@@ -4,10 +4,9 @@
   "description": "Node/Express + PostgreSQL API for the secure medical records app. Steps 1–7 of the build plan.",
   "main": "index.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "migrate": "node src/migrations/runMigration.js"
-  },
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

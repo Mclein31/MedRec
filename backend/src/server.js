@@ -1,7 +1,13 @@
-const app = require('./app');
+require('dotenv').config();
+const express = require('express');
 
+const app = express();
 const PORT = process.env.PORT || 4000;
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.listen(PORT, () => {
-  console.log(`Medical Records API listening on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
