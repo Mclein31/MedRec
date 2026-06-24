@@ -16,9 +16,6 @@ export default function LoginScreen() {
     <View style={{
       padding: 40,
       gap: 12, 
-      // flex: 1,
-      // justifyContent: 'center',
-      // alignItems:'center'
       }}>
 
 
