@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Button } from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import { useState } from 'react';
 import { FlipInEasyX } from 'react-native-reanimated';
 
@@ -15,7 +15,10 @@ export default function LoginScreen() {
   return (
     <View style={{
       padding: 40,
-      gap: 12, 
+      gap: 12,
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center"
       }}>
 
 
@@ -28,6 +31,8 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
         style={{
+          width: "75%",
+          height: "7%",
           borderWidth: 1,
           borderColor: '#ccc',
           padding: 10,
@@ -43,6 +48,8 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         secureTextEntry
         style={{
+          width: "75%",
+          height: "7%",
           borderWidth: 1,
           borderColor: '#ccc',
           padding: 10,
@@ -50,8 +57,20 @@ export default function LoginScreen() {
         }}
       />
 
-      {/* Button */}
-      <Button title="Log In" onPress={handleLogin} />
+      <Pressable
+        onPress={handleLogin}
+        style={{
+          backgroundColor: "#007AFF",
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          borderRadius: 8,
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          Log In
+        </Text>
+      </Pressable>
     </View>
   );
 }
