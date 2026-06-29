@@ -1,12 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
-
+import { Platform } from 'react-native';
 // IMPORTANT: "localhost" only works when testing in a web browser, because the
 // browser and the backend are on the same machine. On a real phone (Expo Go),
 // "localhost" means the phone itself, which has no server running on it.
 // Replace this with your computer's LAN IP address, e.g. "http://REMOVED2:4000"
 // Find yours on Mac with: ipconfig getifaddr en0
-const API_BASE_URL = 'http://REMOVED:4000';
-
+const API_BASE_URL = Platform.OS === 'web'
+  ? 'http://localhost:4000'
+  : 'http://REMOVED:4000'; // keep your real LAN IP here for the phone
 const TOKEN_KEY = 'authToken';
 
 type RequestOptions = {
