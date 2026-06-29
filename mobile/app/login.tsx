@@ -62,8 +62,10 @@ export default function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Link href="/register" style={{ marginTop: 12, color: '#007AFF' }}>
-        Don't have an account? Register
+      <Link href="/register">
+        <Text style={{ marginTop: 12, color: '#007AFF' }}>
+          Dont have an account? Register
+        </Text>
       </Link>
     </View>
   );
