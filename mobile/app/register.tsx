@@ -129,13 +129,6 @@ export default function RegisterScreen() {
             </Text>
           </Pressable>
 
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
           {/* Secondary button */}
           <Pressable
             onPress={() => router.push('/login')}
@@ -171,11 +164,11 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     gap: 6,
-    marginBottom: 36,
+    marginBottom: 56,
   },
   logoBox: {
-    width: 56,
-    height: 56,
+    width: 80,
+    height: 80,
     borderRadius: 14,
     backgroundColor: GREEN,
     alignItems: 'center',
@@ -189,7 +182,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   tagline: {
-    fontSize: 13,
+    fontSize: 15,
     color: GREEN_MID,
   },
   form: {
@@ -200,7 +193,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     color: GREEN_MID,
     letterSpacing: 0.3,
@@ -214,7 +207,7 @@ const styles = StyleSheet.create({
     borderColor: GREEN_LIGHT,
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingVertical: 20,
     gap: 8,
   },
   inputIcon: {
@@ -222,47 +215,32 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 15,
     color: '#222',
     padding: 0,
   },
   primaryBtn: {
     backgroundColor: GREEN,
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 20,
     alignItems: 'center',
+    marginBottom: 8
   },
   primaryBtnText: {
-    fontSize: 13,
+    fontSize: 17,
     fontWeight: '500',
     color: '#fff',
     letterSpacing: 0.2,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginVertical: 16,
-    paddingHorizontal: 4,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 0.5,
-    backgroundColor: GREEN_LIGHT,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: GREEN_MID,
   },
   secondaryBtn: {
     borderWidth: 1,
     borderColor: GREEN_LIGHT,
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 20,
     alignItems: 'center',
   },
   secondaryBtnText: {
-    fontSize: 13,
+    fontSize: 17,
     fontWeight: '500',
     color: GREEN_MID,
   },
