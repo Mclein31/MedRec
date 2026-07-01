@@ -141,7 +141,6 @@ export default function RegisterScreen() {
 
       {/* Footer — outside scroll, pinned to bottom */}
       <View style={styles.footer}>
-        <View style={styles.footerDivider} />
         <Text style={styles.footerText}>
           Your data is encrypted and never shared without your consent.
         </Text>
@@ -248,13 +247,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingBottom: 32,
   },
-  footerDivider: {
-    height: 0.5,
-    backgroundColor: GREEN_LIGHT,
-    marginBottom: 10,
-  },
   footerText: {
-    fontSize: 10,
+    fontSize: 12,
     color: GREEN_MID,
     textAlign: 'center',
     opacity: 0.55,
