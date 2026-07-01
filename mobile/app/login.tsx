@@ -144,8 +144,8 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     gap: 6,
-    marginBottom: 36,
-    marginTop: 50
+    marginBottom: 56,
+    marginTop: 40
   },
   logoBox: {
     width: 80,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   tagline: {
-    fontSize: 13,
+    fontSize: 15,
     color: GREEN_MID,
   },
   form: {
