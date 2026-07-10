@@ -1,5 +1,15 @@
-import { View, Text, TextInput, Pressable, Alert, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -10,30 +20,91 @@ const GREEN_MID = '#0F6E56';
 const GREEN_LIGHT = '#9FE1CB';
 const BG = '#f0f7f4';
 
+const MAX_ATTEMPTS = 5;       // lock out after this many failed tries
+const LOCKOUT_SECONDS = 30;   // how long the lockout lasts
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Rate limiting state
+  const [attempts, setAttempts] = useState(0);
+  const [lockedOut, setLockedOut] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const { login } = useAuth();
   const router = useRouter();
 
+  // Clean up interval on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
+  const startLockout = () => {
+    setLockedOut(true);
+    setCountdown(LOCKOUT_SECONDS);
+
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          setLockedOut(false);
+          setAttempts(0); // reset attempts after lockout expires
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const handleLogin = async () => {
+    if (lockedOut) return;
+
     if (!email || !password) {
       Alert.alert('Missing info', 'Enter both email and password.');
       return;
     }
+
     setLoading(true);
     try {
       await login(email, password);
+      // Success — reset attempts and navigate
+      setAttempts(0);
       router.replace('/(tabs)');
     } catch (err: any) {
-      Alert.alert('Login failed', err.message);
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+
+      const remaining = MAX_ATTEMPTS - newAttempts;
+
+      if (newAttempts >= MAX_ATTEMPTS) {
+        // Lock them out
+        startLockout();
+        Alert.alert(
+          'Too many failed attempts',
+          `Your account has been temporarily locked. Please wait ${LOCKOUT_SECONDS} seconds before trying again.`
+        );
+      } else {
+        // Show tries remaining
+        Alert.alert(
+          'Wrong password',
+          remaining === 1
+            ? `Incorrect email or password. 1 attempt remaining before temporary lockout.`
+            : `Incorrect email or password. ${remaining} attempts remaining.`
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const triesLeft = MAX_ATTEMPTS - attempts;
+  const showAttemptsWarning = attempts > 0 && !lockedOut;
 
   return (
     <View style={styles.root}>
@@ -55,11 +126,33 @@ export default function LoginScreen() {
             <Text style={styles.tagline}>Your health records, secured</Text>
           </View>
 
+          {/* Lockout banner */}
+          {lockedOut && (
+            <View style={styles.lockoutBanner}>
+              <Ionicons name="lock-closed" size={16} color="#FF3B30" />
+              <Text style={styles.lockoutText}>
+                Too many attempts. Try again in {countdown}s
+              </Text>
+            </View>
+          )}
+
+          {/* Attempts warning */}
+          {showAttemptsWarning && (
+            <View style={styles.warningBanner}>
+              <Ionicons name="warning-outline" size={15} color="#FF9500" />
+              <Text style={styles.warningText}>
+                {triesLeft === 1
+                  ? '1 attempt remaining before lockout'
+                  : `${triesLeft} attempts remaining`}
+              </Text>
+            </View>
+          )}
+
           {/* Form */}
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Email</Text>
-              <View style={styles.inputRow}>
+              <View style={[styles.inputRow, lockedOut && styles.inputDisabled]}>
                 <Ionicons name="mail-outline" size={16} color={GREEN} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
@@ -70,13 +163,14 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoCorrect={false}
+                  editable={!lockedOut}
                 />
               </View>
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Password</Text>
-              <View style={styles.inputRow}>
+              <View style={[styles.inputRow, lockedOut && styles.inputDisabled]}>
                 <Ionicons name="lock-closed-outline" size={16} color={GREEN} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
@@ -86,6 +180,7 @@ export default function LoginScreen() {
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                   autoCorrect={false}
+                  editable={!lockedOut}
                 />
                 <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
                   <Ionicons
@@ -101,14 +196,16 @@ export default function LoginScreen() {
           {/* Primary button */}
           <Pressable
             onPress={handleLogin}
-            disabled={loading}
-            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+            disabled={loading || lockedOut}
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              (pressed || lockedOut) && { opacity: 0.6 },
+            ]}
           >
             <Text style={styles.primaryBtnText}>
-              {loading ? 'Logging in...' : 'Log in'}
+              {loading ? 'Logging in...' : lockedOut ? `Locked (${countdown}s)` : 'Log in'}
             </Text>
           </Pressable>
-
 
           {/* Secondary button */}
           <Pressable
@@ -120,7 +217,7 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Footer — outside scroll, pinned to bottom */}
+      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
           Your data is encrypted and never shared without your consent.
@@ -145,7 +242,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginBottom: 56,
-    marginTop: 40
+    marginTop: 40,
   },
   logoBox: {
     width: 80,
@@ -165,6 +262,42 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 15,
     color: GREEN_MID,
+  },
+  lockoutBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff5f5',
+    borderWidth: 1,
+    borderColor: '#ffb3b3',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  lockoutText: {
+    fontSize: 13,
+    color: '#FF3B30',
+    fontWeight: '500',
+    flex: 1,
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFF9F0',
+    borderWidth: 1,
+    borderColor: '#FFD699',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#FF9500',
+    fontWeight: '500',
+    flex: 1,
   },
   form: {
     gap: 12,
@@ -190,6 +323,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 20,
     gap: 8,
+  },
+  inputDisabled: {
+    backgroundColor: '#f5f5f5',
+    borderColor: '#ddd',
   },
   inputIcon: {
     width: 18,
