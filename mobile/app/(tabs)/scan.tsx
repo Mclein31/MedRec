@@ -1,7 +1,21 @@
-import { View, Text, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { api } from '../../lib/api';
+
+const GREEN = '#1D9E75';
+const GREEN_DARK = '#085041';
+const GREEN_MID = '#0F6E56';
+const GREEN_LIGHT = '#9FE1CB';
+const BG = '#f0f7f4';
 
 type SharedRecord = {
   id: string;
@@ -39,20 +53,23 @@ export default function ScanScreen() {
     setError(null);
   };
 
-  // Permission state hasn't loaded yet.
-  if (!permission) return <View />;
+  if (!permission) return <View style={styles.root} />;
 
   if (!permission.granted) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ marginBottom: 12, textAlign: 'center' }}>
-          Camera access is needed to scan a patient's share QR code.
+      <View style={styles.permissionRoot}>
+        <View style={styles.permissionIcon}>
+          <Ionicons name="camera-outline" size={36} color={GREEN} />
+        </View>
+        <Text style={styles.permissionTitle}>Camera access needed</Text>
+        <Text style={styles.permissionSub}>
+          To scan a patient's QR code, this app needs access to your camera.
         </Text>
         <Pressable
           onPress={requestPermission}
-          style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}
+          style={({ pressed }) => [styles.grantBtn, pressed && { opacity: 0.85 }]}
         >
-          <Text style={{ color: 'white' }}>Grant Camera Access</Text>
+          <Text style={styles.grantBtnText}>Grant Camera Access</Text>
         </Pressable>
       </View>
     );
@@ -60,60 +77,333 @@ export default function ScanScreen() {
 
   if (records || error) {
     return (
-      <View style={{ flex: 1, padding: 16 }}>
-        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>
-          {error ? 'Could not load records' : 'Shared Records'}
-        </Text>
-        {error && <Text style={{ color: '#FF3B30', marginBottom: 12 }}>{error}</Text>}
+      <View style={styles.root}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>
+            {error ? 'Could not load records' : 'Shared Records'}
+          </Text>
+          {!error && (
+            <Text style={styles.headerSub}>
+              {records?.length} record{records?.length !== 1 ? 's' : ''} shared
+            </Text>
+          )}
+        </View>
+
+        {error && (
+          <View style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={20} color="#FF3B30" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
         <FlatList
           data={records || []}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="document-outline" size={40} color={GREEN_LIGHT} />
+              <Text style={styles.emptyText}>No records shared</Text>
+            </View>
+          }
           renderItem={({ item }) => (
-            <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderColor: '#eee' }}>
-              <Text style={{ fontWeight: 'bold' }}>{item.title}</Text>
-              <Text style={{ color: '#888' }}>
-                {item.type} · {item.date}
-              </Text>
-              {item.description && <Text>{item.description}</Text>}
+            <View style={styles.recordCard}>
+              <View style={styles.recordIcon}>
+                <Ionicons name="document-text-outline" size={20} color={GREEN} />
+              </View>
+              <View style={styles.recordContent}>
+                <Text style={styles.recordTitle}>{item.title}</Text>
+                <Text style={styles.recordMeta}>
+                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.date}
+                </Text>
+                {item.description && (
+                  <Text style={styles.recordDesc}>{item.description}</Text>
+                )}
+              </View>
             </View>
           )}
         />
-        <Pressable
-          onPress={reset}
-          style={{ backgroundColor: '#007AFF', padding: 14, borderRadius: 8, marginTop: 12 }}
-        >
-          <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
-            Scan Another
-          </Text>
-        </Pressable>
+
+        <View style={styles.footer}>
+          <Pressable
+            onPress={reset}
+            style={({ pressed }) => [styles.scanAgainBtn, pressed && { opacity: 0.85 }]}
+          >
+            <Ionicons name="qr-code-outline" size={18} color="#fff" />
+            <Text style={styles.scanAgainText}>Scan Another</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <CameraView
         style={{ flex: 1 }}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         onBarcodeScanned={handleScanned}
       />
+
+      {/* Overlay UI */}
+      <View style={styles.scanOverlay}>
+        <Text style={styles.scanTitle}>Scan Patient QR Code</Text>
+
+        {/* Viewfinder frame */}
+        <View style={styles.viewfinder}>
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+        </View>
+
+        <Text style={styles.scanHint}>
+          Point your camera at the patient's share QR code
+        </Text>
+      </View>
+
       {loading && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.4)',
-          }}
-        >
-          <ActivityIndicator size="large" color="white" />
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Loading records...</Text>
         </View>
       )}
     </View>
   );
 }
+
+const CORNER_SIZE = 24;
+const CORNER_THICKNESS = 3;
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+    gap: 4,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: GREEN_DARK,
+    letterSpacing: -0.5,
+  },
+  headerSub: {
+    fontSize: 13,
+    color: GREEN_MID,
+  },
+  permissionRoot: {
+    flex: 1,
+    backgroundColor: BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 12,
+  },
+  permissionIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  permissionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: GREEN_DARK,
+    textAlign: 'center',
+  },
+  permissionSub: {
+    fontSize: 14,
+    color: GREEN_MID,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  grantBtn: {
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    marginTop: 8,
+  },
+  grantBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    backgroundColor: '#fff5f5',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffb3b3',
+    padding: 14,
+    marginBottom: 12,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FF3B30',
+  },
+  list: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+    gap: 10,
+  },
+  recordCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    padding: 14,
+    gap: 12,
+  },
+  recordIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordContent: {
+    flex: 1,
+    gap: 3,
+  },
+  recordTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: GREEN_DARK,
+  },
+  recordMeta: {
+    fontSize: 12,
+    color: GREEN_MID,
+  },
+  recordDesc: {
+    fontSize: 13,
+    color: '#555',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: GREEN_MID,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    right: 20,
+  },
+  scanAgainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 16,
+  },
+  scanAgainText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  scanOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  scanTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: -0.3,
+  },
+  viewfinder: {
+    width: 220,
+    height: 220,
+    position: 'relative',
+  },
+  corner: {
+    position: 'absolute',
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    borderColor: GREEN,
+  },
+  cornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderTopLeftRadius: 4,
+  },
+  cornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderTopRightRadius: 4,
+  },
+  cornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderBottomLeftRadius: 4,
+  },
+  cornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderBottomRightRadius: 4,
+  },
+  scanHint: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 18,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '500',
+  },
+});
