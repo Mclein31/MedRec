@@ -77,7 +77,7 @@ export default function RegisterScreen() {
               resizeMode="contain"
             />
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>join us and take control of{'\n'}your health records.</Text>
+            <Text style={styles.subtitle}>join us and take control of {'\n'}your health records.</Text>
           </View>
 
           <View style={styles.fields}>
@@ -203,9 +203,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
   scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 40 },
   logoArea: { alignItems: 'center', gap: 6, marginBottom: 28 },
-  logo: { width: 100, height: 100, marginBottom: 6 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
-  subtitle: { fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 20 },
+  logo: { width: 100, height: 100},
+  title: { fontFamily: 'LexendDeca-Bold' ,fontSize: 35, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
+  subtitle: { fontSize: 12, color: '#888', textAlign: 'center', lineHeight: 15 },
   fields: { gap: 12, marginBottom: 6 },
   inputRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -225,17 +225,15 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN, borderRadius: 12,
     paddingVertical: 16, alignItems: 'center', marginTop: 16, marginBottom: 20,
   },
-  primaryBtnText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  primaryBtnText: { fontSize: 20, fontWeight: '600', color: '#fff' },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
-  dividerLine: { flex: 1, height: 0.5, backgroundColor: '#e0e0e0' },
-  dividerText: { fontSize: 12, color: '#aaa' },
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 24 },
+  dividerLine: { flex: 1, height: 1.5, backgroundColor: '#e3e0e0' },
+  dividerText: { fontSize: 14, color: GREEN },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 50, marginBottom: 50 },
   socialBtn: {
-    width: 54, height: 54, borderRadius: 27,
-    borderWidth: 1, borderColor: '#e0e0e0',
-    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
+    width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'
   },
-  socialIcon: { width: 26, height: 26, resizeMode: 'contain' },
+  socialIcon: { width: 45, height: 45, resizeMode: 'contain' },
   loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   loginText: { fontSize: 13, color: '#aaa' },
   loginLink: { fontSize: 13, color: GREEN, fontWeight: '600' },
