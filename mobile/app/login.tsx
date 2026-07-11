@@ -13,7 +13,6 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
-
 const GREEN = '#4e7c4e';
 const BLUE_ICON = '#5c9ee8';
 
@@ -219,10 +218,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
   scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 24 },
-  logoArea: { alignItems: 'center', gap: 6, marginBottom: 28 },
-  logo: { width: 100, height: 100, marginBottom: 6 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
-  subtitle: { fontSize: 14, color: '#888' },
+  logoArea: { alignItems: 'center', gap: 6, marginBottom: 28, marginTop: 30 },
+  logo: { width: 135, height: 135 },
+  title: { fontFamily: 'LexendDeca-Bold',fontSize: 50, color: '#1a1a1a', letterSpacing: 2, margin: 0 },
+  subtitle: { fontSize: 15, color: '#888', margin: 0},
   lockoutBanner: {
     backgroundColor: '#fff5f5', borderWidth: 1, borderColor: '#ffb3b3',
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12,
@@ -235,7 +234,7 @@ const styles = StyleSheet.create({
   warningText: { fontSize: 13, color: '#FF9500', fontWeight: '500', textAlign: 'center' },
   fields: { gap: 12, marginBottom: 6 },
   inputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 12, height: 55,
     borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 14, backgroundColor: '#fff',
   },
@@ -244,22 +243,19 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 15, color: '#222', padding: 0 },
   eyeIcon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#aaa' },
   forgotRow: { alignItems: 'flex-end', marginTop: -4 },
-  forgotText: { fontSize: 13, color: GREEN },
+  forgotText: { fontSize: 14, color: GREEN },
   primaryBtn: {
     backgroundColor: GREEN, borderRadius: 12,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16, marginBottom: 20,
+    paddingVertical: 16, alignItems: 'center', marginTop: 30, marginBottom: 20,
   },
   primaryBtnText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
-  dividerLine: { flex: 1, height: 0.5, backgroundColor: '#e0e0e0' },
-  dividerText: { fontSize: 12, color: '#aaa' },
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 20 },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  dividerLine: { flex: 1, height: 1.5, backgroundColor: '#e3e0e0' },
+  dividerText: { fontSize: 14, color: GREEN },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 50, marginBottom: 25},
   socialBtn: {
-    width: 54, height: 54, borderRadius: 27,
-    borderWidth: 1, borderColor: '#e0e0e0',
-    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
-  },
-  socialIcon: { width: 26, height: 26, resizeMode: 'contain' },
+    width: 54, height: 54, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'},
+  socialIcon: { width: 45, height: 45, resizeMode: 'contain'},
   createBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, paddingVertical: 14,
