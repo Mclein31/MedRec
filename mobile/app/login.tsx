@@ -8,28 +8,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
-const GREEN = '#1D9E75';
-const GREEN_DARK = '#085041';
-const GREEN_MID = '#0F6E56';
-const GREEN_LIGHT = '#9FE1CB';
-const BG = '#f0f7f4';
+const GREEN = '#4e7c4e';
+const BLUE_ICON = '#5c9ee8';
 
-const MAX_ATTEMPTS = 5;       // lock out after this many failed tries
-const LOCKOUT_SECONDS = 30;   // how long the lockout lasts
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 30;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  // Rate limiting state
+  const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [lockedOut, setLockedOut] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -38,23 +33,19 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
 
-  // Clean up interval on unmount
   useEffect(() => {
-    return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
+    return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
   }, []);
 
   const startLockout = () => {
     setLockedOut(true);
     setCountdown(LOCKOUT_SECONDS);
-
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(countdownRef.current!);
           setLockedOut(false);
-          setAttempts(0); // reset attempts after lockout expires
+          setAttempts(0);
           return 0;
         }
         return prev - 1;
@@ -64,38 +55,26 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (lockedOut) return;
-
     if (!email || !password) {
       Alert.alert('Missing info', 'Enter both email and password.');
       return;
     }
-
     setLoading(true);
     try {
       await login(email, password);
-      // Success — reset attempts and navigate
       setAttempts(0);
       router.replace('/(tabs)');
     } catch (err: any) {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
-
       const remaining = MAX_ATTEMPTS - newAttempts;
-
       if (newAttempts >= MAX_ATTEMPTS) {
-        // Lock them out
         startLockout();
-        Alert.alert(
-          'Too many failed attempts',
-          `Your account has been temporarily locked. Please wait ${LOCKOUT_SECONDS} seconds before trying again.`
-        );
+        Alert.alert('Too many attempts', `Account temporarily locked. Try again in ${LOCKOUT_SECONDS} seconds.`);
       } else {
-        // Show tries remaining
-        Alert.alert(
-          'Wrong password',
-          remaining === 1
-            ? `Incorrect email or password. 1 attempt remaining before temporary lockout.`
-            : `Incorrect email or password. ${remaining} attempts remaining.`
+        Alert.alert('Wrong password', remaining === 1
+          ? '1 attempt remaining before lockout.'
+          : `${remaining} attempts remaining.`
         );
       }
     } finally {
@@ -103,124 +82,134 @@ export default function LoginScreen() {
     }
   };
 
+  const handleSocialPress = (provider: string) => {
+    Alert.alert('Coming soon', `${provider} sign-in will be available in a future update.`);
+  };
+
+  const handleForgotPassword = () => {
+    Alert.alert('Coming soon', 'Password reset will be available in a future update.');
+  };
+
   const triesLeft = MAX_ATTEMPTS - attempts;
-  const showAttemptsWarning = attempts > 0 && !lockedOut;
+  const showWarning = attempts > 0 && !lockedOut;
 
   return (
     <View style={styles.root}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Logo + title */}
-          <View style={styles.header}>
-            <View style={styles.logoBox}>
-              {/* Replace this Ionicons icon with your own logo later */}
-              <Ionicons name="pulse" size={28} color="#fff" />
-            </View>
-            <Text style={styles.appName}>MedRecord</Text>
-            <Text style={styles.tagline}>Your health records, secured</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+
+          <View style={styles.logoArea}>
+            <Image
+              source={require('../assets/logo/MedRec-Logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Welcome</Text>
+            <Text style={styles.subtitle}>sign in to continue</Text>
           </View>
 
-          {/* Lockout banner */}
           {lockedOut && (
             <View style={styles.lockoutBanner}>
-              <Ionicons name="lock-closed" size={16} color="#FF3B30" />
-              <Text style={styles.lockoutText}>
-                Too many attempts. Try again in {countdown}s
-              </Text>
+              <Text style={styles.lockoutText}>Too many attempts. Try again in {countdown}s</Text>
             </View>
           )}
 
-          {/* Attempts warning */}
-          {showAttemptsWarning && (
+          {showWarning && (
             <View style={styles.warningBanner}>
-              <Ionicons name="warning-outline" size={15} color="#FF9500" />
               <Text style={styles.warningText}>
-                {triesLeft === 1
-                  ? '1 attempt remaining before lockout'
-                  : `${triesLeft} attempts remaining`}
+                {triesLeft === 1 ? '1 attempt remaining before lockout' : `${triesLeft} attempts remaining`}
               </Text>
             </View>
           )}
 
-          {/* Form */}
-          <View style={styles.form}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Email</Text>
-              <View style={[styles.inputRow, lockedOut && styles.inputDisabled]}>
-                <Ionicons name="mail-outline" size={16} color={GREEN} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="name@example.com"
-                  placeholderTextColor="#aaa"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoCorrect={false}
-                  editable={!lockedOut}
-                />
-              </View>
+          <View style={styles.fields}>
+            <View style={[styles.inputRow, lockedOut && styles.inputDisabled]}>
+              <Image source={require('../assets/icons/person.png')} style={[styles.fieldIcon, { tintColor: BLUE_ICON }]} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email or Phone"
+                placeholderTextColor="#aaa"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoCorrect={false}
+                editable={!lockedOut}
+              />
             </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={[styles.inputRow, lockedOut && styles.inputDisabled]}>
-                <Ionicons name="lock-closed-outline" size={16} color={GREEN} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="••••••••"
-                  placeholderTextColor="#aaa"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCorrect={false}
-                  editable={!lockedOut}
+            <View style={[styles.inputRow, lockedOut && styles.inputDisabled]}>
+              <Image source={require('../assets/icons/padlock.png')} style={[styles.fieldIcon, { tintColor: BLUE_ICON }]} />
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Password"
+                placeholderTextColor="#aaa"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCorrect={false}
+                editable={!lockedOut}
+              />
+              <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                <Image
+                  source={showPassword
+                    ? require('../assets/icons/hidden-eye.png')
+                    : require('../assets/icons/eye-open.png')}
+                  style={styles.eyeIcon}
                 />
-                <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={16}
-                    color={GREEN_MID}
-                  />
-                </Pressable>
-              </View>
+              </Pressable>
             </View>
+
+            <Pressable onPress={handleForgotPassword} style={styles.forgotRow}>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </Pressable>
           </View>
 
-          {/* Primary button */}
           <Pressable
             onPress={handleLogin}
             disabled={loading || lockedOut}
-            style={({ pressed }) => [
-              styles.primaryBtn,
-              (pressed || lockedOut) && { opacity: 0.6 },
-            ]}
+            style={({ pressed }) => [styles.primaryBtn, (pressed || lockedOut) && { opacity: 0.6 }]}
           >
             <Text style={styles.primaryBtnText}>
-              {loading ? 'Logging in...' : lockedOut ? `Locked (${countdown}s)` : 'Log in'}
+              {loading ? 'Logging in...' : lockedOut ? `Locked (${countdown}s)` : 'Login'}
             </Text>
           </Pressable>
 
-          {/* Secondary button */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.socialRow}>
+            <Pressable onPress={() => handleSocialPress('Google')} style={styles.socialBtn}>
+              <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
+            </Pressable>
+            <Pressable onPress={() => handleSocialPress('Apple')} style={styles.socialBtn}>
+              <Image source={require('../assets/icons/apple.png')} style={styles.socialIcon} />
+            </Pressable>
+            <Pressable onPress={() => handleSocialPress('Facebook')} style={styles.socialBtn}>
+              <Image source={require('../assets/icons/facebook.png')} style={styles.socialIcon} />
+            </Pressable>
+          </View>
+
           <Pressable
             onPress={() => router.push('/register')}
-            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.createBtn, pressed && { opacity: 0.7 }]}
           >
-            <Text style={styles.secondaryBtnText}>Create account</Text>
+            <Image source={require('../assets/icons/user-add.png')} style={[styles.createIcon, { tintColor: GREEN }]} />
+            <Text style={styles.createBtnText}>create an account</Text>
           </Pressable>
+
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Your data is encrypted and never shared without your consent.
+          By continuing, you are agreeing to our{' '}
+          <Text style={styles.footerLink}>Terms of Use</Text>
+          {' '}and{' '}
+          <Text style={styles.footerLink}>Privacy Policy</Text>
         </Text>
       </View>
     </View>
@@ -228,149 +217,56 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-    paddingTop: 80,
-    paddingBottom: 24,
-  },
-  header: {
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 56,
-    marginTop: 40,
-  },
-  logoBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 14,
-    backgroundColor: GREEN,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  appName: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: GREEN_DARK,
-    letterSpacing: -0.3,
-  },
-  tagline: {
-    fontSize: 15,
-    color: GREEN_MID,
-  },
+  root: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 24 },
+  logoArea: { alignItems: 'center', gap: 6, marginBottom: 28 },
+  logo: { width: 100, height: 100, marginBottom: 6 },
+  title: { fontSize: 26, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
+  subtitle: { fontSize: 14, color: '#888' },
   lockoutBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff5f5',
-    borderWidth: 1,
-    borderColor: '#ffb3b3',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 12,
+    backgroundColor: '#fff5f5', borderWidth: 1, borderColor: '#ffb3b3',
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12,
   },
-  lockoutText: {
-    fontSize: 13,
-    color: '#FF3B30',
-    fontWeight: '500',
-    flex: 1,
-  },
+  lockoutText: { fontSize: 13, color: '#FF3B30', fontWeight: '500', textAlign: 'center' },
   warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFF9F0',
-    borderWidth: 1,
-    borderColor: '#FFD699',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 12,
+    backgroundColor: '#FFF9F0', borderWidth: 1, borderColor: '#FFD699',
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12,
   },
-  warningText: {
-    fontSize: 13,
-    color: '#FF9500',
-    fontWeight: '500',
-    flex: 1,
-  },
-  form: {
-    gap: 12,
-    marginBottom: 20,
-  },
-  fieldGroup: {
-    gap: 4,
-  },
-  label: {
-    fontSize: 12.5,
-    fontWeight: '500',
-    color: GREEN_MID,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
+  warningText: { fontSize: 13, color: '#FF9500', fontWeight: '500', textAlign: 'center' },
+  fields: { gap: 12, marginBottom: 6 },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 20,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 14, backgroundColor: '#fff',
   },
-  inputDisabled: {
-    backgroundColor: '#f5f5f5',
-    borderColor: '#ddd',
-  },
-  inputIcon: {
-    width: 18,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: '#222',
-    padding: 0,
-  },
+  inputDisabled: { backgroundColor: '#f5f5f5', borderColor: '#ddd' },
+  fieldIcon: { width: 20, height: 20, resizeMode: 'contain' },
+  input: { flex: 1, fontSize: 15, color: '#222', padding: 0 },
+  eyeIcon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#aaa' },
+  forgotRow: { alignItems: 'flex-end', marginTop: -4 },
+  forgotText: { fontSize: 13, color: GREEN },
   primaryBtn: {
-    backgroundColor: GREEN,
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: GREEN, borderRadius: 12,
+    paddingVertical: 16, alignItems: 'center', marginTop: 16, marginBottom: 20,
   },
-  primaryBtnText: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#fff',
-    letterSpacing: 0.2,
+  primaryBtnText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
+  dividerLine: { flex: 1, height: 0.5, backgroundColor: '#e0e0e0' },
+  dividerText: { fontSize: 12, color: '#aaa' },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 20 },
+  socialBtn: {
+    width: 54, height: 54, borderRadius: 27,
+    borderWidth: 1, borderColor: '#e0e0e0',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
   },
-  secondaryBtn: {
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: 'center',
+  socialIcon: { width: 26, height: 26, resizeMode: 'contain' },
+  createBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, paddingVertical: 14,
   },
-  secondaryBtnText: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: GREEN_MID,
-  },
-  footer: {
-    paddingHorizontal: 28,
-    paddingBottom: 31,
-  },
-  footerText: {
-    fontSize: 12,
-    color: GREEN_MID,
-    textAlign: 'center',
-    opacity: 0.55,
-    lineHeight: 15,
-  },
+  createIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  createBtnText: { fontSize: 14, color: GREEN, fontWeight: '500' },
+  footer: { paddingHorizontal: 28, paddingBottom: 32, paddingTop: 8 },
+  footerText: { fontSize: 11, color: '#aaa', textAlign: 'center', lineHeight: 16 },
+  footerLink: { color: GREEN },
 });
