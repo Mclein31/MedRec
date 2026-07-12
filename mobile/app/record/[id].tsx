@@ -28,6 +28,20 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   other: 'ellipsis-horizontal-outline',
 };
 
+// Formats the raw date string from the backend (e.g. "2026-06-29T16:00:00.000Z"
+// or plain "2026-06-29") into a readable "June 29, 2026" format.
+// Using UTC methods avoids timezone-offset issues that cause the date to appear
+// one day earlier in timezones behind UTC.
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 type MedicalRecord = {
   id: string;
   type: string;
@@ -121,7 +135,7 @@ export default function RecordDetailScreen() {
             </View>
             <View style={styles.metaChip}>
               <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
-              <Text style={styles.metaChipText}>{record.date}</Text>
+              <Text style={styles.metaChipText}>{formatDate(record.date)}</Text>
             </View>
           </View>
           {record.description && (
@@ -214,6 +228,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     gap: 8,
+    flexWrap: 'wrap',
   },
   metaChip: {
     flexDirection: 'row',
