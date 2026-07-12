@@ -27,7 +27,13 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!token}>
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+            headerBackTitle: 'Back',  // ← add this line
+          }}
+        />
         <Stack.Screen
           name="record/add"
           options={{
