@@ -30,19 +30,34 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   other: 'ellipsis-horizontal-outline',
 };
 
+function timeAgo(dateStr: string) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+}
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
 type MedicalRecord = {
   id: string;
   type: string;
   title: string;
   description: string | null;
   date: string;
+  created_at?: string;
 };
 
 export default function RecordsScreen() {
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [summary, setSummary] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
 
   const router = useRouter();
@@ -74,7 +89,7 @@ export default function RecordsScreen() {
     setSummarizing(true);
     try {
       const data = await api.summarize();
-      setSummary(data.summary);
+      Alert.alert('AI Health Summary', data.summary);
     } catch (err: any) {
       Alert.alert('AI summary failed', err.message);
     } finally {
@@ -92,51 +107,64 @@ export default function RecordsScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>My Records</Text>
-          <Text style={styles.headerSub}>{records.length} record{records.length !== 1 ? 's' : ''}</Text>
-        </View>
-        <Pressable onPress={logout} style={styles.logoutBtn}>
-          <Ionicons name="log-out-outline" size={20} color={GREEN_MID} />
-        </Pressable>
-      </View>
-
-      {/* AI Summary button */}
-      <Pressable
-        onPress={handleSummarize}
-        disabled={summarizing}
-        style={({ pressed }) => [styles.summaryBtn, pressed && { opacity: 0.85 }]}
-      >
-        <Ionicons name="sparkles-outline" size={18} color="#fff" />
-        <Text style={styles.summaryBtnText}>
-          {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
-        </Text>
-      </Pressable>
-
-      {/* Summary output */}
-      {summary && (
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryCardHeader}>
-            <Ionicons name="sparkles" size={14} color={GREEN} />
-            <Text style={styles.summaryCardLabel}>AI Summary</Text>
-          </View>
-          <Text style={styles.summaryCardText}>{summary}</Text>
-        </View>
-      )}
-
-      {/* Records list */}
       <FlatList
         data={records}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />
         }
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.headerTitle}>My Records</Text>
+                <Text style={styles.headerSub}>
+                  {records.length} record{records.length !== 1 ? 's' : ''}
+                </Text>
+              </View>
+              <Pressable onPress={logout} style={styles.logoutBtn}>
+                <Ionicons name="log-out-outline" size={20} color={GREEN_MID} />
+              </Pressable>
+            </View>
+
+            {/* AI Summary Banner */}
+            <Pressable
+              onPress={handleSummarize}
+              disabled={summarizing}
+              style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.88 }]}
+            >
+              <View style={styles.aiIconBox}>
+                <Ionicons name="sparkles" size={22} color="#fff" />
+              </View>
+              <View style={styles.aiTextBox}>
+                <Text style={styles.aiTitle}>
+                  {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
+                </Text>
+                <Text style={styles.aiSubtitle}>
+                  Get insights and a summary of your health records
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+            </Pressable>
+
+            {/* Section header */}
+            {records.length > 0 && (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Your Records</Text>
+                <View style={styles.sortBtn}>
+                  <Ionicons name="swap-vertical-outline" size={14} color={GREEN_MID} />
+                  <Text style={styles.sortBtnText}>Most Recent</Text>
+                  <Ionicons name="chevron-down" size={13} color={GREEN_MID} />
+                </View>
+              </View>
+            )}
+          </>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={48} color={GREEN_LIGHT} />
+            <Ionicons name="document-text-outline" size={52} color={GREEN_LIGHT} />
             <Text style={styles.emptyTitle}>No records yet</Text>
             <Text style={styles.emptySubtitle}>Tap + to add your first record</Text>
           </View>
@@ -144,22 +172,45 @@ export default function RecordsScreen() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push(`/record/${item.id}`)}
-            style={({ pressed }) => [styles.recordCard, pressed && { opacity: 0.75 }]}
+            style={({ pressed }) => [styles.recordCard, pressed && { opacity: 0.78 }]}
           >
-            <View style={styles.recordIcon}>
-              <Ionicons
-                name={TYPE_ICONS[item.type] || 'document-outline'}
-                size={20}
-                color={GREEN}
-              />
-            </View>
-            <View style={styles.recordContent}>
-              <Text style={styles.recordTitle}>{item.title}</Text>
-              <Text style={styles.recordMeta}>
-                {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.date}
+            {/* Type badge */}
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>
+                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={GREEN_LIGHT} />
+
+            <View style={styles.recordBody}>
+              {/* Icon + content */}
+              <View style={styles.recordRow}>
+                <View style={styles.recordIconBox}>
+                  <Ionicons
+                    name={TYPE_ICONS[item.type] || 'document-outline'}
+                    size={24}
+                    color={GREEN}
+                  />
+                </View>
+                <View style={styles.recordContent}>
+                  <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
+                  <View style={styles.recordDateRow}>
+                    <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
+                    <Text style={styles.recordDateText}>{formatDate(item.date)}</Text>
+                  </View>
+                </View>
+                <View style={styles.chevronCircle}>
+                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
+                </View>
+              </View>
+
+              {/* Added ago footer */}
+              <View style={styles.recordFooter}>
+                <Ionicons name="document-outline" size={12} color="#aaa" />
+                <Text style={styles.recordFooterText}>
+                  Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
+                </Text>
+              </View>
+            </View>
           </Pressable>
         )}
       />
@@ -169,7 +220,7 @@ export default function RecordsScreen() {
         onPress={() => router.push('/record/add')}
         style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={30} color="#fff" />
       </Pressable>
     </View>
   );
@@ -186,142 +237,212 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: BG,
   },
+  listContainer: {
+    paddingBottom: 120,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 64,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: GREEN_DARK,
     letterSpacing: -0.5,
   },
   headerSub: {
-    fontSize: 13,
+    fontSize: 14,
     color: GREEN_MID,
     marginTop: 2,
   },
   logoutBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: GREEN_LIGHT,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  summaryBtn: {
+  aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
     backgroundColor: GREEN,
     marginHorizontal: 20,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    gap: 14,
+    marginBottom: 24,
   },
-  summaryBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+  aiIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiTextBox: {
+    flex: 1,
+    gap: 3,
+  },
+  aiTitle: {
+    fontSize: 15,
+    fontWeight: '700',
     color: '#fff',
   },
-  summaryCard: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    padding: 14,
-    gap: 6,
+  aiSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    lineHeight: 16,
   },
-  summaryCardHeader: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: GREEN_DARK,
+  },
+  sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#fff',
   },
-  summaryCardLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: GREEN,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  summaryCardText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-  },
-  list: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-    gap: 10,
+  sortBtnText: {
+    fontSize: 12,
+    color: GREEN_MID,
+    fontWeight: '500',
   },
   recordCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  typeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e8f5e9',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    margin: 14,
+    marginBottom: 4,
+  },
+  typeBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: GREEN,
+  },
+  recordBody: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+  recordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    padding: 14,
     gap: 12,
   },
-  recordIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+  recordIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: BG,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recordContent: {
     flex: 1,
-    gap: 3,
+    gap: 5,
   },
   recordTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: GREEN_DARK,
+    lineHeight: 22,
   },
-  recordMeta: {
+  recordDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  recordDateText: {
     fontSize: 12,
     color: GREEN_MID,
+  },
+  chevronCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f5',
+  },
+  recordFooterText: {
+    fontSize: 12,
+    color: '#aaa',
   },
   empty: {
     alignItems: 'center',
     paddingTop: 60,
-    gap: 8,
+    gap: 10,
+    paddingHorizontal: 40,
   },
   emptyTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: GREEN_DARK,
   },
   emptySubtitle: {
     fontSize: 14,
     color: GREEN_MID,
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: GREEN,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: GREEN_DARK,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });
