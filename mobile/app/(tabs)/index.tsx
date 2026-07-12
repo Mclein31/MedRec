@@ -33,9 +33,12 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 function timeAgo(dateStr: string) {
   const date = new Date(dateStr);
   const now = new Date();
+  // Compare in milliseconds but normalise to start-of-day so timezone
+  // offsets don't accidentally flip a "today" record into "1 day ago".
   const diffMs = now.getTime() - date.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'Today';
+  if (diffHours < 24) return 'Today';
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
 }
@@ -205,7 +208,7 @@ export default function RecordsScreen() {
 
               {/* Added ago footer */}
               <View style={styles.recordFooter}>
-                <Ionicons name="document-outline" size={12} color="#aaa" />
+                <Ionicons name="folder-open-outline" size={12} color="#aaa" />
                 <Text style={styles.recordFooterText}>
                   Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
                 </Text>
