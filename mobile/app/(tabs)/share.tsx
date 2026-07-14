@@ -26,12 +26,24 @@ type Share = {
   revoked_at: string | null;
 };
 
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }) + ' · ' + date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export default function ShareScreen() {
   const [shares, setShares] = useState<Share[]>([]);
   const [activeToken, setActiveToken] = useState<string | null>(null);
   const [activeExpiry, setActiveExpiry] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [revoking, setRevoking] = useState<string | null>(null); // tracks which share is being revoked
+  const [revoking, setRevoking] = useState<string | null>(null);
 
   const loadShares = async () => {
     try {
@@ -66,7 +78,6 @@ export default function ShareScreen() {
     setRevoking(id);
     try {
       await api.revokeShare(id);
-      // If the revoked share is the one currently displayed, clear the QR
       if (shares.find(s => s.id === id)?.token === activeToken) {
         setActiveToken(null);
         setActiveExpiry(null);
@@ -81,62 +92,80 @@ export default function ShareScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Share Records</Text>
-        <Text style={styles.headerSub}>Generate a temporary QR code for your doctor</Text>
-      </View>
-
-      {/* QR display or generate button */}
-      {activeToken ? (
-        <View style={styles.qrCard}>
-          <QRCode value={activeToken} size={180} color={GREEN_DARK} backgroundColor="#fff" />
-          <Text style={styles.qrLabel}>Show this to your doctor</Text>
-          {activeExpiry && (
-            <View style={styles.expiryRow}>
-              <Ionicons name="time-outline" size={13} color={GREEN_MID} />
-              <Text style={styles.expiryText}>
-                Expires {new Date(activeExpiry).toLocaleString()}
-              </Text>
-            </View>
-          )}
-          <Pressable
-            onPress={() => { setActiveToken(null); setActiveExpiry(null); }}
-            style={({ pressed }) => [styles.dismissBtn, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.dismissBtnText}>Dismiss</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable
-          onPress={handleCreate}
-          disabled={creating}
-          style={({ pressed }) => [styles.generateBtn, pressed && { opacity: 0.85 }]}
-        >
-          {creating ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="qr-code-outline" size={20} color="#fff" />
-              <Text style={styles.generateBtnText}>Generate Share QR (60 min)</Text>
-            </>
-          )}
-        </Pressable>
-      )}
-
-      {/* Share history */}
-      <View style={styles.historyHeader}>
-        <Text style={styles.historyTitle}>Share History</Text>
-      </View>
-
       <FlatList
         data={shares}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Share Records</Text>
+              <Text style={styles.headerSub}>
+                Generate a temporary QR code for your doctor
+              </Text>
+            </View>
+
+            {/* QR card or generate button */}
+            {activeToken ? (
+              <View style={styles.qrCard}>
+                <QRCode
+                  value={activeToken}
+                  size={180}
+                  color={GREEN_DARK}
+                  backgroundColor="#fff"
+                />
+                <Text style={styles.qrLabel}>Show this to your doctor</Text>
+                {activeExpiry && (
+                  <View style={styles.expiryRow}>
+                    <Ionicons name="time-outline" size={13} color={GREEN_MID} />
+                    <Text style={styles.expiryText}>
+                      Expires {new Date(activeExpiry).toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                <Pressable
+                  onPress={() => { setActiveToken(null); setActiveExpiry(null); }}
+                  style={({ pressed }) => [styles.dismissBtn, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={styles.dismissBtnText}>Dismiss</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handleCreate}
+                disabled={creating}
+                style={({ pressed }) => [styles.generateBtn, pressed && { opacity: 0.85 }]}
+              >
+                {creating ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="qr-code-outline" size={20} color="#fff" />
+                    <Text style={styles.generateBtnText}>Generate Share QR (60 min)</Text>
+                  </>
+                )}
+              </Pressable>
+            )}
+
+            {/* Section header */}
+            {shares.length > 0 && (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Share History</Text>
+                <Text style={styles.sectionCount}>
+                  {shares.length} link{shares.length !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            )}
+          </>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="qr-code-outline" size={40} color={GREEN_LIGHT} />
-            <Text style={styles.emptyText}>No shares yet</Text>
+            <Ionicons name="qr-code-outline" size={52} color={GREEN_LIGHT} />
+            <Text style={styles.emptyTitle}>No shares yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Generate a QR code to share your records with a doctor
+            </Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -147,32 +176,68 @@ export default function ShareScreen() {
 
           return (
             <View style={styles.shareCard}>
-              <View style={[styles.statusDot, { backgroundColor: active ? GREEN : '#ccc' }]} />
-              <View style={styles.shareInfo}>
-                <Text style={styles.shareStatus}>
+              {/* Status badge */}
+              <View style={[
+                styles.statusBadge,
+                active ? styles.statusBadgeActive :
+                revoked ? styles.statusBadgeRevoked :
+                styles.statusBadgeExpired
+              ]}>
+                <Text style={[
+                  styles.statusBadgeText,
+                  active ? styles.statusBadgeTextActive :
+                  revoked ? styles.statusBadgeTextRevoked :
+                  styles.statusBadgeTextExpired
+                ]}>
                   {revoked ? 'Revoked' : expired ? 'Expired' : 'Active'}
                 </Text>
-                <Text style={styles.shareExpiry}>
-                  {new Date(item.expires_at).toLocaleString()}
-                </Text>
               </View>
-              {active && (
-                <Pressable
-                  onPress={() => handleRevoke(item.id)}
-                  disabled={isRevoking}
-                  style={({ pressed }) => [
-                    styles.revokeBtn,
-                    pressed && { opacity: 0.7 },
-                    isRevoking && { opacity: 0.5 },
-                  ]}
-                >
-                  {isRevoking ? (
-                    <ActivityIndicator size="small" color="#FF3B30" />
-                  ) : (
-                    <Text style={styles.revokeBtnText}>Revoke</Text>
+
+              <View style={styles.shareBody}>
+                <View style={styles.shareRow}>
+                  <View style={styles.shareIconBox}>
+                    <Ionicons
+                      name="qr-code-outline"
+                      size={22}
+                      color={active ? GREEN : '#aaa'}
+                    />
+                  </View>
+                  <View style={styles.shareInfo}>
+                    <Text style={styles.shareInfoLabel}>Expires</Text>
+                    <View style={styles.shareDateRow}>
+                      <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
+                      <Text style={styles.shareDateText}>
+                        {formatDate(item.expires_at)}
+                      </Text>
+                    </View>
+                  </View>
+                  {active && (
+                    <Pressable
+                      onPress={() => handleRevoke(item.id)}
+                      disabled={isRevoking}
+                      style={({ pressed }) => [
+                        styles.revokeBtn,
+                        pressed && { opacity: 0.7 },
+                        isRevoking && { opacity: 0.5 },
+                      ]}
+                    >
+                      {isRevoking ? (
+                        <ActivityIndicator size="small" color="#FF3B30" />
+                      ) : (
+                        <Text style={styles.revokeBtnText}>Revoke</Text>
+                      )}
+                    </Pressable>
                   )}
-                </Pressable>
-              )}
+                </View>
+
+                <View style={styles.shareFooter}>
+                  <Ionicons name="folder-open-outline" size={12} color="#aaa" />
+                  <Text style={styles.shareFooterText}>
+                    {revoked ? 'Revoked · ' : expired ? 'Expired · ' : 'Active · '}
+                    {formatDate(item.expires_at)}
+                  </Text>
+                </View>
+              </View>
             </View>
           );
         }}
@@ -186,21 +251,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
+  listContainer: {
+    paddingBottom: 120,
+  },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 64,
     paddingBottom: 20,
     gap: 4,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: GREEN_DARK,
     letterSpacing: -0.5,
   },
   headerSub: {
-    fontSize: 13,
+    fontSize: 14,
     color: GREEN_MID,
+    marginTop: 2,
   },
   qrCard: {
     marginHorizontal: 20,
@@ -212,6 +281,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   qrLabel: {
     fontSize: 14,
@@ -247,56 +321,106 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: GREEN,
     marginHorizontal: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 16,
     marginBottom: 24,
   },
   generateBtnText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#fff',
   },
-  historyHeader: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  historyTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: GREEN_DARK,
+  },
+  sectionCount: {
+    fontSize: 13,
     color: GREEN_MID,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  list: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    gap: 8,
   },
   shareCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    margin: 14,
+    marginBottom: 4,
+  },
+  statusBadgeActive: {
+    backgroundColor: '#e8f5f0',
+  },
+  statusBadgeExpired: {
+    backgroundColor: '#f5f5f5',
+  },
+  statusBadgeRevoked: {
+    backgroundColor: '#fff5f5',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusBadgeTextActive: {
+    color: GREEN,
+  },
+  statusBadgeTextExpired: {
+    color: '#aaa',
+  },
+  statusBadgeTextRevoked: {
+    color: '#FF3B30',
+  },
+  shareBody: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+  shareRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    padding: 14,
     gap: 12,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  shareIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: BG,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shareInfo: {
     flex: 1,
-    gap: 2,
+    gap: 4,
   },
-  shareStatus: {
-    fontSize: 14,
-    fontWeight: '600',
+  shareInfoLabel: {
+    fontSize: 15,
+    fontWeight: '700',
     color: GREEN_DARK,
   },
-  shareExpiry: {
+  shareDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  shareDateText: {
     fontSize: 12,
     color: GREEN_MID,
   },
@@ -315,13 +439,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FF3B30',
   },
+  shareFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f5',
+  },
+  shareFooterText: {
+    fontSize: 12,
+    color: '#aaa',
+  },
   empty: {
     alignItems: 'center',
-    paddingTop: 40,
-    gap: 8,
+    paddingTop: 60,
+    gap: 10,
+    paddingHorizontal: 40,
   },
-  emptyText: {
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: GREEN_DARK,
+  },
+  emptySubtitle: {
     fontSize: 14,
     color: GREEN_MID,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
