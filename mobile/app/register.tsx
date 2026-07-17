@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 
 const GREEN = '#4e7c4e';
@@ -28,6 +29,7 @@ export default function RegisterScreen() {
 
   const { register } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -68,7 +70,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.root}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20 }]} keyboardShouldPersistTaps="handled">
 
           <View style={styles.logoArea}>
             <Image
@@ -201,7 +203,7 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
-  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 40 },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingBottom: 40 },
   logoArea: { alignItems: 'center', gap: 6, marginTop: 40 },
   logo: { width: 100, height: 100},
   title: { fontFamily: 'LexendDeca-Bold' ,fontSize: 35, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },

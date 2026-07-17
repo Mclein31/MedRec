@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 const GREEN = '#4e7c4e';
 const BLUE_ICON = '#5c9ee8';
@@ -31,6 +32,7 @@ export default function LoginScreen() {
 
   const { login } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
@@ -95,7 +97,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.root}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20 }]} keyboardShouldPersistTaps="handled">
 
           <View style={styles.logoArea}>
             <Image
@@ -217,7 +219,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
-  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 24 },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingBottom: 24 },
   logoArea: { alignItems: 'center', gap: 6, marginBottom: 28, marginTop: 30 },
   logo: { width: 135, height: 135 },
   title: { fontFamily: 'LexendDeca-Bold',fontSize: 50, color: '#1a1a1a', letterSpacing: 2, margin: 0 },
