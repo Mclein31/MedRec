@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { api } from '../../lib/api';
+import { StatusBar } from 'expo-status-bar';
 
 const GREEN = '#1D9E75';
 const GREEN_DARK = '#085041';
@@ -94,6 +95,7 @@ export default function ShareScreen() {
 
   return (
     <View style={styles.root}>
+      <StatusBar style="dark" />
       <FlatList
         data={shares}
         keyExtractor={(item) => item.id}

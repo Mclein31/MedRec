@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { StatusBar } from 'expo-status-bar';
 
 const GREEN = '#1D9E75';
 const GREEN_DARK = '#085041';
@@ -112,6 +113,7 @@ export default function RecordsScreen() {
 
   return (
     <View style={styles.root}>
+      <StatusBar style="dark" />
       <FlatList
         data={records}
         keyExtractor={(item) => item.id}

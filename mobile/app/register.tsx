@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { StatusBar } from 'expo-status-bar';
 
 const GREEN = '#4e7c4e';
 const BLUE_ICON = '#5c9ee8';
@@ -69,6 +70,7 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.root}>
+      <StatusBar style="dark" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20 }]} keyboardShouldPersistTaps="handled">
 
@@ -195,6 +197,7 @@ export default function RegisterScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
+    
   );
 }
 
