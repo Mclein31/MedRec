@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 // Find yours on Mac with: ipconfig getifaddr en0
 const API_BASE_URL = Platform.OS === 'web'
   ? 'http://localhost:4000'
-  : 'http://REMOVED:4000'; // keep your real LAN IP here for the phone
+  : 'http://McLnOnz.local:4000'; // keep your real LAN IP here for the phone
 
 const TOKEN_KEY = 'authToken';
 
