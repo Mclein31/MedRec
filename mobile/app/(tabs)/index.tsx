@@ -11,6 +11,7 @@ import {
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -65,6 +66,7 @@ export default function RecordsScreen() {
 
   const router = useRouter();
   const { logout } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const loadRecords = async () => {
     try {
@@ -120,7 +122,7 @@ export default function RecordsScreen() {
         ListHeaderComponent={
           <>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
               <View>
                 <Text style={styles.headerTitle}>My Records</Text>
                 <Text style={styles.headerSub}>
@@ -248,7 +250,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 64,
     paddingBottom: 20,
   },
   headerTitle: {

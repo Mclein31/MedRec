@@ -10,6 +10,7 @@ import {
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { api } from '../../lib/api';
 
@@ -44,6 +45,7 @@ export default function ShareScreen() {
   const [activeExpiry, setActiveExpiry] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   const loadShares = async () => {
     try {
@@ -99,7 +101,7 @@ export default function ShareScreen() {
         ListHeaderComponent={
           <>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
               <Text style={styles.headerTitle}>Share Records</Text>
               <Text style={styles.headerSub}>
                 Generate a temporary QR code for your doctor
@@ -256,7 +258,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 64,
     paddingBottom: 20,
     gap: 4,
   },
