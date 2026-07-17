@@ -189,9 +189,6 @@ export default function LoginScreen() {
             <Pressable onPress={() => handleSocialPress('Apple')} style={styles.socialBtn}>
               <Image source={require('../assets/icons/apple.png')} style={styles.socialIcon} />
             </Pressable>
-            <Pressable onPress={() => handleSocialPress('Facebook')} style={styles.socialBtn}>
-              <Image source={require('../assets/icons/facebook.png')} style={styles.socialIcon} />
-            </Pressable>
           </View>
 
           <Pressable
