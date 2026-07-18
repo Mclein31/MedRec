@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   },
   revokeBtn: {
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ffb3b3',
