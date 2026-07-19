@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { api } from '../../lib/api';
 
@@ -16,6 +17,26 @@ const GREEN_DARK = '#085041';
 const GREEN_MID = '#0F6E56';
 const GREEN_LIGHT = '#9FE1CB';
 const BG = '#f0f7f4';
+
+const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  consultation: 'people-outline',
+  diagnosis: 'medkit-outline',
+  lab: 'flask-outline',
+  prescription: 'document-text-outline',
+  medication: 'medical-outline',
+  appointment: 'calendar-outline',
+  other: 'ellipsis-horizontal-outline',
+};
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
 
 type SharedRecord = {
   id: string;
@@ -31,6 +52,7 @@ export default function ScanScreen() {
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState<SharedRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   const handleScanned = async ({ data }: BarcodeScanningResult) => {
     if (scanned) return;
@@ -78,7 +100,8 @@ export default function ScanScreen() {
   if (records || error) {
     return (
       <View style={styles.root}>
-        <View style={styles.header}>
+        {/* Header with safe area */}
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <Text style={styles.headerTitle}>
             {error ? 'Could not load records' : 'Shared Records'}
           </Text>
@@ -108,17 +131,40 @@ export default function ScanScreen() {
           }
           renderItem={({ item }) => (
             <View style={styles.recordCard}>
-              <View style={styles.recordIcon}>
-                <Ionicons name="document-text-outline" size={20} color={GREEN} />
-              </View>
-              <View style={styles.recordContent}>
-                <Text style={styles.recordTitle}>{item.title}</Text>
-                <Text style={styles.recordMeta}>
-                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.date}
+              {/* Type badge — matches Share Records style */}
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeBadgeText}>
+                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                 </Text>
+              </View>
+
+              <View style={styles.recordBody}>
+                <View style={styles.recordRow}>
+                  <View style={styles.recordIconBox}>
+                    <Ionicons
+                      name={TYPE_ICONS[item.type] || 'document-outline'}
+                      size={22}
+                      color={GREEN}
+                    />
+                  </View>
+                  <View style={styles.recordContent}>
+                    <Text style={styles.recordTitle}>{item.title}</Text>
+                    <View style={styles.recordDateRow}>
+                      <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
+                      <Text style={styles.recordMeta}>{formatDate(item.date)}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Description + footer */}
                 {item.description && (
                   <Text style={styles.recordDesc}>{item.description}</Text>
                 )}
+
+                <View style={styles.recordFooter}>
+                  <Ionicons name="folder-open-outline" size={12} color="#aaa" />
+                  <Text style={styles.recordFooterText}>Read-only · Shared by patient</Text>
+                </View>
               </View>
             </View>
           )}
@@ -146,18 +192,14 @@ export default function ScanScreen() {
         onBarcodeScanned={handleScanned}
       />
 
-      {/* Overlay UI */}
       <View style={styles.scanOverlay}>
         <Text style={styles.scanTitle}>Scan Patient QR Code</Text>
-
-        {/* Viewfinder frame */}
         <View style={styles.viewfinder}>
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
         </View>
-
         <Text style={styles.scanHint}>
           Point your camera at the patient's share QR code
         </Text>
@@ -183,19 +225,19 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 16,
     gap: 4,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: GREEN_DARK,
     letterSpacing: -0.5,
   },
   headerSub: {
-    fontSize: 13,
+    fontSize: 14,
     color: GREEN_MID,
+    marginTop: 2,
   },
   permissionRoot: {
     flex: 1,
@@ -259,35 +301,65 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
-    gap: 10,
-  },
-  recordCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    padding: 14,
+    paddingBottom: 180,
     gap: 12,
   },
-  recordIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+  recordCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  typeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e8f5e9',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    margin: 14,
+    marginBottom: 4,
+  },
+  typeBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: GREEN,
+  },
+  recordBody: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+  recordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  recordIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     backgroundColor: BG,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recordContent: {
     flex: 1,
-    gap: 3,
+    gap: 5,
   },
   recordTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: GREEN_DARK,
+    lineHeight: 22,
+  },
+  recordDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   recordMeta: {
     fontSize: 12,
@@ -296,8 +368,19 @@ const styles = StyleSheet.create({
   recordDesc: {
     fontSize: 13,
     color: '#555',
-    marginTop: 4,
     lineHeight: 18,
+  },
+  recordFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f5',
+  },
+  recordFooterText: {
+    fontSize: 12,
+    color: '#aaa',
   },
   empty: {
     alignItems: 'center',
@@ -310,7 +393,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 110,
     left: 20,
     right: 20,
   },
@@ -355,34 +438,10 @@ const styles = StyleSheet.create({
     height: CORNER_SIZE,
     borderColor: GREEN,
   },
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: CORNER_THICKNESS,
-    borderLeftWidth: CORNER_THICKNESS,
-    borderTopLeftRadius: 4,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: CORNER_THICKNESS,
-    borderRightWidth: CORNER_THICKNESS,
-    borderTopRightRadius: 4,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: CORNER_THICKNESS,
-    borderLeftWidth: CORNER_THICKNESS,
-    borderBottomLeftRadius: 4,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: CORNER_THICKNESS,
-    borderRightWidth: CORNER_THICKNESS,
-    borderBottomRightRadius: 4,
-  },
+  cornerTL: { top: 0, left: 0, borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderTopLeftRadius: 4 },
+  cornerTR: { top: 0, right: 0, borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderTopRightRadius: 4 },
+  cornerBL: { bottom: 0, left: 0, borderBottomWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderBottomLeftRadius: 4 },
+  cornerBR: { bottom: 0, right: 0, borderBottomWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderBottomRightRadius: 4 },
   scanHint: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.75)',
@@ -392,10 +451,7 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
