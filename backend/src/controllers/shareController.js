@@ -4,14 +4,26 @@ const { generateSecureToken } = require('../utils/token');
 
 const DEFAULT_TTL_MINUTES = Number(process.env.SHARE_TOKEN_DEFAULT_TTL_MINUTES || 60);
 
-// Protected: logged-in user generates a share token (and, on the client, a QR code from it).
 async function createShare(req, res, next) {
   try {
-    const { ttlMinutes, allowedTypes } = req.body;
+    const { ttlMinutes, allowedTypes, recordIds } = req.body;
     const minutes = Number(ttlMinutes) > 0 ? Number(ttlMinutes) : DEFAULT_TTL_MINUTES;
 
     if (allowedTypes && !Array.isArray(allowedTypes)) {
       return res.status(400).json({ error: 'allowedTypes must be an array of record types' });
+    }
+    if (recordIds && !Array.isArray(recordIds)) {
+      return res.status(400).json({ error: 'recordIds must be an array of UUIDs' });
+    }
+
+    // Validate that the requested record IDs actually belong to this user
+    if (recordIds && recordIds.length > 0) {
+      const userRecords = await recordModel.getAllForUser(req.user.id);
+      const userRecordIds = userRecords.map(r => r.id);
+      const invalidIds = recordIds.filter(id => !userRecordIds.includes(id));
+      if (invalidIds.length > 0) {
+        return res.status(400).json({ error: 'One or more record IDs do not belong to you' });
+      }
     }
 
     const token = generateSecureToken();
@@ -22,21 +34,20 @@ async function createShare(req, res, next) {
       token,
       expiresAt,
       allowedTypes,
+      recordIds,
     });
 
-    // The mobile app encodes `token` into a QR code. The doctor's scanner hits
-    // GET /share/:token to retrieve the records — no login required for that route.
     res.status(201).json({
       token: share.token,
       expiresAt: share.expires_at,
       allowedTypes: share.allowed_types,
+      recordIds: share.record_ids,
     });
   } catch (err) {
     next(err);
   }
 }
 
-// Public: anyone with a valid, unexpired, unrevoked token can read (not modify) the records.
 async function getByToken(req, res, next) {
   try {
     const { token } = req.params;
@@ -46,7 +57,13 @@ async function getByToken(req, res, next) {
       return res.status(404).json({ error: 'This share link is invalid, expired, or revoked' });
     }
 
-    const records = await recordModel.getAllForShare(share.user_id, share.allowed_types);
+    // Pass both recordIds and allowedTypes — recordIds takes priority in the model
+    const records = await recordModel.getAllForShare(
+      share.user_id,
+      share.allowed_types,
+      share.record_ids
+    );
+
     res.json({
       expiresAt: share.expires_at,
       records,
@@ -74,5 +91,3 @@ async function revokeShare(req, res, next) {
     next(err);
   }
 }
-
-module.exports = { createShare, getByToken, listShares, revokeShare };
