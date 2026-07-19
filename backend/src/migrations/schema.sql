@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS shared_access (
   token VARCHAR(128) UNIQUE NOT NULL,
   -- Optional: restrict which record types are visible to this share, NULL = all
   allowed_types VARCHAR(40)[] DEFAULT NULL,
+  -- Optional: restrict to specific record IDs. Takes priority over allowed_types. NULL = use allowed_types or all.
+  record_ids UUID[] DEFAULT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
   revoked_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
