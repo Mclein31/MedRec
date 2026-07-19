@@ -35,7 +35,6 @@ async function getAllForUser(userId, { type } = {}) {
   return rows;
 }
 
-// Always scoped by user_id so a user can never fetch another user's record by guessing an id.
 async function getOneForUser(userId, recordId) {
   const { rows } = await pool.query(
     `SELECT * FROM medical_records WHERE id = $1 AND user_id = $2`,
@@ -52,8 +51,20 @@ async function deleteForUser(userId, recordId) {
   return rowCount > 0;
 }
 
-// Used by the share-access flow; optionally filtered to a set of allowed types.
-async function getAllForShare(userId, allowedTypes) {
+// Used by the share-access flow.
+// Priority: specific record IDs > allowed types > all records
+async function getAllForShare(userId, allowedTypes, recordIds) {
+  // Specific records selected — highest priority
+  if (recordIds && recordIds.length > 0) {
+    const { rows } = await pool.query(
+      `SELECT id, type, title, description, date FROM medical_records
+       WHERE user_id = $1 AND id = ANY($2) ORDER BY date DESC`,
+      [userId, recordIds]
+    );
+    return rows;
+  }
+
+  // Filter by type
   if (allowedTypes && allowedTypes.length > 0) {
     const { rows } = await pool.query(
       `SELECT id, type, title, description, date FROM medical_records
@@ -62,6 +73,8 @@ async function getAllForShare(userId, allowedTypes) {
     );
     return rows;
   }
+
+  // All records
   const { rows } = await pool.query(
     `SELECT id, type, title, description, date FROM medical_records
      WHERE user_id = $1 ORDER BY date DESC`,
