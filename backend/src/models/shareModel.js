@@ -1,11 +1,11 @@
 const pool = require('../config/db');
 
-async function createShare({ userId, token, expiresAt, allowedTypes }) {
+async function createShare({ userId, token, expiresAt, allowedTypes, recordIds }) {
   const { rows } = await pool.query(
-    `INSERT INTO shared_access (user_id, token, expires_at, allowed_types)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, token, expires_at, allowed_types, created_at`,
-    [userId, token, expiresAt, allowedTypes || null]
+    `INSERT INTO shared_access (user_id, token, expires_at, allowed_types, record_ids)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, token, expires_at, allowed_types, record_ids, created_at`,
+    [userId, token, expiresAt, allowedTypes || null, recordIds || null]
   );
   return rows[0];
 }
@@ -30,11 +30,9 @@ async function revoke(userId, shareId) {
 
 async function listForUser(userId) {
   const { rows } = await pool.query(
-    `SELECT id, token, expires_at, allowed_types, revoked_at, created_at
+    `SELECT id, token, expires_at, allowed_types, record_ids, revoked_at, created_at
      FROM shared_access WHERE user_id = $1 ORDER BY created_at DESC`,
     [userId]
   );
   return rows;
 }
-
-module.exports = { createShare, findActiveByToken, revoke, listForUser };
