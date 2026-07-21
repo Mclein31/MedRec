@@ -83,8 +83,8 @@ export const api = {
 
   deleteRecord: (id: string) => request(`/records/${id}`, { method: 'DELETE' }),
 
-  createShare: (ttlMinutes: number) =>
-    request('/share', { method: 'POST', body: { ttlMinutes } }),
+  createShare: (ttlMinutes: number, recordIds?: string[]) =>
+    request('/share', { method: 'POST', body: { ttlMinutes, recordIds } }),
 
   listShares: () => request('/share'),
 
