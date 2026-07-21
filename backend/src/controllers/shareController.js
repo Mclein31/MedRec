@@ -91,3 +91,10 @@ async function revokeShare(req, res, next) {
     next(err);
   }
 }
+
+module.exports = {
+  createShare,
+  getByToken,
+  listShares,
+  revokeShare,
+};
