@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -14,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { StatusBar } from 'expo-status-bar'
+import { StatusBar } from 'expo-status-bar';
 
 const GREEN = '#1D9E75';
 const GREEN_DARK = '#085041';
@@ -65,6 +67,7 @@ export default function RecordsScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
+  const [sortMode, setSortMode] = useState<'recent' | 'oldest' | 'appointment' | 'lab'>('recent');
 
   const router = useRouter();
   const { logout } = useAuth();
@@ -134,14 +137,66 @@ export default function RecordsScreen() {
     setSharing(true);
     try {
       const data = await api.createShare(60, Array.from(selectedIds));
-      router.push({ pathname: '/(tabs)/share', params: { pendingToken: data.token, pendingExpiry: data.expiresAt } });
       cancelSelection();
+      // Pass the token as a param so share.tsx can display the QR immediately
+      router.push({ pathname: '/(tabs)/share', params: { pendingToken: data.token, pendingExpiry: data.expiresAt } });
     } catch (err: any) {
       Alert.alert('Failed to create share', err.message);
     } finally {
       setSharing(false);
     }
   };
+
+  const SORT_OPTIONS = ['Most Recent', 'Oldest', 'Appointments', 'Labs', 'Cancel'];
+
+  const handleSort = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: SORT_OPTIONS,
+          cancelButtonIndex: 4,
+          title: 'Sort Records',
+        },
+        (index) => {
+          if (index === 0) setSortMode('recent');
+          else if (index === 1) setSortMode('oldest');
+          else if (index === 2) setSortMode('appointment');
+          else if (index === 3) setSortMode('lab');
+        }
+      );
+    } else {
+      Alert.alert('Sort Records', 'Choose a sort order', [
+        { text: 'Most Recent', onPress: () => setSortMode('recent') },
+        { text: 'Oldest', onPress: () => setSortMode('oldest') },
+        { text: 'Appointments', onPress: () => setSortMode('appointment') },
+        { text: 'Labs', onPress: () => setSortMode('lab') },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  };
+
+  const sortLabel: Record<string, string> = {
+    recent: 'Most Recent',
+    oldest: 'Oldest',
+    appointment: 'Appointments',
+    lab: 'Labs',
+  };
+
+  const sortedRecords = [...records].sort((a, b) => {
+    if (sortMode === 'recent') return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortMode === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (sortMode === 'appointment') {
+      if (a.type === 'appointment' && b.type !== 'appointment') return -1;
+      if (b.type === 'appointment' && a.type !== 'appointment') return 1;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+    if (sortMode === 'lab') {
+      if (a.type === 'lab' && b.type !== 'lab') return -1;
+      if (b.type === 'lab' && a.type !== 'lab') return 1;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+    return 0;
+  });
 
   if (loading) {
     return (
@@ -155,7 +210,7 @@ export default function RecordsScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <FlatList
-        data={records}
+        data={sortedRecords}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -224,11 +279,11 @@ export default function RecordsScreen() {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Your Records</Text>
                 {!selectionMode && (
-                  <View style={styles.sortBtn}>
+                  <Pressable onPress={handleSort} style={({ pressed }) => [styles.sortBtn, pressed && { opacity: 0.7 }]}>
                     <Ionicons name="swap-vertical-outline" size={14} color={GREEN_MID} />
-                    <Text style={styles.sortBtnText}>Most Recent</Text>
+                    <Text style={styles.sortBtnText}>{sortLabel[sortMode]}</Text>
                     <Ionicons name="chevron-down" size={13} color={GREEN_MID} />
-                  </View>
+                  </Pressable>
                 )}
               </View>
             )}
@@ -341,13 +396,6 @@ export default function RecordsScreen() {
           <Ionicons name="add" size={30} color="#fff" />
         </Pressable>
       )}
-
-      {sharing && (
-        <View style={styles.sharingOverlay}>
-          <ActivityIndicator size="large" color={GREEN} />
-          <Text style={styles.sharingText}>Creating share QR...</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -451,7 +499,7 @@ const styles = StyleSheet.create({
     width: 48, height: 48, borderRadius: 14,
     backgroundColor: BG, alignItems: 'center', justifyContent: 'center',
   },
-  recordContent: { flex: 1, gap: 6 },
+  recordContent: { flex: 1, gap: 5 },
   recordTitle: { fontSize: 16, fontWeight: '700', color: GREEN_DARK, lineHeight: 22 },
   recordDateRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   recordDateText: { fontSize: 12, color: GREEN_MID },
@@ -483,12 +531,4 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35, shadowRadius: 10, elevation: 8,
   },
   shareSelectedBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  sharingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  sharingText: { marginTop: 12, fontSize: 15, fontWeight: '600', color: '#fff' },
 });
