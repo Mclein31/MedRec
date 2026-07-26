@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'expo-status-bar'
 
 const GREEN = '#1D9E75';
 const GREEN_DARK = '#085041';
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     width: 48, height: 48, borderRadius: 14,
     backgroundColor: BG, alignItems: 'center', justifyContent: 'center',
   },
-  recordContent: { flex: 1, gap: 5 },
+  recordContent: { flex: 1, gap: 6 },
   recordTitle: { fontSize: 16, fontWeight: '700', color: GREEN_DARK, lineHeight: 22 },
   recordDateRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   recordDateText: { fontSize: 12, color: GREEN_MID },
