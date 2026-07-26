@@ -134,15 +134,8 @@ export default function RecordsScreen() {
     setSharing(true);
     try {
       const data = await api.createShare(60, Array.from(selectedIds));
+      router.push({ pathname: '/(tabs)/share', params: { pendingToken: data.token, pendingExpiry: data.expiresAt } });
       cancelSelection();
-      router.push('/(tabs)/share');
-      // Small delay to let navigation settle before showing the alert
-      setTimeout(() => {
-        Alert.alert(
-          'Share QR Created',
-          `A QR code has been generated for ${selectedIds.size} selected record${selectedIds.size !== 1 ? 's' : ''}. It expires in 60 minutes.`
-        );
-      }, 500);
     } catch (err: any) {
       Alert.alert('Failed to create share', err.message);
     } finally {
@@ -348,6 +341,13 @@ export default function RecordsScreen() {
           <Ionicons name="add" size={30} color="#fff" />
         </Pressable>
       )}
+
+      {sharing && (
+        <View style={styles.sharingOverlay}>
+          <ActivityIndicator size="large" color={GREEN} />
+          <Text style={styles.sharingText}>Creating share QR...</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -483,4 +483,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35, shadowRadius: 10, elevation: 8,
   },
   shareSelectedBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  sharingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  sharingText: { marginTop: 12, fontSize: 15, fontWeight: '600', color: '#fff' },
 });

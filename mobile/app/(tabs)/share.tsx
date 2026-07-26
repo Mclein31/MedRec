@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
@@ -41,6 +41,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function ShareScreen() {
+  const params = useLocalSearchParams<{ pendingToken?: string; pendingExpiry?: string }>();
   const [shares, setShares] = useState<Share[]>([]);
   const [activeToken, setActiveToken] = useState<string | null>(null);
   const [activeExpiry, setActiveExpiry] = useState<string | null>(null);
@@ -59,8 +60,12 @@ export default function ShareScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (params.pendingToken && params.pendingToken !== activeToken) {
+        setActiveToken(params.pendingToken);
+        setActiveExpiry(params.pendingExpiry ?? null);
+      }
       loadShares();
-    }, [])
+    }, [params.pendingToken, params.pendingExpiry, activeToken])
   );
 
   const handleCreate = async () => {
@@ -92,6 +97,8 @@ export default function ShareScreen() {
       setRevoking(null);
     }
   };
+
+  const isLoadingQrFromNav = !!params.pendingToken && params.pendingToken !== activeToken;
 
   return (
     <View style={styles.root}>
@@ -135,20 +142,21 @@ export default function ShareScreen() {
                   <Text style={styles.dismissBtnText}>Dismiss</Text>
                 </Pressable>
               </View>
+            ) : isLoadingQrFromNav || creating ? (
+              <View style={styles.qrCard}>
+                <ActivityIndicator size="large" color={GREEN} />
+                <Text style={styles.qrLabel}>Generating QR code...</Text>
+              </View>
             ) : (
               <Pressable
                 onPress={handleCreate}
                 disabled={creating}
                 style={({ pressed }) => [styles.generateBtn, pressed && { opacity: 0.85 }]}
               >
-                {creating ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="qr-code-outline" size={20} color="#fff" />
-                    <Text style={styles.generateBtnText}>Generate Share QR (60 min)</Text>
-                  </>
-                )}
+                <>
+                  <Ionicons name="qr-code-outline" size={20} color="#fff" />
+                  <Text style={styles.generateBtnText}>Generate Share QR (60 min)</Text>
+                </>
               </Pressable>
             )}
 
