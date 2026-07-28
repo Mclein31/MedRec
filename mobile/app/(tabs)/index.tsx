@@ -8,6 +8,7 @@ import {
   Alert,
   StyleSheet,
   Modal,
+  Animated,
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -70,6 +71,8 @@ export default function RecordsScreen() {
   const [summarizing, setSummarizing] = useState(false);
   const [sortMode, setSortMode] = useState('recent');
   const [showSortModal, setShowSortModal] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const sheetAnim = useState(new Animated.Value(0))[0];
 
   const router = useRouter();
   const { logout } = useAuth();
@@ -108,6 +111,19 @@ export default function RecordsScreen() {
     }
   };
 
+
+  const openSort = () => {
+    setOverlayVisible(true);
+    setShowSortModal(true);
+    Animated.spring(sheetAnim, { toValue: 1, useNativeDriver: true, bounciness: 0 }).start();
+  };
+
+  const closeSort = () => {
+    Animated.timing(sheetAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+      setShowSortModal(false);
+      setOverlayVisible(false);
+    });
+  };
 
   const sortLabel: Record<string, string> = {
     recent: 'Most Recent', oldest: 'Oldest', appointment: 'Appointments',
@@ -196,7 +212,7 @@ export default function RecordsScreen() {
             {records.length > 0 && (
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Your Records</Text>
-                <Pressable onPress={() => setShowSortModal(true)} style={({ pressed }) => [styles.sortBtn, pressed && { opacity: 0.7 }]}>
+                <Pressable onPress={openSort} style={({ pressed }) => [styles.sortBtn, pressed && { opacity: 0.7 }]}>
                   <Ionicons name="swap-vertical-outline" size={14} color={GREEN_MID} />
                   <Text style={styles.sortBtnText}>{sortLabel[sortMode]}</Text>
                   <Ionicons name="chevron-down" size={13} color={GREEN_MID} />
@@ -266,25 +282,45 @@ export default function RecordsScreen() {
         <Ionicons name="add" size={30} color="#fff" />
       </Pressable>
 
-      {/* Sort / Filter Bottom Sheet */}
+      {/* Dark overlay — appears instantly, separate from sheet animation */}
+      {overlayVisible && (
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={closeSort}
+        />
+      )}
+
+      {/* Sort bottom sheet — slides up independently */}
       <Modal
         visible={showSortModal}
         transparent
-        animationType="slide"
-        onRequestClose={() => setShowSortModal(false)}
+        animationType="none"
+        onRequestClose={closeSort}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable style={styles.modalDismiss} onPress={() => setShowSortModal(false)} />
-          <View style={styles.modalSheet}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable style={{ flex: 1 }} onPress={closeSort} />
+          <Animated.View
+            style={[
+              styles.modalSheet,
+              {
+                transform: [{
+                  translateY: sheetAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [600, 0],
+                  }),
+                }],
+              },
+            ]}
+          >
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Filter & Sort Records</Text>
             <Text style={styles.modalSubtitle}>Choose how you want to view your records.</Text>
-            {SORT_OPTIONS.map((opt, i) => {
+            {SORT_OPTIONS.map((opt) => {
               const isActive = sortMode === opt.key;
               return (
                 <Pressable
                   key={opt.key}
-                  onPress={() => { setSortMode(opt.key); setShowSortModal(false); }}
+                  onPress={() => { setSortMode(opt.key); closeSort(); }}
                   style={[styles.sortOption, isActive && styles.sortOptionActive]}
                 >
                   <View style={[styles.sortOptionIcon, isActive && styles.sortOptionIconActive]}>
@@ -297,7 +333,7 @@ export default function RecordsScreen() {
                 </Pressable>
               );
             })}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -309,15 +345,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
+
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: BG,
   },
+
   listContainer: {
     paddingBottom: 120,
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -326,17 +365,20 @@ const styles = StyleSheet.create({
     paddingTop: 64,
     paddingBottom: 20,
   },
+
   headerTitle: {
     fontSize: 30,
     fontWeight: '800',
     color: GREEN_DARK,
     letterSpacing: -0.5,
   },
+
   headerSub: {
     fontSize: 14,
     color: GREEN_MID,
     marginTop: 2,
   },
+
   logoutBtn: {
     width: 42,
     height: 42,
@@ -347,6 +389,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -357,6 +400,7 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 24,
   },
+
   aiIconBox: {
     width: 44,
     height: 44,
@@ -365,20 +409,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   aiTextBox: {
     flex: 1,
     gap: 3,
   },
+
   aiTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#fff',
   },
+
   aiSubtitle: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.75)',
     lineHeight: 16,
   },
+
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -386,11 +434,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 12,
   },
+
   sectionTitle: {
     fontSize: 17,
     fontWeight: '700',
     color: GREEN_DARK,
   },
+
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -402,23 +452,29 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     backgroundColor: '#fff',
   },
+
   sortBtnText: {
     fontSize: 12,
     color: GREEN_MID,
     fontWeight: '500',
   },
+
   recordCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     marginHorizontal: 20,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
     overflow: 'hidden',
   },
+
   typeBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#e8f5e9',
@@ -428,21 +484,25 @@ const styles = StyleSheet.create({
     margin: 14,
     marginBottom: 4,
   },
+
   typeBadgeText: {
     fontSize: 12,
     fontWeight: '600',
     color: GREEN,
   },
+
   recordBody: {
     paddingHorizontal: 14,
     paddingBottom: 14,
     gap: 10,
   },
+
   recordRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+
   recordIconBox: {
     width: 48,
     height: 48,
@@ -451,25 +511,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   recordContent: {
     flex: 1,
     gap: 5,
   },
+
   recordTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: GREEN_DARK,
     lineHeight: 22,
   },
+
   recordDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
+
   recordDateText: {
     fontSize: 12,
     color: GREEN_MID,
   },
+
   chevronCircle: {
     width: 30,
     height: 30,
@@ -479,6 +544,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   recordFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -487,50 +553,39 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f5f5f5',
   },
+
   recordFooterText: {
     fontSize: 12,
     color: '#aaa',
   },
+
   empty: {
     alignItems: 'center',
     paddingTop: 60,
     gap: 10,
     paddingHorizontal: 40,
   },
+
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: GREEN_DARK,
   },
+
   emptySubtitle: {
     fontSize: 14,
     color: GREEN_MID,
     textAlign: 'center',
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 120,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: GREEN,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: GREEN_DARK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-    modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
 
-  modalDismiss: {
-    flex: 1,
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 10,
   },
 
   modalSheet: {
@@ -538,8 +593,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingBottom: 48,
     paddingTop: 12,
+    paddingBottom: 48,
   },
 
   modalHandle: {
@@ -601,5 +656,25 @@ const styles = StyleSheet.create({
   sortOptionLabelActive: {
     color: GREEN,
     fontWeight: '600',
+  },
+
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 120,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: GREEN_DARK,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });
