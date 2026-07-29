@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   cameraHint: {
-    fontSize: 14, color: 'rgba(255,255,255,0.85)',
+    fontSize: 15, color: 'rgba(255,255,255,0.85)',
     textAlign: 'center', paddingHorizontal: 40, lineHeight: 20,
   },
   viewfinder: { width: 280, height: 380, position: 'relative' },
