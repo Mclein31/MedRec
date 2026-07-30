@@ -1,19 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// IMPORTANT: "localhost" only works when testing in a web browser, because the
-// browser and the backend are on the same machine. On a real phone (Expo Go),
-// "localhost" means the phone itself, which has no server running on it.
-// Replace this with your computer's LAN IP address, e.g. "http://REMOVED2:4000"
-// Find yours on Mac with: ipconfig getifaddr en0
+
 const API_BASE_URL = Platform.OS === 'web'
   ? 'http://localhost:4000'
-  : 'http://McLnOnz.local:4000'; // keep your real LAN IP here for the phone
+  : 'http://McLnOnz.local:4000'; 
 
 const TOKEN_KEY = 'authToken';
 
-// expo-secure-store wraps the iOS Keychain / Android Keystore, which don't
-// exist on web. On web, fall back to localStorage instead.
 const tokenStorage = {
   async get(key: string) {
     if (Platform.OS === 'web') return localStorage.getItem(key);
@@ -52,7 +46,6 @@ async function request(path: string, options: RequestOptions = {}) {
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  // DELETE endpoints return 204 No Content - there's no JSON body to parse.
   if (response.status === 204) {
     if (!response.ok) throw new Error('Request failed');
     return null;
@@ -90,7 +83,7 @@ export const api = {
 
   revokeShare: (id: string) => request(`/share/${id}`, { method: 'DELETE' }),
 
-  // Public endpoint - the token IS the credential, no login needed.
+
   getSharedRecords: (shareToken: string) => request(`/share/${shareToken}`),
 
   summarize: () => request('/ai/summarize', { method: 'POST', body: {} }),

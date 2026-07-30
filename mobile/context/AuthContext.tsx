@@ -15,7 +15,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On app start, check if a token is already saved from a previous session.
   useEffect(() => {
   getToken().then((stored) => {
       setToken(stored);
