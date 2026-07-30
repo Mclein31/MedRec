@@ -31,7 +31,7 @@ function RootLayoutNav() {
           name="(tabs)"
           options={{
             headerShown: false,
-            headerBackTitle: 'Back',  // ← add this line
+            headerBackTitle: 'Back',
           }}
         />
         <Stack.Screen

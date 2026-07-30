@@ -35,8 +35,6 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 function timeAgo(dateStr: string) {
   const date = new Date(dateStr);
   const now = new Date();
-  // Compare in milliseconds but normalise to start-of-day so timezone
-  // offsets don't accidentally flip a "today" record into "1 day ago".
   const diffMs = now.getTime() - date.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -424,7 +422,7 @@ const styles = StyleSheet.create({
   aiSubtitle: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.75)',
-    lineHeight: 16,
+    lineHeight: 15,
   },
 
   sectionHeader: {

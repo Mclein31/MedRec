@@ -86,9 +86,7 @@ export default function AddRecordScreen() {
   };
 
   const handleUsePhoto = () => {
-    // Placeholder: when OpenAI billing is enabled, send photo to AI here
-    // and auto-fill title, type, description, date from the response.
-    // For now, just go back to the form so the user can fill it in manually.
+    //dpa tapos, need pa AI key
     Alert.alert(
       'Photo captured',
       'AI document scanning will be available once OpenAI billing is set up. You can fill in the fields manually for now.',
