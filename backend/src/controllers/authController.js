@@ -29,6 +29,12 @@ async function register(req, res, next) {
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Password must include at least one number' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'Password must include at least one uppercase letter' });
+    }
 
     const existing = await userModel.findByEmail(email.toLowerCase());
     if (existing) {
