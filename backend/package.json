@@ -4,10 +4,10 @@
   "description": "Node/Express + PostgreSQL API for the secure medical records app. Steps 1–7 of the build plan.",
   "main": "index.js",
   "scripts": {
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js",
-  "migrate": "node src/migrations/runMigration.js"
-},
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/migrations/runMigration.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -16,6 +16,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.1",
     "jsonwebtoken": "^9.0.3",
     "openai": "^6.44.0",
     "pg": "^8.22.0"
