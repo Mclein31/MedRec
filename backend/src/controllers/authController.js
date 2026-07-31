@@ -1,12 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
-
+const crypto = require('crypto');
+const tokenModel = require('../models/tokenModel');
 const SALT_ROUNDS = 12;
 
 function signToken(user) {
   return jwt.sign(
-    { sub: user.id, email: user.email },
+    { sub: user.id, email: user.email, jti: crypto.randomUUID() },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -76,6 +77,18 @@ async function login(req, res, next) {
 
     const token = signToken(user);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function logout(req, res, next) {
+  try {
+    await tokenModel.revokeToken({
+      jti: req.tokenJti,
+      expiresAt: new Date(req.tokenExp * 1000), // JWT exp is in seconds, Date wants ms
+    });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

@@ -89,6 +89,8 @@ export const api = {
   summarize: () => request('/ai/summarize', { method: 'POST', body: {} }),
 
   explain: (text: string) => request('/ai/explain', { method: 'POST', body: { text } }),
+
+  logout: () => request('/auth/logout', { method: 'POST' }),
 };
 
 export async function saveToken(token: string) {

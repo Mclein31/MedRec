@@ -35,6 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Fail open — if the network call fails, still log the user out of this
+      // device. Worst case the token stays valid server-side until natural
+      // expiry, same as before this fix, not worse.
+    }
     await clearToken();
     setToken(null);
   };
