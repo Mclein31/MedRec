@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
     margin: 14,
-    marginBottom: 4,
+    marginBottom: 5,
   },
 
   typeBadgeText: {
