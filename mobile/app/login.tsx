@@ -217,53 +217,225 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingBottom: 24 },
-  logoArea: { alignItems: 'center', gap: 6, marginBottom: 28, marginTop: 30 },
-  logo: { width: 135, height: 135 },
-  title: { fontFamily: 'LexendDeca-Bold',fontSize: 50, color: '#1a1a1a', letterSpacing: 2, margin: 0 },
-  subtitle: { fontSize: 15, color: '#888', margin: 0},
+  root: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 28,
+    paddingBottom: 24,
+  },
+
+  logoArea: {
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 28,
+    marginTop: 30,
+  },
+
+  logo: {
+    width: 135,
+    height: 135,
+  },
+
+  title: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 50,
+    color: '#1a1a1a',
+    letterSpacing: 2,
+    margin: 0,
+  },
+
+  subtitle: {
+    fontSize: 15,
+    color: '#888',
+    margin: 0,
+  },
+
   lockoutBanner: {
-    backgroundColor: '#fff5f5', borderWidth: 1, borderColor: '#ffb3b3',
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12,
+    backgroundColor: '#fff5f5',
+    borderWidth: 1,
+    borderColor: '#ffb3b3',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
   },
-  lockoutText: { fontSize: 13, color: '#FF3B30', fontWeight: '500', textAlign: 'center' },
+
+  lockoutText: {
+    fontSize: 13,
+    color: '#FF3B30',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
   warningBanner: {
-    backgroundColor: '#FFF9F0', borderWidth: 1, borderColor: '#FFD699',
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12,
+    backgroundColor: '#FFF9F0',
+    borderWidth: 1,
+    borderColor: '#FFD699',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
   },
-  warningText: { fontSize: 13, color: '#FF9500', fontWeight: '500', textAlign: 'center' },
-  fields: { gap: 12, marginBottom: 6 },
+
+  warningText: {
+    fontSize: 13,
+    color: '#FF9500',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  fields: {
+    gap: 12,
+    marginBottom: 6,
+  },
+
   inputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, height: 60,
-    borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 14, backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    height: 60,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: '#fff',
   },
-  inputDisabled: { backgroundColor: '#f5f5f5', borderColor: '#ddd' },
-  fieldIcon: { width: 25, height: 25, resizeMode: 'contain' },
-  input: { flex: 1, fontSize: 17.5, color: '#222', padding: 0 },
-  eyeIcon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#aaa' },
-  forgotRow: { alignItems: 'flex-end', marginTop: -4 },
-  forgotText: { fontSize: 14, color: GREEN },
+
+  inputDisabled: {
+    backgroundColor: '#f5f5f5',
+    borderColor: '#ddd',
+  },
+
+  fieldIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+
+  input: {
+    flex: 1,
+    fontSize: 17.5,
+    color: '#222',
+    padding: 0,
+  },
+
+  eyeIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+    tintColor: '#aaa',
+  },
+
+  forgotRow: {
+    alignItems: 'flex-end',
+    marginTop: -4,
+  },
+
+  forgotText: {
+    fontSize: 14,
+    color: GREEN,
+  },
+
   primaryBtn: {
-    height: 60, backgroundColor: GREEN, borderRadius: 12,
-    paddingVertical: 16, alignItems: 'center', marginTop: 30, marginBottom: 20,
+    height: 60,
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 30,
+    marginBottom: 20,
   },
-  primaryBtnText: { fontFamily: 'LexendDeca-Bold',fontSize: 25, color: '#fff' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  dividerLine: { flex: 1, height: 1.5, backgroundColor: '#e3e0e0' },
-  dividerText: { fontSize: 14, color: GREEN },
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 50, marginBottom: 25},
+
+  primaryBtnText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 25,
+    color: '#fff',
+  },
+
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1.5,
+    backgroundColor: '#e3e0e0',
+  },
+
+  dividerText: {
+    fontSize: 14,
+    color: GREEN,
+  },
+
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 50,
+    marginBottom: 25,
+  },
+
   socialBtn: {
-    width: 54, height: 54, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'},
-  socialIcon: { width: 45, height: 45, resizeMode: 'contain'},
-  createBtn: {
-    height: 56,flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    borderWidth: 1, borderColor: GREEN , borderRadius: 12, paddingVertical: 14,
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
-  createIcon: { width: 25, height: 25, resizeMode: 'contain' },
-  createBtnText: { fontFamily: 'LexendDeca-Bold' ,fontSize: 17.5, color: GREEN, fontWeight: '500' },
-  footer: { paddingHorizontal: 28, paddingBottom: 35, },
-  footerText: { fontSize: 12, color: '#7d7b7b', textAlign: 'center', lineHeight: 16 },
-  footerLink: { color: GREEN, fontSize: 13, fontWeight: '600' },
+
+  socialIcon: {
+    width: 45,
+    height: 45,
+    resizeMode: 'contain',
+  },
+
+  createBtn: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 14,
+  },
+
+  createIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+
+  createBtnText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 17.5,
+    color: GREEN,
+    fontWeight: '500',
+  },
+
+  footer: {
+    paddingHorizontal: 28,
+    paddingBottom: 35,
+  },
+
+  footerText: {
+    fontSize: 12,
+    color: '#7d7b7b',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+
+  footerLink: {
+    color: GREEN,
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });
