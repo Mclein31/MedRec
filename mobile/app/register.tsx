@@ -202,41 +202,175 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingBottom: 40 },
-  logoArea: { alignItems: 'center', gap: 6, marginTop: 40 },
-  logo: { width: 100, height: 100},
-  title: { fontFamily: 'LexendDeca-Bold' ,fontSize: 35, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
-  subtitle: { fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 15, marginBottom:20 },
-  fields: { gap: 12, marginBottom: 6 },
+  root: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 28,
+    paddingBottom: 40,
+  },
+
+  logoArea: {
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 40,
+  },
+
+  logo: {
+    width: 100,
+    height: 100,
+  },
+
+  title: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 35,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    letterSpacing: -0.3,
+  },
+
+  subtitle: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 15,
+    marginBottom: 20,
+  },
+
+  fields: {
+    gap: 12,
+    marginBottom: 6,
+  },
+
   inputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, height: 60,
-    borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 14, backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    height: 60,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: '#fff',
   },
-  fieldIcon: { width: 25, height: 25, resizeMode: 'contain' },
-  input: { flex: 1, fontSize: 17.5, color: '#222', padding: 0 },
-  eyeIcon: { width: 20, height: 20, resizeMode: 'contain', tintColor: '#aaa' },
+
+  fieldIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+
+  input: {
+    flex: 1,
+    fontSize: 17.5,
+    color: '#222',
+    padding: 0,
+  },
+
+  eyeIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+    tintColor: '#aaa',
+  },
+
   hintRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#f0f8f0', borderRadius: 10, padding: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#f0f8f0',
+    borderRadius: 10,
+    padding: 12,
   },
-  hintIcon: { width: 25, height: 25, resizeMode: 'contain', marginTop: 1 },
-  hintText: { flex: 1, fontSize: 13, color: GREEN, lineHeight: 17 },
+
+  hintIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+    marginTop: 1,
+  },
+
+  hintText: {
+    flex: 1,
+    fontSize: 13,
+    color: GREEN,
+    lineHeight: 17,
+  },
+
   primaryBtn: {
-    backgroundColor: GREEN, borderRadius: 12,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16, marginBottom: 20,
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 20,
   },
-  primaryBtnText: { fontFamily: 'LexendDeca-Bold',fontSize: 22.5, fontWeight: '600', color: '#fff' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1.5, backgroundColor: '#e3e0e0' },
-  dividerText: { fontSize: 14, color: GREEN },
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 50, marginBottom: 40 },
+
+  primaryBtnText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 22.5,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1.5,
+    backgroundColor: '#e3e0e0',
+  },
+
+  dividerText: {
+    fontSize: 14,
+    color: GREEN,
+  },
+
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 50,
+    marginBottom: 40,
+  },
+
   socialBtn: {
-    width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
-  socialIcon: { width: 40, height: 40, resizeMode: 'contain' },
-  loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  loginText: { fontSize: 13, color: '#7d7b7b' },
-  loginLink: { fontSize: 13, color: GREEN, fontWeight: '600' },
+
+  socialIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+  },
+
+  loginRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  loginText: {
+    fontSize: 13,
+    color: '#7d7b7b',
+  },
+
+  loginLink: {
+    fontSize: 13,
+    color: GREEN,
+    fontWeight: '600',
+  },
 });
