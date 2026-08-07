@@ -281,123 +281,444 @@ const CORNER_SIZE = 24;
 const CORNER_THICKNESS = 3;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
-  header: { paddingHorizontal: 20, paddingBottom: 16, gap: 4 },
-  headerTitle: { fontSize: 30, fontWeight: '800', color: GREEN_DARK, letterSpacing: -0.5 },
-  headerSub: { fontSize: 14, color: GREEN_MID, marginTop: 2 },
+  root: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 4,
+  },
+
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: GREEN_DARK,
+    letterSpacing: -0.5,
+  },
+
+  headerSub: {
+    fontSize: 14,
+    color: GREEN_MID,
+    marginTop: 2,
+  },
+
   permissionRoot: {
-    flex: 1, backgroundColor: BG, alignItems: 'center',
-    justifyContent: 'center', padding: 32, gap: 12,
+    flex: 1,
+    backgroundColor: BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 12,
   },
+
   permissionIcon: {
-    width: 72, height: 72, borderRadius: 18, backgroundColor: '#fff',
-    borderWidth: 1, borderColor: GREEN_LIGHT, alignItems: 'center',
-    justifyContent: 'center', marginBottom: 8,
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  permissionTitle: { fontSize: 20, fontWeight: '700', color: GREEN_DARK, textAlign: 'center' },
-  permissionSub: { fontSize: 14, color: GREEN_MID, textAlign: 'center', lineHeight: 20 },
-  grantBtn: { backgroundColor: GREEN, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 },
-  grantBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+
+  permissionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: GREEN_DARK,
+    textAlign: 'center',
+  },
+
+  permissionSub: {
+    fontSize: 14,
+    color: GREEN_MID,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  grantBtn: {
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    marginTop: 8,
+  },
+
+  grantBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
   errorCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20,
-    backgroundColor: '#fff5f5', borderRadius: 12, borderWidth: 1,
-    borderColor: '#ffb3b3', padding: 14, marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    backgroundColor: '#fff5f5',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffb3b3',
+    padding: 14,
+    marginBottom: 12,
   },
-  errorText: { flex: 1, fontSize: 14, color: '#FF3B30' },
-  list: { paddingHorizontal: 20, paddingBottom: 180, gap: 12 },
+
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FF3B30',
+  },
+
+  list: {
+    paddingHorizontal: 20,
+    paddingBottom: 180,
+    gap: 12,
+  },
+
   recordCard: {
-    backgroundColor: '#fff', borderRadius: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 6, elevation: 2, overflow: 'hidden',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+    overflow: 'hidden',
   },
+
   typeBadge: {
-    alignSelf: 'flex-start', backgroundColor: '#e8f5e9',
-    paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20,
-    margin: 14, marginBottom: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: '#e8f5e9',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    margin: 14,
+    marginBottom: 4,
   },
-  typeBadgeText: { fontSize: 12, fontWeight: '600', color: GREEN },
-  recordBody: { paddingHorizontal: 14, paddingBottom: 14, gap: 10 },
-  recordRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+
+  typeBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: GREEN,
+  },
+
+  recordBody: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+
+  recordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
   recordIconBox: {
-    width: 46, height: 46, borderRadius: 14,
-    backgroundColor: BG, alignItems: 'center', justifyContent: 'center',
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: BG,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  recordContent: { flex: 1, gap: 5 },
-  recordTitle: { fontSize: 16, fontWeight: '700', color: GREEN_DARK, lineHeight: 22 },
-  recordDateRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  recordMeta: { fontSize: 12, color: GREEN_MID },
+
+  recordContent: {
+    flex: 1,
+    gap: 5,
+  },
+
+  recordTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: GREEN_DARK,
+    lineHeight: 22,
+  },
+
+  recordDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+
+  recordMeta: {
+    fontSize: 12,
+    color: GREEN_MID,
+  },
+
   chevronCircle: {
-    width: 30, height: 30, borderRadius: 15,
-    borderWidth: 1, borderColor: GREEN_LIGHT,
-    alignItems: 'center', justifyContent: 'center',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+
   recordFooter: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f5f5f5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f5',
   },
-  recordFooterText: { fontSize: 12, color: '#aaa' },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyText: { fontSize: 14, color: GREEN_MID },
-  footer: { position: 'absolute', bottom: 110, left: 20, right: 20 },
+
+  recordFooterText: {
+    fontSize: 12,
+    color: '#aaa',
+  },
+
+  empty: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 8,
+  },
+
+  emptyText: {
+    fontSize: 14,
+    color: GREEN_MID,
+  },
+
+  footer: {
+    position: 'absolute',
+    bottom: 110,
+    left: 20,
+    right: 20,
+  },
+
   scanAgainBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, backgroundColor: GREEN, borderRadius: 12, paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 16,
   },
-  scanAgainText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+
+  scanAgainText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
   scanOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center', gap: 24,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
   },
-  scanTitle: { fontSize: 18, fontWeight: '700', color: '#fff', letterSpacing: -0.3 },
-  viewfinder: { width: 220, height: 220, position: 'relative' },
-  corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: GREEN },
-  cornerTL: { top: 0, left: 0, borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderTopLeftRadius: 4 },
-  cornerTR: { top: 0, right: 0, borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderTopRightRadius: 4 },
-  cornerBL: { bottom: 0, left: 0, borderBottomWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderBottomLeftRadius: 4 },
-  cornerBR: { bottom: 0, right: 0, borderBottomWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderBottomRightRadius: 4 },
-  scanHint: { fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center', paddingHorizontal: 40, lineHeight: 18 },
+
+  scanTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: -0.3,
+  },
+
+  viewfinder: {
+    width: 220,
+    height: 220,
+    position: 'relative',
+  },
+
+  corner: {
+    position: 'absolute',
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    borderColor: GREEN,
+  },
+
+  cornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderTopLeftRadius: 4,
+  },
+
+  cornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderTopRightRadius: 4,
+  },
+
+  cornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderBottomLeftRadius: 4,
+  },
+
+  cornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderBottomRightRadius: 4,
+  },
+
+  scanHint: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 18,
+  },
+
   loadingOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', gap: 12,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
-  loadingText: { fontSize: 14, color: '#fff', fontWeight: '500' },
+
+  loadingText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '500',
+  },
+
   // Modal styles
-  modalRoot: { flex: 1, backgroundColor: BG },
+
+  modalRoot: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+
   modalHandle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#ccc', alignSelf: 'center', marginTop: 12, marginBottom: 8,
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#ccc',
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 8,
   },
-  modalScroll: { padding: 24, gap: 12 },
+
+  modalScroll: {
+    padding: 24,
+    gap: 12,
+  },
+
   modalIconBox: {
-    width: 64, height: 64, borderRadius: 16, backgroundColor: '#fff',
-    borderWidth: 1, borderColor: GREEN_LIGHT,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: GREEN_DARK, letterSpacing: -0.3 },
-  modalMetaRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: GREEN_DARK,
+    letterSpacing: -0.3,
+  },
+
+  modalMetaRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+
   metaChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingVertical: 4, paddingHorizontal: 10, borderRadius: 20,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: GREEN_LIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
   },
-  metaChipText: { fontSize: 12, color: GREEN_MID, fontWeight: '500' },
-  modalDivider: { height: 0.5, backgroundColor: GREEN_LIGHT, marginVertical: 4 },
+
+  metaChipText: {
+    fontSize: 12,
+    color: GREEN_MID,
+    fontWeight: '500',
+  },
+
+  modalDivider: {
+    height: 0.5,
+    backgroundColor: GREEN_LIGHT,
+    marginVertical: 4,
+  },
+
   modalSectionLabel: {
-    fontSize: 11, fontWeight: '600', color: GREEN_MID,
-    letterSpacing: 0.5, textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '600',
+    color: GREEN_MID,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  modalDescription: { fontSize: 14, color: '#333', lineHeight: 21 },
+
+  modalDescription: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 21,
+  },
+
   readOnlyNotice: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#fff', borderRadius: 12,
-    borderWidth: 1, borderColor: GREEN_LIGHT,
-    padding: 14, marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    padding: 14,
+    marginTop: 8,
   },
-  readOnlyText: { flex: 1, fontSize: 13, color: GREEN_MID, lineHeight: 18 },
-  modalFooter: { paddingHorizontal: 24, paddingTop: 12 },
+
+  readOnlyText: {
+    flex: 1,
+    fontSize: 13,
+    color: GREEN_MID,
+    lineHeight: 18,
+  },
+
+  modalFooter: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+
   closeBtn: {
-    backgroundColor: GREEN, borderRadius: 12,
-    paddingVertical: 16, alignItems: 'center',
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
-  closeBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+
+  closeBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });
