@@ -72,6 +72,12 @@ export default function RecordsScreen() {
   const [overlayVisible, setOverlayVisible] = useState(false);
   const sheetAnim = useState(new Animated.Value(0))[0];
 
+  // Selection mode: long-press a record to enter it, then pick records
+  // to share via QR without sharing everything.
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sharing, setSharing] = useState(false);
+
   const router = useRouter();
   const { logout } = useAuth();
 
@@ -109,6 +115,48 @@ export default function RecordsScreen() {
     }
   };
 
+  const enterSelectionMode = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const cancelSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleShareSelected = async () => {
+    if (selectedIds.size === 0) {
+      Alert.alert('No records selected', 'Select at least one record to share.');
+      return;
+    }
+    setSharing(true);
+    try {
+      const data = await api.createShare(60, Array.from(selectedIds));
+      cancelSelection();
+      // share.tsx reads these params on focus and shows the QR immediately
+      router.push({
+        pathname: '/(tabs)/share',
+        params: { pendingToken: data.token, pendingExpiry: data.expiresAt },
+      });
+    } catch (err: any) {
+      Alert.alert('Failed to create share', err.message);
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const openSort = () => {
     setOverlayVisible(true);
@@ -143,16 +191,15 @@ export default function RecordsScreen() {
 
   const TYPE_FILTERS = ['appointment', 'lab', 'consultation', 'diagnosis', 'prescription', 'medication', 'other'];
 
-  const sortedRecords = [...records].sort((a, b) => {
-    if (sortMode === 'recent') return new Date(b.date).getTime() - new Date(a.date).getTime();
-    if (sortMode === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (TYPE_FILTERS.includes(sortMode)) {
-      if (a.type === sortMode && b.type !== sortMode) return -1;
-      if (b.type === sortMode && a.type !== sortMode) return 1;
+  // Filter down to just the selected type (if a type filter is active),
+  // then sort what's left by date.
+  const sortedRecords = [...records]
+    .filter((r) => (TYPE_FILTERS.includes(sortMode) ? r.type === sortMode : true))
+    .sort((a, b) => {
+      if (sortMode === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime();
+      // 'recent' and every type filter fall back to newest-first ordering
       return new Date(b.date).getTime() - new Date(a.date).getTime();
-    }
-    return 0;
-  });
+    });
 
   if (loading) {
     return (
@@ -181,104 +228,188 @@ export default function RecordsScreen() {
                   {records.length} record{records.length !== 1 ? 's' : ''}
                 </Text>
               </View>
-              <Pressable onPress={logout} style={styles.logoutBtn}>
-                <Ionicons name="log-out-outline" size={20} color={GREEN_MID} />
-              </Pressable>
+              {selectionMode ? (
+                <Pressable onPress={cancelSelection} style={styles.cancelBtn}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={logout} style={styles.logoutBtn}>
+                  <Ionicons name="log-out-outline" size={20} color={GREEN_MID} />
+                </Pressable>
+              )}
             </View>
 
-            {/* AI Summary Banner */}
-            <Pressable
-              onPress={handleSummarize}
-              disabled={summarizing}
-              style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.88 }]}
-            >
-              <View style={styles.aiIconBox}>
-                <Ionicons name="sparkles" size={22} color="#fff" />
-              </View>
-              <View style={styles.aiTextBox}>
-                <Text style={styles.aiTitle}>
-                  {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
+            {/* Selection mode banner */}
+            {selectionMode && (
+              <View style={styles.selectionBanner}>
+                <Ionicons name="checkmark-circle" size={16} color={GREEN} />
+                <Text style={styles.selectionBannerText}>
+                  {selectedIds.size === 0
+                    ? 'Tap records to select'
+                    : `${selectedIds.size} record${selectedIds.size !== 1 ? 's' : ''} selected`}
                 </Text>
-                <Text style={styles.aiSubtitle}>
-                  Get insights and a summary of your health records
-                </Text>
+                <Pressable onPress={() => setSelectedIds(new Set(records.map((r) => r.id)))}>
+                  <Text style={styles.selectAllText}>Select all</Text>
+                </Pressable>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
-            </Pressable>
+            )}
+
+            {/* AI Summary Banner — hidden while selecting */}
+            {!selectionMode && (
+              <Pressable
+                onPress={handleSummarize}
+                disabled={summarizing}
+                style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.88 }]}
+              >
+                <View style={styles.aiIconBox}>
+                  <Ionicons name="sparkles" size={22} color="#fff" />
+                </View>
+                <View style={styles.aiTextBox}>
+                  <Text style={styles.aiTitle}>
+                    {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
+                  </Text>
+                  <Text style={styles.aiSubtitle}>
+                    Get insights and a summary of your health records
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+              </Pressable>
+            )}
 
             {/* Section header */}
             {records.length > 0 && (
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Your Records</Text>
-                <Pressable onPress={openSort} style={({ pressed }) => [styles.sortBtn, pressed && { opacity: 0.7 }]}>
-                  <Ionicons name="swap-vertical-outline" size={14} color={GREEN_MID} />
-                  <Text style={styles.sortBtnText}>{sortLabel[sortMode]}</Text>
-                  <Ionicons name="chevron-down" size={13} color={GREEN_MID} />
-                </Pressable>
+                {!selectionMode && (
+                  <Pressable onPress={openSort} style={({ pressed }) => [styles.sortBtn, pressed && { opacity: 0.7 }]}>
+                    <Ionicons name="swap-vertical-outline" size={14} color={GREEN_MID} />
+                    <Text style={styles.sortBtnText}>{sortLabel[sortMode]}</Text>
+                    <Ionicons name="chevron-down" size={13} color={GREEN_MID} />
+                  </Pressable>
+                )}
               </View>
             )}
           </>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={52} color={GREEN_LIGHT} />
-            <Text style={styles.emptyTitle}>No records yet</Text>
-            <Text style={styles.emptySubtitle}>Tap + to add your first record</Text>
+            <Ionicons
+              name={TYPE_FILTERS.includes(sortMode) ? 'filter-outline' : 'document-text-outline'}
+              size={52}
+              color={GREEN_LIGHT}
+            />
+            <Text style={styles.emptyTitle}>
+              {TYPE_FILTERS.includes(sortMode) ? `No ${sortLabel[sortMode].toLowerCase()}` : 'No records yet'}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {TYPE_FILTERS.includes(sortMode)
+                ? 'Try a different filter or add a new record'
+                : 'Tap + to add your first record'}
+            </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push(`/record/${item.id}`)}
-            style={({ pressed }) => [styles.recordCard, pressed && { opacity: 0.78 }]}
-          >
-            {/* Type badge */}
-            <View style={styles.typeBadge}>
-              <Text style={styles.typeBadgeText}>
-                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-              </Text>
-            </View>
-
-            <View style={styles.recordBody}>
-              {/* Icon + content */}
-              <View style={styles.recordRow}>
-                <View style={styles.recordIconBox}>
-                  <Ionicons
-                    name={TYPE_ICONS[item.type] || 'document-outline'}
-                    size={24}
-                    color={GREEN}
-                  />
-                </View>
-                <View style={styles.recordContent}>
-                  <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
-                  <View style={styles.recordDateRow}>
-                    <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
-                    <Text style={styles.recordDateText}>{formatDate(item.date)}</Text>
+        renderItem={({ item }) => {
+          const isSelected = selectedIds.has(item.id);
+          return (
+            <Pressable
+              onPress={() => {
+                if (selectionMode) {
+                  toggleSelection(item.id);
+                } else {
+                  router.push(`/record/${item.id}`);
+                }
+              }}
+              onLongPress={() => {
+                if (!selectionMode) enterSelectionMode(item.id);
+              }}
+              style={({ pressed }) => [
+                styles.recordCard,
+                pressed && { opacity: 0.78 },
+                isSelected && styles.recordCardSelected,
+              ]}
+            >
+              {/* Selection checkbox */}
+              {selectionMode && (
+                <View style={styles.checkboxArea}>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
                   </View>
                 </View>
-                <View style={styles.chevronCircle}>
-                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
-                </View>
-              </View>
+              )}
 
-              {/* Added ago footer */}
-              <View style={styles.recordFooter}>
-                <Ionicons name="folder-open-outline" size={12} color="#aaa" />
-                <Text style={styles.recordFooterText}>
-                  Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
+              {/* Type badge */}
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeBadgeText}>
+                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                 </Text>
               </View>
-            </View>
-          </Pressable>
-        )}
+
+              <View style={styles.recordBody}>
+                {/* Icon + content */}
+                <View style={styles.recordRow}>
+                  <View style={styles.recordIconBox}>
+                    <Ionicons
+                      name={TYPE_ICONS[item.type] || 'document-outline'}
+                      size={24}
+                      color={isSelected ? '#fff' : GREEN}
+                    />
+                  </View>
+                  <View style={styles.recordContent}>
+                    <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
+                    <View style={styles.recordDateRow}>
+                      <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
+                      <Text style={styles.recordDateText}>{formatDate(item.date)}</Text>
+                    </View>
+                  </View>
+                  {!selectionMode && (
+                    <View style={styles.chevronCircle}>
+                      <Ionicons name="chevron-forward" size={14} color={GREEN} />
+                    </View>
+                  )}
+                </View>
+
+                {/* Added ago footer */}
+                <View style={styles.recordFooter}>
+                  <Ionicons name="folder-open-outline" size={12} color="#aaa" />
+                  <Text style={styles.recordFooterText}>
+                    Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+          );
+        }}
       />
 
-      {/* FAB */}
-      <Pressable
-        onPress={() => router.push('/record/add')}
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-      >
-        <Ionicons name="add" size={30} color="#fff" />
-      </Pressable>
+      {/* FAB — Share Selected while in selection mode, otherwise Add */}
+      {selectionMode ? (
+        <Pressable
+          onPress={handleShareSelected}
+          disabled={sharing || selectedIds.size === 0}
+          style={[
+            styles.shareSelectedBtn,
+            (sharing || selectedIds.size === 0) && { opacity: 0.5 },
+          ]}
+        >
+          {sharing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="qr-code-outline" size={20} color="#fff" />
+              <Text style={styles.shareSelectedBtnText}>
+                Share {selectedIds.size > 0 ? `${selectedIds.size} ` : ''}Selected
+              </Text>
+            </>
+          )}
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={() => router.push('/record/add')}
+          style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
+        >
+          <Ionicons name="add" size={30} color="#fff" />
+        </Pressable>
+      )}
 
       {/* Dark overlay — appears instantly, separate from sheet animation */}
       {overlayVisible && (
@@ -388,6 +519,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  cancelBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    backgroundColor: '#fff',
+  },
+
+  cancelBtnText: {
+    fontSize: 14,
+    color: GREEN_MID,
+    fontWeight: '500',
+  },
+
+  selectionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: GREEN_LIGHT,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  selectionBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: GREEN_DARK,
+    fontWeight: '500',
+  },
+
+  selectAllText: {
+    fontSize: 13,
+    color: GREEN,
+    fontWeight: '600',
+  },
+
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -471,6 +644,34 @@ const styles = StyleSheet.create({
     shadowRadius: 6.5,
     elevation: 2,
     overflow: 'hidden',
+  },
+
+  recordCardSelected: {
+    borderWidth: 2,
+    borderColor: GREEN,
+  },
+
+  checkboxArea: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+  },
+
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: GREEN_LIGHT,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  checkboxSelected: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
   },
 
   typeBadge: {
@@ -674,5 +875,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 8,
+  },
+
+  shareSelectedBtn: {
+    position: 'absolute',
+    bottom: 120,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: GREEN,
+    borderRadius: 16,
+    paddingVertical: 16,
+    shadowColor: GREEN_DARK,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+
+  shareSelectedBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
   },
 });
