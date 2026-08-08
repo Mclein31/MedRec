@@ -1,4 +1,4 @@
-# MedVault (Working Title)
+# MedRec (Working Title)
 
 A mobile application that allows users to securely store, manage, and share their personal medical records in one centralized platform.
 
@@ -8,7 +8,7 @@ The system also includes AI features that help users organize, summarize, and un
 
 ## 📱 Overview
 
-MedVault is designed to help patients keep all their medical information in one place. Users can store their medical history, including doctor visits, diagnoses, lab results, prescriptions, medications, and appointments.
+MedRec is designed to help patients keep all their medical information in one place. Users can store their medical history, including doctor visits, diagnoses, lab results, prescriptions, medications, and appointments.
 
 When visiting a new doctor, users can securely share their records using a QR code or access token. This allows healthcare providers to quickly view relevant medical history and make better-informed decisions.
 
