@@ -9,27 +9,43 @@ import {
   StyleSheet,
   Modal,
   Animated,
+  TextInput,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
-const GREEN = '#1D9E75';
-const GREEN_DARK = '#085041';
-const GREEN_MID = '#0F6E56';
-const GREEN_LIGHT = '#9FE1CB';
-const BG = '#f0f7f4';
+const GREEN = '#159A83';
+const GREEN_DARK = '#12343B';
+const GREEN_MID = '#159A83';
+const GREEN_LIGHT = '#DDF5EE';
+const BG = '#F4FAF9';
+const INK = '#12343B';
+const MUTED = '#64748B';
 
-const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  consultation: 'people-outline',
-  diagnosis: 'medkit-outline',
-  lab: 'flask-outline',
-  prescription: 'document-text-outline',
-  medication: 'medical-outline',
-  appointment: 'calendar-outline',
-  other: 'ellipsis-horizontal-outline',
+const TYPE_COLORS: Record<string, string> = {
+  consultation: '#159A83',
+  lab: '#1976D2',
+  appointment: '#3BA7A0',
+  diagnosis: '#159A83',
+  prescription: '#159A83',
+  medication: '#159A83',
+  other: '#64748B',
+};
+
+const TYPE_ASSETS: Record<string, number> = {
+  consultation: require('../../assets/icons/consultation.png'),
+  diagnosis: require('../../assets/icons/diagnosis.png'),
+  lab: require('../../assets/icons/lab.png'),
+  prescription: require('../../assets/icons/prescription.png'),
+  medication: require('../../assets/icons/prescription.png'),
+  appointment: require('../../assets/icons/calendar.png'),
+  other: require('../../assets/icons/folder.png'),
 };
 
 function timeAgo(dateStr: string) {
@@ -68,6 +84,7 @@ export default function RecordsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [sortMode, setSortMode] = useState('recent');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showSortModal, setShowSortModal] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const sheetAnim = useState(new Animated.Value(0))[0];
@@ -80,6 +97,14 @@ export default function RecordsScreen() {
 
   const router = useRouter();
   const { logout } = useAuth();
+  const insets = useSafeAreaInsets();
+
+  const handleMenuPress = () => {
+    Alert.alert('Account', 'Would you like to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: logout },
+    ]);
+  };
 
   const loadRecords = async () => {
     try {
@@ -195,6 +220,7 @@ export default function RecordsScreen() {
   // then sort what's left by date.
   const sortedRecords = [...records]
     .filter((r) => (TYPE_FILTERS.includes(sortMode) ? r.type === sortMode : true))
+    .filter((r) => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       if (sortMode === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime();
       // 'recent' and every type filter fall back to newest-first ordering
@@ -220,23 +246,13 @@ export default function RecordsScreen() {
         }
         ListHeaderComponent={
           <>
-            {/* Header */}
-            <View style={styles.header}>
-              <View>
-                <Text style={styles.headerTitle}>My Records</Text>
-                <Text style={styles.headerSub}>
-                  {records.length} record{records.length !== 1 ? 's' : ''}
-                </Text>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+              <View style={styles.toolbar}>
+                {selectionMode ? <Pressable onPress={cancelSelection} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></Pressable> : <Pressable onPress={handleMenuPress}><Image source={require('../../assets/icons/burger-menu.png')} style={styles.toolbarIcon} /></Pressable>}
+                <View style={styles.bell}><Image source={require('../../assets/icons/notification-bell.png')} style={styles.toolbarIcon} /><View style={styles.notificationDot} /></View>
               </View>
-              {selectionMode ? (
-                <Pressable onPress={cancelSelection} style={styles.cancelBtn}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </Pressable>
-              ) : (
-                <Pressable onPress={logout} style={styles.logoutBtn}>
-                  <Ionicons name="log-out-outline" size={20} color={GREEN_MID} />
-                </Pressable>
-              )}
+              <Text style={styles.headerTitle}>Hello, McLein 👋</Text>
+              <Text style={styles.headerSub}>{"Here" + "'" + "s your health overview"}</Text>
             </View>
 
             {/* Selection mode banner */}
@@ -262,7 +278,7 @@ export default function RecordsScreen() {
                 style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.88 }]}
               >
                 <View style={styles.aiIconBox}>
-                  <Ionicons name="sparkles" size={22} color="#fff" />
+                  <Image source={require('../../assets/icons/AI.png')} style={styles.aiAsset} />
                 </View>
                 <View style={styles.aiTextBox}>
                   <Text style={styles.aiTitle}>
@@ -276,19 +292,15 @@ export default function RecordsScreen() {
               </Pressable>
             )}
 
-            {/* Section header */}
-            {records.length > 0 && (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Your Records</Text>
-                {!selectionMode && (
-                  <Pressable onPress={openSort} style={({ pressed }) => [styles.sortBtn, pressed && { opacity: 0.7 }]}>
-                    <Ionicons name="swap-vertical-outline" size={14} color={GREEN_MID} />
-                    <Text style={styles.sortBtnText}>{sortLabel[sortMode]}</Text>
-                    <Ionicons name="chevron-down" size={13} color={GREEN_MID} />
-                  </Pressable>
-                )}
-              </View>
-            )}
+              <View style={styles.recordsHeading}>
+              <Pressable onLongPress={openSort}><Text style={styles.sectionTitle}>My Records</Text><Text style={styles.recordCount}>{records.length} Record{records.length === 1 ? '' : 's'}</Text></Pressable>
+              <View style={styles.searchBox}><TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search" placeholderTextColor={MUTED} style={styles.searchInput} /><Image source={require('../../assets/icons/search.png')} style={styles.searchIcon} /></View>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+              {[
+                ['recent', 'All'], ['consultation', 'Consultation'], ['lab', 'Labs'], ['appointment', 'Appointment'], ['diagnosis', 'Diagnoses'], ['prescription', 'Prescriptions'],
+              ].map(([key, label]) => <Pressable key={key} onPress={() => setSortMode(key)} style={[styles.chip, sortMode === key && styles.chipActive]}><Text style={[styles.chipText, sortMode === key && styles.chipTextActive]}>{label}</Text></Pressable>)}
+            </ScrollView>
           </>
         }
         ListEmptyComponent={
@@ -348,16 +360,12 @@ export default function RecordsScreen() {
                 {/* Icon + content */}
                 <View style={styles.recordRow}>
                   <View style={styles.recordIconBox}>
-                    <Ionicons
-                      name={TYPE_ICONS[item.type] || 'document-outline'}
-                      size={24}
-                      color={isSelected ? '#fff' : GREEN}
-                    />
+                    <Image source={TYPE_ASSETS[item.type] || require('../../assets/icons/folder.png')} style={[styles.recordAsset, { tintColor: isSelected ? '#fff' : (TYPE_COLORS[item.type] || GREEN) }]} />
                   </View>
                   <View style={styles.recordContent}>
                     <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
                     <View style={styles.recordDateRow}>
-                      <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
+                      <Image source={require('../../assets/icons/calendar.png')} style={styles.dateAsset} />
                       <Text style={styles.recordDateText}>{formatDate(item.date)}</Text>
                     </View>
                   </View>
@@ -370,7 +378,7 @@ export default function RecordsScreen() {
 
                 {/* Added ago footer */}
                 <View style={styles.recordFooter}>
-                  <Ionicons name="folder-open-outline" size={12} color="#aaa" />
+                  <Image source={require('../../assets/icons/open-folder.png')} style={styles.footerAsset} />
                   <Text style={styles.recordFooterText}>
                     Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
                   </Text>
@@ -483,40 +491,50 @@ const styles = StyleSheet.create({
   },
 
   listContainer: {
-    paddingBottom: 120,
+    paddingBottom: 126,
   },
 
   header: {
+    paddingHorizontal: 28,
+    paddingBottom: 12,
+  },
+
+  toolbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 64,
-    paddingBottom: 20,
+    marginBottom: 17,
   },
 
+  bell: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  toolbarIcon: { width: 24, height: 24, resizeMode: 'contain' },
+
   headerTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: GREEN_DARK,
-    letterSpacing: -0.5,
+    fontSize: 24,
+    fontFamily: 'LexendDeca-Bold',
+    color: INK,
   },
 
   headerSub: {
-    fontSize: 14,
-    color: GREEN_MID,
-    marginTop: 2,
+    fontSize: 9,
+    color: MUTED,
+    marginTop: 1,
   },
 
-  logoutBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
+  notificationDot: {
+    position: 'absolute',
+    right: 1,
+    top: 1,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: GREEN,
   },
 
   cancelBtn: {
@@ -564,22 +582,25 @@ const styles = StyleSheet.create({
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: GREEN,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-    marginBottom: 24,
+    backgroundColor: '#1976D2',
+    marginHorizontal: 28,
+    borderRadius: 11,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
+    marginBottom: 15,
   },
 
   aiIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  aiAsset: { width: 22, height: 22, resizeMode: 'contain', tintColor: '#fff' },
 
   aiTextBox: {
     flex: 1,
@@ -587,30 +608,41 @@ const styles = StyleSheet.create({
   },
 
   aiTitle: {
-    fontSize: 15,
+    fontSize: 11,
     fontWeight: '700',
     color: '#fff',
   },
 
   aiSubtitle: {
-    fontSize: 12,
+    fontSize: 7.5,
     color: 'rgba(255,255,255,0.75)',
     lineHeight: 15,
   },
 
-  sectionHeader: {
+  recordsHeading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    paddingHorizontal: 28,
+    marginBottom: 8,
   },
 
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: GREEN_DARK,
+    fontSize: 13,
+    fontFamily: 'LexendDeca-Bold',
+    color: INK,
   },
+
+  recordCount: { fontSize: 8, color: GREEN, marginTop: 1 },
+
+  searchBox: { flexDirection: 'row', alignItems: 'center', width: 101, height: 25, borderRadius: 14, backgroundColor: '#fff', paddingHorizontal: 10 },
+  searchInput: { flex: 1, padding: 0, fontSize: 8, color: INK },
+  searchIcon: { width: 13, height: 13, resizeMode: 'contain' },
+  chipRow: { paddingHorizontal: 28, paddingBottom: 8, gap: 7 },
+  chip: { height: 23, borderRadius: 8, backgroundColor: '#fff', paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D9E7E4' },
+  chipActive: { backgroundColor: '#DDF5EE', borderColor: '#DDF5EE' },
+  chipText: { fontSize: 8, color: MUTED },
+  chipTextActive: { color: GREEN, fontWeight: '700' },
 
   sortBtn: {
     flexDirection: 'row',
@@ -618,23 +650,23 @@ const styles = StyleSheet.create({
     gap: 4,
     borderWidth: 1,
     borderColor: GREEN_LIGHT,
-    borderRadius: 20,
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
     backgroundColor: '#fff',
   },
 
   sortBtnText: {
-    fontSize: 12,
+    fontSize: 10,
     color: GREEN_MID,
     fontWeight: '500',
   },
 
   recordCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 12,
+    borderRadius: 9,
+    marginHorizontal: 28,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -676,24 +708,23 @@ const styles = StyleSheet.create({
 
   typeBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e8f5e9',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    margin: 14,
-    marginBottom: 5,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    marginTop: 8,
+    marginLeft: 10,
+    marginBottom: 2,
   },
 
   typeBadgeText: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: '600',
     color: GREEN,
   },
 
   recordBody: {
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    gap: 10,
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+    gap: 5,
   },
 
   recordRow: {
@@ -703,13 +734,15 @@ const styles = StyleSheet.create({
   },
 
   recordIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: BG,
+    width: 37,
+    height: 37,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  recordAsset: { width: 24, height: 24, resizeMode: 'contain' },
 
   recordContent: {
     flex: 1,
@@ -717,10 +750,10 @@ const styles = StyleSheet.create({
   },
 
   recordTitle: {
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: '700',
-    color: GREEN_DARK,
-    lineHeight: 22,
+    color: INK,
+    lineHeight: 14,
   },
 
   recordDateRow: {
@@ -728,9 +761,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
+  dateAsset: { width: 11, height: 11, resizeMode: 'contain' },
 
   recordDateText: {
-    fontSize: 12,
+    fontSize: 8,
     color: GREEN_MID,
   },
 
@@ -752,9 +786,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f5f5f5',
   },
+  footerAsset: { width: 11, height: 11, resizeMode: 'contain' },
 
   recordFooterText: {
-    fontSize: 12,
+    fontSize: 8,
     color: '#aaa',
   },
 

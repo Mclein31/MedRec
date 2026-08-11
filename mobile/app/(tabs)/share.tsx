@@ -1,43 +1,27 @@
-import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  Alert,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, Pressable, FlatList, Alert, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { api } from '../../lib/api';
 import { StatusBar } from 'expo-status-bar';
 
-const GREEN = '#1D9E75';
-const GREEN_DARK = '#085041';
-const GREEN_MID = '#0F6E56';
-const GREEN_LIGHT = '#9FE1CB';
-const BG = '#f0f7f4';
+const TEAL = '#159A83';
+const BLUE = '#1976D2';
+const INK = '#12343B';
+const MUTED = '#64748B';
+const BG = '#F4FAF9';
 
-type Share = {
-  id: string;
-  token: string;
-  expires_at: string;
-  revoked_at: string | null;
-};
+type Share = { id: string; token: string; expires_at: string; revoked_at: string | null };
 
-function formatDate(dateStr: string) {
+function formatExpiry(dateStr: string) {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  }) + ' · ' + date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function expiryStatus(dateStr: string) {
+  const minutes = Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / 60000));
+  return minutes > 0 ? `Expires in ${minutes} minute${minutes === 1 ? '' : 's'}` : 'Expired';
 }
 
 export default function ShareScreen() {
@@ -58,15 +42,13 @@ export default function ShareScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      if (params.pendingToken && params.pendingToken !== activeToken) {
-        setActiveToken(params.pendingToken);
-        setActiveExpiry(params.pendingExpiry ?? null);
-      }
-      loadShares();
-    }, [params.pendingToken, params.pendingExpiry, activeToken])
-  );
+  useFocusEffect(useCallback(() => {
+    if (params.pendingToken && params.pendingToken !== activeToken) {
+      setActiveToken(params.pendingToken);
+      setActiveExpiry(params.pendingExpiry ?? null);
+    }
+    loadShares();
+  }, [params.pendingToken, params.pendingExpiry, activeToken]));
 
   const handleCreate = async () => {
     setCreating(true);
@@ -86,7 +68,7 @@ export default function ShareScreen() {
     setRevoking(id);
     try {
       await api.revokeShare(id);
-      if (shares.find(s => s.id === id)?.token === activeToken) {
+      if (shares.find((share) => share.id === id)?.token === activeToken) {
         setActiveToken(null);
         setActiveExpiry(null);
       }
@@ -98,385 +80,122 @@ export default function ShareScreen() {
     }
   };
 
-  const isLoadingQrFromNav = !!params.pendingToken && params.pendingToken !== activeToken;
+  const activeShares = shares.filter((share) => !share.revoked_at && new Date(share.expires_at) >= new Date());
+  const recentShares = shares.filter((share) => share.revoked_at || new Date(share.expires_at) < new Date());
+  const isLoadingQr = !!params.pendingToken && params.pendingToken !== activeToken;
+
+  const ShareCard = ({ share, active }: { share: Share; active: boolean }) => (
+    <View style={styles.shareCard}>
+      <View style={styles.cardTop}>
+        <View style={styles.qrIconBox}><Image source={require('../../assets/icons/qr-white.png')} style={styles.qrAsset} /></View>
+        <View style={styles.shareInfo}>
+          <Text style={styles.shareName}>{"Doctor" + "'" + "s QR Access"}</Text>
+          <Text style={styles.shareDetails}>All records · 60 minute access</Text>
+        </View>
+        {active ? (
+          <Pressable onPress={() => { setActiveToken(share.token); setActiveExpiry(share.expires_at); }}><Text style={styles.viewQr}>View QR</Text></Pressable>
+        ) : (
+          <Text style={styles.revoked}>Revoked</Text>
+        )}
+      </View>
+      <View style={styles.cardBottom}>
+        {active ? (
+          <>
+            <View style={styles.expiryLine}><Image source={require('../../assets/icons/clock.png')} style={styles.clockAsset} /><Text style={styles.expiryText}>{expiryStatus(share.expires_at)}</Text></View>
+            <Pressable onPress={() => handleRevoke(share.id)} disabled={revoking === share.id}>
+              {revoking === share.id ? <ActivityIndicator size="small" color="#F04747" /> : <Text style={styles.revoke}>Revoke Access</Text>}
+            </Pressable>
+          </>
+        ) : (
+          <Text style={styles.revokedTime}>{share.revoked_at ? `Revoked at ${new Date(share.revoked_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : `Expired ${formatExpiry(share.expires_at)}`}</Text>
+        )}
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
       <FlatList
-        data={shares}
+        data={recentShares}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={
-          <>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-              <Text style={styles.headerTitle}>Share Records</Text>
-              <Text style={styles.headerSub}>
-                Generate a temporary QR code for your doctor
-              </Text>
-            </View>
-
-            {/* QR card or generate button */}
-            {activeToken ? (
-              <View style={styles.qrCard}>
-                <QRCode
-                  value={activeToken}
-                  size={180}
-                  color={GREEN_DARK}
-                  backgroundColor="#fff"
-                />
-                <Text style={styles.qrLabel}>Show this to your doctor</Text>
-                {activeExpiry && (
-                  <View style={styles.expiryRow}>
-                    <Ionicons name="time-outline" size={13} color={GREEN_MID} />
-                    <Text style={styles.expiryText}>
-                      Expires {new Date(activeExpiry).toLocaleString()}
-                    </Text>
-                  </View>
-                )}
-                <Pressable
-                  onPress={() => { setActiveToken(null); setActiveExpiry(null); }}
-                  style={({ pressed }) => [styles.dismissBtn, pressed && { opacity: 0.7 }]}
-                >
-                  <Text style={styles.dismissBtnText}>Dismiss</Text>
-                </Pressable>
-              </View>
-            ) : isLoadingQrFromNav || creating ? (
-              <View style={styles.qrCard}>
-                <ActivityIndicator size="large" color={GREEN} />
-                <Text style={styles.qrLabel}>Generating QR code...</Text>
-              </View>
-            ) : (
-              <Pressable
-                onPress={handleCreate}
-                disabled={creating}
-                style={({ pressed }) => [styles.generateBtn, pressed && { opacity: 0.85 }]}
-              >
-                <>
-                  <Ionicons name="qr-code-outline" size={20} color="#fff" />
-                  <Text style={styles.generateBtnText}>Generate Share QR (60 min)</Text>
-                </>
-              </Pressable>
-            )}
-
-            {/* Section header */}
-            {shares.length > 0 && (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Share History</Text>
-                <Text style={styles.sectionCount}>
-                  {shares.length} link{shares.length !== 1 ? 's' : ''}
-                </Text>
-              </View>
-            )}
-          </>
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="qr-code-outline" size={52} color={GREEN_LIGHT} />
-            <Text style={styles.emptyTitle}>No shares yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Generate a QR code to share your records with a doctor
-            </Text>
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={<>
+          <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+            <View style={styles.headerIcons}><Image source={require('../../assets/icons/burger-menu.png')} style={styles.headerAsset} /><View><Image source={require('../../assets/icons/notification-bell.png')} style={styles.headerAsset} /><View style={styles.notificationDot} /></View></View>
+            <Text style={styles.title}>Share Records</Text>
+            <Text style={styles.subtitle}>Share your health records in a limited time access</Text>
           </View>
-        }
-        renderItem={({ item }) => {
-          const expired = new Date(item.expires_at) < new Date();
-          const revoked = !!item.revoked_at;
-          const active = !expired && !revoked;
-          const isRevoking = revoking === item.id;
 
-          return (
-            <View style={styles.shareCard}>
-              {/* Status badge */}
-              <View style={[
-                styles.statusBadge,
-                active ? styles.statusBadgeActive :
-                revoked ? styles.statusBadgeRevoked :
-                styles.statusBadgeExpired
-              ]}>
-                <Text style={[
-                  styles.statusBadgeText,
-                  active ? styles.statusBadgeTextActive :
-                  revoked ? styles.statusBadgeTextRevoked :
-                  styles.statusBadgeTextExpired
-                ]}>
-                  {revoked ? 'Revoked' : expired ? 'Expired' : 'Active'}
-                </Text>
-              </View>
-
-              <View style={styles.shareBody}>
-                <View style={styles.shareRow}>
-                  <View style={styles.shareIconBox}>
-                    <Ionicons
-                      name="qr-code-outline"
-                      size={22}
-                      color={active ? GREEN : '#aaa'}
-                    />
-                  </View>
-                  <View style={styles.shareInfo}>
-                    <Text style={styles.shareInfoLabel}>Expires</Text>
-                    <View style={styles.shareDateRow}>
-                      <Ionicons name="calendar-outline" size={12} color={GREEN_MID} />
-                      <Text style={styles.shareDateText}>
-                        {formatDate(item.expires_at)}
-                      </Text>
-                    </View>
-                  </View>
-                  {active && (
-                    <Pressable
-                      onPress={() => handleRevoke(item.id)}
-                      disabled={isRevoking}
-                      style={({ pressed }) => [
-                        styles.revokeBtn,
-                        pressed && { opacity: 0.7 },
-                        isRevoking && { opacity: 0.5 },
-                      ]}
-                    >
-                      {isRevoking ? (
-                        <ActivityIndicator size="small" color="#FF3B30" />
-                      ) : (
-                        <Text style={styles.revokeBtnText}>Revoke</Text>
-                      )}
-                    </Pressable>
-                  )}
-                </View>
-
-                <View style={styles.shareFooter}>
-                  <Ionicons name="folder-open-outline" size={12} color="#aaa" />
-                  <Text style={styles.shareFooterText}>
-                    {revoked ? 'Revoked · ' : expired ? 'Expired · ' : 'Active · '}
-                    {formatDate(item.expires_at)}
-                  </Text>
-                </View>
-              </View>
+          {activeToken ? (
+            <View style={styles.qrCard}>
+              <Text style={styles.qrTitle}>{"Doctor" + "'" + "s QR Access"}</Text>
+              <Text style={styles.qrSubtitle}>All records · 60 minute access</Text>
+              <QRCode value={activeToken} size={142} color="#000" backgroundColor="#fff" />
+              {activeExpiry && <Text style={styles.qrExpiry}>{expiryStatus(activeExpiry)}</Text>}
             </View>
-          );
-        }}
+          ) : isLoadingQr || creating ? (
+            <View style={styles.loadingCard}><ActivityIndicator color={TEAL} /><Text style={styles.qrSubtitle}>Generating QR access...</Text></View>
+          ) : (
+            <Pressable onPress={handleCreate} style={({ pressed }) => [styles.generateCard, pressed && styles.pressed]}>
+              <View style={styles.generateIcon}><Image source={require('../../assets/icons/qr-white.png')} style={styles.whiteQrAsset} /></View>
+              <View><Text style={styles.generateTitle}>Share your records with your Doctor</Text><Text style={styles.generateSubtitle}>The QR code will automatically expire in 60 minutes</Text></View>
+              <View style={styles.generateButton}><Text style={styles.generateButtonText}>GENERATE QR CODE</Text></View>
+            </Pressable>
+          )}
+
+          {activeShares.length > 0 && <><View style={styles.sectionHead}><Text style={styles.sectionTitle}>Active</Text><Text style={styles.sectionSubtitle}>Manage your health records</Text></View>{activeShares.map((share) => <ShareCard key={share.id} share={share} active />)}</>}
+          {recentShares.length > 0 && <View style={styles.sectionHead}><Text style={styles.sectionTitle}>Recents</Text><Text style={styles.sectionSubtitle}>Expired and Revoked QR codes are shown here</Text></View>}
+        </>}
+        ListEmptyComponent={activeShares.length === 0 && recentShares.length === 0 ? <View style={styles.empty}><Image source={require('../../assets/icons/qr-white.png')} style={styles.emptyQrAsset} /><Text style={styles.emptyTitle}>No shares yet</Text><Text style={styles.emptyText}>Generate a QR code to share your records with a doctor.</Text></View> : null}
+        renderItem={({ item }) => <ShareCard share={item} active={false} />}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  listContainer: {
-    paddingBottom: 120,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    gap: 4,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: GREEN_DARK,
-    letterSpacing: -0.5,
-  },
-  headerSub: {
-    fontSize: 14,
-    color: GREEN_MID,
-    marginTop: 2,
-  },
-  qrCard: {
-    marginHorizontal: 20,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    padding: 24,
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  qrLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: GREEN_DARK,
-  },
-  expiryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  expiryText: {
-    fontSize: 12,
-    color: GREEN_MID,
-  },
-  dismissBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    marginTop: 4,
-  },
-  dismissBtnText: {
-    fontSize: 13,
-    color: GREEN_MID,
-    fontWeight: '500',
-  },
-  generateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: GREEN,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    paddingVertical: 16,
-    marginBottom: 24,
-  },
-  generateBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: GREEN_DARK,
-  },
-  sectionCount: {
-    fontSize: 13,
-    color: GREEN_MID,
-  },
-  shareCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    margin: 14,
-    marginBottom: 4,
-  },
-  statusBadgeActive: {
-    backgroundColor: '#e8f5f0',
-  },
-  statusBadgeExpired: {
-    backgroundColor: '#f5f5f5',
-  },
-  statusBadgeRevoked: {
-    backgroundColor: '#fff5f5',
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  statusBadgeTextActive: {
-    color: GREEN,
-  },
-  statusBadgeTextExpired: {
-    color: '#aaa',
-  },
-  statusBadgeTextRevoked: {
-    color: '#FF3B30',
-  },
-  shareBody: {
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    gap: 10,
-  },
-  shareRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  shareIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: BG,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shareInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  shareInfoLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: GREEN_DARK,
-  },
-  shareDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  shareDateText: {
-    fontSize: 12,
-    color: GREEN_MID,
-  },
-  revokeBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 11,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ffb3b3',
-    backgroundColor: '#fff5f5',
-    minWidth: 64,
-    alignItems: 'center',
-  },
-  revokeBtnText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#FF3B30',
-  },
-  shareFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f5f5f5',
-  },
-  shareFooterText: {
-    fontSize: 12,
-    color: '#aaa',
-  },
-  empty: {
-    alignItems: 'center',
-    paddingTop: 60,
-    gap: 10,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: GREEN_DARK,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: GREEN_MID,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+  root: { flex: 1, backgroundColor: BG },
+  list: { paddingBottom: 120 },
+  header: { paddingHorizontal: 28, paddingBottom: 12 },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  notificationDot: { position: 'absolute', right: 0, top: 0, width: 6, height: 6, borderRadius: 3, backgroundColor: TEAL },
+  headerAsset: { width: 25, height: 25, resizeMode: 'contain' },
+  title: { color: INK, fontFamily: 'LexendDeca-Bold', fontSize: 24 },
+  subtitle: { color: MUTED, fontSize: 9, marginTop: 1 },
+  generateCard: { marginHorizontal: 28, minHeight: 85, borderRadius: 11, backgroundColor: BLUE, padding: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 9, flexWrap: 'wrap', marginBottom: 14 },
+  generateIcon: { paddingTop: 2 },
+  whiteQrAsset: { width: 29, height: 29, resizeMode: 'contain' },
+  generateTitle: { color: '#fff', fontSize: 10, fontWeight: '700', maxWidth: 205 },
+  generateSubtitle: { color: '#E7F0FF', fontSize: 7, marginTop: 2 },
+  generateButton: { backgroundColor: '#fff', borderRadius: 5, height: 23, width: '100%', alignItems: 'center', justifyContent: 'center', marginTop: -2 },
+  generateButtonText: { color: '#111', fontSize: 8, fontWeight: '800' },
+  pressed: { opacity: 0.8 },
+  qrCard: { backgroundColor: '#fff', borderRadius: 10, marginHorizontal: 64, alignItems: 'center', paddingVertical: 10, marginBottom: 5 },
+  qrTitle: { fontFamily: 'LexendDeca-Bold', fontSize: 12, color: INK },
+  qrSubtitle: { color: MUTED, fontSize: 7.5, marginTop: 2, marginBottom: 7 },
+  qrExpiry: { color: MUTED, fontSize: 8, marginTop: 6 },
+  loadingCard: { marginHorizontal: 28, height: 110, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
+  sectionHead: { marginHorizontal: 28, marginTop: 1, marginBottom: 7 },
+  sectionTitle: { fontFamily: 'LexendDeca-Bold', fontSize: 13, color: INK },
+  sectionSubtitle: { fontSize: 8, color: MUTED, marginTop: 1 },
+  shareCard: { marginHorizontal: 28, backgroundColor: '#fff', borderRadius: 8, marginBottom: 10, paddingHorizontal: 10, paddingTop: 10 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  qrIconBox: { width: 39, height: 39, alignItems: 'center', justifyContent: 'center' },
+  qrAsset: { width: 34, height: 34, resizeMode: 'contain', tintColor: TEAL },
+  shareInfo: { flex: 1 },
+  shareName: { color: INK, fontSize: 11, fontWeight: '700' },
+  shareDetails: { color: MUTED, fontSize: 7.5, marginTop: 2 },
+  viewQr: { color: BLUE, fontSize: 8, fontWeight: '700', alignSelf: 'flex-start' },
+  revoked: { color: '#F04747', fontSize: 8 },
+  cardBottom: { marginTop: 5, paddingTop: 7, borderTopWidth: 1, borderTopColor: '#EEF1F2', minHeight: 23, justifyContent: 'center' },
+  expiryLine: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 7 },
+  clockAsset: { width: 11, height: 11, resizeMode: 'contain' },
+  expiryText: { color: MUTED, fontSize: 7.5 },
+  revoke: { color: '#F04747', fontSize: 8, marginBottom: 1 },
+  revokedTime: { color: MUTED, fontSize: 7, paddingBottom: 2 },
+  empty: { alignItems: 'center', paddingTop: 42, paddingHorizontal: 60 },
+  emptyQrAsset: { width: 46, height: 46, resizeMode: 'contain', tintColor: '#DDF5EE' },
+  emptyTitle: { marginTop: 9, color: INK, fontFamily: 'LexendDeca-Bold', fontSize: 15 },
+  emptyText: { color: MUTED, textAlign: 'center', fontSize: 10, marginTop: 5 },
 });
