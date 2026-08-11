@@ -63,6 +63,7 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     'LexendDeca-Bold': require('../assets/fonts/Lexend_Deca/static/LexendDeca-Bold.ttf'),
     'LexendDeca-Regular': require('../assets/fonts/Lexend_Deca/static/LexendDeca-Regular.ttf'),
+    'LexendDeca-SemiBold': require('../assets/fonts/Lexend_Deca/static/LexendDeca-SemiBold.ttf'),
   });
 
   useEffect(() => {
