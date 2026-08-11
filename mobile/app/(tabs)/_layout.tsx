@@ -1,16 +1,16 @@
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const GREEN = '#1D9E75';
-const GREEN_BG = '#e8f5f0';
-const INACTIVE = '#aaa';
+const GREEN = '#159A83';
+const GREEN_BG = '#DDF5EE';
+const INACTIVE = '#64748B';
 
 const TABS = [
-  { name: 'index', route: '/(tabs)', label: 'Records', icon: 'document-text-outline' as const },
-  { name: 'share', route: '/(tabs)/share', label: 'Share', icon: 'qr-code-outline' as const },
-  { name: 'scan', route: '/(tabs)/scan', label: 'Scan', icon: 'camera-outline' as const },
+  { name: 'index', route: '/(tabs)', label: 'Records', activeIcon: require('../../assets/icons/records-active.png'), inactiveIcon: require('../../assets/icons/records-inactive.png') },
+  { name: 'share', route: '/(tabs)/share', label: 'Share', activeIcon: require('../../assets/icons/share-active.png'), inactiveIcon: require('../../assets/icons/share-inactive.png') },
+  { name: 'scan', route: '/(tabs)/scan', label: 'Scan', activeIcon: require('../../assets/icons/scan-active.png'), inactiveIcon: require('../../assets/icons/scan-inactive.png') },
+  { name: 'profile', route: undefined, label: 'Profile', activeIcon: require('../../assets/icons/profile-active.png'), inactiveIcon: require('../../assets/icons/profile-inactive.png') },
 ];
 
 function CustomTabBar() {
@@ -30,15 +30,12 @@ function CustomTabBar() {
           return (
             <Pressable
               key={tab.name}
-              onPress={() => router.push(tab.route as any)}
+              onPress={() => tab.route && router.push(tab.route as any)}
+              disabled={!tab.route}
               style={styles.tabItem}
             >
               <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
-                <Ionicons
-                  name={tab.icon}
-                  size={27.5}
-                  color={isActive ? GREEN : INACTIVE}
-                />
+                <Image source={isActive ? tab.activeIcon : tab.inactiveIcon} style={styles.tabIcon} />
               </View>
               <Text style={[styles.label, isActive && styles.labelActive]}>
                 {tab.label}
@@ -69,24 +66,23 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: -25,
+    bottom: 0,
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingTop: 8,
+    paddingTop: 4,
     backgroundColor: 'transparent',
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 50,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    gap: 8,
-    borderWidth: 0.5,
-    borderColor: '#9FE1CB',
-    shadowColor: '#0F6E56',
+    borderRadius: 18,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    gap: 3,
+    borderWidth: 0,
+    shadowColor: '#159A83',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.13,
     shadowRadius: 15,
@@ -97,17 +93,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   iconWrap: {
-    width: 110,
-    height: 40,
-    borderRadius: 18,
+    width: 62,
+    height: 31,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapActive: {
     backgroundColor: GREEN_BG,
   },
+  tabIcon: { width: 21, height: 21, resizeMode: 'contain' },
   label: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '500',
     color: INACTIVE,
   },
