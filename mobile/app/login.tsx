@@ -80,12 +80,23 @@ export default function LoginScreen() {
       <StatusBar style="dark" />
       <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <ImageBackground source={require('../assets/graphics/login-graphic.png')} style={[styles.hero, { paddingTop: insets.top + 16 }]} resizeMode="cover">
+          <ImageBackground
+            source={require('../assets/graphics/login-graphic.png')}
+            style={styles.hero}
+            imageStyle={styles.heroGraphic}
+            resizeMode="contain"
+          >
             <View style={styles.brandRow}>
-              <Image source={require('../assets/logo/logo.png')} style={styles.brandMark} />
+              <Image
+                source={require('../assets/logo/logo.png')}
+                style={styles.brandMark}
+              />
+
               <View>
                 <Text style={styles.brand}>MedRec</Text>
-                <Text style={styles.tagline}>Your Health Records in Your Pockets</Text>
+                <Text style={styles.tagline}>
+                  Your Health Records in Your Pockets
+                </Text>
               </View>
             </View>
           </ImageBackground>
@@ -132,41 +143,269 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F4FAF9' },
-  keyboard: { flex: 1 },
-  scroll: { flexGrow: 1 },
-  hero: { height: 180, paddingHorizontal: 24 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brandMark: { width: 42, height: 42, resizeMode: 'contain' },
-  brand: { color: INK, fontFamily: 'LexendDeca-Bold', fontSize: 18 },
-  tagline: { color: MUTED, fontSize: 8.5, marginTop: 1 },
-  body: { paddingHorizontal: 28, paddingTop: 22, paddingBottom: 22 },
-  title: { color: BLUE, fontFamily: 'LexendDeca-Bold', fontSize: 24, textAlign: 'center' },
-  subtitle: { color: MUTED, fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 20 },
-  error: { color: '#D73A49', fontSize: 12, textAlign: 'center', marginBottom: 10 },
-  warning: { color: '#C77A00', fontSize: 12, textAlign: 'center', marginBottom: 10 },
-  fields: { gap: 11 },
-  inputRow: { height: 48, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 14, borderRadius: 11, borderWidth: 1, borderColor: '#D9E7E4', backgroundColor: '#fff' },
-  disabled: { backgroundColor: '#DDF5EE' },
-  fieldIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  input: { flex: 1, color: INK, fontSize: 13, padding: 0 },
-  eyeIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  forgot: { alignItems: 'flex-end', marginTop: -1 },
-  forgotText: { color: BLUE, fontSize: 10 },
-  primaryButton: { height: 48, backgroundColor: TEAL, borderRadius: 11, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 54, marginTop: 16, marginBottom: 16 },
-  primaryText: { color: '#fff', fontFamily: 'LexendDeca-Bold', fontSize: 14 },
-  arrow: { width: 16, height: 16, tintColor: '#fff', resizeMode: 'contain' },
-  pressed: { opacity: 0.72 },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  line: { flex: 1, height: 1, backgroundColor: '#D9E7E4' },
-  dividerText: { color: MUTED, fontSize: 11 },
-  googleButton: { height: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 11, borderWidth: 1, borderColor: '#D9E7E4' },
-  google: { width: 20, height: 20, resizeMode: 'contain' },
-  googleText: { color: INK, fontSize: 13, fontWeight: '600' },
-  createButton: { height: 44, marginTop: 16, borderRadius: 11, borderWidth: 1, borderColor: TEAL, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
-  createIcon: { width: 17, height: 17, tintColor: TEAL, resizeMode: 'contain' },
-  createText: { color: TEAL, fontSize: 13, fontWeight: '600' },
-  footer: { paddingHorizontal: 30, paddingBottom: 17 },
-  footerText: { textAlign: 'center', fontSize: 8.5, color: MUTED, lineHeight: 13 },
-  footerLink: { color: TEAL },
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  keyboard: {
+    flex: 1,
+  },
+
+  scroll: {
+    flexGrow: 1,
+  },
+
+  hero: {
+    height: 320,
+    paddingHorizontal: 40,
+    marginTop: 0,
+  },
+
+
+  heroGraphic: {
+    transform: [
+      { translateX: 0 },
+      { translateY: 50 },
+    ],
+  },
+
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+
+    position: 'relative',
+    top: 90,
+    left: -20,
+  },
+
+  brandMark: {
+    width: 75,
+    height: 75,
+    resizeMode: 'contain',
+  },
+
+  brand: {
+    color: INK,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 24,
+    lineHeight: 27,
+  },
+
+  tagline: {
+    color: MUTED,
+    fontSize: 12,
+    lineHeight: 12,
+    marginTop: 0,
+    
+  },
+
+  body: {
+    marginTop: -15,
+    paddingHorizontal: 50,
+    paddingTop: 15,
+    paddingBottom: 20,
+
+    backgroundColor: '#FFFFFF',
+
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+
+    overflow: 'hidden',
+  },
+
+  title: {
+    color: BLUE,
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 30,
+    textAlign: 'center',
+  },
+
+  subtitle: {
+    color: MUTED,
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 0,
+    lineHeight: 12,
+    marginBottom: 20,
+  },
+
+  error: {
+    color: '#D73A49',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+
+  warning: {
+    color: '#C77A00',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+
+  fields: {
+    gap: 14,
+  },
+
+  inputRow: {
+    height: 57.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    paddingHorizontal: 25,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+    backgroundColor: '#FFFFFF',
+  },
+
+  disabled: {
+    backgroundColor: '#DDF5EE',
+  },
+
+  fieldIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+
+  input: {
+    flex: 1,
+    color: INK,
+    fontSize: 14,
+    padding: 0,
+  },
+
+  eyeIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+  },
+
+  forgot: {
+    alignItems: 'flex-end',
+  },
+
+  forgotText: {
+    color: BLUE,
+    fontSize: 12,
+    lineHeight: 0,
+    marginTop: 0,
+  },
+
+  primaryButton: {
+    height: 57.5,
+    backgroundColor: TEAL,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginTop: 25,
+    marginBottom: 18,
+  },
+
+  primaryText: {
+    color: '#FFFFFF',
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 18,
+  },
+
+  arrow: {
+    position: 'absolute',
+    right: 24,
+    width: 30,
+    height: 30,
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+
+  pressed: {
+    opacity: 0.72,
+  },
+
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 18,
+    marginBottom: 18,
+  },
+
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#C9D4D2',
+  },
+
+  dividerText: {
+    color: MUTED,
+    fontSize: 12,
+  },
+
+  googleButton: {
+    height: 55,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+  },
+
+  google: {
+    width: 26,
+    height: 26,
+    resizeMode: 'contain',
+  },
+
+  googleText: {
+    color: INK,
+    fontSize: 16,
+    fontWeight: '400',
+  },
+
+  createButton: {
+    height: 57.5,
+    marginTop: 38,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: TEAL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  createIcon: {
+    width: 25,
+    height: 25,
+    tintColor: TEAL,
+    resizeMode: 'contain',
+  },
+
+  createText: {
+    color: TEAL,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+
+  footer: {
+    paddingHorizontal: 40,
+    paddingBottom: 20,
+    paddingTop: 5,
+  },
+
+  footerText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: MUTED,
+    lineHeight: 14,
+    marginBottom: 10,
+  },
+
+  footerLink: {
+    color: TEAL,
+  },
 });
