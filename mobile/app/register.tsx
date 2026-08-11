@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  ImageBackground,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -16,8 +17,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 
-const GREEN = '#4e7c4e';
-const BLUE_ICON = '#5c9ee8';
+const BLUE = '#1976D2';
+const TEAL = '#159A83';
+const TEXT_DARK = '#12343B';
+const TEXT_MUTED = '#64748B';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -72,305 +75,196 @@ export default function RegisterScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20 }]} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-          <View style={styles.logoArea}>
-            <Image
-              source={require('../assets/logo/MedRec-Logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>join us and take control of {'\n'}your health records.</Text>
-          </View>
-
-          <View style={styles.fields}>
-            <View style={styles.inputRow}>
-              <Image source={require('../assets/icons/person.png')} style={[styles.fieldIcon, { tintColor: BLUE_ICON }]} />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your full name"
-                placeholderTextColor="#aaa"
-                value={name}
-                onChangeText={setName}
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.inputRow}>
-              <Image source={require('../assets/icons/mail.png')} style={[styles.fieldIcon, { tintColor: BLUE_ICON }]} />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email address"
-                placeholderTextColor="#aaa"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.inputRow}>
-              <Image source={require('../assets/icons/padlock.png')} style={[styles.fieldIcon, { tintColor: BLUE_ICON }]} />
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Create password"
-                placeholderTextColor="#aaa"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCorrect={false}
-              />
-              <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-                <Image
-                  source={showPassword
-                    ? require('../assets/icons/hidden-eye.png')
-                    : require('../assets/icons/eye-open.png')}
-                  style={styles.eyeIcon}
-                />
-              </Pressable>
-            </View>
-
-            <View style={styles.inputRow}>
-              <Image source={require('../assets/icons/padlock.png')} style={[styles.fieldIcon, { tintColor: BLUE_ICON }]} />
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Confirm your password"
-                placeholderTextColor="#aaa"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirm}
-                autoCorrect={false}
-              />
-              <Pressable onPress={() => setShowConfirm(!showConfirm)} hitSlop={8}>
-                <Image
-                  source={showConfirm
-                    ? require('../assets/icons/hidden-eye.png')
-                    : require('../assets/icons/eye-open.png')}
-                  style={styles.eyeIcon}
-                />
-              </Pressable>
-            </View>
-
-            {/* Password hint */}
-            <View style={styles.hintRow}>
-              <Image source={require('../assets/icons/shield.png')} style={[styles.hintIcon, { tintColor: GREEN }]} />
-              <Text style={styles.hintText}>
-                Password must be at least 8 characters and include a number and an uppercase letter.
-              </Text>
-            </View>
-          </View>
-
-          <Pressable
-            onPress={handleRegister}
-            disabled={loading}
-            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+          <ImageBackground
+            source={require('../assets/graphics/login-graphic.png')}
+            style={[styles.graphicHeader, { paddingTop: insets.top + 16 }]}
+            resizeMode="cover"
           >
-            <Text style={styles.primaryBtnText}>
-              {loading ? 'Creating account...' : 'Create Account'}
-            </Text>
-          </Pressable>
+            <View style={styles.logoRow}>
+              <Image
+                source={require('../assets/logo/logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <View>
+                <Text style={styles.brandName}>MedRec</Text>
+                <Text style={styles.brandTagline}>Your Health Records in Your Pocket</Text>
+              </View>
+            </View>
+          </ImageBackground>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or sign up with</Text>
-            <View style={styles.dividerLine} />
-          </View>
+          <View style={styles.body}>
+            <Text style={styles.title}>Create your Account</Text>
+            <Text style={styles.subtitle}>Join us and take control of your health records</Text>
 
-          <View style={styles.socialRow}>
-            <Pressable onPress={() => handleSocialPress('Google')} style={styles.socialBtn}>
+            <View style={styles.fields}>
+              <View style={styles.inputRow}>
+                <Image source={require('../assets/icons/person.png')} style={styles.fieldIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full Name"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={name}
+                  onChangeText={setName}
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <Image source={require('../assets/icons/mail.png')} style={styles.fieldIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email or Phone"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Password"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCorrect={false}
+                />
+                <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                  <Image
+                    source={showPassword
+                      ? require('../assets/icons/open-eye.png')
+                      : require('../assets/icons/closed-eye.png')}
+                    style={styles.eyeIcon}
+                  />
+                </Pressable>
+              </View>
+
+              <View style={styles.inputRow}>
+                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Confirm Password"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirm}
+                  autoCorrect={false}
+                />
+                <Pressable onPress={() => setShowConfirm(!showConfirm)} hitSlop={8}>
+                  <Image
+                    source={showConfirm
+                      ? require('../assets/icons/open-eye.png')
+                      : require('../assets/icons/closed-eye.png')}
+                    style={styles.eyeIcon}
+                  />
+                </Pressable>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={handleRegister}
+              disabled={loading}
+              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.primaryBtnText}>
+                {loading ? 'Creating account...' : 'Create Account'}
+              </Text>
+              {!loading && (
+                <Image source={require('../assets/icons/arrow.png')} style={styles.arrowIcon} />
+              )}
+            </Pressable>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Pressable
+              onPress={() => handleSocialPress('Google')}
+              style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
+            >
               <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
+              <Text style={styles.outlineBtnText}>Sign in with Google</Text>
             </Pressable>
-            <Pressable onPress={() => handleSocialPress('Apple')} style={styles.socialBtn}>
-              <Image source={require('../assets/icons/apple.png')} style={styles.socialIcon} />
-            </Pressable>
-          </View>
 
-          <View style={styles.loginRow}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <Pressable onPress={() => router.push('/login')}>
-              <Text style={styles.loginLink}>Login</Text>
-            </Pressable>
+            <View style={styles.loginRow}>
+              <Text style={styles.loginText}>Already have an Account? </Text>
+              <Pressable onPress={() => router.push('/login')}>
+                <Text style={styles.loginLink}>Sign In</Text>
+              </Pressable>
+            </View>
           </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
-    
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  root: { flex: 1, backgroundColor: '#F4FAF9' },
+  scroll: { flexGrow: 1 },
 
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-    paddingBottom: 40,
+  graphicHeader: {
+    width: '100%',
+    height: 180,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 24,
+    backgroundColor: '#DDF5EE',
   },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logo: { width: 38, height: 38 },
+  brandName: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
+  brandTagline: { fontSize: 10, color: TEXT_MUTED, maxWidth: 190 },
 
-  logoArea: {
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 40,
-  },
+  body: { paddingHorizontal: 28, paddingTop: 24, paddingBottom: 32 },
 
-  logo: {
-    width: 100,
-    height: 100,
-  },
-
-  title: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 35,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    letterSpacing: -0.3,
-  },
-
+  title: { fontSize: 24, fontWeight: '800', color: BLUE, textAlign: 'center' },
   subtitle: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 15,
-    marginBottom: 20,
+    fontSize: 13, color: TEXT_MUTED, textAlign: 'center',
+    marginTop: 4, marginBottom: 22, paddingHorizontal: 10,
   },
 
-  fields: {
-    gap: 12,
-    marginBottom: 6,
-  },
-
+  fields: { gap: 12, marginBottom: 4 },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    height: 60,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    backgroundColor: '#fff',
+    flexDirection: 'row', alignItems: 'center', gap: 12, height: 54,
+    borderWidth: 1, borderColor: '#D9E7E4', borderRadius: 14,
+    paddingHorizontal: 16, backgroundColor: '#F4FAF9',
   },
-
-  fieldIcon: {
-    width: 25,
-    height: 25,
-    resizeMode: 'contain',
-  },
-
-  input: {
-    flex: 1,
-    fontSize: 17.5,
-    color: '#222',
-    padding: 0,
-  },
-
-  eyeIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-    tintColor: '#aaa',
-  },
-
-  hintRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: '#f0f8f0',
-    borderRadius: 10,
-    padding: 12,
-  },
-
-  hintIcon: {
-    width: 25,
-    height: 25,
-    resizeMode: 'contain',
-    marginTop: 1,
-  },
-
-  hintText: {
-    flex: 1,
-    fontSize: 13,
-    color: GREEN,
-    lineHeight: 17,
-  },
+  fieldIcon: { width: 20, height: 20, resizeMode: 'contain' },
+  input: { flex: 1, fontSize: 15, color: TEXT_DARK, padding: 0 },
+  eyeIcon: { width: 20, height: 20, resizeMode: 'contain' },
 
   primaryBtn: {
-    backgroundColor: GREEN,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 20,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    height: 54, backgroundColor: TEAL, borderRadius: 14,
+    marginTop: 20, marginBottom: 18,
   },
+  primaryBtnText: { fontSize: 17, fontWeight: '700', color: '#fff' },
+  arrowIcon: { width: 18, height: 18, resizeMode: 'contain', tintColor: '#fff' },
 
-  primaryBtnText: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 22.5,
-    fontWeight: '600',
-    color: '#fff',
-  },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#D9E7E4' },
+  dividerText: { fontSize: 13, color: TEXT_MUTED },
 
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 20,
+  outlineBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    height: 52, borderWidth: 1, borderColor: '#D9E7E4', borderRadius: 14,
+    marginBottom: 20, backgroundColor: '#fff',
   },
+  socialIcon: { width: 20, height: 20, resizeMode: 'contain' },
+  outlineBtnText: { fontSize: 15, fontWeight: '600', color: TEXT_DARK },
 
-  dividerLine: {
-    flex: 1,
-    height: 1.5,
-    backgroundColor: '#e3e0e0',
-  },
-
-  dividerText: {
-    fontSize: 14,
-    color: GREEN,
-  },
-
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 50,
-    marginBottom: 40,
-  },
-
-  socialBtn: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-
-  socialIcon: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-  },
-
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  loginText: {
-    fontSize: 13,
-    color: '#7d7b7b',
-  },
-
-  loginLink: {
-    fontSize: 13,
-    color: GREEN,
-    fontWeight: '600',
-  },
+  loginRow: { flexDirection: 'row', justifyContent: 'center' },
+  loginText: { fontSize: 13, color: TEXT_MUTED },
+  loginLink: { fontSize: 13, color: TEAL, fontWeight: '700' },
 });
