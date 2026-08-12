@@ -251,7 +251,7 @@ export default function RecordsScreen() {
                 {selectionMode ? <Pressable onPress={cancelSelection} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></Pressable> : <Pressable onPress={handleMenuPress}><Image source={require('../../assets/icons/burger-menu.png')} style={styles.toolbarIcon} /></Pressable>}
                 <View style={styles.bell}><Image source={require('../../assets/icons/notification-bell.png')} style={styles.toolbarIcon} /><View style={styles.notificationDot} /></View>
               </View>
-              <Text style={styles.headerTitle}>Hello, McLein 👋</Text>
+              <Text style={styles.headerTitle}>Hello, McLein 👋🏼</Text>
               <Text style={styles.headerSub}>{"Here" + "'" + "s your health overview"}</Text>
             </View>
 
@@ -360,7 +360,7 @@ export default function RecordsScreen() {
                 {/* Icon + content */}
                 <View style={styles.recordRow}>
                   <View style={styles.recordIconBox}>
-                    <Image source={TYPE_ASSETS[item.type] || require('../../assets/icons/folder.png')} style={[styles.recordAsset, { tintColor: isSelected ? '#fff' : (TYPE_COLORS[item.type] || GREEN) }]} />
+                    <Image source={TYPE_ASSETS[item.type] || require('../../assets/icons/folder.png')} style={[styles.recordAsset, { tintColor: TYPE_COLORS[item.type] || GREEN}]} />
                   </View>
                   <View style={styles.recordContent}>
                     <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
@@ -388,36 +388,6 @@ export default function RecordsScreen() {
           );
         }}
       />
-
-      {/* FAB — Share Selected while in selection mode, otherwise Add */}
-      {selectionMode ? (
-        <Pressable
-          onPress={handleShareSelected}
-          disabled={sharing || selectedIds.size === 0}
-          style={[
-            styles.shareSelectedBtn,
-            (sharing || selectedIds.size === 0) && { opacity: 0.5 },
-          ]}
-        >
-          {sharing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="qr-code-outline" size={20} color="#fff" />
-              <Text style={styles.shareSelectedBtnText}>
-                Share {selectedIds.size > 0 ? `${selectedIds.size} ` : ''}Selected
-              </Text>
-            </>
-          )}
-        </Pressable>
-      ) : (
-        <Pressable
-          onPress={() => router.push('/record/add')}
-          style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-        >
-          <Ionicons name="add" size={30} color="#fff" />
-        </Pressable>
-      )}
 
       {/* Dark overlay — appears instantly, separate from sheet animation */}
       {overlayVisible && (
@@ -478,6 +448,11 @@ export default function RecordsScreen() {
 }
 
 const styles = StyleSheet.create({
+
+  // ─────────────────────────────
+  // ROOT
+  // ─────────────────────────────
+
   root: {
     flex: 1,
     backgroundColor: BG,
@@ -494,8 +469,13 @@ const styles = StyleSheet.create({
     paddingBottom: 126,
   },
 
+
+  // ─────────────────────────────
+  // HEADER
+  // ─────────────────────────────
+
   header: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     paddingBottom: 12,
   },
 
@@ -503,7 +483,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 17,
+    marginBottom: 18,
+  },
+
+  toolbarIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
 
   bell: {
@@ -513,27 +499,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  toolbarIcon: { width: 24, height: 24, resizeMode: 'contain' },
-
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: 'LexendDeca-Bold',
     color: INK,
   },
 
   headerSub: {
-    fontSize: 9,
+    fontSize: 12,
     color: MUTED,
-    marginTop: 1,
+    marginTop: 3,
+    lineHeight: 12,
   },
 
   notificationDot: {
     position: 'absolute',
     right: 1,
     top: 1,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
     backgroundColor: GREEN,
   },
 
@@ -548,22 +533,27 @@ const styles = StyleSheet.create({
 
   cancelBtnText: {
     fontSize: 14,
-    color: GREEN_MID,
+    color: GREEN,
     fontWeight: '500',
   },
+
+
+  // ─────────────────────────────
+  // SELECTION BANNER
+  // ─────────────────────────────
 
   selectionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginHorizontal: 20,
-    marginBottom: 12,
+    marginHorizontal: 24,
+    marginBottom: 14,
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: GREEN_LIGHT,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
 
   selectionBannerText: {
@@ -579,70 +569,151 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+
+  // ─────────────────────────────
+  // AI SUMMARY
+  // ─────────────────────────────
+
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1976D2',
-    marginHorizontal: 28,
-    borderRadius: 11,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 10,
-    marginBottom: 15,
+    marginHorizontal: 24,
+    borderRadius: 16,
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    gap: 12,
+    marginBottom: 18,
   },
 
   aiIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  aiAsset: { width: 22, height: 22, resizeMode: 'contain', tintColor: '#fff' },
+  aiAsset: {
+    width: 35,
+    height: 35,
+    resizeMode: 'contain',
+    tintColor: '#fff',
+  },
 
   aiTextBox: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
 
   aiTitle: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+    marginBottom: 0,
   },
 
   aiSubtitle: {
-    fontSize: 7.5,
+    fontSize: 11,
+    fontWeight: '500',
     color: 'rgba(255,255,255,0.75)',
-    lineHeight: 15,
+    lineHeight: 10,
+    marginTop: 0, 
   },
+
+
+  // ─────────────────────────────
+  // RECORD HEADER
+  // ─────────────────────────────
 
   recordsHeading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 28,
-    marginBottom: 8,
+    paddingHorizontal: 24,
+    marginBottom: 12,
   },
 
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 18,
     fontFamily: 'LexendDeca-Bold',
     color: INK,
   },
 
-  recordCount: { fontSize: 8, color: GREEN, marginTop: 1 },
+  recordCount: {
+    fontSize: 12,
+    color: GREEN,
+    marginTop: 2,
+  },
 
-  searchBox: { flexDirection: 'row', alignItems: 'center', width: 101, height: 25, borderRadius: 14, backgroundColor: '#fff', paddingHorizontal: 10 },
-  searchInput: { flex: 1, padding: 0, fontSize: 8, color: INK },
-  searchIcon: { width: 13, height: 13, resizeMode: 'contain' },
-  chipRow: { paddingHorizontal: 28, paddingBottom: 8, gap: 7 },
-  chip: { height: 23, borderRadius: 8, backgroundColor: '#fff', paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D9E7E4' },
-  chipActive: { backgroundColor: '#DDF5EE', borderColor: '#DDF5EE' },
-  chipText: { fontSize: 8, color: MUTED },
-  chipTextActive: { color: GREEN, fontWeight: '700' },
+
+  // ─────────────────────────────
+  // SEARCH
+  // ─────────────────────────────
+
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 120,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+  },
+
+  searchInput: {
+    flex: 1,
+    padding: 0,
+    fontSize: 12,
+    color: INK,
+  },
+
+  searchIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
+
+  // ─────────────────────────────
+  // FILTER CHIPS
+  // ─────────────────────────────
+
+  chipRow: {
+    paddingHorizontal: 24,
+    paddingBottom: 14,
+    gap: 8,
+  },
+
+  chip: {
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+  },
+
+  chipActive: {
+    backgroundColor: GREEN_LIGHT,
+    borderColor: GREEN_LIGHT,
+  },
+
+  chipText: {
+    fontSize: 12,
+    color: MUTED,
+  },
+
+  chipTextActive: {
+    color: GREEN,
+    fontWeight: '700',
+  },
+
+
+  // ─────────────────────────────
+  // SORT BUTTON
+  // ─────────────────────────────
 
   sortBtn: {
     flexDirection: 'row',
@@ -650,31 +721,38 @@ const styles = StyleSheet.create({
     gap: 4,
     borderWidth: 1,
     borderColor: GREEN_LIGHT,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     backgroundColor: '#fff',
   },
 
   sortBtnText: {
-    fontSize: 10,
-    color: GREEN_MID,
+    fontSize: 12,
+    color: GREEN,
     fontWeight: '500',
   },
 
+
+  // ─────────────────────────────
+  // RECORD CARD
+  // ─────────────────────────────
+
   recordCard: {
     backgroundColor: '#fff',
-    borderRadius: 9,
-    marginHorizontal: 28,
-    marginBottom: 8,
+    borderRadius: 16,
+    marginHorizontal: 24,
+    marginBottom: 12,
+
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 6.5,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
+
     overflow: 'hidden',
   },
 
@@ -682,6 +760,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: GREEN,
   },
+
+
+  // ─────────────────────────────
+  // CHECKBOX
+  // ─────────────────────────────
 
   checkboxArea: {
     position: 'absolute',
@@ -706,43 +789,54 @@ const styles = StyleSheet.create({
     borderColor: GREEN,
   },
 
+
+  // ─────────────────────────────
+  // RECORD TYPE BADGE
+  // ─────────────────────────────
+
   typeBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    marginTop: 8,
-    marginLeft: 10,
-    marginBottom: 2,
+    marginTop: 12,
+    marginLeft: 14,
+    marginBottom: 4,
   },
 
   typeBadgeText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
     color: GREEN,
   },
 
+
+  // ─────────────────────────────
+  // RECORD BODY
+  // ─────────────────────────────
+
   recordBody: {
-    paddingHorizontal: 10,
-    paddingBottom: 8,
-    gap: 5,
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+    gap: 8,
   },
 
   recordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 30,
   },
 
   recordIconBox: {
-    width: 37,
-    height: 37,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
+    width: 44,
+    height: 44,
+    paddingHorizontal: 35, 
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  recordAsset: { width: 24, height: 24, resizeMode: 'contain' },
+  recordAsset: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+  },
 
   recordContent: {
     flex: 1,
@@ -750,48 +844,72 @@ const styles = StyleSheet.create({
   },
 
   recordTitle: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: '700',
     color: INK,
-    lineHeight: 14,
+    lineHeight: 18,
   },
 
   recordDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
-  dateAsset: { width: 11, height: 11, resizeMode: 'contain' },
+
+  dateAsset: {
+    width: 12,
+    height: 12,
+    resizeMode: 'contain',
+  },
 
   recordDateText: {
-    fontSize: 8,
-    color: GREEN_MID,
+    fontSize: 10,
+    color: MUTED,
   },
 
+
+  // ─────────────────────────────
+  // RECORD CHEVRON
+  // ─────────────────────────────
+
   chevronCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
+    width: 45,
+    height: 45,
+    borderRadius: 16,
     borderColor: GREEN_LIGHT,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
+
+  // ─────────────────────────────
+  // RECORD FOOTER
+  // ─────────────────────────────
+
   recordFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingTop: 8,
+    gap: 6,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f5f5f5',
+    borderTopColor: '#F5F5F5',
   },
-  footerAsset: { width: 11, height: 11, resizeMode: 'contain' },
+
+  footerAsset: {
+    width: 12,
+    height: 12,
+    resizeMode: 'contain',
+  },
 
   recordFooterText: {
-    fontSize: 8,
-    color: '#aaa',
+    fontSize: 10,
+    color: '#999',
   },
+
+
+  // ─────────────────────────────
+  // EMPTY STATE
+  // ─────────────────────────────
 
   empty: {
     alignItems: 'center',
@@ -808,9 +926,13 @@ const styles = StyleSheet.create({
 
   emptySubtitle: {
     fontSize: 14,
-    color: GREEN_MID,
+    color: GREEN,
     textAlign: 'center',
   },
+
+    // ─────────────────────────────
+  // MODAL OVERLAY
+  // ─────────────────────────────
 
   modalOverlay: {
     position: 'absolute',
@@ -821,6 +943,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     zIndex: 10,
   },
+
+
+  // ─────────────────────────────
+  // SORT BOTTOM SHEET
+  // ─────────────────────────────
 
   modalSheet: {
     backgroundColor: '#fff',
@@ -853,6 +980,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+
+  // ─────────────────────────────
+  // SORT OPTIONS
+  // ─────────────────────────────
+
   sortOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -864,20 +996,20 @@ const styles = StyleSheet.create({
   },
 
   sortOptionActive: {
-    backgroundColor: '#f0f9f5',
+    backgroundColor: '#F0F9F5',
   },
 
   sortOptionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   sortOptionIconActive: {
-    backgroundColor: '#e8f5f0',
+    backgroundColor: '#E8F5F0',
   },
 
   sortOptionLabel: {
@@ -890,53 +1022,5 @@ const styles = StyleSheet.create({
   sortOptionLabelActive: {
     color: GREEN,
     fontWeight: '600',
-  },
-
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 120,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: GREEN,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: GREEN_DARK,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-
-  shareSelectedBtn: {
-    position: 'absolute',
-    bottom: 120,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: GREEN,
-    borderRadius: 16,
-    paddingVertical: 16,
-    shadowColor: GREEN_DARK,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-
-  shareSelectedBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
   },
 });
