@@ -22,11 +22,11 @@ import { useAuth } from '../../context/AuthContext';
 
 const GREEN = '#159A83';
 const GREEN_DARK = '#12343B';
-const GREEN_MID = '#159A83';
 const GREEN_LIGHT = '#DDF5EE';
 const BG = '#F4FAF9';
 const INK = '#12343B';
-const MUTED = '#64748B';
+const MUTED = '#64748B'
+const BORDER = '#E5F0EE';;
 
 const TYPE_COLORS: Record<string, string> = {
   consultation: '#159A83',
@@ -389,6 +389,29 @@ export default function RecordsScreen() {
         }}
       />
 
+      {/* Floating Share Button */}
+      {selectionMode && selectedIds.size > 0 && (
+        <Pressable
+          onPress={handleShareSelected}
+          disabled={sharing}
+          style={({ pressed }) => [
+            styles.shareFloatingBtn,
+            pressed && { opacity: 0.85 },
+          ]}
+        >
+          {sharing ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="share-outline" size={18} color="#fff" />
+              <Text style={styles.shareFloatingText}>
+                Share
+              </Text>
+            </>
+          )}
+        </Pressable>
+      )}
+
       {/* Dark overlay — appears instantly, separate from sheet animation */}
       {overlayVisible && (
         <Pressable
@@ -507,7 +530,7 @@ const styles = StyleSheet.create({
 
   headerSub: {
     fontSize: 12,
-    color: MUTED,
+    color: BORDER,
     marginTop: 3,
     lineHeight: 12,
   },
@@ -754,6 +777,9 @@ const styles = StyleSheet.create({
     elevation: 2,
 
     overflow: 'hidden',
+
+    borderWidth: 1,
+    borderColor: BORDER,
   },
 
   recordCardSelected: {
@@ -930,7 +956,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-    // ─────────────────────────────
+  // ─────────────────────────────
   // MODAL OVERLAY
   // ─────────────────────────────
 
@@ -942,6 +968,44 @@ const styles = StyleSheet.create({
     left: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
     zIndex: 10,
+  },
+
+  // ─────────────────────────────
+  // MODAL SHARE SELECTION
+  // ─────────────────────────────
+    shareFloatingBtn: {
+    position: 'absolute',
+    bottom: 90, // sits above your navbar
+    alignSelf: 'center',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    gap: 8,
+
+    backgroundColor: GREEN,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+
+    borderRadius: 30,
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+
+    zIndex: 20,
+  },
+
+  shareFloatingText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 
 
