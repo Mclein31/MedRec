@@ -79,21 +79,15 @@ export default function RegisterScreen() {
 
           <ImageBackground
             source={require('../assets/graphics/login-graphic.png')}
-            style={[styles.graphicHeader, { paddingTop: insets.top + 16 }]}
+            style={[styles.graphicHeader, { paddingTop: insets.top }]}
+            imageStyle={{
+              transform: [
+                { translateY: 60 },
+                { scale: 1.03 },
+              ],
+            }}
             resizeMode="cover"
-          >
-            <View style={styles.logoRow}>
-              <Image
-                source={require('../assets/logo/logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <View>
-                <Text style={styles.brandName}>MedRec</Text>
-                <Text style={styles.brandTagline}>Your Health Records in Your Pocket</Text>
-              </View>
-            </View>
-          </ImageBackground>
+          />
 
           <View style={styles.body}>
             <Text style={styles.title}>Create your Account</Text>
@@ -211,60 +205,218 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F4FAF9' },
-  scroll: { flexGrow: 1 },
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  scroll: {
+    flexGrow: 1,
+  },
 
   graphicHeader: {
     width: '100%',
-    height: 180,
-    justifyContent: 'flex-start',
-    paddingHorizontal: 24,
-    backgroundColor: '#DDF5EE',
+    height: 210,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logo: { width: 38, height: 38 },
-  brandName: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
-  brandTagline: { fontSize: 10, color: TEXT_MUTED, maxWidth: 190 },
 
-  body: { paddingHorizontal: 28, paddingTop: 24, paddingBottom: 32 },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
 
-  title: { fontSize: 24, fontWeight: '800', color: BLUE, textAlign: 'center' },
+  logo: {
+    width: 62,
+    height: 62,
+    resizeMode: 'contain',
+  },
+
+  brandName: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 24,
+    color: TEXT_DARK,
+    lineHeight: 26,
+  },
+
+  brandTagline: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    lineHeight: 13,
+  },
+
+  body: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+
+    marginTop: 35,
+
+    paddingHorizontal: 46,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+
+  title: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 30,
+    color: BLUE,
+    textAlign: 'center',
+    lineHeight: 37,
+  },
+
   subtitle: {
-    fontSize: 13, color: TEXT_MUTED, textAlign: 'center',
-    marginTop: 4, marginBottom: 22, paddingHorizontal: 10,
+    fontSize: 11,
+    color: TEXT_MUTED,
+    textAlign: 'center',
+
+    marginTop: 0,
+    marginBottom: 12,
   },
 
-  fields: { gap: 12, marginBottom: 4 },
-  inputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, height: 54,
-    borderWidth: 1, borderColor: '#D9E7E4', borderRadius: 14,
-    paddingHorizontal: 16, backgroundColor: '#F4FAF9',
+  fields: {
+    gap: 14,
   },
-  fieldIcon: { width: 20, height: 20, resizeMode: 'contain' },
-  input: { flex: 1, fontSize: 15, color: TEXT_DARK, padding: 0 },
-  eyeIcon: { width: 20, height: 20, resizeMode: 'contain' },
+
+  inputRow: {
+    height: 57.5,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    gap: 18,
+
+    paddingHorizontal: 30,
+
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+
+    backgroundColor: '#FFFFFF',
+  },
+
+  fieldIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+
+  input: {
+    flex: 1,
+
+    fontSize: 14,
+    color: TEXT_DARK,
+
+    padding: 0,
+  },
+
+  eyeIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+  },
 
   primaryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    height: 54, backgroundColor: TEAL, borderRadius: 14,
-    marginTop: 20, marginBottom: 18,
-  },
-  primaryBtnText: { fontSize: 17, fontWeight: '700', color: '#fff' },
-  arrowIcon: { width: 18, height: 18, resizeMode: 'contain', tintColor: '#fff' },
+    height: 57.5,
 
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#D9E7E4' },
-  dividerText: { fontSize: 13, color: TEXT_MUTED },
+    marginTop: 20,
+    marginBottom: 28,
+
+    borderRadius: 16,
+
+    backgroundColor: TEAL,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    gap: 10,
+  },
+
+  primaryBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 20,
+    color: '#FFFFFF',
+  },
+
+  arrowIcon: {
+    position: 'absolute',
+    right: 28,
+
+    width: 28,
+    height: 28,
+
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    gap: 18,
+
+    marginBottom: 28,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+
+    backgroundColor: '#D9E7E4',
+  },
+
+  dividerText: {
+    color: TEXT_MUTED,
+    fontSize: 15,
+  },
 
   outlineBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    height: 52, borderWidth: 1, borderColor: '#D9E7E4', borderRadius: 14,
-    marginBottom: 20, backgroundColor: '#fff',
-  },
-  socialIcon: { width: 20, height: 20, resizeMode: 'contain' },
-  outlineBtnText: { fontSize: 15, fontWeight: '600', color: TEXT_DARK },
+    height: 57.5,
 
-  loginRow: { flexDirection: 'row', justifyContent: 'center' },
-  loginText: { fontSize: 13, color: TEXT_MUTED },
-  loginLink: { fontSize: 13, color: TEAL, fontWeight: '700' },
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+
+    backgroundColor: '#FFFFFF',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    gap: 12,
+  },
+
+  socialIcon: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
+  },
+
+  outlineBtnText: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: TEXT_DARK,
+  },
+
+  loginRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+
+    marginTop: 42,
+  },
+
+  loginText: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+  },
+
+  loginLink: {
+    fontSize: 14,
+    color: TEAL,
+    fontWeight: '700',
+  },
 });
