@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
 
   headerSub: {
     fontSize: 12,
-    color: BORDER,
+    color: MUTED,
     marginTop: 3,
     lineHeight: 12,
   },
@@ -682,6 +682,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: '#fff',
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: BORDER,
   },
 
   searchInput: {
