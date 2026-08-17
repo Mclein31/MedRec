@@ -374,381 +374,361 @@ export default function RecordDetailScreen() {
 
 const styles = StyleSheet.create({
 
-  // ─────────────────────────────
-  // ROOT
-  // ─────────────────────────────
-
   root: {
     flex: 1,
     backgroundColor: BG,
   },
 
+
   centered: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: BG,
     gap: 12,
   },
 
+
   notFound: {
-    fontSize: 17,
-    fontWeight: '700',
+    marginTop: 10,
+    fontSize: 16,
     color: GREEN_DARK,
+    fontWeight: '700',
   },
+
 
   notFoundBack: {
+    marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 30,
   },
+
 
   notFoundBackText: {
-    fontSize: 14,
-    fontWeight: '600',
     color: GREEN,
+    fontSize: 15,
+    fontWeight: '700',
   },
 
 
-  // ─────────────────────────────
-  // HEADER
-  // ─────────────────────────────
+  /*
+  ==========================
+  HEADER
+  ==========================
+  */
+
 
   header: {
-    minHeight: 96,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 115,
     paddingHorizontal: 24,
-    paddingBottom: 12,
-
-    backgroundColor: '#fff',
-
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6EFEB',
+    paddingBottom: 20,
+    backgroundColor: BG,
+    zIndex: 20,
   },
+
 
   backButton: {
-    width: 86,
-    height: 42,
-
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 11,
 
-    paddingHorizontal: 10,
+    borderRadius: 30,
 
-    borderRadius: 22,
-
-    backgroundColor: '#F7FAF9',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    elevation: 3,
   },
+
 
   backText: {
-    fontSize: 15,
-    fontWeight: '600',
     color: '#1E1E1E',
-    marginLeft: -2,
+    fontSize: 16,
+    fontWeight: '700',
   },
 
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E1E1E',
 
+  headerTitle: {
     position: 'absolute',
     left: 0,
     right: 0,
-
+    bottom: 25,
     textAlign: 'center',
-
-    pointerEvents: 'none',
+    color: '#12343B',
+    fontSize: 22,
+    fontWeight: '800',
   },
+
 
   headerSpacer: {
-    width: 86,
-    height: 42,
+    width: 80,
   },
 
 
-  // ─────────────────────────────
-  // SCROLL
-  // ─────────────────────────────
+  pressed: {
+    opacity: 0.75,
+  },
+
+
+  /*
+  ==========================
+  SCROLL
+  ==========================
+  */
+
 
   scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    gap: 14,
+    paddingHorizontal: 24,
+    paddingTop: 135,
+    paddingBottom: 40,
+    gap: 18,
   },
 
 
-  // ─────────────────────────────
-  // RECORD CARD
-  // ─────────────────────────────
+  /*
+  ==========================
+  RECORD CARD
+  ==========================
+  */
+
 
   recordCard: {
-    backgroundColor: '#fff',
-
-    borderRadius: 20,
-
-    borderWidth: 1.5,
-    borderColor: GREEN_LIGHT,
-
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 22,
-
-    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: 28,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    elevation: 5,
   },
+
 
   recordIconBox: {
-    width: 70,
-    height: 70,
-
-    borderRadius: 20,
-
-    backgroundColor: '#F0F8F5',
-
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: '#EEF8F5',
     alignItems: 'center',
     justifyContent: 'center',
-
-    marginBottom: 12,
+    marginBottom: 20,
   },
+
 
   recordTitle: {
     fontSize: 28,
-    lineHeight: 34,
-
-    fontWeight: '700',
-
-    color: GREEN_DARK,
-
-    letterSpacing: -0.6,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    color: '#12343B',
+    marginBottom: 16,
   },
 
 
-  // ─────────────────────────────
-  // META CHIPS
-  // ─────────────────────────────
+  /*
+  ==========================
+  META CHIPS
+  ==========================
+  */
+
 
   metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-
-    gap: 10,
-
     flexWrap: 'wrap',
-
-    marginTop: 2,
+    gap: 10,
   },
+
 
   metaChip: {
     flexDirection: 'row',
     alignItems: 'center',
-
     gap: 7,
-
-    minHeight: 40,
-
+    backgroundColor: '#F6FBF9',
     paddingHorizontal: 14,
-
-    borderRadius: 22,
-
-    backgroundColor: '#F4FAF7',
-
-    borderWidth: 1.5,
-    borderColor: GREEN_LIGHT,
+    paddingVertical: 9,
+    borderRadius: 30,
   },
+
 
   metaChipText: {
-    fontSize: 15,
-
     color: GREEN_MID,
-
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
 
 
-  // ─────────────────────────────
-  // DIVIDER
-  // ─────────────────────────────
+  /*
+  ==========================
+  NOTES
+  ==========================
+  */
+
 
   divider: {
     height: 1,
+    backgroundColor: '#E6EFEB',
+    marginVertical: 24,
+  },
 
-    backgroundColor: '#BFE5D8',
 
-    marginTop: 12,
+  descriptionLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: GREEN_MID,
     marginBottom: 12,
   },
 
 
-  // ─────────────────────────────
-  // NOTES
-  // ─────────────────────────────
-
-  descriptionLabel: {
-    fontSize: 13,
-
-    fontWeight: '600',
-
-    color: GREEN_DARK,
-
-    letterSpacing: 1.1,
-  },
-
   description: {
     fontSize: 18,
-
-    color: '#3C3C3C',
-
-    lineHeight: 27,
-
-    marginTop: 4,
+    color: '#34464A',
+    lineHeight: 26,
   },
 
 
-  // ─────────────────────────────
-  // EXPLAIN BUTTON
-  // ─────────────────────────────
+  /*
+  ==========================
+  AI BUTTON
+  ==========================
+  */
+
 
   explainBtn: {
-    minHeight: 64,
-
+    height: 62,
+    borderRadius: 20,
+    backgroundColor: GREEN,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-
     gap: 12,
 
-    backgroundColor: '#4FA381',
 
-    borderRadius: 18,
-
-    paddingHorizontal: 20,
-
-    shadowColor: '#000',
+    shadowColor: GREEN,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
     shadowOffset: {
       width: 0,
-      height: 3,
+      height: 8,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    elevation: 4,
   },
+
 
   explainBtnDisabled: {
-    opacity: 0.75,
+    opacity: 0.7,
   },
+
 
   explainBtnText: {
-    fontSize: 18,
-
-    fontWeight: '700',
-
-    color: '#fff',
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
   },
 
 
-  // ─────────────────────────────
-  // AI EXPLANATION
-  // ─────────────────────────────
+  /*
+  ==========================
+  AI RESULT CARD
+  ==========================
+  */
+
 
   explanationCard: {
-    backgroundColor: '#fff',
-
-    borderRadius: 18,
-
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-
-    padding: 18,
-
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
     gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    shadowOffset:{
+      width:0,
+      height:6,
+    },
+    elevation:3,
   },
+
 
   explanationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-
-    gap: 8,
-  },
-
-  explanationIcon: {
-    width: 30,
-    height: 30,
-
-    borderRadius: 15,
-
-    backgroundColor: '#EDF8F3',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  explanationLabel: {
-    fontSize: 13,
-
-    fontWeight: '700',
-
-    color: GREEN,
-
-    textTransform: 'uppercase',
-
-    letterSpacing: 0.7,
-  },
-
-  explanationText: {
-    fontSize: 15,
-
-    color: '#333',
-
-    lineHeight: 23,
+    flexDirection:'row',
+    alignItems:'center',
+    gap:8,
   },
 
 
-  // ─────────────────────────────
-  // DELETE
-  // ─────────────────────────────
-
-  deleteBtn: {
-    minHeight: 64,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    gap: 10,
-
-    borderWidth: 1.5,
-    borderColor: '#FFB5B0',
-
-    backgroundColor: '#FFF7F6',
-
-    borderRadius: 18,
-
-    paddingHorizontal: 20,
-  },
-
-  deleteBtnText: {
-    fontSize: 17,
-
-    fontWeight: '600',
-
-    color: '#F04438',
+  explanationIcon:{
+    width:28,
+    height:28,
+    borderRadius:14,
+    backgroundColor:'#EEF8F5',
+    alignItems:'center',
+    justifyContent:'center',
   },
 
 
-  // ─────────────────────────────
-  // PRESS
-  // ─────────────────────────────
-
-  pressed: {
-    opacity: 0.82,
+  explanationLabel:{
+    color:GREEN,
+    fontSize:13,
+    fontWeight:'800',
+    letterSpacing:1,
   },
+
+
+  explanationText:{
+    color:'#34464A',
+    fontSize:15,
+    lineHeight:23,
+  },
+
+
+  /*
+  ==========================
+  DELETE
+  ==========================
+  */
+
+
+  deleteBtn:{
+    height:62,
+    borderRadius:20,
+    backgroundColor:'#FFF8F8',
+    borderWidth:1.5,
+    borderColor:'#FFB8B8',
+
+
+    flexDirection:'row',
+    alignItems:'center',
+    justifyContent:'center',
+    gap:10,
+  },
+
+
+  deleteBtnText:{
+    color:'#F04438',
+    fontSize:17,
+    fontWeight:'700',
+  },
+
 });
