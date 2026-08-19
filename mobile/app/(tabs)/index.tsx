@@ -30,8 +30,8 @@ const BORDER = '#E5F0EE';;
 
 const TYPE_COLORS: Record<string, string> = {
   consultation: '#159A83',
-  lab: '#1976D2',
-  appointment: '#3BA7A0',
+  lab: '#159A83',
+  appointment: '#159A83',
   diagnosis: '#159A83',
   prescription: '#159A83',
   medication: '#159A83',
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
 
   selectionBannerText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: GREEN_DARK,
     fontWeight: '500',
   },
