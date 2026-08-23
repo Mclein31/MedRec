@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
+import { useResponsive } from '../hooks/useResponsive';
 
 const TEAL = '#159A83';
 const BLUE = '#1976D2';
@@ -27,6 +28,7 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { wp, hp, fp, isTablet, maxFormWidth } = useResponsive();
 
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
@@ -75,73 +77,278 @@ export default function LoginScreen() {
   const handleSocialPress = () => Alert.alert('Coming soon', 'Google sign-in will be available in a future update.');
   const handleForgotPassword = () => Alert.alert('Coming soon', 'Password reset will be available in a future update.');
 
+  /* ── responsive styles ─────────────────────────────── */
+  const r = {
+    hero: {
+      height: hp(320),
+      paddingHorizontal: wp(40),
+      marginTop: 0,
+    } as const,
+    heroGraphic: {
+      transform: [
+        { translateX: 0 },
+        { translateY: hp(50) },
+      ],
+    } as const,
+    brandRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: wp(5),
+      position: 'relative' as const,
+      top: hp(90),
+      left: wp(-20),
+    },
+    brandMark: {
+      width: fp(75),
+      height: fp(75),
+      resizeMode: 'contain' as const,
+    },
+    brand: {
+      color: INK,
+      fontFamily: 'LexendDeca-Bold',
+      fontSize: fp(24),
+      lineHeight: fp(27),
+    },
+    tagline: {
+      color: MUTED,
+      fontSize: fp(12),
+      lineHeight: fp(12),
+      marginTop: 0,
+    },
+    body: {
+      marginTop: hp(-15),
+      paddingHorizontal: wp(50),
+      paddingTop: hp(15),
+      paddingBottom: hp(20),
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: wp(35),
+      borderTopRightRadius: wp(35),
+      overflow: 'hidden' as const,
+      ...(isTablet && {
+        maxWidth: maxFormWidth,
+        alignSelf: 'center' as const,
+        width: '100%' as const,
+      }),
+    },
+    title: {
+      color: BLUE,
+      fontFamily: 'LexendDeca-SemiBold',
+      fontSize: fp(30),
+      textAlign: 'center' as const,
+    },
+    subtitle: {
+      color: MUTED,
+      fontSize: fp(11),
+      textAlign: 'center' as const,
+      marginTop: 0,
+      lineHeight: fp(12),
+      marginBottom: hp(20),
+    },
+    error: {
+      color: '#D73A49',
+      fontSize: fp(13),
+      textAlign: 'center' as const,
+      marginBottom: hp(10),
+    },
+    warning: {
+      color: '#C77A00',
+      fontSize: fp(13),
+      textAlign: 'center' as const,
+      marginBottom: hp(10),
+    },
+    fields: {
+      gap: hp(14),
+    },
+    inputRow: {
+      height: hp(57.5),
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: wp(20),
+      paddingHorizontal: wp(25),
+      borderRadius: wp(16),
+      borderWidth: 1,
+      borderColor: '#D9E7E4',
+      backgroundColor: '#FFFFFF',
+    },
+    fieldIcon: {
+      width: fp(25),
+      height: fp(25),
+      resizeMode: 'contain' as const,
+    },
+    input: {
+      flex: 1,
+      color: INK,
+      fontSize: fp(14),
+      padding: 0,
+    },
+    eyeIcon: {
+      width: fp(22),
+      height: fp(22),
+      resizeMode: 'contain' as const,
+    },
+    forgotText: {
+      color: BLUE,
+      fontSize: fp(12),
+      lineHeight: 0,
+      marginTop: 0,
+    },
+    primaryButton: {
+      height: hp(57.5),
+      backgroundColor: TEAL,
+      borderRadius: wp(16),
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      position: 'relative' as const,
+      marginTop: hp(25),
+      marginBottom: hp(18),
+    },
+    primaryText: {
+      color: '#FFFFFF',
+      fontFamily: 'LexendDeca-SemiBold',
+      fontSize: fp(18),
+    },
+    arrow: {
+      position: 'absolute' as const,
+      right: wp(24),
+      width: fp(30),
+      height: fp(30),
+      tintColor: '#FFFFFF',
+      resizeMode: 'contain' as const,
+    },
+    divider: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: wp(18),
+      marginBottom: hp(18),
+    },
+    dividerText: {
+      color: MUTED,
+      fontSize: fp(12),
+    },
+    googleButton: {
+      height: hp(55),
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: wp(12),
+      borderRadius: wp(16),
+      borderWidth: 1,
+      borderColor: '#D9E7E4',
+    },
+    google: {
+      width: fp(26),
+      height: fp(26),
+      resizeMode: 'contain' as const,
+    },
+    googleText: {
+      color: INK,
+      fontSize: fp(16),
+      fontWeight: '400' as const,
+    },
+    createButton: {
+      height: hp(57.5),
+      marginTop: hp(38),
+      borderRadius: wp(16),
+      borderWidth: 1,
+      borderColor: TEAL,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      flexDirection: 'row' as const,
+      gap: wp(10),
+    },
+    createIcon: {
+      width: fp(25),
+      height: fp(25),
+      tintColor: TEAL,
+      resizeMode: 'contain' as const,
+    },
+    createText: {
+      color: TEAL,
+      fontSize: fp(18),
+      fontWeight: '600' as const,
+    },
+    footer: {
+      paddingHorizontal: wp(40),
+      paddingBottom: hp(20),
+      paddingTop: hp(5),
+    },
+    footerText: {
+      textAlign: 'center' as const,
+      fontSize: fp(12),
+      color: MUTED,
+      lineHeight: fp(14),
+      marginBottom: hp(10),
+    },
+  };
+
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]} keyboardShouldPersistTaps="handled">
           <ImageBackground
             source={require('../assets/graphics/login-graphic.png')}
-            style={styles.hero}
-            imageStyle={styles.heroGraphic}
+            style={r.hero}
+            imageStyle={r.heroGraphic}
             resizeMode="contain"
           >
-            <View style={styles.brandRow}>
+            <View style={r.brandRow}>
               <Image
                 source={require('../assets/logo/logo.png')}
-                style={styles.brandMark}
+                style={r.brandMark}
               />
 
               <View>
-                <Text style={styles.brand}>MedRec</Text>
-                <Text style={styles.tagline}>
+                <Text style={r.brand}>MedRec</Text>
+                <Text style={r.tagline}>
                   Your Health Records in Your Pockets
                 </Text>
               </View>
             </View>
           </ImageBackground>
 
-          <View style={styles.body}>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Sign in to access your health records</Text>
-            {lockedOut && <Text style={styles.error}>Too many attempts. Try again in {countdown}s.</Text>}
-            {attempts > 0 && !lockedOut && <Text style={styles.warning}>{MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts === 1 ? '' : 's'} remaining</Text>}
+          <View style={r.body}>
+            <Text style={r.title}>Welcome Back!</Text>
+            <Text style={r.subtitle}>Sign in to access your health records</Text>
+            {lockedOut && <Text style={r.error}>Too many attempts. Try again in {countdown}s.</Text>}
+            {attempts > 0 && !lockedOut && <Text style={r.warning}>{MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts === 1 ? '' : 's'} remaining</Text>}
 
-            <View style={styles.fields}>
-              <View style={[styles.inputRow, lockedOut && styles.disabled]}>
-                <Image source={require('../assets/icons/mail.png')} style={styles.fieldIcon} />
-                <TextInput style={styles.input} placeholder="Email or Phone" placeholderTextColor={MUTED} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoCorrect={false} editable={!lockedOut} />
+            <View style={r.fields}>
+              <View style={[r.inputRow, lockedOut && styles.disabled]}>
+                <Image source={require('../assets/icons/mail.png')} style={r.fieldIcon} />
+                <TextInput style={r.input} placeholder="Email or Phone" placeholderTextColor={MUTED} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoCorrect={false} editable={!lockedOut} />
               </View>
-              <View style={[styles.inputRow, lockedOut && styles.disabled]}>
-                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
-                <TextInput style={styles.input} placeholder="Password" placeholderTextColor={MUTED} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCorrect={false} editable={!lockedOut} />
+              <View style={[r.inputRow, lockedOut && styles.disabled]}>
+                <Image source={require('../assets/icons/padlock.png')} style={r.fieldIcon} />
+                <TextInput style={r.input} placeholder="Password" placeholderTextColor={MUTED} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCorrect={false} editable={!lockedOut} />
                 <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-                  <Image source={showPassword ? require('../assets/icons/open-eye.png') : require('../assets/icons/closed-eye.png')} style={styles.eyeIcon} />
+                  <Image source={showPassword ? require('../assets/icons/open-eye.png') : require('../assets/icons/closed-eye.png')} style={r.eyeIcon} />
                 </Pressable>
               </View>
-              <Pressable onPress={handleForgotPassword} style={styles.forgot}><Text style={styles.forgotText}>Forgot Password?</Text></Pressable>
+              <Pressable onPress={handleForgotPassword} style={styles.forgot}><Text style={r.forgotText}>Forgot Password?</Text></Pressable>
             </View>
 
-            <Pressable onPress={handleLogin} disabled={loading || lockedOut} style={({ pressed }) => [styles.primaryButton, (pressed || lockedOut) && styles.pressed]}>
-              <Text style={styles.primaryText}>{loading ? 'Signing in...' : lockedOut ? `Locked (${countdown}s)` : 'Sign In'}</Text>
-              {!loading && !lockedOut && <Image source={require('../assets/icons/arrow.png')} style={styles.arrow} />}
+            <Pressable onPress={handleLogin} disabled={loading || lockedOut} style={({ pressed }) => [r.primaryButton, (pressed || lockedOut) && styles.pressed]}>
+              <Text style={r.primaryText}>{loading ? 'Signing in...' : lockedOut ? `Locked (${countdown}s)` : 'Sign In'}</Text>
+              {!loading && !lockedOut && <Image source={require('../assets/icons/arrow.png')} style={r.arrow} />}
             </Pressable>
 
-            <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or</Text><View style={styles.line} /></View>
-            <Pressable onPress={handleSocialPress} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}>
-              <Image source={require('../assets/icons/google.png')} style={styles.google} /><Text style={styles.googleText}>Sign in with Google</Text>
+            <View style={r.divider}><View style={styles.line} /><Text style={r.dividerText}>or</Text><View style={styles.line} /></View>
+            <Pressable onPress={handleSocialPress} style={({ pressed }) => [r.googleButton, pressed && styles.pressed]}>
+              <Image source={require('../assets/icons/google.png')} style={r.google} /><Text style={r.googleText}>Sign in with Google</Text>
             </Pressable>
-            <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
-              <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} /><Text style={styles.createText}>Create an Account</Text>
+            <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [r.createButton, pressed && styles.pressed]}>
+              <Image source={require('../assets/icons/user-add.png')} style={r.createIcon} /><Text style={r.createText}>Create an Account</Text>
             </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}><Text style={styles.footerText}>By continuing, you agree to our <Text style={styles.footerLink}>Terms of Use</Text> and <Text style={styles.footerLink}>Privacy Policy</Text></Text></View>
+      <View style={r.footer}><Text style={r.footerText}>By continuing, you agree to our <Text style={styles.footerLink}>Terms of Use</Text> and <Text style={styles.footerLink}>Privacy Policy</Text></Text></View>
     </View>
   );
 }
 
+/* ── static styles (values that don't need scaling) ── */
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -156,253 +363,26 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  hero: {
-    height: 320,
-    paddingHorizontal: 40,
-    marginTop: 0,
-  },
-
-
-  heroGraphic: {
-    transform: [
-      { translateX: 0 },
-      { translateY: 50 },
-    ],
-  },
-
-  brandRow: {
-    flexDirection: 'row',
+  scrollTablet: {
     alignItems: 'center',
-    gap: 5,
-
-    position: 'relative',
-    top: 90,
-    left: -20,
-  },
-
-  brandMark: {
-    width: 75,
-    height: 75,
-    resizeMode: 'contain',
-  },
-
-  brand: {
-    color: INK,
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 24,
-    lineHeight: 27,
-  },
-
-  tagline: {
-    color: MUTED,
-    fontSize: 12,
-    lineHeight: 12,
-    marginTop: 0,
-    
-  },
-
-  body: {
-    marginTop: -15,
-    paddingHorizontal: 50,
-    paddingTop: 15,
-    paddingBottom: 20,
-
-    backgroundColor: '#FFFFFF',
-
-    borderTopLeftRadius: 35,
-    borderTopRightRadius: 35,
-
-    overflow: 'hidden',
-  },
-
-  title: {
-    color: BLUE,
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 30,
-    textAlign: 'center',
-  },
-
-  subtitle: {
-    color: MUTED,
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 0,
-    lineHeight: 12,
-    marginBottom: 20,
-  },
-
-  error: {
-    color: '#D73A49',
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-
-  warning: {
-    color: '#C77A00',
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-
-  fields: {
-    gap: 14,
-  },
-
-  inputRow: {
-    height: 57.5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    paddingHorizontal: 25,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-    backgroundColor: '#FFFFFF',
   },
 
   disabled: {
     backgroundColor: '#DDF5EE',
   },
 
-  fieldIcon: {
-    width: 25,
-    height: 25,
-    resizeMode: 'contain',
-  },
-
-  input: {
-    flex: 1,
-    color: INK,
-    fontSize: 14,
-    padding: 0,
-  },
-
-  eyeIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-  },
-
   forgot: {
     alignItems: 'flex-end',
-  },
-
-  forgotText: {
-    color: BLUE,
-    fontSize: 12,
-    lineHeight: 0,
-    marginTop: 0,
-  },
-
-  primaryButton: {
-    height: 57.5,
-    backgroundColor: TEAL,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginTop: 25,
-    marginBottom: 18,
-  },
-
-  primaryText: {
-    color: '#FFFFFF',
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 18,
-  },
-
-  arrow: {
-    position: 'absolute',
-    right: 24,
-    width: 30,
-    height: 30,
-    tintColor: '#FFFFFF',
-    resizeMode: 'contain',
   },
 
   pressed: {
     opacity: 0.72,
   },
 
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 18,
-    marginBottom: 18,
-  },
-
   line: {
     flex: 1,
     height: 1,
     backgroundColor: '#C9D4D2',
-  },
-
-  dividerText: {
-    color: MUTED,
-    fontSize: 12,
-  },
-
-  googleButton: {
-    height: 55,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-  },
-
-  google: {
-    width: 26,
-    height: 26,
-    resizeMode: 'contain',
-  },
-
-  googleText: {
-    color: INK,
-    fontSize: 16,
-    fontWeight: '400',
-  },
-
-  createButton: {
-    height: 57.5,
-    marginTop: 38,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: TEAL,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
-  },
-
-  createIcon: {
-    width: 25,
-    height: 25,
-    tintColor: TEAL,
-    resizeMode: 'contain',
-  },
-
-  createText: {
-    color: TEAL,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-
-  footer: {
-    paddingHorizontal: 40,
-    paddingBottom: 20,
-    paddingTop: 5,
-  },
-
-  footerText: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: MUTED,
-    lineHeight: 14,
-    marginBottom: 10,
   },
 
   footerLink: {

@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
+import { useResponsive } from '../hooks/useResponsive';
 
 const BLUE = '#1976D2';
 const TEAL = '#159A83';
@@ -34,6 +35,7 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { wp, hp, fp, isTablet, maxFormWidth } = useResponsive();
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -71,33 +73,173 @@ export default function RegisterScreen() {
     Alert.alert('Coming soon', `${provider} sign-up will be available in a future update.`);
   };
 
+  /* ── responsive styles ─────────────────────────────── */
+  const r = {
+    graphicHeader: {
+      width: '100%' as const,
+      height: hp(210),
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      backgroundColor: '#FFFFFF',
+      paddingTop: insets.top,
+    },
+    graphicImage: {
+      transform: [
+        { translateY: hp(60) },
+        { scale: 1.03 },
+      ],
+    } as const,
+    body: {
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: wp(35),
+      borderTopRightRadius: wp(35),
+      marginTop: hp(35),
+      paddingHorizontal: wp(46),
+      paddingTop: hp(20),
+      paddingBottom: hp(10),
+      ...(isTablet && {
+        maxWidth: maxFormWidth,
+        alignSelf: 'center' as const,
+        width: '100%' as const,
+      }),
+    },
+    title: {
+      fontFamily: 'LexendDeca-SemiBold',
+      fontSize: fp(30),
+      color: BLUE,
+      textAlign: 'center' as const,
+      lineHeight: fp(37),
+    },
+    subtitle: {
+      fontSize: fp(11),
+      color: TEXT_MUTED,
+      textAlign: 'center' as const,
+      marginTop: 0,
+      marginBottom: hp(12),
+    },
+    fields: {
+      gap: hp(14),
+    },
+    inputRow: {
+      height: hp(57.5),
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: wp(18),
+      paddingHorizontal: wp(30),
+      borderRadius: wp(18),
+      borderWidth: 1,
+      borderColor: '#D9E7E4',
+      backgroundColor: '#FFFFFF',
+    },
+    fieldIcon: {
+      width: fp(25),
+      height: fp(25),
+      resizeMode: 'contain' as const,
+    },
+    input: {
+      flex: 1,
+      fontSize: fp(14),
+      color: TEXT_DARK,
+      padding: 0,
+    },
+    eyeIcon: {
+      width: fp(22),
+      height: fp(22),
+      resizeMode: 'contain' as const,
+    },
+    primaryBtn: {
+      height: hp(57.5),
+      marginTop: hp(20),
+      marginBottom: hp(28),
+      borderRadius: wp(16),
+      backgroundColor: TEAL,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: wp(10),
+    },
+    primaryBtnText: {
+      fontFamily: 'LexendDeca-SemiBold',
+      fontSize: fp(20),
+      color: '#FFFFFF',
+    },
+    arrowIcon: {
+      position: 'absolute' as const,
+      right: wp(28),
+      width: fp(28),
+      height: fp(28),
+      tintColor: '#FFFFFF',
+      resizeMode: 'contain' as const,
+    },
+    divider: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: wp(18),
+      marginBottom: hp(28),
+    },
+    dividerText: {
+      color: TEXT_MUTED,
+      fontSize: fp(15),
+    },
+    outlineBtn: {
+      height: hp(57.5),
+      borderRadius: wp(16),
+      borderWidth: 1,
+      borderColor: '#D9E7E4',
+      backgroundColor: '#FFFFFF',
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: wp(12),
+    },
+    socialIcon: {
+      width: fp(28),
+      height: fp(28),
+      resizeMode: 'contain' as const,
+    },
+    outlineBtnText: {
+      fontSize: fp(18),
+      fontWeight: '400' as const,
+      color: TEXT_DARK,
+    },
+    loginRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'center' as const,
+      marginTop: hp(42),
+    },
+    loginText: {
+      fontSize: fp(12),
+      color: TEXT_MUTED,
+    },
+    loginLink: {
+      fontSize: fp(14),
+      color: TEAL,
+      fontWeight: '700' as const,
+    },
+  };
+
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.scroll, isTablet && styles.scrollTablet]} keyboardShouldPersistTaps="handled">
 
           <ImageBackground
             source={require('../assets/graphics/login-graphic.png')}
-            style={[styles.graphicHeader, { paddingTop: insets.top }]}
-            imageStyle={{
-              transform: [
-                { translateY: 60 },
-                { scale: 1.03 },
-              ],
-            }}
+            style={r.graphicHeader}
+            imageStyle={r.graphicImage}
             resizeMode="cover"
           />
 
-          <View style={styles.body}>
-            <Text style={styles.title}>Create your Account</Text>
-            <Text style={styles.subtitle}>Join us and take control of your health records</Text>
+          <View style={r.body}>
+            <Text style={r.title}>Create your Account</Text>
+            <Text style={r.subtitle}>Join us and take control of your health records</Text>
 
-            <View style={styles.fields}>
-              <View style={styles.inputRow}>
-                <Image source={require('../assets/icons/person.png')} style={styles.fieldIcon} />
+            <View style={r.fields}>
+              <View style={r.inputRow}>
+                <Image source={require('../assets/icons/person.png')} style={r.fieldIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={r.input}
                   placeholder="Full Name"
                   placeholderTextColor={TEXT_MUTED}
                   value={name}
@@ -106,10 +248,10 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <Image source={require('../assets/icons/mail.png')} style={styles.fieldIcon} />
+              <View style={r.inputRow}>
+                <Image source={require('../assets/icons/mail.png')} style={r.fieldIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={r.input}
                   placeholder="Email or Phone"
                   placeholderTextColor={TEXT_MUTED}
                   value={email}
@@ -120,10 +262,10 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
+              <View style={r.inputRow}>
+                <Image source={require('../assets/icons/padlock.png')} style={r.fieldIcon} />
                 <TextInput
-                  style={[styles.input, { flex: 1 }]}
+                  style={[r.input, { flex: 1 }]}
                   placeholder="Password"
                   placeholderTextColor={TEXT_MUTED}
                   value={password}
@@ -136,15 +278,15 @@ export default function RegisterScreen() {
                     source={showPassword
                       ? require('../assets/icons/open-eye.png')
                       : require('../assets/icons/closed-eye.png')}
-                    style={styles.eyeIcon}
+                    style={r.eyeIcon}
                   />
                 </Pressable>
               </View>
 
-              <View style={styles.inputRow}>
-                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
+              <View style={r.inputRow}>
+                <Image source={require('../assets/icons/padlock.png')} style={r.fieldIcon} />
                 <TextInput
-                  style={[styles.input, { flex: 1 }]}
+                  style={[r.input, { flex: 1 }]}
                   placeholder="Confirm Password"
                   placeholderTextColor={TEXT_MUTED}
                   value={confirmPassword}
@@ -157,7 +299,7 @@ export default function RegisterScreen() {
                     source={showConfirm
                       ? require('../assets/icons/open-eye.png')
                       : require('../assets/icons/closed-eye.png')}
-                    style={styles.eyeIcon}
+                    style={r.eyeIcon}
                   />
                 </Pressable>
               </View>
@@ -166,34 +308,34 @@ export default function RegisterScreen() {
             <Pressable
               onPress={handleRegister}
               disabled={loading}
-              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [r.primaryBtn, pressed && { opacity: 0.85 }]}
             >
-              <Text style={styles.primaryBtnText}>
+              <Text style={r.primaryBtnText}>
                 {loading ? 'Creating account...' : 'Create Account'}
               </Text>
               {!loading && (
-                <Image source={require('../assets/icons/arrow.png')} style={styles.arrowIcon} />
+                <Image source={require('../assets/icons/arrow.png')} style={r.arrowIcon} />
               )}
             </Pressable>
 
-            <View style={styles.divider}>
+            <View style={r.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={r.dividerText}>or</Text>
               <View style={styles.dividerLine} />
             </View>
 
             <Pressable
               onPress={() => handleSocialPress('Google')}
-              style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [r.outlineBtn, pressed && { opacity: 0.7 }]}
             >
-              <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
-              <Text style={styles.outlineBtnText}>Sign in with Google</Text>
+              <Image source={require('../assets/icons/google.png')} style={r.socialIcon} />
+              <Text style={r.outlineBtnText}>Sign in with Google</Text>
             </Pressable>
 
-            <View style={styles.loginRow}>
-              <Text style={styles.loginText}>Already have an Account? </Text>
+            <View style={r.loginRow}>
+              <Text style={r.loginText}>Already have an Account? </Text>
               <Pressable onPress={() => router.push('/login')}>
-                <Text style={styles.loginLink}>Sign In</Text>
+                <Text style={r.loginLink}>Sign In</Text>
               </Pressable>
             </View>
           </View>
@@ -204,6 +346,7 @@ export default function RegisterScreen() {
   );
 }
 
+/* ── static styles (values that don't need scaling) ── */
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -214,209 +357,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  graphicHeader: {
-    width: '100%',
-    height: 210,
-
-    justifyContent: 'center',
+  scrollTablet: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  logo: {
-    width: 62,
-    height: 62,
-    resizeMode: 'contain',
-  },
-
-  brandName: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 24,
-    color: TEXT_DARK,
-    lineHeight: 26,
-  },
-
-  brandTagline: {
-    fontSize: 12,
-    color: TEXT_MUTED,
-    lineHeight: 13,
-  },
-
-  body: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 35,
-    borderTopRightRadius: 35,
-
-    marginTop: 35,
-
-    paddingHorizontal: 46,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-
-  title: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 30,
-    color: BLUE,
-    textAlign: 'center',
-    lineHeight: 37,
-  },
-
-  subtitle: {
-    fontSize: 11,
-    color: TEXT_MUTED,
-    textAlign: 'center',
-
-    marginTop: 0,
-    marginBottom: 12,
-  },
-
-  fields: {
-    gap: 14,
-  },
-
-  inputRow: {
-    height: 57.5,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-
-    gap: 18,
-
-    paddingHorizontal: 30,
-
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-
-    backgroundColor: '#FFFFFF',
-  },
-
-  fieldIcon: {
-    width: 25,
-    height: 25,
-    resizeMode: 'contain',
-  },
-
-  input: {
-    flex: 1,
-
-    fontSize: 14,
-    color: TEXT_DARK,
-
-    padding: 0,
-  },
-
-  eyeIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-  },
-
-  primaryBtn: {
-    height: 57.5,
-
-    marginTop: 20,
-    marginBottom: 28,
-
-    borderRadius: 16,
-
-    backgroundColor: TEAL,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    gap: 10,
-  },
-
-  primaryBtnText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 20,
-    color: '#FFFFFF',
-  },
-
-  arrowIcon: {
-    position: 'absolute',
-    right: 28,
-
-    width: 28,
-    height: 28,
-
-    tintColor: '#FFFFFF',
-    resizeMode: 'contain',
-  },
-
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-
-    gap: 18,
-
-    marginBottom: 28,
   },
 
   dividerLine: {
     flex: 1,
     height: 1,
-
     backgroundColor: '#D9E7E4',
-  },
-
-  dividerText: {
-    color: TEXT_MUTED,
-    fontSize: 15,
-  },
-
-  outlineBtn: {
-    height: 57.5,
-
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-
-    backgroundColor: '#FFFFFF',
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    gap: 12,
-  },
-
-  socialIcon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
-  },
-
-  outlineBtnText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: TEXT_DARK,
-  },
-
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-
-    marginTop: 42,
-  },
-
-  loginText: {
-    fontSize: 12,
-    color: TEXT_MUTED,
-  },
-
-  loginLink: {
-    fontSize: 14,
-    color: TEAL,
-    fontWeight: '700',
   },
 });
