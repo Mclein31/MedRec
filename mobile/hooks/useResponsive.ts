@@ -1,26 +1,38 @@
 import { useWindowDimensions } from 'react-native';
 
 /**
- * Base design dimensions (iPhone 14 / 390 × 844).
- * All current hardcoded values in the screens were authored for this size.
+ * Base design dimensions — iPhone 14 Plus (428 × 926 pt).
+ * The original hardcoded pixel values in login/register were authored
+ * to fit this screen without scrolling.
  */
-const BASE_WIDTH = 390;
-const BASE_HEIGHT = 844;
+const BASE_WIDTH = 428;
+const BASE_HEIGHT = 926;
 
 /**
  * Returns scaling helpers that map design-pixel values to the current screen.
  *
- *  wp(n) — width-proportional (paddings, margins, widths, border-radius, gaps)
- *  hp(n) — height-proportional  (vertical heights, margins, paddings)
- *  fp(n) — font-proportional    (font sizes, icon sizes — uses a moderate factor
- *          so text doesn't blow up on very wide tablets)
- *  isTablet — true when the shorter dimension ≥ 600 dp (common tablet breakpoint)
+ *  wp(n) — width-proportional  (paddings, margins, widths, border-radius, gaps)
+ *  hp(n) — height-proportional (vertical heights, margins, paddings)
+ *  fp(n) — font-proportional   (font sizes, icon sizes)
+ *  isTablet — true when the shorter dimension ≥ 600 dp
  */
 export function useResponsive() {
   const { width, height } = useWindowDimensions();
 
-  const scaleW = width / BASE_WIDTH;
-  const scaleH = height / BASE_HEIGHT;
+  const rawScaleW = width / BASE_WIDTH;
+  const rawScaleH = height / BASE_HEIGHT;
+
+  const isTablet = Math.min(width, height) >= 600;
+
+  /**
+   * On phones the scale is capped at 1.0 — elements keep the original
+   * design sizes as their maximum and shrink on smaller screens.
+   * On tablets the cap is raised so the UI grows gracefully.
+   */
+  const cap = isTablet ? 1.6 : 1.0;
+
+  const scaleW = Math.min(rawScaleW, cap);
+  const scaleH = Math.min(rawScaleH, cap);
 
   /** Width-proportional */
   const wp = (size: number) => Math.round(size * scaleW);
@@ -30,14 +42,12 @@ export function useResponsive() {
 
   /**
    * Font / icon proportional — uses the *smaller* of the two scale
-   * factors capped at 1.6× so tablet text stays readable, not enormous.
+   * factors so text stays balanced across different aspect ratios.
    */
   const fp = (size: number) => {
-    const scale = Math.min(scaleW, scaleH, 1.6);
+    const scale = Math.min(scaleW, scaleH);
     return Math.round(size * scale);
   };
-
-  const isTablet = Math.min(width, height) >= 600;
 
   /**
    * Maximum content width for tablets — keeps the form from stretching
