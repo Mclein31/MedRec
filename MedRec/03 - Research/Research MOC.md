@@ -13,6 +13,9 @@ related:
   - "[[MedRec]]"
   - "[[MedRec Dashboard]]"
   - "[[MedRec MOC]]"
+  - "[[Competitive Landscape]]"
+  - "[[Regulatory Landscape]]"
+  - "[[Academic Literature Summary]]"
 ---
 
 # Research Map of Content (MOC)
@@ -32,24 +35,35 @@ As a solo developer project, research rigor is essential to ensure I am building
      │                   │                               │                   │
 [[Research Questions]]   [[Research Hypotheses]]   [[Research Methods]]   [[Research Gaps]]
      │                   │                               │                   │
-     └─────────┬─────────┘                   ┌───────────┴───────────┐       │
-               │                             │                       │       │
-               ▼                     [[Qualitative Research]] [[Quantitative Research]]
-       [[Literature Review]]                 │                       │       │
-               │                     [[Interview Questions]]         │       │
-               │                             │                       │       │
-               │                     [[Interview Notes]]             │       │
-               │                             │                       │       │
-               └──────────────────────┬──────┴───────────────────────┘       │
-                                      ▼                                      │
-                             [[Research Findings]] ◄─────────────────────────┘
-                                      │
-                             [[Research Themes]]
-                                      │
-                             [[Research Insights]]
-                                      │
-                             [[User Needs]] / [[Requirements MOC]]
+     ├─────────┬─────────┘                   ┌───────────┴───────────┐       │
+     │         │                             │                       │       │
+     ▼         ▼                     [[Qualitative Research]] [[Quantitative Research]]
+[[Landscape Research]]                       │                       │       │
+  - [[Competitive Landscape]]        [[Interview Questions]]         │       │
+  - [[Regulatory Landscape]]                 │                       │       │
+  - [[Academic Literature Summary]]  [[Interview Notes]]             │       │
+  - [[Literature Review]]                    │                       │       │
+     │                                       │                       │       │
+     └────────────────────────┬──────────────┴───────────────────────┘       │
+                              ▼                                              │
+                     [[Research Findings]] ◄─────────────────────────────────┘
+                              │
+                     [[Research Themes]]
+                              │
+                     [[Research Insights]]
+                              │
+                     [[User Needs]] / [[Requirements MOC]]
 ```
+
+---
+
+## 🌐 Landscape Research
+
+Synthesized landscape overviews establishing the competitive, legal, standards, and academic context for MedRec:
+
+- **[[Competitive Landscape]]**: Teardowns and positioning of existing personal health record tools (Apple Health Records, Epic MyChart, Guava Health, Fasten Health, PicnicHealth), failure post-mortems (Microsoft HealthVault, Google Health v1), and MedRec's market whitespace.
+- **[[Regulatory Landscape]]**: Comprehensive overview of ONC 21st Century Cures Act, Information Blocking rules, USCDI / FHIR R4 mandates, HIPAA covered-entity boundaries vs FTC Health Breach Notification Rule, TEFCA, and state health privacy statutes (CCPA/CPRA, Washington My Health My Data Act).
+- **[[Academic Literature Summary]]**: Empirical studies, statistics, and clinical benchmarks (Holmgren et al. hospital integration gap, Smith et al. missing data prevalence, ONC fax reliance, MPI error rates, 80% unstructured data challenge, and Kleppmann local-first principles).
 
 ---
 
@@ -63,7 +77,7 @@ As a solo developer project, research rigor is essential to ensure I am building
 
 ## 📚 Secondary Research & Literature
 
-- **[[Literature Review]]**: Tracker and synthesis of academic papers, industry reports, healthcare interoperability whitepapers, and existing market research.
+- **[[Literature Review]]**: Tracker and catalog of academic papers, industry reports, healthcare interoperability whitepapers, and existing market research.
 
 ---
 

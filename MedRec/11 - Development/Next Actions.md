@@ -13,6 +13,9 @@ related:
   - "[[Current Development]]"
   - "[[Backlog]]"
   - "[[Development MOC]]"
+  - "[[Competitive Landscape]]"
+  - "[[Regulatory Landscape]]"
+  - "[[Academic Literature Summary]]"
   - "[[Research Questions]]"
   - "[[Literature Review]]"
   - "[[Interview Questions]]"
@@ -20,16 +23,18 @@ related:
 
 # Next Actions
 
-The immediate, high-priority actions for **MedRec**. Kept intentionally short (3–6 items) so I can focus on concrete progress without analysis paralysis.
+The immediate, high-priority actions for **MedRec**. Kept intentionally focused so I can execute systematically without analysis paralysis.
 
 ---
 
 ## 🎯 Immediate Priority Queue
 
-- [ ] **Define core research questions** &rarr; Complete the initial breakdown of open domain questions in [[Research Questions]] regarding patient records ownership and interoperability barriers.
-- [ ] **Begin literature review** &rarr; Start compiling key papers on personal health record adoption, FHIR interoperability, and EHR data silo friction in [[Literature Review]].
-- [ ] **Map out initial user interview plan** &rarr; Finalize participant criteria and question script for exploratory interviews with multi-provider patients and clinic staff in [[Interview Questions]].
-- [ ] **Explore existing solutions / competitive landscape** &rarr; Document existing apps and services (e.g., Apple Health, FollowMyHealth, Fasten Health) and identify unmet gaps in [[Product Risks]] and [[Research MOC]].
+- [x] **Explore existing solutions / competitive landscape** &rarr; Completed comprehensive teardown of Apple Health, Epic MyChart, Guava, Fasten, and PicnicHealth in [[Competitive Landscape]].
+- [ ] **Deep-dive into FHIR R4 specification and SMART on FHIR app launch flow** &rarr; Study US Core Implementation Guide, FHIR resource schemas (Patient, Observation, Condition, DiagnosticReport), and OAuth2 PKCE client-side launch flows.
+- [ ] **Analyze how Guava/Fasten/PicnicHealth differentiate — where could MedRec fit?** &rarr; Evaluate cloud aggregator vs self-hosted vs clinical trial monetization models to carve out MedRec's local-first, zero-knowledge positioning.
+- [ ] **Research HIPAA vs non-HIPAA app compliance path in detail (get legal clarity)** &rarr; Deepen understanding of FTC Health Breach Notification Rule, Washington My Health My Data Act, CCPA/CPRA, and verify sovereign local-first legal insulation.
+- [ ] **Define MedRec's unique value proposition based on competitive gaps** &rarr; Translate findings from [[Competitive Landscape]], [[Academic Literature Summary]], and [[Research Gaps]] into crisp positioning for [[MedRec Vision]] and [[MedRec Goals]].
+- [ ] **Begin primary research planning (interview participant recruitment strategy)** &rarr; Outline recruitment criteria, outreach templates, and consent workflows for 8–10 multi-provider patients and clinic administrators in [[Qualitative Research]] and [[Interview Questions]].
 
 ---
 

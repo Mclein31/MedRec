@@ -11,10 +11,14 @@
             "id": "270f805d059c4090",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "03 - Research/Research Gaps.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Research Gaps"
             }
           }
         ]
@@ -183,6 +187,19 @@
   },
   "active": "270f805d059c4090",
   "lastOpenFiles": [
+    "03 - Research/Research Findings.md",
+    "03 - Research/Research Gaps.md",
+    "03 - Research/Research Insights.md",
+    "03 - Research/Research MOC.md",
+    "03 - Research/Research Themes.md",
+    "03 - Research/Academic Literature Summary.md",
+    "03 - Research/Competitive Landscape.md",
+    "03 - Research/Interview Notes.md",
+    "03 - Research/Quantitative Research.md",
+    "03 - Research/Regulatory Landscape.md",
+    "03 - Research/Interview Questions.md",
+    "03 - Research/Qualitative Research.md",
+    "03 - Research/Research Questions.md",
     "MedRec.md",
     "00 - Dashboard/MedRec Current State.md",
     "06 - Features/Record Transfer.md",
