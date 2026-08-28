@@ -1,0 +1,80 @@
+---
+type: project-brain
+title: MedRecord_App Project Context
+project: MedRecord_App
+status: active
+tags:
+  - project
+  - healthcare
+  - mobile
+  - react-native
+  - expo
+  - express
+  - postgresql
+  - ai
+last_updated: 2026-08-28
+---
+
+# 🏥 MedRecord_App (MedRec) — Project Context
+
+## 📌 Overview & Purpose
+**MedRec** is a full-stack personal medical health records management and clinical sharing platform. It empowers patients to securely store, organize, categorize, and temporarily share their longitudinal health data (doctor visits, diagnoses, lab results, prescriptions, and medications) with healthcare providers via time-expiring QR codes and cryptographically signed access tokens. The application integrates AI features powered by OpenAI to summarize dense clinical notes, explain complex medical jargon in plain language, and automatically categorize health documents.
+
+---
+
+## 🎯 Current Objectives & Status
+- **Status**: `In Active Development`
+- **Current Focus**: Connecting the React Native (Expo) mobile frontend to the Express/PostgreSQL backend API, testing user auth tokens, record uploads, and doctor QR scanning flows.
+- **Obsidian Research Vault**: A dedicated 18-module Obsidian knowledge vault is integrated in `MedRecord_App/MedRec/` containing deep research on healthcare data silos, regulatory compliance, doctor/patient user journeys, and architecture specifications.
+
+---
+
+## 💻 Tech Stack & Dependencies
+
+### Mobile Frontend (`mobile/`)
+- **Framework**: React Native (Expo SDK 52, Expo Router v4 file-based routing)
+- **Language**: TypeScript (`expo-env.d.ts`)
+- **Navigation**: Expo Router Tabs (`(tabs)`), Stack Navigation (`_layout.tsx`)
+- **Icons & UI**: Expo Vector Icons (`@expo/vector-icons`), custom themed components (`themed-view.tsx`, `themed-text.tsx`), responsive scaling hooks (`useResponsive.ts`)
+- **Typography**: Google Fonts (Lexend Deca)
+
+### Backend API (`backend/`)
+- **Runtime & Framework**: Node.js, Express.js (v5.x)
+- **Database**: PostgreSQL with native client connection pooling (`pg`)
+- **Authentication & Security**: JSON Web Tokens (`jsonwebtoken`), password hashing (`bcryptjs`), HTTP header hardening (`helmet`), CORS whitelisting (`cors`), request throttling (`express-rate-limit`)
+- **AI Integration**: OpenAI Node SDK (`openai ^6.44.0`) utilizing `gpt-4o` for clinical record summarization and taxonomy tagging
+- **Testing**: Jest (`jest ^30.4.2`), Supertest (`supertest ^7.2.2`)
+
+---
+
+## 📂 Key Files & Structure
+- `backend/src/server.js` & `backend/src/app.js`: Express application initialization and middleware pipeline.
+- `backend/src/routes/`:
+  - `authRoutes.js`: User registration, login, and JWT issuance.
+  - `recordRoutes.js`: Patient medical records CRUD (visits, diagnoses, lab results, prescriptions).
+  - `shareRoutes.js`: Time-limited sharing token generation, QR code payload generation, and doctor read-only access verification.
+  - `aiRoutes.js`: OpenAI-powered clinical summarization and medical terminology simplification.
+- `backend/src/models/`: Database access objects (`userModel.js`, `recordModel.js`, `shareModel.js`, `tokenModel.js`).
+- `backend/src/migrations/schema.sql`: PostgreSQL schema definitions with Foreign Keys and indexes.
+- `mobile/app/`:
+  - `_layout.tsx`: Root stack navigation and theme provider.
+  - `login.tsx` & `register.tsx`: Authentication screen interfaces.
+  - `(tabs)/index.tsx`: Patient records dashboard and health timeline.
+  - `(tabs)/share.tsx`: QR code generator for clinical record sharing.
+  - `(tabs)/scan.tsx`: Doctor QR code scanner interface.
+  - `record/[id].tsx` & `record/add.tsx`: Record detail view and new record entry form.
+  - `lib/api.ts`: Centralized Axios/fetch client communicating with backend endpoints.
+- `MedRec/`: 18-folder Obsidian research vault (`00 - Dashboard`, `01 - Vision`, `02 - Problem Space`, `08 - Technical Architecture`, etc.).
+
+---
+
+## 🔗 Related Projects & Links
+- 🌐 [[Personal Website]] — Showcases *MedRec* in the 3D coverflow portfolio gallery.
+- 🗺️ [[_BRAIN/PROJECT_INDEX|Master Project Index]]
+- 📊 [[_BRAIN/CROSS_PROJECT_MAP|Cross-Project Map]]
+- 🐙 **Repository**: [github.com/Mclein31/MedRec](https://github.com/Mclein31/MedRec.git)
+
+---
+
+## ⚠️ Known Limitations
+- Backend currently operates on local PostgreSQL connection strings; production cloud database hosting is being configured.
