@@ -10,6 +10,9 @@ last_updated: 2026-08-29
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.3.2] — Add Record Modal Drag Handle Affordance
+- **Added**: iOS-style centered horizontal drag handle pill (`#CBD5E1`, 38×4px, `pointerEvents="none"`) at the top of the Add Record modal sheet (`record/add.tsx`) to provide visual dismiss/drag affordance without intercepting native swipe gestures.
+
 ## [0.3.1] — Record Details Metadata & Layout Redesign
 - **Changed**: Reorganized Record Details (`record/[id].tsx`) overview card with a compact two-column horizontal metadata row for Date of Event and Logged in MedRec with an inline divider.
 - **Improved**: Established modular card hierarchy with dedicated sections for Overview, Clinical Notes & Observations, and AI Medical Insights.

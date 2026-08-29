@@ -222,10 +222,15 @@ export default function AddRecordScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
 
+      {/* Drag Handle Indicator */}
+      <View style={styles.handleContainer} pointerEvents="none">
+        <View style={styles.handle} />
+      </View>
+
       {/* ─────────────────────────────
           MODAL HEADER
       ───────────────────────────── */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: 6 }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [
@@ -436,6 +441,23 @@ const styles = StyleSheet.create({
 
   flexOne: {
     flex: 1,
+  },
+
+  /* ─────────────────────────────
+     DRAG HANDLE
+  ───────────────────────────── */
+  handleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 2,
+    backgroundColor: BG,
+  },
+  handle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
   },
 
   /* ─────────────────────────────
