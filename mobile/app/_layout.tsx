@@ -37,16 +37,14 @@ function RootLayoutNav() {
         <Stack.Screen
           name="record/add"
           options={{
-            title: 'Add Record',
             presentation: 'modal',
-            headerShown: true,
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="record/[id]"
           options={{
-            title: 'Record Details',
-            headerShown: true,
+            headerShown: false,
           }}
         />
       </Stack.Protected>

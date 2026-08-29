@@ -5,10 +5,15 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-08-28
+last_updated: 2026-08-29
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [0.3.1] — Record Details Metadata & Layout Redesign
+- **Changed**: Reorganized Record Details (`record/[id].tsx`) overview card with a compact two-column horizontal metadata row for Date of Event and Logged in MedRec with an inline divider.
+- **Improved**: Established modular card hierarchy with dedicated sections for Overview, Clinical Notes & Observations, and AI Medical Insights.
+- **Refined**: Preserved MedRec design tokens, Lexend Deca typography, curated asset icons, and safe-area insets while significantly reducing vertical footprint.
 
 ## [0.3.0] — Backend Core & Testing Suite
 - **Added**: Complete Node/Express 5 REST API with Auth, Records, Sharing, and AI route modules.

@@ -12,7 +12,7 @@ tags:
   - express
   - postgresql
   - ai
-last_updated: 2026-08-28
+last_updated: 2026-08-29
 ---
 
 # 🏥 MedRecord_App (MedRec) — Project Context
@@ -24,7 +24,7 @@ last_updated: 2026-08-28
 
 ## 🎯 Current Objectives & Status
 - **Status**: `In Active Development`
-- **Current Focus**: Connecting the React Native (Expo) mobile frontend to the Express/PostgreSQL backend API, testing user auth tokens, record uploads, and doctor QR scanning flows.
+- **Current Focus**: Connecting the React Native (Expo) mobile frontend to the Express/PostgreSQL backend API, user authentication, doctor QR scanning flows, and polished healthcare mobile UX (including the redesigned Record Details modular card view with compact metadata).
 - **Obsidian Research Vault**: A dedicated 18-module Obsidian knowledge vault is integrated in `MedRecord_App/MedRec/` containing deep research on healthcare data silos, regulatory compliance, doctor/patient user journeys, and architecture specifications.
 
 ---
@@ -62,7 +62,8 @@ last_updated: 2026-08-28
   - `(tabs)/index.tsx`: Patient records dashboard and health timeline.
   - `(tabs)/share.tsx`: QR code generator for clinical record sharing.
   - `(tabs)/scan.tsx`: Doctor QR code scanner interface.
-  - `record/[id].tsx` & `record/add.tsx`: Record detail view and new record entry form.
+  - `record/[id].tsx`: Record detail view with modular cards, compact 2-column metadata, clinical notes, and AI insights.
+  - `record/add.tsx`: New record entry form and document scanning flow.
   - `lib/api.ts`: Centralized Axios/fetch client communicating with backend endpoints.
 - `MedRec/`: 18-folder Obsidian research vault (`00 - Dashboard`, `01 - Vision`, `02 - Problem Space`, `08 - Technical Architecture`, etc.).
 

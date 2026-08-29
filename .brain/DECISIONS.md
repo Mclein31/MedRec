@@ -7,10 +7,27 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-08-28
+last_updated: 2026-08-29
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-08-29 — Compact Horizontal Metadata & Modular Card Hierarchy for Record Details
+
+### Decision
+Structure the Record Details screen (`mobile/app/record/[id].tsx`) with a compact, side-by-side two-column metadata row (Date of Event and Logged in MedRec) with an inline divider directly beneath the title, followed by distinct modular cards for Clinical Notes and AI Medical Insights.
+
+### Reason
+Full-size stacked date cards consumed excessive vertical screen real estate on mobile devices and competed visually with the primary record title. Placing metadata in a tight horizontal row with subtle icons and divider keeps temporal context scannable without pushing clinical notes or AI actions below the fold.
+
+### Alternatives
+- **Stacked Date Cards**: Consumed ~120px of vertical space with oversized containers.
+- **Header-only Metadata**: Cluttered the navigation bar and reduced readability.
+
+### Consequences
+Significantly reduces vertical scrolling on standard iPhone viewports while preserving scannability and clear separation of clinical notes, AI tools, and destructive actions.
+
+---
 
 ## 2025-02-10 — React Native with Expo SDK 52 & Expo Router
 

@@ -7,27 +7,47 @@ import {
   Alert,
   StyleSheet,
   Image,
+  Platform,
+  KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { api } from '../../lib/api';
 
-const GREEN = '#1D9E75';
-const GREEN_DARK = '#085041';
-const GREEN_MID = '#0F6E56';
-const GREEN_LIGHT = '#9FE1CB';
-const BG = '#f0f7f4';
+// Design Tokens matching MedRec standard palette
+const TEAL = '#159A83';
+const INK = '#12343B';
+const GREEN_LIGHT = '#DDF5EE';
+const BG = '#F4FAF9';
+const BORDER = '#E5F0EE';
+const MUTED = '#64748B';
+const CARD_BG = '#FFFFFF';
+
+const BLUE = '#1976D2';
+
+const TYPE_ASSETS: Record<string, any> = {
+  consultation: require('../../assets/icons/consultation.png'),
+  diagnosis: require('../../assets/icons/diagnosis.png'),
+  lab: require('../../assets/icons/lab.png'),
+  prescription: require('../../assets/icons/prescription.png'),
+  medication: require('../../assets/icons/prescription.png'),
+  appointment: require('../../assets/icons/calendar.png'),
+  other: require('../../assets/icons/folder.png'),
+};
 
 const RECORD_TYPES = [
-  { value: 'consultation', label: 'Consultation', icon: 'people-outline' },
-  { value: 'diagnosis', label: 'Diagnosis', icon: 'medkit-outline' },
-  { value: 'lab', label: 'Lab', icon: 'flask-outline' },
-  { value: 'prescription', label: 'Prescription', icon: 'document-text-outline' },
-  { value: 'medication', label: 'Medication', icon: 'medical-outline' },
-  { value: 'appointment', label: 'Appointment', icon: 'calendar-outline' },
-  { value: 'other', label: 'Other', icon: 'ellipsis-horizontal-outline' },
+  { value: 'consultation', label: 'Consultation' },
+  { value: 'diagnosis', label: 'Diagnosis' },
+  { value: 'lab', label: 'Lab' },
+  { value: 'prescription', label: 'Prescription' },
+  { value: 'medication', label: 'Medication' },
+  { value: 'appointment', label: 'Appointment' },
+  { value: 'other', label: 'Other' },
 ] as const;
 
 type Screen = 'form' | 'camera' | 'preview';
@@ -44,6 +64,7 @@ export default function AddRecordScreen() {
   const cameraRef = useRef<CameraView>(null);
 
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -65,7 +86,10 @@ export default function AddRecordScreen() {
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
-        Alert.alert('Camera access needed', 'Please allow camera access to scan documents.');
+        Alert.alert(
+          'Camera access needed',
+          'Please allow camera access to scan documents.'
+        );
         return;
       }
     }
@@ -75,18 +99,20 @@ export default function AddRecordScreen() {
   const takePicture = async () => {
     if (!cameraRef.current) return;
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: false });
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.7,
+        base64: false,
+      });
       if (photo?.uri) {
         setPhotoUri(photo.uri);
         setScreen('preview');
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Failed to take photo', 'Please try again.');
     }
   };
 
   const handleUsePhoto = () => {
-    //dpa tapos, need pa AI key
     Alert.alert(
       'Photo captured',
       'AI document scanning will be available once OpenAI billing is set up. You can fill in the fields manually for now.',
@@ -102,12 +128,13 @@ export default function AddRecordScreen() {
   // ─── Camera screen ────────────────────────────────────────────────────────
   if (screen === 'camera') {
     return (
-      <View style={{ flex: 1, backgroundColor: '#000' }}>
-        <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back">
+      <View style={styles.cameraRoot}>
+        <StatusBar style="light" />
+        <CameraView ref={cameraRef} style={styles.cameraView} facing="back">
           {/* Viewfinder overlay */}
-          <View style={styles.cameraOverlay}>
+          <View style={[styles.cameraOverlay, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
             <Text style={styles.cameraHint}>
-              Point at a document — prescription, lab result, etc.
+              Point at a document — prescription, lab result, or medical invoice
             </Text>
             <View style={styles.viewfinder}>
               <View style={[styles.corner, styles.cornerTL]} />
@@ -116,13 +143,24 @@ export default function AddRecordScreen() {
               <View style={[styles.corner, styles.cornerBR]} />
             </View>
             <View style={styles.cameraActions}>
-              <Pressable onPress={() => setScreen('form')} style={styles.cameraCancel}>
+              <Pressable
+                onPress={() => setScreen('form')}
+                style={styles.cameraCancel}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel camera scan"
+              >
                 <Text style={styles.cameraCancelText}>Cancel</Text>
               </Pressable>
-              <Pressable onPress={takePicture} style={styles.captureBtn}>
+              <Pressable
+                onPress={takePicture}
+                style={({ pressed }) => [styles.captureBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Capture document photo"
+              >
                 <View style={styles.captureInner} />
               </Pressable>
-              <View style={{ width: 80 }} />
+              <View style={styles.cameraSpacer} />
             </View>
           </View>
         </CameraView>
@@ -134,25 +172,45 @@ export default function AddRecordScreen() {
   if (screen === 'preview' && photoUri) {
     return (
       <View style={styles.previewRoot}>
-        <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="contain" />
-        <View style={styles.previewActions}>
-          <Text style={styles.previewLabel}>Use this photo?</Text>
+        <StatusBar style="light" />
+        <Image
+          source={{ uri: photoUri }}
+          style={styles.previewImage}
+          resizeMode="contain"
+        />
+        <View
+          style={[
+            styles.previewActions,
+            { paddingBottom: insets.bottom + 24 },
+          ]}
+        >
+          <Text style={styles.previewLabel}>Use this document?</Text>
           <Text style={styles.previewSub}>
             AI will extract the record details automatically once billing is enabled.
           </Text>
           <Pressable
             onPress={handleUsePhoto}
-            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [
+              styles.previewPrimaryBtn,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Use captured photo"
           >
-            <Ionicons name="checkmark-outline" size={18} color="#fff" />
-            <Text style={styles.primaryBtnText}>Use Photo</Text>
+            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.previewPrimaryBtnText}>Use Photo</Text>
           </Pressable>
           <Pressable
             onPress={handleRetake}
-            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [
+              styles.previewSecondaryBtn,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Retake photo"
           >
-            <Ionicons name="camera-outline" size={18} color={GREEN_MID} />
-            <Text style={styles.secondaryBtnText}>Retake</Text>
+            <Ionicons name="camera-outline" size={18} color={INK} />
+            <Text style={styles.previewSecondaryBtnText}>Retake Photo</Text>
           </Pressable>
         </View>
       </View>
@@ -162,207 +220,701 @@ export default function AddRecordScreen() {
   // ─── Form screen ──────────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
+      <StatusBar style="dark" />
+
+      {/* ─────────────────────────────
+          MODAL HEADER
+      ───────────────────────────── */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [
+            styles.headerDismissBtn,
+            pressed && styles.pressed,
+          ]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel and dismiss"
+        >
+          <Ionicons name="close" size={20} color={INK} />
+        </Pressable>
+
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Add Health Record
+        </Text>
+
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.flexOne}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Scan document button */}
-        <Pressable
-          onPress={openCamera}
-          style={({ pressed }) => [styles.scanBtn, pressed && { opacity: 0.85 }]}
+        <ScrollView
+          contentContainerStyle={[
+            styles.scroll,
+            { paddingBottom: insets.bottom + 40 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View style={styles.scanBtnIcon}>
-            <Ionicons name="camera-outline" size={22} color={GREEN} />
-          </View>
-          <View style={styles.scanBtnText}>
-            <Text style={styles.scanBtnTitle}>Scan Document</Text>
-            <Text style={styles.scanBtnSub}>Take a photo to auto-fill this form</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={GREEN_LIGHT} />
-        </Pressable>
+          {/* 1. DOCUMENT AI / SCAN DOCUMENT FEATURE CARD */}
+          <Pressable
+            onPress={openCamera}
+            style={({ pressed }) => [
+              styles.scanCard,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Scan health document with camera"
+          >
+            <View style={styles.scanIconBox}>
+              <Image
+                source={require('../../assets/icons/AI.png')}
+                style={styles.scanIcon}
+              />
+            </View>
+            <View style={styles.scanTextBox}>
+              <Text style={styles.scanTitle}>Scan Health Document</Text>
+              <Text style={styles.scanSub}>
+                Take a photo to auto-fill details with AI
+              </Text>
+            </View>
+            <View style={styles.scanChevronBox}>
+              <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+            </View>
+          </Pressable>
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or fill in manually</Text>
-          <View style={styles.dividerLine} />
-        </View>
+          {/* Divider Row */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or fill in manually</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
-        {/* Type picker */}
-        <Text style={styles.sectionLabel}>Type</Text>
-        <View style={styles.typeGrid}>
-          {RECORD_TYPES.map((t) => {
-            const active = type === t.value;
-            return (
-              <Pressable
-                key={t.value}
-                onPress={() => setType(t.value)}
-                style={[styles.typeChip, active && styles.typeChipActive]}
-              >
-                <Ionicons
-                  name={t.icon as any}
-                  size={14}
-                  color={active ? '#fff' : GREEN_MID}
+          {/* 2. RECORD TYPE SELECTION */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>RECORD TYPE</Text>
+            <View style={styles.typeGrid}>
+              {RECORD_TYPES.map((t) => {
+                const active = type === t.value;
+                return (
+                  <Pressable
+                    key={t.value}
+                    onPress={() => setType(t.value)}
+                    style={({ pressed }) => [
+                      styles.typeChip,
+                      active && styles.typeChipActive,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select record type ${t.label}`}
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Image
+                      source={TYPE_ASSETS[t.value]}
+                      style={[
+                        styles.typeChipIcon,
+                        { tintColor: active ? TEAL : MUTED },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.typeChipText,
+                        active && styles.typeChipTextActive,
+                      ]}
+                    >
+                      {t.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* 3. RECORD INFORMATION CARD */}
+          <View style={styles.formCard}>
+            {/* Title Field */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>RECORD TITLE *</Text>
+              <View style={styles.inputContainer}>
+                <Image
+                  source={require('../../assets/icons/folder.png')}
+                  style={styles.fieldLeadingIcon}
                 />
-                <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>
-                  {t.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                <TextInput
+                  style={styles.textInput}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="e.g. Annual Blood Work & Lipid Panel"
+                  placeholderTextColor={MUTED}
+                  accessibilityLabel="Record title input"
+                />
+              </View>
+            </View>
 
-        {/* Title */}
-        <Text style={styles.sectionLabel}>Title</Text>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g. Blood test results"
-            placeholderTextColor="#aaa"
-          />
-        </View>
+            {/* Date Field */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>DATE OF EVENT</Text>
+              <View style={styles.inputContainer}>
+                <Image
+                  source={require('../../assets/icons/calendar.png')}
+                  style={styles.fieldLeadingIcon}
+                />
+                <TextInput
+                  style={styles.textInput}
+                  value={date}
+                  onChangeText={setDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={MUTED}
+                  accessibilityLabel="Date input"
+                />
+              </View>
+            </View>
 
-        {/* Description */}
-        <Text style={styles.sectionLabel}>Description</Text>
-        <View style={[styles.inputRow, styles.textAreaRow]}>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Optional notes or details"
-            placeholderTextColor="#aaa"
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-        </View>
+            {/* Description Field */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>CLINICAL NOTES / DETAILS</Text>
+              <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                <TextInput
+                  style={[styles.textInput, styles.textArea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
+                  placeholderTextColor={MUTED}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  accessibilityLabel="Description notes input"
+                />
+              </View>
+            </View>
+          </View>
 
-        {/* Date */}
-        <Text style={styles.sectionLabel}>Date</Text>
-        <View style={styles.inputRow}>
-          <Ionicons name="calendar-outline" size={18} color={GREEN} />
-          <TextInput
-            style={styles.input}
-            value={date}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#aaa"
-          />
-        </View>
-
-        {/* Save */}
-        <Pressable
-          onPress={handleSave}
-          disabled={saving}
-          style={({ pressed }) => [styles.primaryBtn, { marginTop: 12 }, pressed && { opacity: 0.85 }]}
-        >
-          <Ionicons name="checkmark-outline" size={18} color="#fff" />
-          <Text style={styles.primaryBtnText}>
-            {saving ? 'Saving...' : 'Save Record'}
-          </Text>
-        </Pressable>
-      </ScrollView>
+          {/* 4. PRIMARY SAVE CTA */}
+          <Pressable
+            onPress={handleSave}
+            disabled={saving}
+            style={({ pressed }) => [
+              styles.saveBtn,
+              pressed && styles.pressed,
+              saving && styles.disabledBtn,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Save medical record"
+          >
+            {saving ? (
+              <>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.saveBtnText}>Saving Record...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.saveBtnText}>Save Record</Text>
+              </>
+            )}
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
-const CORNER_SIZE = 22;
+const CORNER_SIZE = 24;
 const CORNER_THICKNESS = 3;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
-  scroll: { padding: 20, paddingTop: 24, gap: 10 },
-
-  // Scan button
-  scanBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#fff', borderRadius: 14,
-    borderWidth: 1, borderColor: GREEN_LIGHT,
-    padding: 14, marginBottom: 4,
+  root: {
+    flex: 1,
+    backgroundColor: BG,
   },
-  scanBtnIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: BG, alignItems: 'center', justifyContent: 'center',
-  },
-  scanBtnText: { flex: 1, gap: 2 },
-  scanBtnTitle: { fontSize: 15, fontWeight: '600', color: GREEN_DARK },
-  scanBtnSub: { fontSize: 12, color: GREEN_MID },
 
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 4 },
-  dividerLine: { flex: 1, height: 0.5, backgroundColor: GREEN_LIGHT },
-  dividerText: { fontSize: 12, color: GREEN_MID },
+  flexOne: {
+    flex: 1,
+  },
+
+  /* ─────────────────────────────
+     HEADER
+  ───────────────────────────── */
+  header: {
+    backgroundColor: BG,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+
+  headerDismissBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: CARD_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+
+  headerTitle: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 17,
+    color: INK,
+    textAlign: 'center',
+    marginHorizontal: 8,
+  },
+
+  headerSpacer: {
+    width: 36,
+  },
+
+  pressed: {
+    opacity: 0.75,
+  },
+
+  disabledBtn: {
+    opacity: 0.6,
+  },
+
+  /* ─────────────────────────────
+     SCROLL CONTENT
+  ───────────────────────────── */
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    gap: 16,
+  },
+
+  /* ─────────────────────────────
+     SCAN DOCUMENT CARD
+  ───────────────────────────── */
+  scanCard: {
+    backgroundColor: BLUE,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: BLUE,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  scanIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  scanIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    tintColor: '#FFFFFF',
+  },
+
+  scanTextBox: {
+    flex: 1,
+    gap: 2,
+  },
+
+  scanTitle: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+
+  scanSub: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+
+  scanChevronBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* ─────────────────────────────
+     DIVIDER ROW
+  ───────────────────────────── */
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 2,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: BORDER,
+  },
+
+  dividerText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: MUTED,
+  },
+
+  /* ─────────────────────────────
+     RECORD TYPE CHIPS
+  ───────────────────────────── */
+  section: {
+    gap: 8,
+  },
 
   sectionLabel: {
-    fontSize: 12, fontWeight: '600', color: GREEN_MID,
-    letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 8, marginBottom: 2,
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 11,
+    color: MUTED,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
-  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+
+  typeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+
   typeChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: GREEN_LIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    borderRadius: 20,
+    backgroundColor: CARD_BG,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
-  typeChipActive: { backgroundColor: GREEN, borderColor: GREEN },
-  typeChipText: { fontSize: 13, fontWeight: '500', color: GREEN_MID },
-  typeChipTextActive: { color: '#fff' },
-  inputRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderWidth: 1, borderColor: GREEN_LIGHT,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, gap: 10,
-  },
-  textAreaRow: { alignItems: 'flex-start', paddingTop: 13 },
-  input: { flex: 1, fontSize: 15, color: '#222', padding: 0 },
-  textArea: { minHeight: 90 },
-  primaryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, backgroundColor: GREEN, borderRadius: 12, paddingVertical: 16,
-  },
-  primaryBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
 
-  // Camera screen
+  typeChipActive: {
+    backgroundColor: GREEN_LIGHT,
+    borderColor: TEAL,
+  },
+
+  typeChipIcon: {
+    width: 14,
+    height: 14,
+    resizeMode: 'contain',
+  },
+
+  typeChipText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+    color: INK,
+  },
+
+  typeChipTextActive: {
+    fontFamily: 'LexendDeca-SemiBold',
+    color: TEAL,
+  },
+
+  /* ─────────────────────────────
+     FORM CARD & INPUTS
+  ───────────────────────────── */
+  formCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 16,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+
+  fieldGroup: {
+    gap: 6,
+  },
+
+  fieldLabel: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 11,
+    color: MUTED,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8FCFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EBF4F1',
+    paddingHorizontal: 14,
+    minHeight: 48,
+  },
+
+  textAreaContainer: {
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    minHeight: 110,
+  },
+
+  fieldLeadingIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+    tintColor: TEAL,
+  },
+
+  textInput: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 14,
+    color: INK,
+    padding: 0,
+  },
+
+  textArea: {
+    minHeight: 85,
+    textAlignVertical: 'top',
+  },
+
+  /* ─────────────────────────────
+     SAVE CTA BUTTON
+  ───────────────────────────── */
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: TEAL,
+    borderRadius: 16,
+    height: 54,
+    marginTop: 4,
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  saveBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+
+  /* ─────────────────────────────
+     CAMERA SCREEN
+  ───────────────────────────── */
+  cameraRoot: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+
+  cameraView: {
+    flex: 1,
+  },
+
   cameraOverlay: {
-    flex: 1, alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 60,
-  },
-  cameraHint: {
-    fontSize: 15, color: 'rgba(255,255,255,0.85)',
-    textAlign: 'center', paddingHorizontal: 40, lineHeight: 20,
-  },
-  viewfinder: { width: 280, height: 380, position: 'relative' },
-  corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: GREEN },
-  cornerTL: { top: 0, left: 0, borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderTopLeftRadius: 4 },
-  cornerTR: { top: 0, right: 0, borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderTopRightRadius: 4 },
-  cornerBL: { bottom: 0, left: 0, borderBottomWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderBottomLeftRadius: 4 },
-  cornerBR: { bottom: 0, right: 0, borderBottomWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderBottomRightRadius: 4 },
-  cameraActions: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', width: '100%', paddingHorizontal: 30,
-  },
-  cameraCancel: { width: 80, alignItems: 'flex-start' },
-  cameraCancelText: { fontSize: 16, color: '#fff', fontWeight: '500' },
-  captureBtn: {
-    width: 72, height: 72, borderRadius: 36,
-    borderWidth: 4, borderColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  captureInner: {
-    width: 56, height: 56, borderRadius: 28, backgroundColor: '#fff',
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
   },
 
-  // Preview screen
-  previewRoot: { flex: 1, backgroundColor: '#000' },
-  previewImage: { flex: 1 },
+  cameraHint: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 20,
+  },
+
+  viewfinder: {
+    width: 280,
+    height: 380,
+    position: 'relative',
+  },
+
+  corner: {
+    position: 'absolute',
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    borderColor: TEAL,
+  },
+
+  cornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderTopLeftRadius: 6,
+  },
+
+  cornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderTopRightRadius: 6,
+  },
+
+  cornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderLeftWidth: CORNER_THICKNESS,
+    borderBottomLeftRadius: 6,
+  },
+
+  cornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: CORNER_THICKNESS,
+    borderRightWidth: CORNER_THICKNESS,
+    borderBottomRightRadius: 6,
+  },
+
+  cameraActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+
+  cameraCancel: {
+    width: 70,
+    alignItems: 'flex-start',
+  },
+
+  cameraCancelText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+
+  captureBtn: {
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  captureInner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+  },
+
+  cameraSpacer: {
+    width: 70,
+  },
+
+  /* ─────────────────────────────
+     PREVIEW SCREEN
+  ───────────────────────────── */
+  previewRoot: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+
+  previewImage: {
+    flex: 1,
+  },
+
   previewActions: {
-    backgroundColor: '#fff', padding: 24, gap: 10,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    backgroundColor: CARD_BG,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    gap: 12,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
-  previewLabel: { fontSize: 18, fontWeight: '700', color: GREEN_DARK },
-  previewSub: { fontSize: 13, color: '#888', lineHeight: 18, marginBottom: 4 },
-  secondaryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, borderWidth: 1, borderColor: GREEN_LIGHT,
-    borderRadius: 12, paddingVertical: 14,
+
+  previewLabel: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 18,
+    color: INK,
   },
-  secondaryBtnText: { fontSize: 15, fontWeight: '500', color: GREEN_MID },
+
+  previewSub: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+    color: MUTED,
+    lineHeight: 19,
+    marginBottom: 4,
+  },
+
+  previewPrimaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: TEAL,
+    borderRadius: 14,
+    height: 50,
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  previewPrimaryBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+
+  previewSecondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#F8FCFB',
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 14,
+    height: 50,
+  },
+
+  previewSecondaryBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 15,
+    color: INK,
+  },
 });

@@ -9,7 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { useEffect, useState } from 'react';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -141,7 +141,6 @@ export default function RecordDetailScreen() {
     return (
       <View style={styles.root}>
         <StatusBar style="dark" />
-        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={TEAL} />
           <Text style={styles.loadingText}>Loading record details...</Text>
@@ -154,7 +153,6 @@ export default function RecordDetailScreen() {
     return (
       <View style={styles.root}>
         <StatusBar style="dark" />
-        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.centered}>
           <View style={styles.notFoundIconBox}>
             <Image
@@ -190,7 +188,6 @@ export default function RecordDetailScreen() {
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
-      <Stack.Screen options={{ headerShown: false }} />
 
       {/* ─────────────────────────────
           SAFE-AREA NAVIGATION HEADER
