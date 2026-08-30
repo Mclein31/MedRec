@@ -55,6 +55,14 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Header Layout**: Integrated at the top of modal headers with `paddingTop: 10, paddingBottom: 14` to communicate swipe-down dismissibility without adding dead vertical space.
 - **Drawer Exception**: The side menu drawer (`SideMenuModal`) slides horizontally from the left edge and is intentionally excluded from vertical downward drag handles.
 
+## 📱 Adaptive Share Hero & Cardless Flat Access History
+- **Screen Architecture**: `mobile/app/(tabs)/share.tsx` is organized into three distinct tiers:
+  - **Tier 1 (Adaptive Hero)**: Focuses 75% of visual weight on sharing. Transitions between the default `#1976D2` blue generation card and a white living QR preview card with 142px SVG QR code, live clean countdown status (`#159A83`), and immediate access revocation.
+  - **Tier 2 (Active Shares)**: Secondary list for active doctor access sessions when not actively previewing a QR code.
+  - **Tier 3 (Past Sessions)**: Quiet, borderless activity log sitting directly on `#F4FAF9` canvas with 1px hairline dividers (`#E5F0EE`).
+- **Typography-Driven Hierarchy**: Removes repetitive leading icons and pill badges from past sessions; status is communicated with clean right-aligned typography (`Revoked` in `#D92D20`, `Expired` in `#64748B`).
+- **Progressive Disclosure**: Automatically shows the 3 most recent sessions, with an expandable `"Show full history"` button when history exceeds 3 items.
+
 ## 🎨 Universal AI Card Design System & Record Type Carousel
 - **Unified Visual Language**: All AI-powered feature cards (`aiBanner` in `(tabs)/index.tsx`, `generateCard` in `(tabs)/share.tsx`, `aiCard` in `record/[id].tsx`, and `scanHeroCard` in `record/add.tsx`) share a consistent design system:
   - Container: Signature rich blue (`#1976D2`), `borderRadius: 16`, `padding: 16`, `gap: 12`, elevation shadow (`shadowColor: '#1976D2'`, `elevation: 3`).

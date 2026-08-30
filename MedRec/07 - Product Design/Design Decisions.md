@@ -40,10 +40,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-08** | **Inset Grouped Profile Architecture & Avatar Persistence** | `Active` | Eliminates visual clutter and text highlight boxes in favor of clean iOS-style grouped cards and persistent photo uploads. | [[07 - Product Design/Design Decisions#DD-08|DD-08]] |
 | **DD-09** | **Universal Sliding Sheet Drag Handle & Compact Input Placeholders** | `Active` | Communicates downward drag dismissibility consistently across all sliding modals without vertical dead space, paired with compact input placeholders for long medical terms. | [[07 - Product Design/Design Decisions#DD-09|DD-09]] |
 | **DD-10** | **Unified Blue AI Card Layout & Horizontal Category Carousel** | `Active` | Creates a shared visual language for AI cards (rich blue, horizontal icon/title row, white CTA) and single-line category carousel preserving vertical form space. | [[07 - Product Design/Design Decisions#DD-10|DD-10]] |
+| **DD-11** | **Adaptive Share Hero & Cardless Flat Access History** | `Active` | Focuses 75% of visual weight on instant QR generation/scanning while de-cluttering past activity into a calm, unboxed typography timeline without cards, pills, or repetitive icons. | [[07 - Product Design/Design Decisions#DD-11|DD-11]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-11: Adaptive Share Hero & Cardless Flat Access History
+- **Context**: The Share Records screen had visual repetition and card fatigue: every past expired or revoked share rendered as a large standalone 100px+ bordered card with a repetitive 39px teal QR icon. An initial proposal to wrap them in an enterprise audit ledger created a dense, dashboard-like table feel unsuitable for a consumer healthcare app.
+- **Alternatives Considered**: (A) Stacking 10+ standalone bordered cards with giant icons, (B) Heavy enterprise audit ledger table inside an enclosed outer card with badges and hashes, (C) Segmented control hiding history entirely, (D) Adaptive Hero Surface (75% visual weight) paired with an unboxed, cardless flat timeline (25% visual weight) directly on the `#F4FAF9` background canvas.
+- **Decision**: Option D — Implement the Adaptive Hero Surface that transitions between the primary blue generation card and active living QR card, paired with an unboxed, typography-driven past session timeline with 1px hairline dividers and progressive disclosure.
+- **Rationale**: Keeps the primary clinical action (generating/scanning QR codes) front-and-center in high-stress triage situations, while presenting historical logs as reassuring, lightweight plain text (`Revoked` in soft red, `Expired` in muted slate) without card or badge clutter.
 
 ### DD-10: Unified Blue AI Card Layout & Horizontal Category Carousel
 - **Context**: AI feature entry points across the app (Record List summary, Share QR access, Record Details AI insights, Add Record scanner) had fragmented container styles, button treatments, and icon background highlights. Additionally, multi-line record type chip grids pushed form fields below the fold.

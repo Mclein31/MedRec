@@ -10,6 +10,14 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.8.4] — Adaptive Share Hero & Cardless Flat Access History
+- **Redesigned**: Restructured the Share Records tab (`mobile/app/(tabs)/share.tsx`) using the Adaptive Hero and Cardless Flat Timeline architecture:
+  - **Tier 1 (Adaptive Hero)**: Dynamically transitions between the primary blue generation hero card (`#1976D2`) with horizontal QR icon and the living white QR preview card (`#FFFFFF`, `QRCode` 142px) with clean countdown text and instant revocation action.
+  - **Tier 2 (Active Shares)**: Displays secondary live doctor access sessions with active timers and one-tap QR inspection.
+  - **Tier 3 (Past Sessions)**: Replaced repetitive individual multi-border cards and enterprise audit ledgers with a calm, unboxed typography list rendered directly on the `#F4FAF9` canvas, separated by 1px hairline dividers (`#E5F0EE`).
+- **Streamlined**: Eliminated repetitive 39px QR icons, drop shadows, and heavy pill badges on historical entries in favor of clean, right-aligned status typography (`Revoked` in soft red `#D92D20`, `Expired` in muted slate `#64748B`).
+- **Progressive Disclosure**: Implemented automatic collapsing for long history feeds, displaying up to 3 past sessions by default with an expandable `"Show full history (N sessions)"` toggle.
+
 ## [0.8.3] — Unified Blue AI Cards, Share Card Restructure & Record Type Carousel
 - **Restructured**: Redesigned the "Share your records with your Doctor" card in `mobile/app/(tabs)/share.tsx` into a balanced horizontal top row layout (`generateTopRow`, `flexDirection: 'row', alignItems: 'center', gap: 12`) pairing the white QR icon (`qr-white.png`) beside the title with responsive `flex: 1` text wrapping, expiration notice underneath, and full-width white CTA at bottom.
 - **Unified**: Standardized all AI feature cards (`mobile/app/record/[id].tsx` AI Medical Insights, `mobile/app/record/add.tsx` Scan Health Document, and `mobile/app/(tabs)/share.tsx` Share Card) to use the signature `#1976D2` blue background, white typography, white action CTA buttons, and direct icon rendering with all background highlight pills removed.
