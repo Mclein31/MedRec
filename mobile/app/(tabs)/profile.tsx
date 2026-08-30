@@ -27,7 +27,6 @@ import ChangePasswordModal from '../../components/ChangePasswordModal';
 import EmergencyIdModal from '../../components/EmergencyIdModal';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
-import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
 const TEAL = Colors.teal;
@@ -316,17 +315,42 @@ export default function ProfileScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
 
-      {/* Screen Header Toolbar */}
-      <ScreenHeader
-        title="Profile"
-        subtitle="Manage your personal and medical ID"
-        onPressMenu={() => setMenuVisible(true)}
-        onPressNotifications={() => {
-          refreshNotifications();
-          setNotificationsVisible(true);
-        }}
-        unreadCount={unreadCount}
-      />
+      {/* Fixed Global Navigation Toolbar */}
+      <View style={[styles.topToolbar, { paddingTop: insets.top + 12 }]}>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setMenuVisible(true);
+          }}
+          hitSlop={10}
+          style={styles.iconBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Open navigation menu"
+        >
+          <Image
+            source={require('../../assets/icons/burger-menu.png')}
+            style={styles.toolbarIcon}
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            refreshNotifications();
+            setNotificationsVisible(true);
+          }}
+          hitSlop={10}
+          style={styles.iconBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Notifications, ${unreadCount} unread`}
+        >
+          <Image
+            source={require('../../assets/icons/notification-bell.png')}
+            style={styles.toolbarIcon}
+          />
+          {unreadCount > 0 && <View style={styles.notificationDot} />}
+        </Pressable>
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -338,6 +362,12 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TEAL} />
         }
       >
+        {/* Profile Title & Subtitle (Scrolls away naturally) */}
+        <View style={styles.titleSection}>
+          <Text style={styles.screenTitle}>Profile</Text>
+          <Text style={styles.screenSubtitle}>Manage your personal and medical ID</Text>
+        </View>
+
         {/* ─────────────────────────────
             1. UNBOXED PROFILE HERO
         ───────────────────────────── */}
@@ -789,21 +819,57 @@ const styles = StyleSheet.create({
   },
 
   /* ─────────────────────────────
-     SCREEN HEADER
+     FIXED GLOBAL TOOLBAR
   ───────────────────────────── */
-  screenHeader: {
-    paddingHorizontal: 24,
+  topToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 8,
     backgroundColor: BG,
+    zIndex: 10,
   },
-  screenHeaderTitle: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 24,
+  iconBtn: {
+    padding: 2,
+  },
+  toolbarIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+  notificationDot: {
+    position: 'absolute',
+    right: -1,
+    top: -1,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: TEAL,
+    borderWidth: 1.5,
+    borderColor: BG,
+  },
+
+  /* ─────────────────────────────
+     SCROLLABLE TITLE SECTION
+  ───────────────────────────── */
+  titleSection: {
+    paddingHorizontal: 4,
+    marginBottom: 4,
+  },
+  screenTitle: {
+    ...Typography.display,
     color: INK,
+  },
+  screenSubtitle: {
+    ...Typography.subtitle,
+    color: MUTED,
+    marginTop: 2,
   },
 
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 4,
     gap: 12,
   },
 

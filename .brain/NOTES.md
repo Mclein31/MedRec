@@ -87,3 +87,7 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Category Quick Chips Carousel**: Direct single-tap horizontal filter bar (`[ All (14) ] [ Labs (5) ] [ Prescriptions (3) ] ...`) with real-time record distribution counts, eliminating redundant sorting modals and providing instant zero-friction navigation.
 - **Classic Card Preservation & De-cluttering**: Retains signature medical cards with category badge, 44px squircle icon box, clinical event date, and folder creation footer, while removing the circular background highlight on the chevron arrow for a clean, cohesive visual hierarchy.
 
+## 👤 Continuous Scrollable Profile Architecture
+- **Single Scroll Hierarchy (`mobile/app/(tabs)/profile.tsx`)**: The Profile title (28px `LexendDeca-Bold`) and subtitle are located inside the top-level `<ScrollView>`, scrolling away naturally as the user scrolls through their health profile.
+- **Fixed Global Navigation Header**: Keeps a compact top toolbar (`insets.top + 12`) outside the scroll area for persistent access to the Burger Menu drawer and Notification Bell unread indicator dot, avoiding unnecessary viewport occupation while ensuring global navigation remains accessible at all times.
+

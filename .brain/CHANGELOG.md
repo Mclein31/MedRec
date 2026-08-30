@@ -10,6 +10,11 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.8.7] — Continuous Scrollable Profile Architecture
+- **Continuous Scroll Surface**: Refactored the Profile screen (`mobile/app/(tabs)/profile.tsx`) so that the "Profile" title and subtitle scroll away naturally with the profile content inside a single continuous `<ScrollView>`, significantly increasing usable vertical viewport height.
+- **Fixed Global Navigation Toolbar**: Preserved the fixed top header containing the Burger Menu drawer trigger and Notification Bell with dynamic unread indicator dot directly under the safe area.
+- **Clean Safe-Area Clearance**: Retained 110px bottom navigation clearance and verified zero nested scrolling or layout jumps across sections.
+
 ## [0.8.6] — Records Screen Layout Overhaul & Quick Category Carousel
 - **Full-Width Search Bar**: Replaced cramped header search input with a prominent full-width `<RecordSearchBar />` supporting instant real-time filtering and clear (X) reset.
 - **Category Quick Chips Carousel**: Enhanced horizontal category filter row with dynamic, live record distribution count badges (e.g., `All (14)`, `Labs (5)`, `Prescriptions (3)`), allowing immediate 1-tap filtering without repetitive modals.
