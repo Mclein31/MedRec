@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,44 +8,33 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  Modal,
-  Animated,
-  TextInput,
   ScrollView,
   Image,
 } from 'react-native';
-import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
+
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import * as Haptics from 'expo-haptics';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
-import { DragHandle } from '../../components/ui/DragHandle';
+import { RecordSearchBar } from '../../components/records/RecordSearchBar';
 import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
-const GREEN = Colors.teal;
-const GREEN_DARK = Colors.ink;
-const GREEN_LIGHT = Colors.tealLight;
-const BG = Colors.bg;
-const INK = Colors.ink;
-const MUTED = Colors.muted;
-const BORDER = Colors.border;
-
-const TYPE_COLORS: Record<string, string> = {
-  consultation: '#159A83',
-  lab: '#159A83',
-  appointment: '#159A83',
-  diagnosis: '#159A83',
-  prescription: '#159A83',
-  medication: '#159A83',
-  other: '#64748B',
+export type MedicalRecord = {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  date: string;
+  created_at?: string;
 };
 
-const TYPE_ASSETS: Record<string, number> = {
+const TYPE_ASSETS: Record<string, any> = {
   consultation: require('../../assets/icons/consultation.png'),
   diagnosis: require('../../assets/icons/diagnosis.png'),
   lab: require('../../assets/icons/lab.png'),
@@ -54,69 +44,74 @@ const TYPE_ASSETS: Record<string, number> = {
   other: require('../../assets/icons/folder.png'),
 };
 
-function timeAgo(dateStr: string) {
+const CATEGORY_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'lab', label: 'Labs' },
+  { key: 'prescription', label: 'Prescriptions' },
+  { key: 'consultation', label: 'Consultations' },
+  { key: 'diagnosis', label: 'Diagnoses' },
+  { key: 'appointment', label: 'Appointments' },
+  { key: 'medication', label: 'Medications' },
+  { key: 'other', label: 'Other' },
+];
+
+function timeAgo(dateStr?: string | null) {
+  if (!dateStr) return 'Recently';
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   if (diffHours < 24) return 'Today';
   if (diffDays === 1) return '1 day ago';
-  return `${diffDays} days ago`;
+  if (diffDays < 30) return `${diffDays} days ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths === 1) return '1 month ago';
+  if (diffMonths < 12) return `${diffMonths} months ago`;
+  return `${Math.floor(diffMonths / 12)} years ago`;
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr?: string | null) {
+  if (!dateStr) return 'Not specified';
   const date = new Date(dateStr);
-
+  if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
-
-type MedicalRecord = {
-  id: string;
-  type: string;
-  title: string;
-  description: string | null;
-  date: string;
-  created_at?: string;
-};
 
 export default function RecordsScreen() {
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
-  const [sortMode, setSortMode] = useState('recent');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSortModal, setShowSortModal] = useState(false);
-  const [overlayVisible, setOverlayVisible] = useState(false);
-  const sheetAnim = useState(new Animated.Value(0))[0];
 
-  // Selection mode: long-press a record to enter it, then pick records
-  // to share via QR without sharing everything.
+  // Search & Category Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Selection Mode State for QR Sharing
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
+
+  // Navigation Modals
   const [menuVisible, setMenuVisible] = useState(false);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { unreadCount, refreshNotifications } = useNotifications();
   const insets = useSafeAreaInsets();
-
-  const handleMenuPress = () => {
-    Haptics.selectionAsync();
-    setMenuVisible(true);
-  };
 
   const loadRecords = async () => {
     try {
       const data = await api.getRecords();
-      setRecords(data.records);
+      setRecords(data.records || []);
     } catch (err: any) {
       Alert.alert('Error loading records', err.message);
     }
@@ -148,12 +143,23 @@ export default function RecordsScreen() {
     }
   };
 
+  // ─── Selection Mode Handlers ──────────────────────────────────────────────
+  const toggleSelectMode = () => {
+    Haptics.selectionAsync();
+    if (selectionMode) {
+      setSelectionMode(false);
+      setSelectedIds(new Set());
+    } else {
+      setSelectionMode(true);
+    }
+  };
+
   const enterSelectionMode = (id: string) => {
     setSelectionMode(true);
     setSelectedIds(new Set([id]));
   };
 
-  const toggleSelection = (id: string) => {
+  const toggleRecordSelection = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -165,21 +171,21 @@ export default function RecordsScreen() {
     });
   };
 
-  const cancelSelection = () => {
-    setSelectionMode(false);
-    setSelectedIds(new Set());
+  const selectAllRecords = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedIds(new Set(records.map((r) => r.id)));
   };
 
   const handleShareSelected = async () => {
     if (selectedIds.size === 0) {
-      Alert.alert('No records selected', 'Select at least one record to share.');
+      Alert.alert('No records selected', 'Please select at least one record to share.');
       return;
     }
     setSharing(true);
     try {
       const data = await api.createShare(60, Array.from(selectedIds));
-      cancelSelection();
-      // share.tsx reads these params on focus and shows the QR immediately
+      setSelectionMode(false);
+      setSelectedIds(new Set());
       router.push({
         pathname: '/(tabs)/share',
         params: { pendingToken: data.token, pendingExpiry: data.expiresAt },
@@ -191,121 +197,165 @@ export default function RecordsScreen() {
     }
   };
 
-  const openSort = () => {
-    setOverlayVisible(true);
-    setShowSortModal(true);
-    Animated.spring(sheetAnim, { toValue: 1, useNativeDriver: true, bounciness: 0 }).start();
-  };
-
-  const closeSort = () => {
-    Animated.timing(sheetAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-      setShowSortModal(false);
-      setOverlayVisible(false);
+  // ─── Category Counts Calculation ──────────────────────────────────────────
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: records.length };
+    records.forEach((r) => {
+      const typeKey = (r.type || 'other').toLowerCase();
+      counts[typeKey] = (counts[typeKey] || 0) + 1;
     });
-  };
+    return counts;
+  }, [records]);
 
-  const sortLabel: Record<string, string> = {
-    recent: 'Most Recent', oldest: 'Oldest', appointment: 'Appointments',
-    lab: 'Labs', consultation: 'Consultations', diagnosis: 'Diagnoses',
-    prescription: 'Prescriptions', medication: 'Medications', other: 'Others',
-  };
+  // ─── Filtered & Sorted Records List (Newest first) ────────────────────────
+  const sortedRecords = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const filtered = records.filter((r) => {
+      const matchesCategory =
+        selectedCategory === 'all' || (r.type || 'other').toLowerCase() === selectedCategory;
+      if (!matchesCategory) return false;
 
-  const SORT_OPTIONS: { key: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'recent', label: 'Most Recent', icon: 'time-outline' },
-    { key: 'oldest', label: 'Oldest', icon: 'calendar-outline' },
-    { key: 'appointment', label: 'Appointments', icon: 'calendar-number-outline' },
-    { key: 'lab', label: 'Labs', icon: 'flask-outline' },
-    { key: 'consultation', label: 'Consultations', icon: 'people-outline' },
-    { key: 'diagnosis', label: 'Diagnoses', icon: 'medkit-outline' },
-    { key: 'prescription', label: 'Prescriptions', icon: 'document-text-outline' },
-    { key: 'medication', label: 'Medications', icon: 'medical-outline' },
-    { key: 'other', label: 'Others', icon: 'ellipsis-horizontal-outline' },
-  ];
-
-  const TYPE_FILTERS = ['appointment', 'lab', 'consultation', 'diagnosis', 'prescription', 'medication', 'other'];
-
-  // Filter down to just the selected type (if a type filter is active),
-  // then sort what's left by date.
-  const sortedRecords = [...records]
-    .filter((r) => (TYPE_FILTERS.includes(sortMode) ? r.type === sortMode : true))
-    .filter((r) => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => {
-      if (sortMode === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime();
-      // 'recent' and every type filter fall back to newest-first ordering
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (!query) return true;
+      const titleMatch = (r.title || '').toLowerCase().includes(query);
+      const descMatch = (r.description || '').toLowerCase().includes(query);
+      const typeMatch = (r.type || '').toLowerCase().includes(query);
+      return titleMatch || descMatch || typeMatch;
     });
+
+    return filtered.sort((a, b) => {
+      return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
+    });
+  }, [records, selectedCategory, searchQuery]);
+
+  const firstName = user?.name ? user.name.trim().split(' ')[0] : 'there';
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={GREEN} />
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color={Colors.teal} />
+        <Text style={styles.loadingText}>Loading health records...</Text>
       </View>
     );
   }
 
-  const firstName = user?.name ? user.name.trim().split(' ')[0] : 'there';
-
   return (
     <View style={styles.root}>
+      <StatusBar style="dark" />
+
+      {/* ────────────────────────────────────────────────────────
+          MAIN RECORDS FLATLIST WITH CLEAN LAYOUT
+      ──────────────────────────────────────────────────────── */}
       <FlatList
         data={sortedRecords}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
+        ]}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.teal}
+          />
         }
         ListHeaderComponent={
-          <>
-            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-              <View style={styles.toolbar}>
-                {selectionMode ? (
-                  <Pressable onPress={cancelSelection} style={styles.cancelBtn}>
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable onPress={handleMenuPress} hitSlop={10}>
-                    <Image source={require('../../assets/icons/burger-menu.png')} style={styles.toolbarIcon} />
-                  </Pressable>
-                )}
+          <View style={styles.headerContainer}>
+            {/* Top Toolbar */}
+            <View style={[styles.toolbar, { paddingTop: insets.top + 12 }]}>
+              {selectionMode ? (
+                <Pressable
+                  onPress={toggleSelectMode}
+                  hitSlop={8}
+                  style={styles.cancelBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel selection mode"
+                >
+                  <Text style={styles.cancelBtnText}>Done</Text>
+                </Pressable>
+              ) : (
                 <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();
+                    setMenuVisible(true);
+                  }}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open navigation menu"
+                >
+                  <Image
+                    source={require('../../assets/icons/burger-menu.png')}
+                    style={styles.toolbarIcon}
+                  />
+                </Pressable>
+              )}
+
+              <View style={styles.toolbarRight}>
+                {records.length > 0 && !selectionMode && (
+                  <Pressable
+                    onPress={toggleSelectMode}
+                    hitSlop={8}
+                    style={styles.selectHeaderBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Enter multi-record selection mode"
+                  >
+                    <Text style={styles.selectHeaderText}>Select</Text>
+                  </Pressable>
+                )}
+
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    refreshNotifications();
                     setNotificationsVisible(true);
                   }}
-                  style={styles.bell}
                   hitSlop={10}
+                  style={styles.bellBtn}
                   accessibilityRole="button"
                   accessibilityLabel={`Notifications, ${unreadCount} unread`}
                 >
-                  <Image source={require('../../assets/icons/notification-bell.png')} style={styles.toolbarIcon} />
+                  <Image
+                    source={require('../../assets/icons/notification-bell.png')}
+                    style={styles.toolbarIcon}
+                  />
                   {unreadCount > 0 && <View style={styles.notificationDot} />}
                 </Pressable>
               </View>
-              <Text style={styles.headerTitle}>Hello, {firstName} 👋🏼</Text>
-              <Text style={styles.headerSub}>{"Here" + "'" + "s your health overview"}</Text>
             </View>
 
-            {/* Selection mode banner */}
+            {/* Screen Greeting */}
+            <View style={styles.greetingBox}>
+              <Text style={styles.greetingTitle}>Hello, {firstName} 👋🏼</Text>
+              <Text style={styles.greetingSub}>Here's your health overview</Text>
+            </View>
+
+            {/* Multi-Selection Info Banner */}
             {selectionMode && (
               <View style={styles.selectionBanner}>
-                <Ionicons name="checkmark-circle" size={16} color={GREEN} />
-                <Text style={styles.selectionBannerText}>
-                  {selectedIds.size === 0
-                    ? 'Tap records to select'
-                    : `${selectedIds.size} record${selectedIds.size !== 1 ? 's' : ''} selected`}
-                </Text>
-                <Pressable onPress={() => setSelectedIds(new Set(records.map((r) => r.id)))}>
+                <View style={styles.selectionBannerLeft}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.teal} />
+                  <Text style={styles.selectionBannerText}>
+                    {selectedIds.size === 0
+                      ? 'Tap records to select'
+                      : `${selectedIds.size} record${selectedIds.size !== 1 ? 's' : ''} selected`}
+                  </Text>
+                </View>
+                <Pressable onPress={selectAllRecords} hitSlop={6}>
                   <Text style={styles.selectAllText}>Select all</Text>
                 </Pressable>
               </View>
             )}
 
-            {/* AI Summary Banner — hidden while selecting */}
+            {/* AI Health Summary Banner (Hidden during Selection Mode) */}
             {!selectionMode && (
               <Pressable
                 onPress={handleSummarize}
                 disabled={summarizing}
-                style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.88 }]}
+                style={({ pressed }) => [styles.aiBanner, pressed && styles.aiBannerPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Generate AI Health Summary"
               >
                 <View style={styles.aiIconBox}>
                   <Image source={require('../../assets/icons/AI.png')} style={styles.aiAsset} />
@@ -315,71 +365,99 @@ export default function RecordsScreen() {
                     {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
                   </Text>
                   <Text style={styles.aiSubtitle}>
-                    Get insights and a summary of your health records
+                    Get clinical insights and a summary of your records
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+                {summarizing ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <Ionicons name="chevron-forward" size={18} color="rgba(255, 255, 255, 0.75)" />
+                )}
               </Pressable>
             )}
 
-              <View style={styles.recordsHeading}>
-              <Pressable onLongPress={openSort}><Text style={styles.sectionTitle}>My Records</Text><Text style={styles.recordCount}>{records.length} Record{records.length === 1 ? '' : 's'}</Text></Pressable>
-              <View style={styles.searchBox}><TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search" placeholderTextColor={MUTED} style={styles.searchInput} /><Image source={require('../../assets/icons/search.png')} style={styles.searchIcon} /></View>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {[
-                ['recent', 'All'], ['consultation', 'Consultation'], ['lab', 'Labs'], ['appointment', 'Appointment'], ['diagnosis', 'Diagnoses'], ['prescription', 'Prescriptions'],
-              ].map(([key, label]) => <Pressable key={key} onPress={() => setSortMode(key)} style={[styles.chip, sortMode === key && styles.chipActive]}><Text style={[styles.chipText, sortMode === key && styles.chipTextActive]}>{label}</Text></Pressable>)}
-            </ScrollView>
-          </>
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons
-              name={TYPE_FILTERS.includes(sortMode) ? 'filter-outline' : 'document-text-outline'}
-              size={52}
-              color={GREEN_LIGHT}
+            {/* Clean Full-Width Search Bar */}
+            <RecordSearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
-            <Text style={styles.emptyTitle}>
-              {TYPE_FILTERS.includes(sortMode) ? `No ${sortLabel[sortMode].toLowerCase()}` : 'No records yet'}
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {TYPE_FILTERS.includes(sortMode)
-                ? 'Try a different filter or add a new record'
-                : 'Tap + to add your first record'}
-            </Text>
+
+            {/* Category Quick Filter Chips with Live Counts Carousel */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}
+            >
+              {CATEGORY_FILTERS.map((cat) => {
+                const count = categoryCounts[cat.key] || 0;
+                const isActive = selectedCategory === cat.key;
+                return (
+                  <Pressable
+                    key={cat.key}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setSelectedCategory(cat.key);
+                    }}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${cat.label}, ${count} records`}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                      {cat.label} {count > 0 ? `(${count})` : ''}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Records Section Counter Header */}
+            <View style={styles.recordsSectionHeader}>
+              <Text style={styles.recordsSectionTitle}>My Records</Text>
+              <Text style={styles.recordsCountText}>
+                {sortedRecords.length} Record{sortedRecords.length === 1 ? '' : 's'}
+              </Text>
+            </View>
           </View>
         }
         renderItem={({ item }) => {
           const isSelected = selectedIds.has(item.id);
+          const typeKey = (item.type || 'other').toLowerCase();
+          const typeAsset = TYPE_ASSETS[typeKey] || TYPE_ASSETS.other;
+
           return (
             <Pressable
               onPress={() => {
                 if (selectionMode) {
-                  toggleSelection(item.id);
+                  Haptics.selectionAsync();
+                  toggleRecordSelection(item.id);
                 } else {
                   router.push(`/record/${item.id}`);
                 }
               }}
               onLongPress={() => {
-                if (!selectionMode) enterSelectionMode(item.id);
+                if (!selectionMode) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  enterSelectionMode(item.id);
+                }
               }}
               style={({ pressed }) => [
                 styles.recordCard,
-                pressed && { opacity: 0.78 },
-                isSelected && styles.recordCardSelected,
+                pressed && styles.cardPressed,
+                isSelected && styles.cardSelected,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.type}: ${item.title}, ${formatDate(item.date)}`}
             >
-              {/* Selection checkbox */}
+              {/* Selection Checkbox */}
               {selectionMode && (
                 <View style={styles.checkboxArea}>
                   <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                    {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    {isSelected && <Ionicons name="checkmark" size={13} color={Colors.white} />}
                   </View>
                 </View>
               )}
 
-              {/* Type badge */}
+              {/* Record Type Badge */}
               <View style={styles.typeBadge}>
                 <Text style={styles.typeBadgeText}>
                   {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
@@ -387,28 +465,39 @@ export default function RecordsScreen() {
               </View>
 
               <View style={styles.recordBody}>
-                {/* Icon + content */}
+                {/* Icon + Content Row */}
                 <View style={styles.recordRow}>
                   <View style={styles.recordIconBox}>
-                    <Image source={TYPE_ASSETS[item.type] || require('../../assets/icons/folder.png')} style={[styles.recordAsset, { tintColor: TYPE_COLORS[item.type] || GREEN}]} />
+                    <Image
+                      source={typeAsset}
+                      style={styles.recordAsset}
+                    />
                   </View>
+
                   <View style={styles.recordContent}>
-                    <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.recordTitle} numberOfLines={2}>
+                      {item.title}
+                    </Text>
                     <View style={styles.recordDateRow}>
-                      <Image source={require('../../assets/icons/calendar.png')} style={styles.dateAsset} />
+                      <Image
+                        source={require('../../assets/icons/calendar.png')}
+                        style={styles.dateAsset}
+                      />
                       <Text style={styles.recordDateText}>{formatDate(item.date)}</Text>
                     </View>
                   </View>
+
                   {!selectionMode && (
-                    <View style={styles.chevronCircle}>
-                      <Ionicons name="chevron-forward" size={14} color={GREEN} />
-                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.muted} style={styles.chevronArrow} />
                   )}
                 </View>
 
-                {/* Added ago footer */}
+                {/* Added ago Footer */}
                 <View style={styles.recordFooter}>
-                  <Image source={require('../../assets/icons/open-folder.png')} style={styles.footerAsset} />
+                  <Image
+                    source={require('../../assets/icons/open-folder.png')}
+                    style={styles.footerAsset}
+                  />
                   <Text style={styles.recordFooterText}>
                     Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
                   </Text>
@@ -417,87 +506,52 @@ export default function RecordsScreen() {
             </Pressable>
           );
         }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name={searchQuery || selectedCategory !== 'all' ? 'search-outline' : 'document-text-outline'}
+              size={48}
+              color={Colors.tealLight}
+            />
+            <Text style={styles.emptyTitle}>
+              {searchQuery || selectedCategory !== 'all' ? 'No matching records' : 'No records yet'}
+            </Text>
+            <Text style={styles.emptySub}>
+              {searchQuery || selectedCategory !== 'all'
+                ? 'Try adjusting your search keywords or filter category.'
+                : 'Tap the + button on the navigation bar to add your first health record.'}
+            </Text>
+          </View>
+        }
       />
 
-      {/* Floating Share Button */}
+      {/* ────────────────────────────────────────────────────────
+          FLOATING SHARE SELECTED CTA BUTTON (Selection Mode)
+      ──────────────────────────────────────────────────────── */}
       {selectionMode && selectedIds.size > 0 && (
-        <Pressable
-          onPress={handleShareSelected}
-          disabled={sharing}
-          style={({ pressed }) => [
-            styles.shareFloatingBtn,
-            pressed && { opacity: 0.85 },
-          ]}
-        >
-          {sharing ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="share-outline" size={18} color="#fff" />
-              <Text style={styles.shareFloatingText}>
-                Share
-              </Text>
-            </>
-          )}
-        </Pressable>
-      )}
-
-      {/* Dark overlay — appears instantly, separate from sheet animation */}
-      {overlayVisible && (
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={closeSort}
-        />
-      )}
-
-      {/* Sort bottom sheet — slides up independently */}
-      <Modal
-        visible={showSortModal}
-        transparent
-        animationType="none"
-        onRequestClose={closeSort}
-      >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Pressable style={{ flex: 1 }} onPress={closeSort} />
-          <Animated.View
-            style={[
-              styles.modalSheet,
-              {
-                transform: [{
-                  translateY: sheetAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [600, 0],
-                  }),
-                }],
-              },
-            ]}
+        <View style={[styles.floatingBar, { paddingBottom: Math.max(insets.bottom, 12) + 70 }]}>
+          <Pressable
+            onPress={handleShareSelected}
+            disabled={sharing}
+            style={({ pressed }) => [styles.shareFloatingBtn, pressed && styles.btnPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${selectedIds.size} selected records with Doctor`}
           >
-            <DragHandle />
-            <Text style={styles.modalTitle}>Filter & Sort Records</Text>
-            <Text style={styles.modalSubtitle}>Choose how you want to view your records.</Text>
-            {SORT_OPTIONS.map((opt) => {
-              const isActive = sortMode === opt.key;
-              return (
-                <Pressable
-                  key={opt.key}
-                  onPress={() => { setSortMode(opt.key); closeSort(); }}
-                  style={[styles.sortOption, isActive && styles.sortOptionActive]}
-                >
-                  <View style={[styles.sortOptionIcon, isActive && styles.sortOptionIconActive]}>
-                    <Ionicons name={opt.icon} size={18} color={isActive ? GREEN : '#888'} />
-                  </View>
-                  <Text style={[styles.sortOptionLabel, isActive && styles.sortOptionLabelActive]}>
-                    {opt.label}
-                  </Text>
-                  {isActive && <Ionicons name="checkmark-circle" size={22} color={GREEN} />}
-                </Pressable>
-              );
-            })}
-          </Animated.View>
+            {sharing ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <>
+                <Ionicons name="qr-code-outline" size={18} color={Colors.white} />
+                <Text style={styles.shareFloatingText}>
+                  Share {selectedIds.size} Record{selectedIds.size !== 1 ? 's' : ''} via QR
+                </Text>
+              </>
+            )}
+          </Pressable>
         </View>
-      </Modal>
+      )}
 
-      {/* Side Menu Drawer Hub */}
+      {/* Side Menu Drawer */}
       <SideMenuModal
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
@@ -515,622 +569,410 @@ export default function RecordsScreen() {
 }
 
 const styles = StyleSheet.create({
-
-  // ─────────────────────────────
-  // ROOT
-  // ─────────────────────────────
-
   root: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: Colors.bg,
   },
-
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: BG,
+    backgroundColor: Colors.bg,
+    gap: 12,
   },
-
-  listContainer: {
-    paddingBottom: Spacing.tabBarClearance,
+  loadingText: {
+    ...Typography.body,
+    color: Colors.muted,
   },
-
-
-  // ─────────────────────────────
-  // HEADER
-  // ─────────────────────────────
-
-  header: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingBottom: 12,
+  listContent: {
+    flexGrow: 1,
   },
-
+  headerContainer: {
+    paddingBottom: 4,
+  },
   toolbar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 18,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.screenPadding,
+    marginBottom: 14,
   },
-
+  toolbarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   toolbarIcon: {
-    width: 24,
-    height: 24,
+    width: 25,
+    height: 25,
     resizeMode: 'contain',
   },
-
-  bell: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+  bellBtn: {
+    padding: 2,
   },
-
-  headerTitle: {
-    fontSize: 28,
-    fontFamily: 'LexendDeca-Bold',
-    color: INK,
-  },
-
-  headerSub: {
-    fontSize: 12,
-    color: MUTED,
-    marginTop: 3,
-    lineHeight: 12,
-  },
-
   notificationDot: {
     position: 'absolute',
-    right: 1,
-    top: 1,
+    right: -1,
+    top: -1,
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: GREEN,
+    backgroundColor: Colors.teal,
+    borderWidth: 1.5,
+    borderColor: Colors.bg,
   },
-
-  cancelBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+  selectHeaderBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.cardBg,
     borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    backgroundColor: '#fff',
+    borderColor: Colors.border,
   },
-
+  selectHeaderText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: Colors.teal,
+  },
+  cancelBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.tealLight,
+  },
   cancelBtnText: {
-    fontSize: 14,
-    color: GREEN,
-    fontWeight: '500',
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12.5,
+    color: Colors.teal,
+  },
+  greetingBox: {
+    paddingHorizontal: Spacing.screenPadding,
+    marginBottom: 14,
+  },
+  greetingTitle: {
+    ...Typography.display,
+    color: Colors.ink,
+  },
+  greetingSub: {
+    ...Typography.subtitle,
+    color: Colors.muted,
+    marginTop: 2,
   },
 
-
-  // ─────────────────────────────
-  // SELECTION BANNER
-  // ─────────────────────────────
-
+  /* Selection Banner */
   selectionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
     marginHorizontal: Spacing.screenPadding,
-    marginBottom: 14,
-    backgroundColor: '#fff',
-    borderRadius: 14,
+    marginBottom: 12,
+    backgroundColor: Colors.cardBg,
+    borderRadius: Radii.button,
     borderWidth: 1,
-    borderColor: GREEN_LIGHT,
+    borderColor: Colors.tealLight,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
-
+  selectionBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   selectionBannerText: {
-    flex: 1,
-    fontSize: 14,
-    color: GREEN_DARK,
-    fontWeight: '500',
-  },
-
-  selectAllText: {
+    fontFamily: 'LexendDeca-Medium',
     fontSize: 13,
-    color: GREEN,
-    fontWeight: '600',
+    color: Colors.ink,
+  },
+  selectAllText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12.5,
+    color: Colors.teal,
   },
 
-
-  // ─────────────────────────────
-  // AI SUMMARY
-  // ─────────────────────────────
-
+  /* AI Health Summary Banner */
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1976D2',
+    backgroundColor: Colors.blue,
     marginHorizontal: Spacing.screenPadding,
-    borderRadius: 16,
-    paddingVertical: 15,
-    paddingHorizontal: 16,
+    borderRadius: Radii.card,
+    paddingVertical: 13,
+    paddingHorizontal: 15,
     gap: 12,
-    marginBottom: 18,
+    marginBottom: 12,
+    shadowColor: Colors.blue,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-
+  aiBannerPressed: {
+    opacity: 0.9,
+  },
   aiIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   aiAsset: {
-    width: 35,
-    height: 35,
+    width: 30,
+    height: 30,
     resizeMode: 'contain',
-    tintColor: '#fff',
+    tintColor: Colors.white,
   },
-
   aiTextBox: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
-
   aiTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 0,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 14.5,
+    color: Colors.white,
   },
-
   aiSubtitle: {
+    fontFamily: 'LexendDeca-Regular',
     fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.75)',
-    lineHeight: 10,
-    marginTop: 0, 
+    color: 'rgba(255, 255, 255, 0.88)',
   },
 
+  /* Quick Category Chips */
+  chipRow: {
+    paddingHorizontal: Spacing.screenPadding,
+    paddingBottom: 10,
+    gap: 8,
+  },
+  chip: {
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.cardBg,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  chipActive: {
+    backgroundColor: Colors.tealLight,
+    borderColor: Colors.teal,
+  },
+  chipText: {
+    fontFamily: 'LexendDeca-Medium',
+    fontSize: 12,
+    color: Colors.muted,
+  },
+  chipTextActive: {
+    fontFamily: 'LexendDeca-Bold',
+    color: Colors.teal,
+  },
 
-  // ─────────────────────────────
-  // RECORD HEADER
-  // ─────────────────────────────
-
-  recordsHeading: {
+  /* Records Section Header */
+  recordsSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.screenPadding,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 10,
   },
-
-  sectionTitle: {
-    fontSize: 18,
+  recordsSectionTitle: {
     fontFamily: 'LexendDeca-Bold',
-    color: INK,
+    fontSize: 18,
+    color: Colors.ink,
   },
-
-  recordCount: {
+  recordsCountText: {
+    fontFamily: 'LexendDeca-Medium',
     fontSize: 12,
-    color: GREEN,
-    marginTop: 2,
+    color: Colors.teal,
   },
 
-
-  // ─────────────────────────────
-  // SEARCH
-  // ─────────────────────────────
-
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: 120,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-
-  searchInput: {
-    flex: 1,
-    padding: 0,
-    fontSize: 12,
-    color: INK,
-  },
-
-  searchIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: 'contain',
-  },
-
-  // ─────────────────────────────
-  // FILTER CHIPS
-  // ─────────────────────────────
-
-  chipRow: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingBottom: 14,
-    gap: 8,
-  },
-
-  chip: {
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-
-  chipActive: {
-    backgroundColor: GREEN_LIGHT,
-    borderColor: GREEN_LIGHT,
-  },
-
-  chipText: {
-    fontSize: 12,
-    color: MUTED,
-  },
-
-  chipTextActive: {
-    color: GREEN,
-    fontWeight: '700',
-  },
-
-
-  // ─────────────────────────────
-  // SORT BUTTON
-  // ─────────────────────────────
-
-  sortBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: GREEN_LIGHT,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: '#fff',
-  },
-
-  sortBtnText: {
-    fontSize: 12,
-    color: GREEN,
-    fontWeight: '500',
-  },
-
-
-  // ─────────────────────────────
-  // RECORD CARD
-  // ─────────────────────────────
-
+  /* ─────────────────────────────
+     RECORD CARD (PRESERVED DESIGN)
+  ───────────────────────────── */
   recordCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: Colors.cardBg,
+    borderRadius: Radii.card,
     marginHorizontal: Spacing.screenPadding,
     marginBottom: 12,
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-
-    overflow: 'hidden',
-
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+    overflow: 'hidden',
   },
-
-  recordCardSelected: {
+  cardPressed: {
+    opacity: 0.8,
+  },
+  cardSelected: {
     borderWidth: 2,
-    borderColor: GREEN,
+    borderColor: Colors.teal,
   },
-
-
-  // ─────────────────────────────
-  // CHECKBOX
-  // ─────────────────────────────
-
   checkboxArea: {
     position: 'absolute',
     top: 12,
     right: 12,
     zIndex: 10,
   },
-
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: GREEN_LIGHT,
-    backgroundColor: '#fff',
+    borderColor: Colors.tealLight,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   checkboxSelected: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
+    backgroundColor: Colors.teal,
+    borderColor: Colors.teal,
   },
 
-
-  // ─────────────────────────────
-  // RECORD TYPE BADGE
-  // ─────────────────────────────
-
+  /* Record Type Badge */
   typeBadge: {
     alignSelf: 'flex-start',
     marginTop: 12,
     marginLeft: 14,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-
   typeBadgeText: {
+    fontFamily: 'LexendDeca-Bold',
     fontSize: 11,
-    fontWeight: '600',
-    color: GREEN,
+    color: Colors.teal,
   },
 
-
-  // ─────────────────────────────
-  // RECORD BODY
-  // ─────────────────────────────
-
+  /* Record Body */
   recordBody: {
     paddingHorizontal: 14,
     paddingBottom: 12,
     gap: 8,
   },
-
   recordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 30,
+    gap: 12,
   },
-
   recordIconBox: {
     width: 44,
     height: 44,
-    paddingHorizontal: 35, 
+    borderRadius: 12,
+    backgroundColor: Colors.tealLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   recordAsset: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     resizeMode: 'contain',
+    tintColor: Colors.teal,
   },
-
   recordContent: {
     flex: 1,
-    gap: 5,
+    gap: 4,
   },
-
   recordTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: INK,
-    lineHeight: 18,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 15.5,
+    color: Colors.ink,
+    lineHeight: 20,
   },
-
   recordDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
-
   dateAsset: {
     width: 12,
     height: 12,
     resizeMode: 'contain',
+    tintColor: Colors.muted,
   },
-
   recordDateText: {
-    fontSize: 10,
-    color: MUTED,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    color: Colors.muted,
+  },
+  chevronArrow: {
+    opacity: 0.6,
+    marginLeft: 4,
   },
 
-
-  // ─────────────────────────────
-  // RECORD CHEVRON
-  // ─────────────────────────────
-
-  chevronCircle: {
-    width: 45,
-    height: 45,
-    borderRadius: 16,
-    borderColor: GREEN_LIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-
-  // ─────────────────────────────
-  // RECORD FOOTER
-  // ─────────────────────────────
-
+  /* Record Footer */
   recordFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F5F5F5',
+    borderTopColor: Colors.divider,
   },
-
   footerAsset: {
     width: 12,
     height: 12,
     resizeMode: 'contain',
+    tintColor: Colors.muted,
   },
-
   recordFooterText: {
-    fontSize: 10,
-    color: '#999',
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11,
+    color: Colors.muted,
   },
 
-
-  // ─────────────────────────────
-  // EMPTY STATE
-  // ─────────────────────────────
-
-  empty: {
+  /* Empty State */
+  emptyContainer: {
     alignItems: 'center',
-    paddingTop: 60,
-    gap: 10,
-    paddingHorizontal: 40,
+    justifyContent: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 30,
+    gap: 8,
   },
-
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: GREEN_DARK,
-  },
-
-  emptySubtitle: {
-    fontSize: 14,
-    color: GREEN,
+    ...Typography.title2,
+    color: Colors.ink,
     textAlign: 'center',
   },
+  emptySub: {
+    ...Typography.body,
+    fontSize: 12.5,
+    color: Colors.muted,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
 
-  // ─────────────────────────────
-  // MODAL OVERLAY
-  // ─────────────────────────────
-
-  modalOverlay: {
+  /* Floating Share Button */
+  floatingBar: {
     position: 'absolute',
-    top: 0,
-    right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    zIndex: 10,
+    right: 0,
+    paddingHorizontal: Spacing.screenPadding,
+    alignItems: 'center',
   },
-
-  // ─────────────────────────────
-  // MODAL SHARE SELECTION
-  // ─────────────────────────────
-    shareFloatingBtn: {
-    position: 'absolute',
-    bottom: 90, // sits above your navbar
-    alignSelf: 'center',
-
+  shareFloatingBtn: {
+    width: '100%',
+    maxWidth: 320,
+    height: 48,
+    borderRadius: Radii.button,
+    backgroundColor: Colors.teal,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-
     gap: 8,
-
-    backgroundColor: GREEN,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-
-    borderRadius: 30,
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
+    shadowColor: Colors.teal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
-
-    zIndex: 20,
+    elevation: 4,
   },
-
   shareFloatingText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
+    ...Typography.button,
+    color: Colors.white,
   },
-
-
-  // ─────────────────────────────
-  // SORT BOTTOM SHEET
-  // ─────────────────────────────
-
-  modalSheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 48,
-  },
-
-  modalHandle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1D5DB',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 16,
-  },
-
-
-  // ─────────────────────────────
-  // SORT OPTIONS
-  // ─────────────────────────────
-
-  sortOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 2,
-  },
-
-  sortOptionActive: {
-    backgroundColor: '#F0F9F5',
-  },
-
-  sortOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  sortOptionIconActive: {
-    backgroundColor: '#E8F5F0',
-  },
-
-  sortOptionLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-  },
-
-  sortOptionLabelActive: {
-    color: GREEN,
-    fontWeight: '600',
+  btnPressed: {
+    opacity: 0.8,
   },
 });

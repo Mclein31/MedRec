@@ -10,6 +10,12 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.8.6] — Records Screen Layout Overhaul & Quick Category Carousel
+- **Full-Width Search Bar**: Replaced cramped header search input with a prominent full-width `<RecordSearchBar />` supporting instant real-time filtering and clear (X) reset.
+- **Category Quick Chips Carousel**: Enhanced horizontal category filter row with dynamic, live record distribution count badges (e.g., `All (14)`, `Labs (5)`, `Prescriptions (3)`), allowing immediate 1-tap filtering without repetitive modals.
+- **Clean Card Chevron Presentation**: Preserved signature classic record cards while removing the circular background highlight tint from the right chevron arrow for a calmer, cleaner aesthetic.
+- **Enhanced Top Toolbar & Multi-Select**: Added an explicit "Select" toolbar toggle button alongside row long-press for multi-record QR sharing, with floating "Share Selected" CTA button.
+
 ## [0.8.5] — App-Wide UI/UX Consistency Pass & Design System Centralization
 - **Centralized Design System**: Overhauled `mobile/constants/theme.ts` with comprehensive canonical tokens:
   - `Colors`: Canonical teal (`#159A83`), ink (`#12343B`), mint/light (`#DDF5EE`), canvas (`#F4FAF9`), surface (`#FFFFFF`), border (`#E5F0EE`), AI blue (`#1976D2`), alert red (`#D92D20`), and modal affordance colors.

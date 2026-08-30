@@ -42,10 +42,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-10** | **Unified Blue AI Card Layout & Horizontal Category Carousel** | `Active` | Creates a shared visual language for AI cards (rich blue, horizontal icon/title row, white CTA) and single-line category carousel preserving vertical form space. | [[07 - Product Design/Design Decisions#DD-10|DD-10]] |
 | **DD-11** | **Adaptive Share Hero & Cardless Flat Access History** | `Active` | Focuses 75% of visual weight on instant QR generation/scanning while de-cluttering past activity into a calm, unboxed typography timeline without cards, pills, or repetitive icons. | [[07 - Product Design/Design Decisions#DD-11|DD-11]] |
 | **DD-12** | **Centralized Design System Tokens & Universal Screen Header** | `Active` | Enforces single-source-of-truth tokens (`theme.ts`), universal `ScreenHeader` with drawer and notification triggers, 20px screen gutters, and 110px tab bar clearance. | [[07 - Product Design/Design Decisions#DD-12|DD-12]] |
+| **DD-13** | **Records Screen Layout & Quick Category Carousel** | `Active` | Replaces cramped search inputs and redundant sort modals with a full-width search bar and direct horizontal category quick chips with live counts. | [[07 - Product Design/Design Decisions#DD-13|DD-13]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-13: Records Screen Layout & Quick Category Carousel
+- **Context**: The Records tab had a cramped 120px search input placed beside titles, an undiscoverable long-press sort gesture, and potential modal fatigue when filtering. Record cards also had extraneous background highlight pills on trailing chevrons.
+- **Alternatives Considered**: (A) Heavy multi-step filter modal sheets with sort options, (B) Dense micro-rows removing cards completely, (C) Preserving the signature record card design (category badge, squircle icon box, clinical event date, folder footer) while enhancing the layout with a full-width `<RecordSearchBar />`, direct horizontal quick-filter category carousel with live count badges (`All (14)`, `Labs (5)`), and removing the chevron background highlight.
+- **Decision**: Option C — Deploy full-width search, direct single-tap category carousel filtering with real-time distribution counts, remove redundant sort modal sheets, and clean up card chevron presentation.
+- **Rationale**: Reduces cognitive friction, avoids nested modal flows, provides immediate categorical feedback, and preserves familiar clinical card identity.
 
 ### DD-12: Centralized Design System Tokens & Universal Screen Header
 - **Context**: The mobile application had minor visual inconsistencies: divergent green color values in the scan tab (`#1D9E75` vs `#159A83`), disparate horizontal margins (24px vs 20px), varying header implementations, and missing drawer menu/notification center affordances on the Doctor Scan and Profile tabs.

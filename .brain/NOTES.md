@@ -82,3 +82,8 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
   - `Button.tsx`: Unified button with haptics, spinner loading, and variant styling (primary, secondary, blue, outline, destructive).
   - `Card.tsx`: Standardized 16px radius container with `#E5F0EE` hairline border.
 
+## 🗂️ Records Screen Layout & Quick Category Carousel
+- **Full-Width Search Bar (`mobile/components/records/RecordSearchBar.tsx`)**: Replaces cramped inline inputs with an edge-to-edge search bar featuring live keyword filtering across record titles, notes, and medical categories, complete with a 1-tap clear button.
+- **Category Quick Chips Carousel**: Direct single-tap horizontal filter bar (`[ All (14) ] [ Labs (5) ] [ Prescriptions (3) ] ...`) with real-time record distribution counts, eliminating redundant sorting modals and providing instant zero-friction navigation.
+- **Classic Card Preservation & De-cluttering**: Retains signature medical cards with category badge, 44px squircle icon box, clinical event date, and folder creation footer, while removing the circular background highlight on the chevron arrow for a clean, cohesive visual hierarchy.
+
