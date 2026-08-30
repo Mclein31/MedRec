@@ -63,10 +63,10 @@ An authenticated in-app notification center triggered by the toolbar bell on Hom
 
 ---
 
-### 4. Bottom Tab State & Active Icon Behavior
-The bottom tab bar dynamically tracks the active screen via `usePathname()`:
-- **Active Profile Tab**: Renders `profile-active.png` with uniform 28×28px dimensions.
-- **Inactive Profile Tab**: Renders `profile-inactive.png` with identical 28×28px sizing, preventing visual scaling jumps or shrinking on tab transitions.
+### 4. Bottom Tab State & Dynamic Avatar Icon Behavior
+The bottom tab bar dynamically tracks navigation state via `usePathname()` and `AuthContext`:
+- **With Uploaded Profile Photo**: Renders the patient's circular photo (`28×28px`, `borderRadius: 14`, `resizeMode: 'cover'`) on both active and inactive states. When active, displays a subtle 1.5px `#159A83` teal border ring.
+- **Without Profile Photo (Default Fallback)**: Renders `profile-active.png` when active and `profile-inactive.png` when inactive with uniform 28×28px sizing.
 - **Tab Selection**: All tabs (`Records`, `Share`, `Scan`, `Profile`) support clear accessibility attributes (`accessibilityRole="tab"`, `accessibilityState={{ selected: isActive }}`).
 
 ---

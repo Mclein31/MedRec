@@ -5,6 +5,7 @@ type AuthUser = {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
 };
 
 type AuthContextType = {
@@ -15,7 +16,7 @@ type AuthContextType = {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  setUser: (user: AuthUser | null) => void;
+  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,12 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const data = await api.getMe();
-      if (data?.user) {
+      const [meData, profileData] = await Promise.all([
+        api.getMe().catch(() => null),
+        api.getProfile().catch(() => null),
+      ]);
+      const userData = meData?.user || profileData?.user;
+      if (userData) {
         setUser({
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          avatarUrl: profileData?.profile?.avatarUrl || userData.avatarUrl || null,
         });
       }
     } catch {
@@ -45,12 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(stored);
       if (stored) {
         try {
-          const data = await api.getMe();
-          if (data?.user) {
+          const [meData, profileData] = await Promise.all([
+            api.getMe().catch(() => null),
+            api.getProfile().catch(() => null),
+          ]);
+          const userData = meData?.user || profileData?.user;
+          if (userData) {
             setUser({
-              id: data.user.id,
-              name: data.user.name,
-              email: data.user.email,
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+              avatarUrl: profileData?.profile?.avatarUrl || userData.avatarUrl || null,
             });
           }
         } catch {
@@ -70,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        avatarUrl: data.user.avatarUrl || null,
       });
     } else {
       await refreshUser();
@@ -85,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        avatarUrl: data.user.avatarUrl || null,
       });
     } else {
       await refreshUser();

@@ -84,15 +84,6 @@ export default function ProfileScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Photo Library Access Required',
-          'Please allow photo library access in your device settings to select a profile photo.'
-        );
-        return;
-      }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
@@ -113,15 +104,17 @@ export default function ProfileScreen() {
       setUploadingPhoto(true);
       // Optimistic update
       setProfile((prev) => ({ ...prev, avatarUrl: photoPayload }));
+      setUser((prev) => (prev ? { ...prev, avatarUrl: photoPayload } : null));
 
       // Persist to backend database
       const res = await api.updateProfile({ avatarUrl: photoPayload });
       if (res && res.profile) {
         setProfile(res.profile);
+        setUser((prev) => (prev ? { ...prev, avatarUrl: res.profile.avatarUrl } : null));
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
-      Alert.alert('Upload Failed', err.message || 'Could not update profile photo.');
+      Alert.alert('Photo Error', err?.message || 'Could not open photo library.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -136,6 +129,7 @@ export default function ProfileScreen() {
             id: data.user.id,
             name: data.user.name,
             email: data.user.email,
+            avatarUrl: data.profile?.avatarUrl || null,
           });
         }
         setProfile(data.profile || {});
@@ -171,11 +165,12 @@ export default function ProfileScreen() {
 
   const handleProfileUpdated = (data: any) => {
     if (data.user) {
-      setUser({
+      setUser((prev) => ({
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
-      });
+        avatarUrl: data.profile?.avatarUrl !== undefined ? data.profile.avatarUrl : prev?.avatarUrl,
+      }));
     }
     if (data.profile) {
       setProfile(data.profile);
@@ -332,12 +327,15 @@ export default function ProfileScreen() {
             onPress={handlePickPhoto}
             disabled={uploadingPhoto}
             style={({ pressed }) => [styles.avatarContainer, pressed && styles.pressed]}
-            hitSlop={10}
+            hitSlop={15}
             accessibilityRole="button"
             accessibilityLabel="Change profile photo"
           >
-            {profile.avatarUrl ? (
-              <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImage} />
+            {(profile.avatarUrl || user?.avatarUrl) ? (
+              <Image
+                source={{ uri: profile.avatarUrl || user?.avatarUrl || '' }}
+                style={styles.avatarImage}
+              />
             ) : (
               <View style={styles.avatarCircle}>
                 <Text style={styles.avatarText}>{userInitials}</Text>

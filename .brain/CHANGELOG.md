@@ -18,10 +18,11 @@ last_updated: 2026-08-30
   - *Personal Information*: Date of Birth (with calculated age), Biological Sex, Phone Number, and Address.
   - *Security & Preferences*: Active QR Shares, Change Password, Export Health Vault (JSON Archive), Biometric App Unlock toggle, Push Notifications toggle, and About MedRec & Disclaimer.
   - *Account Actions & Footer*: Clean Sign Out row and subtle, centered Delete Account & Health Vault link.
-- **Added**: Interactive profile photo upload using `expo-image-picker` with camera badge affordance, 1:1 square crop, and immediate preview.
-- **Added**: Backend `avatar_url` database column in PostgreSQL `user_profiles` table, model/controller handling in `profileModel.js` and `profileController.js`, and test coverage in `profile.test.js`.
+- **Added**: Interactive profile photo upload using `expo-image-picker` with camera badge affordance, 1:1 square crop, direct `PHPickerViewController` invocation, and immediate preview.
+- **Added**: Dynamic bottom navigation Profile tab avatar displaying the user's uploaded circular image (`28×28px`, `cover`, `borderRadius: 14`, with 1.5px `#159A83` active border), falling back to default `profile-active.png`/`profile-inactive.png` icons when no photo exists.
+- **Added**: Global `avatarUrl` session state in `AuthContext` with parallel backend hydration (`api.getMe()` + `api.getProfile()`) across navigation and app restarts.
+- **Added**: Backend `avatar_url` database column in PostgreSQL `user_profiles` table, left-joined lookups in `userModel.js`, controller handling in `authController.js` and `profileController.js`, and test coverage in `profile.test.js`.
 - **Linked**: Integrated `ExpoImagePicker (17.0.11)` and `EXImageLoader (6.0.0)` into CocoaPods (`mobile/ios/Podfile.lock`), added `NSPhotoLibraryUsageDescription` in `Info.plist`, and increased Express JSON limit to `10mb`.
-- **Fixed**: Bottom tab bar Profile icon now renders `profile-active.png` when active and `profile-inactive.png` when inactive, with uniform 28×28px dimensions and no size-jumping or shrinking on tab switches.
 
 ## [0.7.0] — Privacy-Conscious In-App Notification Center & Modal Refinement
 - **Added**: Interactive notification bell trigger and dynamic unread badge dot across Records Overview (`index.tsx`) and Share Center (`share.tsx`).

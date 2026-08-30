@@ -43,7 +43,7 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 
 ## 👤 Profile Tab & Avatar Ingestion
 - **Inset Grouped Architecture**: Designed without heavy card borders or saturated background highlights. Utilizes clean white containers (`#FFFFFF`, `borderRadius: 16`, `borderColor: '#E5F0EE'`) with `#F0F5F4` hairline dividers.
-- **Avatar Selection & Cropping**: Uses `expo-image-picker` with `aspect: [1, 1]`, `allowsEditing: true`, and `quality: 0.7`.
-- **Database Persistence**: Stores image payload in `user_profiles.avatar_url` (PostgreSQL `TEXT` column) and delivers via `GET /profile` and `PUT /profile`.
+- **Avatar Selection & Cropping**: Uses `expo-image-picker` (`launchImageLibraryAsync`) with `aspect: [1, 1]`, `allowsEditing: true`, and `quality: 0.7`. Directly invokes native iOS `PHPickerViewController` without requiring pre-flight permissions.
+- **Database Persistence & Session Sync**: Stores image payload in `user_profiles.avatar_url` (PostgreSQL `TEXT` column) and propagates into `AuthContext` on launch via parallel `api.getMe()` and `api.getProfile()` calls.
 - **Native Linkage**: CocoaPods dependency `ExpoImagePicker (17.0.11)` linked in `mobile.xcworkspace` with iOS `NSPhotoLibraryUsageDescription` in `Info.plist`. Express JSON parser configured with `limit: '10mb'`.
-- **Bottom Navigation State**: Tab layout (`_layout.tsx`) binds `profile-active.png` and `profile-inactive.png` dynamically to `usePathname()`, maintaining strict 28×28px uniform dimensions across all states without scale jumping.
+- **Bottom Navigation State**: Tab layout (`_layout.tsx`) renders the circular user avatar (`28×28px`, `cover`, `borderRadius: 14`, with 1.5px `#159A83` teal border when active) whenever `user?.avatarUrl` exists, and seamlessly falls back to default `profile-active.png` and `profile-inactive.png` icons when no photo is uploaded.

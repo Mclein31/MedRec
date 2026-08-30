@@ -76,7 +76,15 @@ async function login(req, res, next) {
     }
 
     const token = signToken(user);
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatar_url || null,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -98,7 +106,14 @@ async function me(req, res, next) {
   try {
     const user = await userModel.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ user });
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatar_url || null,
+      },
+    });
   } catch (err) {
     next(err);
   }

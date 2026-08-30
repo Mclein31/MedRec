@@ -1,13 +1,16 @@
 import { View, Pressable, StyleSheet, Image } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useAuth } from '../../context/AuthContext';
 
 const GREEN = '#159A83';
 
-function CustomTabBar() {
+function CustomTabBar(_props?: BottomTabBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   const tabs = [
     {
@@ -45,7 +48,6 @@ function CustomTabBar() {
     },
   ];
 
-
   return (
     <View
       style={[
@@ -55,16 +57,14 @@ function CustomTabBar() {
         },
       ]}
     >
-
       {tabs.map((tab) => {
-
         const isAdd = tab.name === 'add';
+        const isProfile = tab.name === 'profile';
 
         const isActive =
           tab.name === 'index'
             ? pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/index'
             : pathname.includes(tab.name);
-
 
         return (
           <Pressable
@@ -76,37 +76,35 @@ function CustomTabBar() {
             accessibilityLabel={`${tab.name.charAt(0).toUpperCase() + tab.name.slice(1)} tab`}
           >
             {isAdd ? (
+              <Image source={tab.icon} style={styles.addIcon} />
+            ) : isProfile && user?.avatarUrl ? (
               <Image
-                source={tab.icon}
-                style={styles.addIcon}
+                source={{ uri: user.avatarUrl }}
+                style={[
+                  styles.profileAvatarIcon,
+                  isActive && styles.profileAvatarIconActive,
+                ]}
               />
             ) : (
               <Image
-                source={
-                  isActive
-                    ? tab.activeIcon
-                    : tab.inactiveIcon
-                }
+                source={isActive ? tab.activeIcon : tab.inactiveIcon}
                 style={styles.navIcon}
               />
             )}
           </Pressable>
         );
-
       })}
-
     </View>
   );
 }
 
 
 export default function TabsLayout() {
-
   return (
     <Tabs
-      tabBar={() => <CustomTabBar />}
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        headerShown:false,
+        headerShown: false,
       }}
     >
 
@@ -181,6 +179,19 @@ const styles = StyleSheet.create({
     width:28,
     height:28,
     resizeMode:'contain',
+  },
+
+
+  profileAvatarIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    resizeMode: 'cover',
+  },
+
+  profileAvatarIconActive: {
+    borderWidth: 1.5,
+    borderColor: GREEN,
   },
 
 
