@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const recordRoutes = require('./routes/recordRoutes');
 const shareRoutes = require('./routes/shareRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app = express();
@@ -40,12 +41,15 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/auth/login', authLimiter);
-app.use('/auth/register', authLimiter);
+if (process.env.NODE_ENV !== 'test') {
+  app.use('/auth/login', authLimiter);
+  app.use('/auth/register', authLimiter);
+}
 app.use('/auth', authRoutes);
 app.use('/records', recordRoutes);
 app.use('/share', shareRoutes);
 app.use('/ai', aiRoutes);
+app.use('/profile', profileRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

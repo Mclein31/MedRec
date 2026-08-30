@@ -51,20 +51,25 @@ last_updated: 2026-08-29
 - `backend/src/server.js` & `backend/src/app.js`: Express application initialization and middleware pipeline.
 - `backend/src/routes/`:
   - `authRoutes.js`: User registration, login, and JWT issuance.
+  - `profileRoutes.js`: User demographic profile, emergency Medical ID, password updates, and account deletion.
   - `recordRoutes.js`: Patient medical records CRUD (visits, diagnoses, lab results, prescriptions).
   - `shareRoutes.js`: Time-limited sharing token generation, QR code payload generation, and doctor read-only access verification.
   - `aiRoutes.js`: OpenAI-powered clinical summarization and medical terminology simplification.
-- `backend/src/models/`: Database access objects (`userModel.js`, `recordModel.js`, `shareModel.js`, `tokenModel.js`).
+- `backend/src/models/`: Database access objects (`userModel.js`, `profileModel.js`, `recordModel.js`, `shareModel.js`, `tokenModel.js`).
 - `backend/src/migrations/schema.sql`: PostgreSQL schema definitions with Foreign Keys and indexes.
 - `mobile/app/`:
   - `_layout.tsx`: Root stack navigation and theme provider.
   - `login.tsx` & `register.tsx`: Authentication screen interfaces.
-  - `(tabs)/index.tsx`: Patient records dashboard and health timeline.
+  - `(tabs)/index.tsx`: Patient records dashboard, dynamic greeting, and health timeline.
+  - `(tabs)/profile.tsx`: Comprehensive patient demographic and Emergency Medical ID profile screen.
   - `(tabs)/share.tsx`: QR code generator for clinical record sharing.
   - `(tabs)/scan.tsx`: Doctor QR code scanner interface.
   - `record/[id].tsx`: Record detail view with modular cards, compact 2-column metadata, clinical notes, and AI insights.
   - `record/add.tsx`: New record entry form and document scanning flow.
-  - `lib/api.ts`: Centralized Axios/fetch client communicating with backend endpoints.
+  - `components/ProfileEditModal.tsx`: Modular edit modal for patient demographics and clinical baseline.
+  - `components/ChangePasswordModal.tsx`: Authenticated password change modal.
+  - `components/EmergencyIdModal.tsx`: High-contrast first responder Emergency Medical ID with offline QR code.
+  - `lib/api.ts`: Centralized fetch client communicating with backend endpoints.
 - `MedRec/`: 18-folder Obsidian research vault (`00 - Dashboard`, `01 - Vision`, `02 - Problem Space`, `08 - Technical Architecture`, etc.).
 
 ---

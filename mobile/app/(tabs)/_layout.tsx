@@ -39,7 +39,7 @@ function CustomTabBar() {
 
     {
       name: 'profile',
-      route: '/profile',
+      route: '/(tabs)/profile',
       activeIcon: require('../../assets/icons/profile-active.png'),
       inactiveIcon: require('../../assets/icons/profile-inactive.png'),
     },
@@ -62,7 +62,7 @@ function CustomTabBar() {
 
         const isActive =
           tab.name === 'index'
-            ? pathname === '/' || pathname.includes('(tabs)')
+            ? pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/index'
             : pathname.includes(tab.name);
 
 
@@ -134,6 +134,13 @@ export default function TabsLayout() {
         name="scan"
         options={{
           title:'Scan',
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title:'Profile',
         }}
       />
 

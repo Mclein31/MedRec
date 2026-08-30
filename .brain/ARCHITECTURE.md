@@ -31,11 +31,14 @@ last_updated: 2026-08-28
                                    ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                     Node.js / Express 5 API Server                     │
-├───────────────────┬───────────────────┬────────────────────────────────┤
-│ /api/auth         │ /api/records      │ /api/share      │ /api/ai      │
-│ - Register/Login  │ - Records CRUD    │ - Create QR     │ - Summarize  │
-│ - JWT Issuance    │ - Category Filter │ - Verify Token  │ - Explain    │
-├───────────────────┴───────────────────┴─────────────────┴──────────────┤
+├───────────────────┬───────────────────┬────────────────┬───────────────┤
+│ /api/auth         │ /api/records      │ /api/share     │ /api/ai       │
+│ - Register/Login  │ - Records CRUD    │ - Create QR    │ - Summarize   │
+│ - JWT Issuance    │ - Category Filter │ - Verify Token │ - Explain     │
+├───────────────────┴───────────────────┴────────────────┴───────────────┤
+│ /api/profile                                                           │
+│ - Get Profile & Stats, Update Demographics/Medical ID, Password, Delete│
+├────────────────────────────────────────────────────────────────────────┤
 │ Security Middleware: Helmet, CORS, Rate Limit, Auth Validator          │
 └───────────────────┬─────────────────────────────────────┬──────────────┘
                     │                                     │
@@ -43,23 +46,26 @@ last_updated: 2026-08-28
       ┌───────────────────────────┐         ┌───────────────────────────┐
       │    PostgreSQL Database    │         │      OpenAI API Cloud     │
       │  - users                  │         │  - gpt-4o Summarization   │
-      │  - medical_records        │         │  - Medical Terms Decoder  │
-      │  - shared_access_tokens   │         └───────────────────────────┘
-      │  - access_audit_logs      │
+      │  - user_profiles          │         │  - Medical Terms Decoder  │
+      │  - medical_records        │         └───────────────────────────┘
+      │  - shared_access          │
+      │  - revoked_tokens         │
       └───────────────────────────┘
 ```
 
 ---
 
 ## 🗄️ Database Schema (`backend/src/migrations/schema.sql`)
-1. `users`: Stores patient and doctor credentials, hashed passwords (`bcryptjs`), and user roles.
-2. `medical_records`: Stores individual clinical records (title, category: `diagnosis`, `prescription`, `lab_result`, `consultation`, record date, attachments, notes, AI summary).
-3. `shared_access_tokens`: Stores cryptographically generated access tokens, associated `user_id`, expiration timestamps, and revocation flags.
-4. `access_logs`: Audit trail logging doctor access events, IP addresses, and timestamps for HIPAA/data privacy compliance.
+1. `users`: Stores user credentials, hashed passwords (`bcryptjs`), and primary identity.
+2. `user_profiles`: 1:1 linked demographic and clinical baseline (DOB, sex, blood type, allergies, conditions, maintenance medications, emergency contact name/relation/phone, address, organ donor status).
+3. `medical_records`: Stores individual clinical records (title, category: `diagnosis`, `prescription`, `lab_result`, `consultation`, record date, attachments, notes, AI summary).
+4. `shared_access`: Stores cryptographically generated access tokens, associated `user_id`, expiration timestamps, and revocation flags.
+5. `revoked_tokens`: Stores revoked JWT `jti` identifiers with TTL for instant session invalidation on logout.
 
 ---
 
 ## 🔐 Security & Access Control Flow
-1. **Patient Sharing**: Patient selects records to share $ightarrow$ Backend generates a high-entropy random token with a custom TTL (e.g. 1 hour) $ightarrow$ Rendered as a QR code in `mobile/app/(tabs)/share.tsx`.
-2. **Doctor Verification**: Doctor scans QR code $ightarrow$ Backend validates token expiration and active status $ightarrow$ Grants scoped read-only access to authorized records.
-3. **Audit Trail**: Every read operation logs the token ID and access timestamp into `access_logs`.
+1. **Patient Sharing**: Patient selects records to share $\rightarrow$ Backend generates a high-entropy random token with a custom TTL (e.g. 1 hour) $\rightarrow$ Rendered as a QR code in `mobile/app/(tabs)/share.tsx`.
+2. **Emergency Medical ID**: Offline scannable QR code encodes public emergency facts directly for instant first responder scanning without authentication barrier.
+3. **Doctor Verification**: Doctor scans QR code $\rightarrow$ Backend validates token expiration and active status $\rightarrow$ Grants scoped read-only access to authorized records.
+4. **Token Invalidation**: Tapping Sign Out immediately writes JWT token `jti` to `revoked_tokens` table.

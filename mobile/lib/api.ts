@@ -91,6 +91,18 @@ export const api = {
   explain: (text: string) => request('/ai/explain', { method: 'POST', body: { text } }),
 
   logout: () => request('/auth/logout', { method: 'POST' }),
+
+  getMe: () => request('/auth/me'),
+
+  getProfile: () => request('/profile'),
+
+  updateProfile: (data: Record<string, any>) =>
+    request('/profile', { method: 'PUT', body: data }),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    request('/profile/password', { method: 'PUT', body: data }),
+
+  deleteAccount: () => request('/profile', { method: 'DELETE' }),
 };
 
 export async function saveToken(token: string) {

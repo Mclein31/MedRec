@@ -515,4 +515,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingBottom: 2
   },
+
+  empty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+
+  emptyQrAsset: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+    tintColor: TEAL,
+    opacity: 0.5,
+    marginBottom: 8,
+  },
+
+  emptyTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 16,
+    color: INK,
+  },
+
+  emptyText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+    color: MUTED,
+    textAlign: 'center',
+  },
 });

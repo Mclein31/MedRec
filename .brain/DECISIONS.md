@@ -12,6 +12,36 @@ last_updated: 2026-08-29
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-30 — Dual-Identity Separation & Emergency Medical ID Architecture
+
+### Decision
+Architect the Profile tab with a strict boundary between Account Demographics (legal name, email, residential address, password) and the Emergency Medical ID (blood type, severe allergies, chronic conditions, maintenance medications, and primary emergency contact with direct dial).
+
+### Reason
+In acute medical crises, paramedics and first responders require rapid (<10 second) cognitive scanning of life-critical facts without navigating complex clinical timelines or general settings. Separating the Emergency ID and providing a dedicated high-contrast modal with an offline-scannable QR code maximizes patient safety.
+
+### Alternatives
+- **Single Flat Form**: Placing all 20+ fields in one continuous form created severe cognitive overload and slowed acute clinical readability.
+- **Putting Medical ID in Records**: Overlapped with deep clinical visits and made vital blood type / allergy info hard to find quickly.
+
+### Consequences
+High usability and clinical triage readiness while keeping general account maintenance intuitive.
+
+---
+
+## 2026-08-30 — SQL-Level Date Formatting for Date of Birth (`to_char`)
+
+### Decision
+Format `date_of_birth` directly in PostgreSQL queries using `to_char(p.date_of_birth, 'YYYY-MM-DD')` rather than relying on JavaScript Date serialization.
+
+### Reason
+When the PostgreSQL driver converts a `DATE` column to a JavaScript `Date` object, local midnight timestamps shift backward by 1 day when serialized via `toISOString()` in positive UTC timezones.
+
+### Consequences
+Guarantees 100% accurate, timezone-invariant birth date display across all international regions.
+
+---
+
 ## 2026-08-29 — Compact Horizontal Metadata & Modular Card Hierarchy for Record Details
 
 ### Decision

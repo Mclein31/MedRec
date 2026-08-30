@@ -10,6 +10,17 @@ last_updated: 2026-08-29
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.4.0] — Profile Tab, Emergency Medical ID & Data Governance
+- **Added**: Complete native Profile tab (`app/(tabs)/profile.tsx`) with user initials avatar, demographic details, and quick metrics badges.
+- **Added**: Emergency Medical ID card & modal (`components/EmergencyIdModal.tsx`) featuring Blood Type, life-critical allergy highlights, chronic conditions, maintenance medications, and 1-tap direct dial for primary emergency contacts.
+- **Added**: Offline-scannable First Responder QR code encoding vital clinical facts for zero-friction emergency triage.
+- **Added**: In-place edit modal (`components/ProfileEditModal.tsx`) for demographics and medical attributes with input validation and pickers.
+- **Added**: Authenticated Password Change modal (`components/ChangePasswordModal.tsx`) with complexity rules.
+- **Added**: Health Vault full JSON export using native `Share.share` and account self-service deletion with cascade cleanup.
+- **Added**: Backend `user_profiles` schema, `profileModel.js`, `profileController.js`, and `profileRoutes.js` mounted on `/profile`.
+- **Added**: Dynamic user greeting in home screen header (`index.tsx`) resolving real authenticated user first name.
+- **Added**: Automated Jest integration test suite (`tests/profile.test.js`) verifying all profile endpoints.
+
 ## [0.3.2] — Add Record Modal Drag Handle Affordance
 - **Added**: iOS-style centered horizontal drag handle pill (`#CBD5E1`, 38×4px, `pointerEvents="none"`) at the top of the Add Record modal sheet (`record/add.tsx`) to provide visual dismiss/drag affordance without intercepting native swipe gestures.
 

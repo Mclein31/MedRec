@@ -96,7 +96,7 @@ export default function RecordsScreen() {
   const [sharing, setSharing] = useState(false);
 
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
 
   const handleMenuPress = () => {
@@ -235,6 +235,8 @@ export default function RecordsScreen() {
     );
   }
 
+  const firstName = user?.name ? user.name.trim().split(' ')[0] : 'there';
+
   return (
     <View style={styles.root}>
       <FlatList
@@ -251,7 +253,7 @@ export default function RecordsScreen() {
                 {selectionMode ? <Pressable onPress={cancelSelection} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></Pressable> : <Pressable onPress={handleMenuPress}><Image source={require('../../assets/icons/burger-menu.png')} style={styles.toolbarIcon} /></Pressable>}
                 <View style={styles.bell}><Image source={require('../../assets/icons/notification-bell.png')} style={styles.toolbarIcon} /><View style={styles.notificationDot} /></View>
               </View>
-              <Text style={styles.headerTitle}>Hello, McLein 👋🏼</Text>
+              <Text style={styles.headerTitle}>Hello, {firstName} 👋🏼</Text>
               <Text style={styles.headerSub}>{"Here" + "'" + "s your health overview"}</Text>
             </View>
 

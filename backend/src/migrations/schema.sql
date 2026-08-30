@@ -41,3 +41,30 @@ CREATE TABLE IF NOT EXISTS shared_access (
 
 CREATE INDEX IF NOT EXISTS idx_shared_access_token ON shared_access(token);
 CREATE INDEX IF NOT EXISTS idx_shared_access_user_id ON shared_access(user_id);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date_of_birth DATE,
+  biological_sex VARCHAR(20) CHECK (biological_sex IN ('male', 'female', 'other', 'undisclosed')),
+  blood_type VARCHAR(10) CHECK (blood_type IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown')),
+  allergies TEXT,
+  medical_conditions TEXT,
+  medications_summary TEXT,
+  emergency_contact_name VARCHAR(120),
+  emergency_contact_relationship VARCHAR(60),
+  emergency_contact_phone VARCHAR(30),
+  phone VARCHAR(30),
+  address TEXT,
+  organ_donor BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+  jti UUID PRIMARY KEY,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
