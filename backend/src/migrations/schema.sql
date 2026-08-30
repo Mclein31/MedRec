@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS medical_records (
 
 CREATE INDEX IF NOT EXISTS idx_medical_records_user_id ON medical_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_medical_records_user_date ON medical_records(user_id, date DESC);
+
+-- Idempotent column additions for existing medical_records installations
 ALTER TABLE medical_records ADD COLUMN IF NOT EXISTS attachment_url TEXT;
 
 CREATE TABLE IF NOT EXISTS shared_access (
@@ -43,6 +45,10 @@ CREATE TABLE IF NOT EXISTS shared_access (
 
 CREATE INDEX IF NOT EXISTS idx_shared_access_token ON shared_access(token);
 CREATE INDEX IF NOT EXISTS idx_shared_access_user_id ON shared_access(user_id);
+
+-- Idempotent column additions for existing shared_access installations
+ALTER TABLE shared_access ADD COLUMN IF NOT EXISTS allowed_types VARCHAR(40)[] DEFAULT NULL;
+ALTER TABLE shared_access ADD COLUMN IF NOT EXISTS record_ids UUID[] DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS user_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,9 +73,12 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+
+-- Idempotent column additions for existing user_profiles installations
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS height VARCHAR(20);
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS weight VARCHAR(20);
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS organ_donor BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS revoked_tokens (
   jti UUID PRIMARY KEY,

@@ -39,7 +39,8 @@ last_updated: 2026-08-28
 │ /api/profile                                                           │
 │ - Get Profile & Stats, Update Demographics/Medical ID, Password, Delete│
 ├────────────────────────────────────────────────────────────────────────┤
-│ Security Middleware: Helmet, CORS, Rate Limit, Auth Validator          │
+│ Security & Startup: Helmet, CORS, Rate Limit, Auth Validator,          │
+│                     Automatic Idempotent Schema Migration on Boot      │
 └───────────────────┬─────────────────────────────────────┬──────────────┘
                     │                                     │
                     ▼                                     ▼
