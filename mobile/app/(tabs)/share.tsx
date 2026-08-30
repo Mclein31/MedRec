@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { api } from '../../lib/api';
 import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
+import { SideMenuModal } from '../../components/menu/SideMenuModal';
 
 const TEAL = '#159A83';
 const BLUE = '#1976D2';
@@ -32,6 +34,7 @@ export default function ShareScreen() {
   const [activeExpiry, setActiveExpiry] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
   const loadShares = async () => {
@@ -39,17 +42,19 @@ export default function ShareScreen() {
       const data = await api.listShares();
       setShares(data.shares);
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error loading shares', err.message);
     }
   };
 
-  useFocusEffect(useCallback(() => {
-    if (params.pendingToken && params.pendingToken !== activeToken) {
-      setActiveToken(params.pendingToken);
-      setActiveExpiry(params.pendingExpiry ?? null);
-    }
-    loadShares();
-  }, [params.pendingToken, params.pendingExpiry, activeToken]));
+  useFocusEffect(
+    useCallback(() => {
+      loadShares();
+      if (params.pendingToken) {
+        setActiveToken(params.pendingToken);
+        setActiveExpiry(params.pendingExpiry ?? null);
+      }
+    }, [params.pendingToken, params.pendingExpiry])
+  );
 
   const handleCreate = async () => {
     setCreating(true);
@@ -65,29 +70,37 @@ export default function ShareScreen() {
     }
   };
 
-  const handleRevoke = async (id: string) => {
-    setRevoking(id);
-    try {
-      await api.revokeShare(id);
-      if (shares.find((share) => share.id === id)?.token === activeToken) {
-        setActiveToken(null);
-        setActiveExpiry(null);
-      }
-      await loadShares();
-    } catch (err: any) {
-      Alert.alert('Failed to revoke', err.message);
-    } finally {
-      setRevoking(null);
-    }
+  const handleRevoke = (id: string) => {
+    Alert.alert('Revoke access', 'Are you sure you want to revoke this QR code?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Revoke',
+        style: 'destructive',
+        onPress: async () => {
+          setRevoking(id);
+          try {
+            await api.revokeShare(id);
+            if (activeToken && shares.find((s) => s.id === id)?.token === activeToken) {
+              setActiveToken(null);
+              setActiveExpiry(null);
+            }
+            await loadShares();
+          } catch (err: any) {
+            Alert.alert('Failed to revoke', err.message);
+          } finally {
+            setRevoking(null);
+          }
+        },
+      },
+    ]);
   };
 
-  const activeShares = shares.filter((share) => !share.revoked_at && new Date(share.expires_at) >= new Date());
-  const recentShares = shares.filter((share) => share.revoked_at || new Date(share.expires_at) < new Date());
-  const isLoadingQr = !!params.pendingToken && params.pendingToken !== activeToken;
+  const activeShares = shares.filter((s) => !s.revoked_at && new Date(s.expires_at) > new Date());
+  const recentShares = shares.filter((s) => s.revoked_at || new Date(s.expires_at) <= new Date());
+  const isLoadingQr = Boolean(params.pendingToken) && !activeToken;
 
   const ShareCard = ({ share, active }: { share: Share; active: boolean }) => (
     <View style={[styles.shareCard, active && styles.activeShareCard]}>
-
       {/* TOP CONTENT */}
       <View style={styles.cardTop}>
         <View style={styles.qrIconBox}>
@@ -137,7 +150,6 @@ export default function ShareScreen() {
         )}
       </View>
 
-
       {/* BOTTOM ACTION */}
       {active ? (
         <View style={styles.revokeContainer}>
@@ -160,13 +172,12 @@ export default function ShareScreen() {
             {share.revoked_at
               ? `Revoked at ${new Date(share.revoked_at).toLocaleTimeString('en-US', {
                   hour: 'numeric',
-                  minute: '2-digit'
+                  minute: '2-digit',
                 })}`
               : `Expired ${formatExpiry(share.expires_at)}`}
           </Text>
         </View>
       )}
-
     </View>
   );
 
@@ -179,7 +190,23 @@ export default function ShareScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={<>
           <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-            <View style={styles.headerIcons}><Image source={require('../../assets/icons/burger-menu.png')} style={styles.headerAsset} /><View><Image source={require('../../assets/icons/notification-bell.png')} style={styles.headerAsset} /><View style={styles.notificationDot} /></View></View>
+            <View style={styles.headerIcons}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setMenuVisible(true);
+                }}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Open navigation menu"
+              >
+                <Image source={require('../../assets/icons/burger-menu.png')} style={styles.headerAsset} />
+              </Pressable>
+              <View>
+                <Image source={require('../../assets/icons/notification-bell.png')} style={styles.headerAsset} />
+                <View style={styles.notificationDot} />
+              </View>
+            </View>
             <Text style={styles.title}>Share Records</Text>
             <Text style={styles.subtitle}>Share your health records in a limited time access</Text>
           </View>
@@ -207,6 +234,9 @@ export default function ShareScreen() {
         ListEmptyComponent={activeShares.length === 0 && recentShares.length === 0 ? <View style={styles.empty}><Image source={require('../../assets/icons/qr-white.png')} style={styles.emptyQrAsset} /><Text style={styles.emptyTitle}>No shares yet</Text><Text style={styles.emptyText}>Generate a QR code to share your records with a doctor.</Text></View> : null}
         renderItem={({ item }) => <ShareCard share={item} active={false} />}
       />
+
+      {/* Side Menu Drawer */}
+      <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </View>
   );
 }

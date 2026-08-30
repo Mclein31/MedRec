@@ -75,6 +75,8 @@ last_updated: 2026-08-29
   - `ProfileEditModal.tsx`: Modular edit modal for patient demographics and clinical baseline.
   - `ChangePasswordModal.tsx`: Authenticated password change modal.
   - `EmergencyIdModal.tsx`: High-contrast first responder Emergency Medical ID with offline QR code.
+  - `menu/SideMenuModal.tsx`: Left-slide animated drawer menu with MedRec app logo and text-only navigation.
+  - `menu/SideMenuItem.tsx`: Text-only interactive row component with active route highlights.
 - `mobile/lib/api.ts`: Centralized fetch client communicating with backend endpoints.
 - `MedRec/`: 18-folder Obsidian research vault (`00 - Dashboard`, `01 - Vision`, `02 - Problem Space`, `08 - Technical Architecture`, etc.).
 

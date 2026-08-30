@@ -78,3 +78,9 @@ last_updated: 2026-08-28
 3. `CameraControls.tsx`: Dual-ring tactile shutter button, torch toggle button, and gallery picker trigger.
 4. `DocumentPreview.tsx`: Full-resolution image review screen with quality self-check prompt, retake action, and confirmation action.
 5. `AttachedDocumentCard.tsx`: Interactive in-form attachment card rendered on `record/add.tsx` with 64×64px thumbnail, zoom preview modal, replace/retake, and delete actions.
+
+---
+
+## 🧭 Drawer Menu Subsystem (`mobile/components/menu/`)
+1. `SideMenuModal.tsx`: Lightweight left-slide animated drawer overlay (`-DRAWER_WIDTH -> 0`) with backdrop fade, official MedRec logo branding (`assets/logo/logo.png`), user summary, and text-only routing for primary tabs and secondary vault tools.
+2. `SideMenuItem.tsx`: Text-only interactive row component with active route highlight (`#F0F9F7`), dynamic badge support (e.g. active shares count), and haptic selection feedback.

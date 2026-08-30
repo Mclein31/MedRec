@@ -12,6 +12,23 @@ last_updated: 2026-08-29
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-30 — Text-Only Drawer Menu Architecture with App Logo Branding
+
+### Decision
+Implement a lightweight, text-only left-slide drawer menu overlay (`SideMenuModal`) utilizing typography (`Lexend Deca`), layout spacing, and subtle active highlights rather than row icons or emojis, anchored by the authentic MedRec app logo (`assets/logo/logo.png`) in the header.
+
+### Reason
+Avoids visual clutter, eliminates duplicate iconography that fights with bottom tabs, preserves iOS swipe ergonomics and thumb reachability, and reinforces brand identity cleanly.
+
+### Alternatives
+- **Full `@react-navigation/drawer` Rewrite**: Breaks Expo Router tabs and creates gesture conflicts with iOS screen pops.
+- **Icon-Heavy Multi-Level Drawer**: Creates visual noise and redundancy with bottom navigation tabs.
+
+### Consequences
+Clean, fast navigation hub for primary routes and secondary vault tools without structural routing bloat.
+
+---
+
 ## 2026-08-30 — Document-First Camera & Mandatory Pre-Commit Legibility Review
 
 ### Decision

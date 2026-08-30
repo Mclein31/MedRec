@@ -29,3 +29,8 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - `expo-image-picker` provides gallery import via `launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })`.
 - Captured and imported images reside strictly within the application's sandboxed local cache and are never saved to the public camera roll.
 - All form inputs in `add.tsx` are managed at the top-level parent component to prevent data loss when switching between form, camera, and preview view modes.
+
+## 🧭 Drawer Menu Architecture
+- The menu is rendered as an overlay Modal (`SideMenuModal`) with hardware-accelerated translation (`useNativeDriver: true`) rather than a full React Navigation drawer container, avoiding gesture conflicts with iOS screen pops and bottom tab switching.
+- Menu rows (`SideMenuItem`) are strictly text-only, utilizing typography (`Lexend Deca`) and padding to maintain visual hierarchy.
+- Header branding directly reuses the existing official asset `assets/logo/logo.png`.

@@ -35,6 +35,7 @@ This document serves as the master index of all core product and UX design decis
 | **DD-03** | **Time-Bounded Self-Expiring Share Links** | `Active` | Protects patient privacy by default so access is not permanently left open to external parties. | [[07 - Product Design/Design Decisions#DD-03|DD-03]] |
 | **DD-04** | **Standardized Clinical Categories over Freeform Tags** | `Active` | Medical records need immediate clinical taxonomy for doctors to parse quickly without unstructured noise. | [[07 - Product Design/Design Decisions#DD-04|DD-04]] |
 | **DD-05** | **Compact Metadata Row & Modular Cards for Record Details** | `Active` | Prevents oversized date cards from pushing clinical notes below the fold on mobile viewports. | [[07 - Product Design/Design Decisions#DD-05|DD-05]] |
+| **DD-06** | **Text-Only App Drawer Navigation with Logo Branding** | `Active` | Eliminates visual icon clutter and duplicate navigation noise by using pure typography and official logo branding. | [[07 - Product Design/Design Decisions#DD-06|DD-06]] |
 
 ---
 
@@ -57,6 +58,12 @@ This document serves as the master index of all core product and UX design decis
 - **Alternatives Considered**: (A) Full-width stacked date cards, (B) Header-integrated metadata, (C) Compact 2-column horizontal metadata row below title with modular section cards.
 - **Decision**: Option C — Compact 2-column horizontal row with subtle divider and dedicated cards for Clinical Notes and AI Medical Insights.
 - **Rationale**: Mobile ergonomic testing showed stacked date cards consumed >120px of vertical height, forcing users to scroll to read clinical notes. A compact horizontal metadata row provides instant scanning while preserving immediate visibility for clinical details.
+
+### DD-06: Text-Only App Drawer Navigation with App Logo Branding
+- **Context**: Top-left burger icon needed to provide access to secondary actions (AI summary, vault export, emergency ID, sign out) without overwhelming the primary bottom tab bar.
+- **Alternatives Considered**: (A) Icon-heavy multi-level drawer, (B) Duplicate full-screen tab list with colored icons, (C) Minimal text-only drawer with official MedRec logo branding.
+- **Decision**: Option C — Text-only navigation rows using pure typography, spacious padding, and subtle active background pills, anchored by the official MedRec app logo (`assets/logo/logo.png`) in the header.
+- **Rationale**: Removing decorative icons from secondary menu rows eliminates visual competition with primary bottom tabs, prevents icon fatigue, and creates a lightweight, clean navigation experience.
 
 ---
 

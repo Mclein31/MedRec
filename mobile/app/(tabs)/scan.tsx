@@ -7,12 +7,15 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import { api } from '../../lib/api';
+import { SideMenuModal } from '../../components/menu/SideMenuModal';
 
 const GREEN = '#1D9E75';
 const GREEN_DARK = '#085041';
@@ -52,6 +55,7 @@ export default function ScanScreen() {
   const [records, setRecords] = useState<SharedRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<SharedRecord | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
   const handleScanned = async ({ data }: BarcodeScanningResult) => {
@@ -101,7 +105,23 @@ export default function ScanScreen() {
   if (records || error) {
     return (
       <View style={styles.root}>
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+          <View style={styles.topToolbar}>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setMenuVisible(true);
+              }}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Open navigation menu"
+            >
+              <Image
+                source={require('../../assets/icons/burger-menu.png')}
+                style={styles.toolbarIcon}
+              />
+            </Pressable>
+          </View>
           <Text style={styles.headerTitle}>
             {error ? 'Could not load records' : 'Shared Records'}
           </Text>
@@ -243,6 +263,9 @@ export default function ScanScreen() {
             </View>
           )}
         </Modal>
+
+        {/* Side Menu Drawer */}
+        <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
       </View>
     );
   }
@@ -255,6 +278,23 @@ export default function ScanScreen() {
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         onBarcodeScanned={handleScanned}
       />
+      <View style={[styles.cameraTopBar, { paddingTop: insets.top + 10 }]}>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setMenuVisible(true);
+          }}
+          hitSlop={10}
+          style={styles.cameraMenuBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Open navigation menu"
+        >
+          <Image
+            source={require('../../assets/icons/burger-menu.png')}
+            style={styles.cameraMenuIcon}
+          />
+        </Pressable>
+      </View>
       <View style={styles.scanOverlay}>
         <Text style={styles.scanTitle}>Scan Patient QR Code</Text>
         <View style={styles.viewfinder}>
@@ -273,6 +313,9 @@ export default function ScanScreen() {
           <Text style={styles.loadingText}>Loading records...</Text>
         </View>
       )}
+
+      {/* Side Menu Drawer */}
+      <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </View>
   );
 }
@@ -284,6 +327,43 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: BG,
+  },
+
+  topToolbar: {
+    paddingBottom: 8,
+    alignItems: 'flex-start',
+  },
+
+  toolbarIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    tintColor: GREEN_DARK,
+  },
+
+  cameraTopBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    zIndex: 10,
+  },
+
+  cameraMenuBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cameraMenuIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    tintColor: '#FFFFFF',
   },
 
   header: {

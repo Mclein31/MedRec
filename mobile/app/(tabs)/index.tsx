@@ -19,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import * as Haptics from 'expo-haptics';
+import { SideMenuModal } from '../../components/menu/SideMenuModal';
 
 const GREEN = '#159A83';
 const GREEN_DARK = '#12343B';
@@ -94,16 +96,15 @@ export default function RecordsScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const router = useRouter();
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
 
   const handleMenuPress = () => {
-    Alert.alert('Account', 'Would you like to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: logout },
-    ]);
+    Haptics.selectionAsync();
+    setMenuVisible(true);
   };
 
   const loadRecords = async () => {
@@ -468,6 +469,13 @@ export default function RecordsScreen() {
           </Animated.View>
         </View>
       </Modal>
+
+      {/* Side Menu Drawer Hub */}
+      <SideMenuModal
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onOpenAiSummary={handleSummarize}
+      />
     </View>
   );
 }

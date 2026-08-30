@@ -28,16 +28,29 @@ This document defines the application navigation hierarchy, screen routing patte
 ## 📱 Mobile App Navigation Framework
 
 ### 1. Bottom Tab Bar (Primary Persistent Navigation)
-The core navigation pattern uses a persistent 4-tab bottom navigation bar:
+The core navigation pattern uses a persistent bottom navigation bar:
 
 | Tab | Label | Target Screen / Module | Key Actions |
 | :--- | :--- | :--- | :--- |
-| **Tab 1** | **Home** | Dashboard Overview | Recent records, active share links, quick stats |
-| **Tab 2** | **Records** | Category & Document List | Full-text search, category filters, folders |
-| **Tab 3** | **Share** | QR / Link Sharing Center | Generate share QR code, manage active access tokens |
-| **Tab 4** | **Profile** | User Profile & Settings | Demographics, emergency ID, security settings |
+| **Tab 1** | **Records** | Dashboard Overview & Records List | Recent records, active share links, search, AI summary |
+| **Tab 2** | **Share** | QR / Link Sharing Center | Generate share QR code, manage active access tokens |
+| **Tab 3** | **Add** | Record Capture Modal | Document camera, 3:4 viewfinder, gallery ingestion |
+| **Tab 4** | **Scan** | Doctor QR Scanner | Live camera QR scanner for inspecting shared patient records |
+| **Tab 5** | **Profile** | User Profile & Settings | Demographics, emergency ID, security settings, vault export |
 
-*Note*: The central action button (Floating Action Button / center tab bump) triggers the **"Upload Record" Modal** from anywhere in the app.
+---
+
+### 2. Top-Left Burger Navigation Drawer (`SideMenuModal`)
+A lightweight, left-slide animated overlay providing fast access to operational actions and secondary vault tools without fighting with the bottom tab bar:
+- **Branding Header**: Displays the authentic MedRec app logo (`assets/logo/logo.png`), application title, and close `(X)` button.
+- **User Demographic Summary**: Name, email, and direct link to the Profile tab.
+- **Text-Only Navigation**: Individual items are strictly **text-only** (no row icons, emojis, or decorative symbols). Visual hierarchy is driven by typography (`Lexend Deca`), spacious padding, subtle active highlights (`#F0F9F7`), and clean horizontal dividers (`#EDF4F3`).
+- **Destination Groups**:
+  - *Primary Routes*: Home, My Records, Share Records (with active shares badge), Scan Doctor QR, Add Health Record, Profile, Emergency Medical ID.
+  - *Vault Actions*: AI Health Summary (OpenAI engine trigger), Export Health Vault (JSON archive sharing).
+  - *Information*: About MedRec & Clinical Disclaimers.
+  - *Footer*: Destructive Sign Out with session invalidation confirmation.
+- **Dismissal Physics**: Smooth 230ms ease-out slide in / 180ms ease-out dismissal via backdrop tap, top close button, or Android hardware back button.
 
 ---
 
