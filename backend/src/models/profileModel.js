@@ -19,6 +19,7 @@ async function getProfileByUserId(userId) {
       p.emergency_contact_phone,
       p.phone,
       p.address,
+      p.avatar_url,
       p.organ_donor,
       p.updated_at AS profile_updated_at,
       (SELECT COUNT(*)::int FROM medical_records mr WHERE mr.user_id = u.id) AS records_count,
@@ -44,6 +45,8 @@ async function upsertProfile(userId, data) {
       );
     }
 
+    const rawAvatar = data.avatar_url !== undefined ? data.avatar_url : data.avatarUrl;
+
     const query = `
       INSERT INTO user_profiles (
         user_id,
@@ -58,10 +61,11 @@ async function upsertProfile(userId, data) {
         emergency_contact_phone,
         phone,
         address,
+        avatar_url,
         organ_donor,
         updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now()
       )
       ON CONFLICT (user_id) DO UPDATE SET
         date_of_birth = EXCLUDED.date_of_birth,
@@ -75,6 +79,7 @@ async function upsertProfile(userId, data) {
         emergency_contact_phone = EXCLUDED.emergency_contact_phone,
         phone = EXCLUDED.phone,
         address = EXCLUDED.address,
+        avatar_url = COALESCE(EXCLUDED.avatar_url, user_profiles.avatar_url),
         organ_donor = EXCLUDED.organ_donor,
         updated_at = now()
       RETURNING *
@@ -93,6 +98,7 @@ async function upsertProfile(userId, data) {
       data.emergency_contact_phone !== undefined ? data.emergency_contact_phone : null,
       data.phone !== undefined ? data.phone : null,
       data.address !== undefined ? data.address : null,
+      rawAvatar !== undefined ? rawAvatar : null,
       data.organ_donor !== undefined ? Boolean(data.organ_donor) : false,
     ];
 

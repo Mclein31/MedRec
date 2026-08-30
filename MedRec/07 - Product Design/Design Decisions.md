@@ -37,10 +37,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-05** | **Compact Metadata Row & Modular Cards for Record Details** | `Active` | Prevents oversized date cards from pushing clinical notes below the fold on mobile viewports. | [[07 - Product Design/Design Decisions#DD-05|DD-05]] |
 | **DD-06** | **Text-Only App Drawer Navigation with Logo Branding** | `Active` | Eliminates visual icon clutter and duplicate navigation noise by using pure typography and official logo branding. | [[07 - Product Design/Design Decisions#DD-06|DD-06]] |
 | **DD-07** | **In-App Notification Center & Privacy-First Audit Alerts** | `Active` | Enforces two-tier health privacy by keeping audit trails in-app with generic copy and providing actionable one-tap deep links. | [[07 - Product Design/Design Decisions#DD-07|DD-07]] |
+| **DD-08** | **Inset Grouped Profile Architecture & Avatar Persistence** | `Active` | Eliminates visual clutter and text highlight boxes in favor of clean iOS-style grouped cards and persistent photo uploads. | [[07 - Product Design/Design Decisions#DD-08|DD-08]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-08: Inset Grouped Profile Architecture & Avatar Persistence
+- **Context**: Patient Profile tab required modern, calm visual hierarchy for sensitive clinical emergency data, demographic details, security settings, and personal photo identification.
+- **Alternatives Considered**: (A) Heavy stacked cards with colored badge pills and red containers, (B) Unstructured plain list, (C) Unboxed hero section with structured Inset Grouped Cards (`#FFFFFF`, `borderRadius: 16`) and hairline dividers.
+- **Decision**: Option C — Unboxed hero (avatar, name, email, bullet metadata) paired with 4 clean Inset Grouped Cards and interactive photo upload.
+- **Rationale**: Eliminates "box-in-a-box" anti-patterns and visual fatigue while highlighting life-critical emergency data and allowing patients to personalize their medical vault.
 
 ### DD-01: Zero App Requirement for Doctors
 - **Context**: Patients need to share records with doctors in clinics.

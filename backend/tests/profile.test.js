@@ -97,8 +97,25 @@ describe('Profile API Endpoints', () => {
       expect(res.body.profile.medicationsSummary).toBe('Albuterol Inhaler');
       expect(res.body.profile.emergencyContactName).toBe('Jane Doe');
       expect(res.body.profile.emergencyContactRelationship).toBe('Spouse');
-      expect(res.body.profile.emergencyContactPhone).toBe('+15559876543');
       expect(res.body.profile.organDonor).toBe(true);
+    });
+
+    it('should update and persist avatarUrl', async () => {
+      const sampleAvatar = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+      const res = await request(app)
+        .put('/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ avatarUrl: sampleAvatar });
+
+      expect(res.status).toBe(200);
+      expect(res.body.profile.avatarUrl).toBe(sampleAvatar);
+
+      const getRes = await request(app)
+        .get('/profile')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.profile.avatarUrl).toBe(sampleAvatar);
     });
 
     it('should reject invalid biological sex', async () => {

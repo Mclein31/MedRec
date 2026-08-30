@@ -58,6 +58,7 @@ export type ProfileData = {
   emergencyContactPhone?: string | null;
   phone?: string | null;
   address?: string | null;
+  avatarUrl?: string | null;
   organDonor?: boolean;
 };
 

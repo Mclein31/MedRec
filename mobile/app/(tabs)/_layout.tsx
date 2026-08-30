@@ -71,31 +71,25 @@ function CustomTabBar() {
             key={tab.name}
             onPress={() => router.push(tab.route as any)}
             style={styles.navItem}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            accessibilityLabel={`${tab.name.charAt(0).toUpperCase() + tab.name.slice(1)} tab`}
           >
-
             {isAdd ? (
-
               <Image
                 source={tab.icon}
                 style={styles.addIcon}
               />
-
             ) : (
-
               <Image
                 source={
                   isActive
                     ? tab.activeIcon
                     : tab.inactiveIcon
                 }
-                style={[
-                  styles.navIcon,
-                  isActive && styles.activeIcon,
-                ]}
+                style={styles.navIcon}
               />
-
             )}
-
           </Pressable>
         );
 
@@ -187,15 +181,6 @@ const styles = StyleSheet.create({
     width:28,
     height:28,
     resizeMode:'contain',
-  },
-
-
-  activeIcon: {
-    transform:[
-      {
-        scale:1.05,
-      }
-    ],
   },
 
 

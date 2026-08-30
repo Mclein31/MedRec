@@ -40,3 +40,10 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Privacy Standard**: Two-tier model ensures notification summaries contain actionable context while completely omitting sensitive clinical values, drug dosages, or diagnoses.
 - **Modal Affordance**: Rendered as a slide-up sheet (`presentationStyle="pageSheet"`) with a centered grey drag handle (`#D1D5DB`, `38×4px`, `borderRadius: 2`) integrated into the header card with compact vertical spacing to indicate downward swipe dismissal.
 - **State & Deep Linking**: Optimistic read-state handling via `NotificationContext` with automatic routing to relevant records (`/record/[id]`), shares (`/(tabs)/share`), or profile screens (`/(tabs)/profile`).
+
+## 👤 Profile Tab & Avatar Ingestion
+- **Inset Grouped Architecture**: Designed without heavy card borders or saturated background highlights. Utilizes clean white containers (`#FFFFFF`, `borderRadius: 16`, `borderColor: '#E5F0EE'`) with `#F0F5F4` hairline dividers.
+- **Avatar Selection & Cropping**: Uses `expo-image-picker` with `aspect: [1, 1]`, `allowsEditing: true`, and `quality: 0.7`.
+- **Database Persistence**: Stores image payload in `user_profiles.avatar_url` (PostgreSQL `TEXT` column) and delivers via `GET /profile` and `PUT /profile`.
+- **Native Linkage**: CocoaPods dependency `ExpoImagePicker (17.0.11)` linked in `mobile.xcworkspace` with iOS `NSPhotoLibraryUsageDescription` in `Info.plist`. Express JSON parser configured with `limit: '10mb'`.
+- **Bottom Navigation State**: Tab layout (`_layout.tsx`) binds `profile-active.png` and `profile-inactive.png` dynamically to `usePathname()`, maintaining strict 28×28px uniform dimensions across all states without scale jumping.

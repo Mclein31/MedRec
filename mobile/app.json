@@ -29,7 +29,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you set a profile photo and upload medical documents."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

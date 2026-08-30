@@ -5,14 +5,15 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-08-28
+last_updated: 2026-08-30
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
 
 ## 🔴 High Priority
 - [x] Connect React Native mobile client (`lib/api.ts`) to live Express server endpoints for Profile and User data.
-- [x] Implement complete Profile Tab (`(tabs)/profile.tsx`) with Emergency Medical ID, Demographics, and Data Export.
+- [x] Implement complete Profile Tab (`(tabs)/profile.tsx`) with Inset Grouped layout, Emergency Medical ID, Demographics, and Data Export.
+- [x] Implement interactive Profile Photo upload (`expo-image-picker`) and PostgreSQL `avatar_url` persistence.
 - [x] Complete UI screen in `app/record/add.tsx` for capturing/uploading prescriptions and lab result images (Document Camera, 3:4 Viewfinder, Quality Review, and In-Form Attachment Card).
 - [x] Implement functional app drawer/menu navigation (`SideMenuModal`) with text-only links and MedRec logo branding.
 - [x] Implement in-app notification center (`NotificationCenterModal`) and dynamic bell trigger with backend persistence and drag affordance.

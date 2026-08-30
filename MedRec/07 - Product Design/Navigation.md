@@ -63,6 +63,14 @@ An authenticated in-app notification center triggered by the toolbar bell on Hom
 
 ---
 
+### 4. Bottom Tab State & Active Icon Behavior
+The bottom tab bar dynamically tracks the active screen via `usePathname()`:
+- **Active Profile Tab**: Renders `profile-active.png` with uniform 28×28px dimensions.
+- **Inactive Profile Tab**: Renders `profile-inactive.png` with identical 28×28px sizing, preventing visual scaling jumps or shrinking on tab transitions.
+- **Tab Selection**: All tabs (`Records`, `Share`, `Scan`, `Profile`) support clear accessibility attributes (`accessibilityRole="tab"`, `accessibilityState={{ selected: isActive }}`).
+
+---
+
 ## 🗂️ Navigation Hierarchy (Stack Models)
 
 ```

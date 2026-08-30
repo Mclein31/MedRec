@@ -7,10 +7,29 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-08-29
+last_updated: 2026-08-30
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-08-30 — Inset Grouped Profile Architecture & Avatar Image Persistence
+
+### Decision
+Modernize the Profile tab (`profile.tsx`) into an unboxed hero and four clean, iOS-inspired Inset Grouped Cards (`borderRadius: 16`, `borderColor: '#E5F0EE'`) with hairline dividers (`#F0F5F4`), eliminating heavy card borders and saturated background highlights behind text (such as red blood pills, green action icon boxes, and colored full-width buttons). Add interactive profile photo upload using `expo-image-picker` with persistent backend PostgreSQL storage (`user_profiles.avatar_url`).
+
+### Reason
+- **Visual Clutter & Hierarchy**: Heavy container boxes and saturated background pills diluted critical clinical emphasis. Inset grouped cards establish calm, clear information architecture appropriate for medical software.
+- **Patient Identity & Ownership**: Allowing users to upload their own photo directly enhances personal ownership and first-responder recognition.
+- **Reliability & Uniformity**: Centralized database storage ensures profile photos persist across devices and re-renders, while eliminating tab-icon scaling jumps guarantees a stable navigation experience.
+
+### Alternatives
+- **Heavy Stacked Cards with Saturated Badges**: Caused visual fatigue and distraction from critical emergency data.
+- **Local-Only Device Image Storage**: Failed to persist photos across account re-logins and cross-device usage.
+
+### Consequences
+Calm, modern medical profile experience with immediate emergency recognition, crisp typography, and full data persistence.
+
+---
 
 ## 2026-08-30 — Privacy-Conscious In-App Notification Center & Two-Tier Content Architecture
 

@@ -56,12 +56,14 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   emergency_contact_phone VARCHAR(30),
   phone VARCHAR(30),
   address TEXT,
+  avatar_url TEXT,
   organ_donor BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 CREATE TABLE IF NOT EXISTS revoked_tokens (
   jti UUID PRIMARY KEY,

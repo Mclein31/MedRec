@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const profileModel = require('../models/profileModel');
 const userModel = require('../models/userModel');
+const notificationModel = require('../models/notificationModel');
 const pool = require('../config/db');
 
 const SALT_ROUNDS = 12;
@@ -29,6 +30,7 @@ function formatProfileResponse(row) {
       emergencyContactPhone: row.emergency_contact_phone || null,
       phone: row.phone || null,
       address: row.address || null,
+      avatarUrl: row.avatar_url || null,
       organDonor: Boolean(row.organ_donor),
       updatedAt: row.profile_updated_at || null,
     },
@@ -72,6 +74,8 @@ async function updateProfile(req, res, next) {
       emergencyContactPhone,
       phone,
       address,
+      avatar_url,
+      avatarUrl,
       organ_donor,
       organDonor,
     } = req.body;
@@ -143,6 +147,9 @@ async function updateProfile(req, res, next) {
 
     if (phone !== undefined) sanitizedData.phone = phone ? String(phone).trim() : null;
     if (address !== undefined) sanitizedData.address = address ? String(address).trim() : null;
+
+    const rawAvatar = avatar_url !== undefined ? avatar_url : avatarUrl;
+    if (rawAvatar !== undefined) sanitizedData.avatar_url = rawAvatar ? String(rawAvatar).trim() : null;
 
     const rawOrganDonor = organ_donor !== undefined ? organ_donor : organDonor;
     if (rawOrganDonor !== undefined) sanitizedData.organ_donor = Boolean(rawOrganDonor);
