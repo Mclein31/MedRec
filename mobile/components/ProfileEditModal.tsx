@@ -187,26 +187,30 @@ export default function ProfileEditModal({
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-          <Pressable onPress={onClose} hitSlop={8} style={styles.cancelBtn}>
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>
-            {mode === 'demographics' ? 'Edit Demographics' : 'Edit Medical ID'}
-          </Text>
-          <Pressable
-            onPress={handleSave}
-            disabled={saving}
-            hitSlop={8}
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color={TEAL} />
-            ) : (
-              <Text style={styles.saveBtnText}>Save</Text>
-            )}
-          </Pressable>
+        {/* Header with integrated drag handle */}
+        <View style={styles.header}>
+          <View style={styles.dragHandle} />
+
+          <View style={styles.headerContentRow}>
+            <Pressable onPress={onClose} hitSlop={8} style={styles.cancelBtn}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </Pressable>
+            <Text style={styles.headerTitle}>
+              {mode === 'demographics' ? 'Edit Demographics' : 'Edit Medical ID'}
+            </Text>
+            <Pressable
+              onPress={handleSave}
+              disabled={saving}
+              hitSlop={8}
+              style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color={TEAL} />
+              ) : (
+                <Text style={styles.saveBtnText}>Save</Text>
+              )}
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView
@@ -226,7 +230,7 @@ export default function ProfileEditModal({
                   onChangeText={setName}
                   placeholder="e.g. McLein Onz"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !name && styles.placeholderInput]}
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
@@ -239,7 +243,7 @@ export default function ProfileEditModal({
                   onChangeText={setDateOfBirth}
                   placeholder="e.g. 1996-10-14"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !dateOfBirth && styles.placeholderInput]}
                   keyboardType="numbers-and-punctuation"
                   autoCapitalize="none"
                 />
@@ -273,7 +277,7 @@ export default function ProfileEditModal({
                   onChangeText={setPhone}
                   placeholder="e.g. +1 (555) 012-3456"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !phone && styles.placeholderInput]}
                   keyboardType="phone-pad"
                 />
               </View>
@@ -285,7 +289,7 @@ export default function ProfileEditModal({
                   onChangeText={setAddress}
                   placeholder="e.g. 123 Health Ave, San Francisco, CA"
                   placeholderTextColor={MUTED}
-                  style={[styles.input, styles.multilineInput]}
+                  style={[styles.input, styles.multilineInput, !address && styles.placeholderInput]}
                   multiline
                   numberOfLines={3}
                 />
@@ -323,7 +327,7 @@ export default function ProfileEditModal({
                   onChangeText={setAllergies}
                   placeholder="e.g. Penicillin (Anaphylaxis), Peanuts, NSAIDs"
                   placeholderTextColor={MUTED}
-                  style={[styles.input, styles.multilineInput]}
+                  style={[styles.input, styles.multilineInput, !allergies && styles.placeholderInput]}
                   multiline
                   numberOfLines={2}
                 />
@@ -337,7 +341,7 @@ export default function ProfileEditModal({
                   onChangeText={setMedicalConditions}
                   placeholder="e.g. Mild Asthma, Type 1 Diabetes, Hypertension"
                   placeholderTextColor={MUTED}
-                  style={[styles.input, styles.multilineInput]}
+                  style={[styles.input, styles.multilineInput, !medicalConditions && styles.placeholderInput]}
                   multiline
                   numberOfLines={2}
                 />
@@ -350,7 +354,7 @@ export default function ProfileEditModal({
                   onChangeText={setMedicationsSummary}
                   placeholder="e.g. Albuterol Inhaler (PRN), Insulin Glargine"
                   placeholderTextColor={MUTED}
-                  style={[styles.input, styles.multilineInput]}
+                  style={[styles.input, styles.multilineInput, !medicationsSummary && styles.placeholderInput]}
                   multiline
                   numberOfLines={2}
                 />
@@ -366,7 +370,7 @@ export default function ProfileEditModal({
                   onChangeText={setEmergencyContactName}
                   placeholder="e.g. Jane Doe"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !emergencyContactName && styles.placeholderInput]}
                   autoCapitalize="words"
                 />
               </View>
@@ -398,7 +402,7 @@ export default function ProfileEditModal({
                   onChangeText={setEmergencyContactPhone}
                   placeholder="e.g. +1 (555) 019-2834"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !emergencyContactPhone && styles.placeholderInput]}
                   keyboardType="phone-pad"
                 />
               </View>
@@ -431,14 +435,25 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
     backgroundColor: CARD_BG,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
+    paddingTop: 10,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+  },
+  dragHandle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  headerContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
     fontFamily: 'LexendDeca-Bold',
@@ -502,6 +517,9 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-Regular',
     fontSize: 14,
     color: INK,
+  },
+  placeholderInput: {
+    fontSize: 12.5,
   },
   multilineInput: {
     minHeight: 64,

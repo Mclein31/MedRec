@@ -1067,12 +1067,12 @@ const styles = StyleSheet.create({
   },
 
   modalHandle: {
-    width: 40,
+    width: 38,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#ddd',
+    backgroundColor: '#D1D5DB',
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
 
   modalTitle: {

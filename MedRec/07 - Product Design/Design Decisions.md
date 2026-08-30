@@ -38,10 +38,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-06** | **Text-Only App Drawer Navigation with Logo Branding** | `Active` | Eliminates visual icon clutter and duplicate navigation noise by using pure typography and official logo branding. | [[07 - Product Design/Design Decisions#DD-06|DD-06]] |
 | **DD-07** | **In-App Notification Center & Privacy-First Audit Alerts** | `Active` | Enforces two-tier health privacy by keeping audit trails in-app with generic copy and providing actionable one-tap deep links. | [[07 - Product Design/Design Decisions#DD-07|DD-07]] |
 | **DD-08** | **Inset Grouped Profile Architecture & Avatar Persistence** | `Active` | Eliminates visual clutter and text highlight boxes in favor of clean iOS-style grouped cards and persistent photo uploads. | [[07 - Product Design/Design Decisions#DD-08|DD-08]] |
+| **DD-09** | **Universal Sliding Sheet Drag Handle & Compact Input Placeholders** | `Active` | Communicates downward drag dismissibility consistently across all sliding modals without vertical dead space, paired with compact input placeholders for long medical terms. | [[07 - Product Design/Design Decisions#DD-09|DD-09]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-09: Universal Sliding Sheet Drag Handle & Compact Input Placeholders
+- **Context**: Multiple sliding sheets (`pageSheet` presentations) across Profile edit, Change Password, Emergency Medical ID, Add Record, Scan Detail, and Sort/Filter lacked a unified visual cue indicating they can be swiped down to dismiss. Additionally, long clinical placeholder prompts were crowding mobile input boxes.
+- **Alternatives Considered**: (A) Inconsistent handles or no handles, (B) Text labels such as "Swipe down", (C) Standardized subtle grey drag handle (`38×4px`, `borderRadius: 2`, `#D1D5DB`) integrated into the header row, paired with conditional `12.5px` placeholder sizing.
+- **Decision**: Option C — Standardize drag handle dimensions and spacing across all 7 sliding modal surfaces, and reduce placeholder font size to 12.5px while retaining 14px user text.
+- **Rationale**: Provides clear ergonomic affordance for touch gestures without introducing dead whitespace or layout shifts, ensuring long medical examples fit comfortably on all mobile screens.
 
 ### DD-08: Inset Grouped Profile Architecture & Avatar Persistence
 - **Context**: Patient Profile tab required modern, calm visual hierarchy for sensitive clinical emergency data, demographic details, security settings, and personal photo identification.

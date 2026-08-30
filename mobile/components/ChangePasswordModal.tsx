@@ -93,23 +93,28 @@ export default function ChangePasswordModal({ visible, onClose }: Props) {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-          <Pressable onPress={handleClose} hitSlop={8} style={styles.cancelBtn}>
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>Change Password</Text>
-          <Pressable
-            onPress={handleSave}
-            disabled={saving}
-            hitSlop={8}
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color={TEAL} />
-            ) : (
-              <Text style={styles.saveBtnText}>Update</Text>
-            )}
-          </Pressable>
+        {/* Header with integrated drag handle */}
+        <View style={styles.header}>
+          <View style={styles.dragHandle} />
+
+          <View style={styles.headerContentRow}>
+            <Pressable onPress={handleClose} hitSlop={8} style={styles.cancelBtn}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </Pressable>
+            <Text style={styles.headerTitle}>Change Password</Text>
+            <Pressable
+              onPress={handleSave}
+              disabled={saving}
+              hitSlop={8}
+              style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color={TEAL} />
+              ) : (
+                <Text style={styles.saveBtnText}>Update</Text>
+              )}
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView
@@ -130,7 +135,7 @@ export default function ChangePasswordModal({ visible, onClose }: Props) {
                   onChangeText={setCurrentPassword}
                   placeholder="Enter current password"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !currentPassword && styles.placeholderInput]}
                   secureTextEntry={!showCurrent}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -154,7 +159,7 @@ export default function ChangePasswordModal({ visible, onClose }: Props) {
                   onChangeText={setNewPassword}
                   placeholder="Enter new password"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !newPassword && styles.placeholderInput]}
                   secureTextEntry={!showNew}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -178,11 +183,18 @@ export default function ChangePasswordModal({ visible, onClose }: Props) {
                   onChangeText={setConfirmPassword}
                   placeholder="Re-enter new password"
                   placeholderTextColor={MUTED}
-                  style={styles.input}
+                  style={[styles.input, !confirmPassword && styles.placeholderInput]}
                   secureTextEntry={!showNew}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+                <Pressable onPress={() => setShowNew(!showNew)} hitSlop={8}>
+                  <Ionicons
+                    name={showNew ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={MUTED}
+                  />
+                </Pressable>
               </View>
             </View>
           </View>
@@ -198,14 +210,25 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
     backgroundColor: CARD_BG,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
+    paddingTop: 10,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+  },
+  dragHandle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  headerContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
     fontFamily: 'LexendDeca-Bold',
@@ -276,5 +299,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: INK,
     padding: 0,
+  },
+  placeholderInput: {
+    fontSize: 12.5,
   },
 });

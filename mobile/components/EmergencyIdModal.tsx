@@ -96,16 +96,20 @@ export default function EmergencyIdModal({
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-          <Pressable onPress={onClose} hitSlop={8} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color={INK} />
-          </Pressable>
-          <View style={styles.headerTitleBox}>
-            <Ionicons name="medical" size={18} color={RED} />
-            <Text style={styles.headerTitle}>Emergency Medical ID</Text>
+        {/* Header with integrated drag handle */}
+        <View style={styles.header}>
+          <View style={styles.dragHandle} />
+
+          <View style={styles.headerContentRow}>
+            <Pressable onPress={onClose} hitSlop={8} style={styles.closeBtn}>
+              <Ionicons name="close" size={24} color={INK} />
+            </Pressable>
+            <View style={styles.headerTitleBox}>
+              <Ionicons name="medical" size={18} color={RED} />
+              <Text style={styles.headerTitle}>Emergency Medical ID</Text>
+            </View>
+            <View style={{ width: 32 }} />
           </View>
-          <View style={{ width: 32 }} />
         </View>
 
         <ScrollView
@@ -265,14 +269,25 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
     backgroundColor: CARD_BG,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
+    paddingTop: 10,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+  },
+  dragHandle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  headerContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitleBox: {
     flexDirection: 'row',

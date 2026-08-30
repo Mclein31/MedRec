@@ -48,3 +48,9 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Database Persistence & Session Sync**: Stores image payload in `user_profiles.avatar_url` (PostgreSQL `TEXT` column) and propagates into `AuthContext` on launch via parallel `api.getMe()` and `api.getProfile()` calls.
 - **Native Linkage**: CocoaPods dependency `ExpoImagePicker (17.0.11)` linked in `mobile.xcworkspace` with iOS `NSPhotoLibraryUsageDescription` in `Info.plist`. Express JSON parser configured with `limit: '10mb'`.
 - **Bottom Navigation State**: Tab layout (`_layout.tsx`) renders the circular user avatar (`28×28px`, `cover`, `borderRadius: 14`, with 1.5px `#159A83` teal border when active) whenever `user?.avatarUrl` exists, and seamlessly falls back to default `profile-active.png` and `profile-inactive.png` icons when no photo is uploaded.
+- **Input Placeholder Sizing**: All profile edit and password input fields use conditional `fontSize: 12.5` for empty placeholder states to comfortably accommodate lengthy clinical examples (e.g. penicillin allergies, asthma medications, address lines) without clipping, switching to standard `14px` when populated with user text.
+
+## 🪟 Sliding Sheet & Drag Handle Architecture
+- **Standard Dimensions**: All pageSheet and slide-up modals (`NotificationCenterModal`, `ProfileEditModal`, `ChangePasswordModal`, `EmergencyIdModal`, `add.tsx`, `scan.tsx`, `index.tsx`) utilize a standardized drag handle (`width: 38`, `height: 4`, `borderRadius: 2`, `backgroundColor: '#D1D5DB'`).
+- **Header Layout**: Integrated at the top of modal headers with `paddingTop: 10, paddingBottom: 14` to communicate swipe-down dismissibility without adding dead vertical space.
+- **Drawer Exception**: The side menu drawer (`SideMenuModal`) slides horizontally from the left edge and is intentionally excluded from vertical downward drag handles.

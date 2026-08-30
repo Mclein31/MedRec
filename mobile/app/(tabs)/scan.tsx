@@ -688,13 +688,13 @@ const styles = StyleSheet.create({
   },
 
   modalHandle: {
-    width: 40,
+    width: 38,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#ccc',
+    backgroundColor: '#D1D5DB',
     alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 12,
   },
 
   modalScroll: {

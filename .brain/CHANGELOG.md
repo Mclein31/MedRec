@@ -10,6 +10,16 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.8.2] — Universal Sliding Modal Drag Handles & Profile Input Placeholder Refinement
+- **Standardized**: Implemented universal subtle grey drag handle affordance (`38×4px`, `borderRadius: 2`, `#D1D5DB`, `marginBottom: 12`) across all sliding sheets/modals in the application:
+  - `ProfileEditModal.tsx` (Demographics & Medical ID editing)
+  - `ChangePasswordModal.tsx` (Security & Password change)
+  - `EmergencyIdModal.tsx` (First Responder Emergency ID)
+  - `mobile/app/record/add.tsx` (Add Health Record form)
+  - `mobile/app/(tabs)/index.tsx` (Filter & Sort Records sheet)
+  - `mobile/app/(tabs)/scan.tsx` (Shared Record Inspection sheet)
+- **Refined**: Adjusted placeholder font size across all Profile edit and password change input fields to a lighter, more compact `12.5px` (`fontSize: 12.5`), ensuring long medical prompts fit cleanly while entered text retains standard `14px` clarity.
+
 ## [0.8.1] — Add Record Scan Hero Blue AI Theming
 - **Updated**: Styled the "Scan Health Document" hero card in `mobile/app/record/add.tsx` with signature AI blue (`#1976D2`), matching the AI Health Summary card on the Records tab and AI Medical Insights on Record Details.
 - **Retained**: Preserved the standard healthcare green/teal palette (`#159A83` / `#DDF5EE`) across record type chips, form field icons, primary Save CTA button, and attached document cards.
