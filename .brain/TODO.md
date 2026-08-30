@@ -13,7 +13,7 @@ last_updated: 2026-08-28
 ## 🔴 High Priority
 - [x] Connect React Native mobile client (`lib/api.ts`) to live Express server endpoints for Profile and User data.
 - [x] Implement complete Profile Tab (`(tabs)/profile.tsx`) with Emergency Medical ID, Demographics, and Data Export.
-- [ ] Complete UI screen in `app/record/add.tsx` for uploading prescriptions and lab result images.
+- [x] Complete UI screen in `app/record/add.tsx` for capturing/uploading prescriptions and lab result images (Document Camera, 3:4 Viewfinder, Quality Review, and In-Form Attachment Card).
 - [ ] Wire up OpenAI summarization service in `backend/src/services/aiService.js` to process record text.
 
 ## 🟡 Medium Priority

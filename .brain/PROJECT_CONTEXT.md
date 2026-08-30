@@ -65,11 +65,17 @@ last_updated: 2026-08-29
   - `(tabs)/share.tsx`: QR code generator for clinical record sharing.
   - `(tabs)/scan.tsx`: Doctor QR code scanner interface.
   - `record/[id].tsx`: Record detail view with modular cards, compact 2-column metadata, clinical notes, and AI insights.
-  - `record/add.tsx`: New record entry form and document scanning flow.
-  - `components/ProfileEditModal.tsx`: Modular edit modal for patient demographics and clinical baseline.
-  - `components/ChangePasswordModal.tsx`: Authenticated password change modal.
-  - `components/EmergencyIdModal.tsx`: High-contrast first responder Emergency Medical ID with offline QR code.
-  - `lib/api.ts`: Centralized fetch client communicating with backend endpoints.
+  - `record/add.tsx`: New record entry form with integrated document camera, gallery import, and attachment card.
+- `mobile/components/`:
+  - `camera/DocumentCamera.tsx`: Full-screen document camera with torch, haptic shutter, and permissions recovery.
+  - `camera/DocumentPreview.tsx`: Full-image quality and legibility review screen.
+  - `camera/ViewfinderOverlay.tsx`: 3:4 document aspect ratio framing guide with teal corner accents.
+  - `camera/CameraControls.tsx`: Shutter button, torch toggle, and photo library picker trigger.
+  - `camera/AttachedDocumentCard.tsx`: Interactive document thumbnail card for the add record form.
+  - `ProfileEditModal.tsx`: Modular edit modal for patient demographics and clinical baseline.
+  - `ChangePasswordModal.tsx`: Authenticated password change modal.
+  - `EmergencyIdModal.tsx`: High-contrast first responder Emergency Medical ID with offline QR code.
+- `mobile/lib/api.ts`: Centralized fetch client communicating with backend endpoints.
 - `MedRec/`: 18-folder Obsidian research vault (`00 - Dashboard`, `01 - Vision`, `02 - Problem Space`, `08 - Technical Architecture`, etc.).
 
 ---

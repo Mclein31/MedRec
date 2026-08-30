@@ -29,7 +29,7 @@ Each requirement defined here specifies a system capability or behavior necessar
 
 | ID | Requirement Name | Description | Target Module | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **FR-001** | Upload Medical Records | Ingest files from camera scans, photo library, PDF documents, and system file pickers. | [[Record Upload]] | PROPOSED |
+| **FR-001** | Upload Medical Records | Ingest files from camera scans, photo library, PDF documents, and system file pickers. | [[Record Upload]] | IN PROGRESS (Camera/Gallery MVP Implemented) |
 | **FR-002** | View Medical Records | Render and inspect multi-page documents, lab PDFs, and image scans with zoom and pagination. | [[Record Viewing]] | PROPOSED |
 | **FR-003** | Share Medical Records | Generate secure, time-limited, or exportable shares of selected records for clinicians and third parties. | [[Record Sharing]] | PROPOSED |
 | **FR-004** | Transfer Records to Providers | Facilitate direct export and handoff packages formatted for provider intake. | [[Record Transfer]] | PROPOSED |

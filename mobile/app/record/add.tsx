@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,13 +12,16 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
-import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
 import { api } from '../../lib/api';
+import { DocumentCamera } from '../../components/camera/DocumentCamera';
+import { DocumentPreview } from '../../components/camera/DocumentPreview';
+import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCard';
 
 // Design Tokens matching MedRec standard palette
 const TEAL = '#159A83';
@@ -27,8 +31,6 @@ const BG = '#F4FAF9';
 const BORDER = '#E5F0EE';
 const MUTED = '#64748B';
 const CARD_BG = '#FFFFFF';
-
-const BLUE = '#1976D2';
 
 const TYPE_ASSETS: Record<string, any> = {
   consultation: require('../../assets/icons/consultation.png'),
@@ -50,186 +52,126 @@ const RECORD_TYPES = [
   { value: 'other', label: 'Other' },
 ] as const;
 
-type Screen = 'form' | 'camera' | 'preview';
+type ViewMode = 'form' | 'camera' | 'preview';
 
 export default function AddRecordScreen() {
-  const [screen, setScreen] = useState<Screen>('form');
+  const [viewMode, setViewMode] = useState<ViewMode>('form');
+  const [tempPhotoUri, setTempPhotoUri] = useState<string | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+
+  // Form Fields
   const [type, setType] = useState('consultation');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const handleSave = async () => {
     if (!title.trim()) {
-      Alert.alert('Title required', 'Please enter a title for this record.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Title required', 'Please enter a title for this health record.');
       return;
     }
     setSaving(true);
     try {
-      await api.addRecord({ type, title, description, date });
+      await api.addRecord({ type, title: title.trim(), description: description.trim(), date });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch (err: any) {
-      Alert.alert('Failed to save', err.message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Failed to save', err.message || 'Could not save record to database.');
     } finally {
       setSaving(false);
     }
   };
 
-  const openCamera = async () => {
-    if (!permission?.granted) {
-      const result = await requestPermission();
-      if (!result.granted) {
-        Alert.alert(
-          'Camera access needed',
-          'Please allow camera access to scan documents.'
-        );
-        return;
-      }
-    }
-    setScreen('camera');
-  };
-
-  const takePicture = async () => {
-    if (!cameraRef.current) return;
+  const handleOpenGallery = async () => {
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-        base64: false,
+      Haptics.selectionAsync();
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
       });
-      if (photo?.uri) {
-        setPhotoUri(photo.uri);
-        setScreen('preview');
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedUri = result.assets[0].uri;
+        setTempPhotoUri(selectedUri);
+        setViewMode('preview');
       }
-    } catch {
-      Alert.alert('Failed to take photo', 'Please try again.');
+    } catch (err: any) {
+      Alert.alert('Gallery Error', err?.message || 'Could not open photo library.');
     }
   };
 
-  const handleUsePhoto = () => {
-    Alert.alert(
-      'Photo captured',
-      'AI document scanning will be available once OpenAI billing is set up. You can fill in the fields manually for now.',
-      [{ text: 'Fill in manually', onPress: () => setScreen('form') }]
-    );
+  const handleConfirmPhoto = (confirmedUri: string) => {
+    setPhotoUri(confirmedUri);
+    setTempPhotoUri(null);
+
+    // Auto-suggest a default title if title is currently blank
+    if (!title.trim()) {
+      const todayFormatted = new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      setTitle(`Scanned Document — ${todayFormatted}`);
+    }
+
+    setViewMode('form');
   };
 
-  const handleRetake = () => {
-    setPhotoUri(null);
-    setScreen('camera');
-  };
-
-  // ─── Camera screen ────────────────────────────────────────────────────────
-  if (screen === 'camera') {
+  // ─── 1. CAMERA VIEWPORT ──────────────────────────────────────────────────
+  if (viewMode === 'camera') {
     return (
-      <View style={styles.cameraRoot}>
-        <StatusBar style="light" />
-        <CameraView ref={cameraRef} style={styles.cameraView} facing="back">
-          {/* Viewfinder overlay */}
-          <View style={[styles.cameraOverlay, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-            <Text style={styles.cameraHint}>
-              Point at a document — prescription, lab result, or medical invoice
-            </Text>
-            <View style={styles.viewfinder}>
-              <View style={[styles.corner, styles.cornerTL]} />
-              <View style={[styles.corner, styles.cornerTR]} />
-              <View style={[styles.corner, styles.cornerBL]} />
-              <View style={[styles.corner, styles.cornerBR]} />
-            </View>
-            <View style={styles.cameraActions}>
-              <Pressable
-                onPress={() => setScreen('form')}
-                style={styles.cameraCancel}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel camera scan"
-              >
-                <Text style={styles.cameraCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={takePicture}
-                style={({ pressed }) => [styles.captureBtn, pressed && styles.pressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Capture document photo"
-              >
-                <View style={styles.captureInner} />
-              </Pressable>
-              <View style={styles.cameraSpacer} />
-            </View>
-          </View>
-        </CameraView>
-      </View>
+      <DocumentCamera
+        onCapture={(uri) => {
+          setTempPhotoUri(uri);
+          setViewMode('preview');
+        }}
+        onSelectFromGallery={(uri) => {
+          setTempPhotoUri(uri);
+          setViewMode('preview');
+        }}
+        onClose={() => {
+          setTempPhotoUri(null);
+          setViewMode('form');
+        }}
+      />
     );
   }
 
-  // ─── Preview screen ───────────────────────────────────────────────────────
-  if (screen === 'preview' && photoUri) {
+  // ─── 2. PHOTO PREVIEW & QUALITY CHECK ─────────────────────────────────────
+  if (viewMode === 'preview' && (tempPhotoUri || photoUri)) {
     return (
-      <View style={styles.previewRoot}>
-        <StatusBar style="light" />
-        <Image
-          source={{ uri: photoUri }}
-          style={styles.previewImage}
-          resizeMode="contain"
-        />
-        <View
-          style={[
-            styles.previewActions,
-            { paddingBottom: insets.bottom + 24 },
-          ]}
-        >
-          <Text style={styles.previewLabel}>Use this document?</Text>
-          <Text style={styles.previewSub}>
-            AI will extract the record details automatically once billing is enabled.
-          </Text>
-          <Pressable
-            onPress={handleUsePhoto}
-            style={({ pressed }) => [
-              styles.previewPrimaryBtn,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Use captured photo"
-          >
-            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.previewPrimaryBtnText}>Use Photo</Text>
-          </Pressable>
-          <Pressable
-            onPress={handleRetake}
-            style={({ pressed }) => [
-              styles.previewSecondaryBtn,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Retake photo"
-          >
-            <Ionicons name="camera-outline" size={18} color={INK} />
-            <Text style={styles.previewSecondaryBtnText}>Retake Photo</Text>
-          </Pressable>
-        </View>
-      </View>
+      <DocumentPreview
+        photoUri={tempPhotoUri || photoUri!}
+        onConfirm={handleConfirmPhoto}
+        onRetake={() => {
+          setViewMode('camera');
+        }}
+        onCancel={() => {
+          setTempPhotoUri(null);
+          setViewMode('form');
+        }}
+      />
     );
   }
 
-  // ─── Form screen ──────────────────────────────────────────────────────────
+  // ─── 3. FORM SCREEN ───────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
 
-      {/* Drag Handle Indicator */}
+      {/* Drag Handle Affordance */}
       <View style={styles.handleContainer} pointerEvents="none">
         <View style={styles.handle} />
       </View>
 
-      {/* ─────────────────────────────
-          MODAL HEADER
-      ───────────────────────────── */}
+      {/* Modal Header */}
       <View style={[styles.header, { paddingTop: 6 }]}>
         <Pressable
           onPress={() => router.back()}
@@ -263,41 +205,79 @@ export default function AddRecordScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* 1. DOCUMENT AI / SCAN DOCUMENT FEATURE CARD */}
-          <Pressable
-            onPress={openCamera}
-            style={({ pressed }) => [
-              styles.scanCard,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Scan health document with camera"
-          >
-            <View style={styles.scanIconBox}>
-              <Image
-                source={require('../../assets/icons/AI.png')}
-                style={styles.scanIcon}
-              />
-            </View>
-            <View style={styles.scanTextBox}>
-              <Text style={styles.scanTitle}>Scan Health Document</Text>
-              <Text style={styles.scanSub}>
-                Take a photo to auto-fill details with AI
-              </Text>
-            </View>
-            <View style={styles.scanChevronBox}>
-              <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
-            </View>
-          </Pressable>
+          {/* Document Attachment State vs Scan Trigger Card */}
+          {photoUri ? (
+            <AttachedDocumentCard
+              photoUri={photoUri}
+              onPressInspect={() => {
+                setTempPhotoUri(photoUri);
+                setViewMode('preview');
+              }}
+              onPressRetake={() => {
+                setViewMode('camera');
+              }}
+              onPressRemove={() => {
+                setPhotoUri(null);
+              }}
+            />
+          ) : (
+            <View style={styles.scanHeroCard}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setViewMode('camera');
+                }}
+                style={({ pressed }) => [
+                  styles.scanHeroPrimaryRow,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Scan health document with camera"
+              >
+                <View style={styles.scanIconBox}>
+                  <Image
+                    source={require('../../assets/icons/AI.png')}
+                    style={styles.scanIcon}
+                  />
+                </View>
+                <View style={styles.scanTextBox}>
+                  <Text style={styles.scanTitle}>Scan Health Document</Text>
+                  <Text style={styles.scanSub}>
+                    Point camera at prescriptions, lab tests, or bills
+                  </Text>
+                </View>
+                <View style={styles.scanChevronBox}>
+                  <Ionicons name="camera" size={16} color="#FFFFFF" />
+                </View>
+              </Pressable>
 
-          {/* Divider Row */}
+              {/* Secondary Option: Photo Library Import */}
+              <View style={styles.scanHeroFooter}>
+                <Pressable
+                  onPress={handleOpenGallery}
+                  style={({ pressed }) => [
+                    styles.galleryHeroBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose from photo gallery"
+                >
+                  <Ionicons name="images-outline" size={15} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.galleryHeroBtnText}>Choose from Photo Library</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          {/* Divider */}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or fill in manually</Text>
+            <Text style={styles.dividerText}>record details</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* 2. RECORD TYPE SELECTION */}
+          {/* Record Type Grid */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>RECORD TYPE</Text>
             <View style={styles.typeGrid}>
@@ -306,7 +286,10 @@ export default function AddRecordScreen() {
                 return (
                   <Pressable
                     key={t.value}
-                    onPress={() => setType(t.value)}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setType(t.value);
+                    }}
                     style={({ pressed }) => [
                       styles.typeChip,
                       active && styles.typeChipActive,
@@ -337,7 +320,7 @@ export default function AddRecordScreen() {
             </View>
           </View>
 
-          {/* 3. RECORD INFORMATION CARD */}
+          {/* Record Information Form Card */}
           <View style={styles.formCard}>
             {/* Title Field */}
             <View style={styles.fieldGroup}>
@@ -358,7 +341,7 @@ export default function AddRecordScreen() {
               </View>
             </View>
 
-            {/* Date Field */}
+            {/* Date of Event */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>DATE OF EVENT</Text>
               <View style={styles.inputContainer}>
@@ -377,7 +360,7 @@ export default function AddRecordScreen() {
               </View>
             </View>
 
-            {/* Description Field */}
+            {/* Clinical Notes / Details */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>CLINICAL NOTES / DETAILS</Text>
               <View style={[styles.inputContainer, styles.textAreaContainer]}>
@@ -396,7 +379,7 @@ export default function AddRecordScreen() {
             </View>
           </View>
 
-          {/* 4. PRIMARY SAVE CTA */}
+          {/* Primary Save CTA */}
           <Pressable
             onPress={handleSave}
             disabled={saving}
@@ -430,15 +413,11 @@ export default function AddRecordScreen() {
   );
 }
 
-const CORNER_SIZE = 24;
-const CORNER_THICKNESS = 3;
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: BG,
   },
-
   flexOne: {
     flex: 1,
   },
@@ -473,7 +452,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
   },
-
   headerDismissBtn: {
     width: 36,
     height: 36,
@@ -489,7 +467,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
-
   headerTitle: {
     flex: 1,
     fontFamily: 'LexendDeca-Bold',
@@ -498,15 +475,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 8,
   },
-
   headerSpacer: {
     width: 36,
   },
-
   pressed: {
     opacity: 0.75,
   },
-
   disabledBtn: {
     opacity: 0.6,
   },
@@ -521,62 +495,78 @@ const styles = StyleSheet.create({
   },
 
   /* ─────────────────────────────
-     SCAN DOCUMENT CARD
+     SCAN HERO CARD
   ───────────────────────────── */
-  scanCard: {
-    backgroundColor: BLUE,
-    borderRadius: 16,
-    padding: 16,
+  scanHeroCard: {
+    backgroundColor: TEAL,
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  scanHeroPrimaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
     gap: 12,
-    shadowColor: BLUE,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 3,
   },
-
   scanIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   scanIcon: {
-    width: 22,
-    height: 22,
+    width: 24,
+    height: 24,
     resizeMode: 'contain',
     tintColor: '#FFFFFF',
   },
-
   scanTextBox: {
     flex: 1,
     gap: 2,
   },
-
   scanTitle: {
-    fontFamily: 'LexendDeca-SemiBold',
+    fontFamily: 'LexendDeca-Bold',
     fontSize: 15,
     color: '#FFFFFF',
   },
-
   scanSub: {
     fontFamily: 'LexendDeca-Regular',
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.88)',
+    lineHeight: 16,
   },
-
   scanChevronBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  scanHeroFooter: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(18, 52, 59, 0.15)',
+  },
+  galleryHeroBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  galleryHeroBtnText: {
+    fontFamily: 'LexendDeca-Medium',
+    fontSize: 12,
+    color: '#FFFFFF',
   },
 
   /* ─────────────────────────────
@@ -588,17 +578,17 @@ const styles = StyleSheet.create({
     gap: 12,
     marginVertical: 2,
   },
-
   dividerLine: {
     flex: 1,
     height: 1,
     backgroundColor: BORDER,
   },
-
   dividerText: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
+    fontFamily: 'LexendDeca-Medium',
+    fontSize: 11,
     color: MUTED,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
 
   /* ─────────────────────────────
@@ -607,7 +597,6 @@ const styles = StyleSheet.create({
   section: {
     gap: 8,
   },
-
   sectionLabel: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11,
@@ -615,13 +604,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-
   typeChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -638,24 +625,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
-
   typeChipActive: {
     backgroundColor: GREEN_LIGHT,
     borderColor: TEAL,
   },
-
   typeChipIcon: {
     width: 14,
     height: 14,
     resizeMode: 'contain',
   },
-
   typeChipText: {
     fontFamily: 'LexendDeca-Regular',
     fontSize: 13,
     color: INK,
   },
-
   typeChipTextActive: {
     fontFamily: 'LexendDeca-SemiBold',
     color: TEAL,
@@ -677,11 +660,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-
   fieldGroup: {
     gap: 6,
   },
-
   fieldLabel: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11,
@@ -689,7 +670,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -701,20 +681,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     minHeight: 48,
   },
-
   textAreaContainer: {
     alignItems: 'flex-start',
     paddingVertical: 12,
     minHeight: 110,
   },
-
   fieldLeadingIcon: {
     width: 16,
     height: 16,
     resizeMode: 'contain',
     tintColor: TEAL,
   },
-
   textInput: {
     flex: 1,
     fontFamily: 'LexendDeca-Regular',
@@ -722,7 +699,6 @@ const styles = StyleSheet.create({
     color: INK,
     padding: 0,
   },
-
   textArea: {
     minHeight: 85,
     textAlignVertical: 'top',
@@ -746,197 +722,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-
   saveBtnText: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 16,
     color: '#FFFFFF',
-  },
-
-  /* ─────────────────────────────
-     CAMERA SCREEN
-  ───────────────────────────── */
-  cameraRoot: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-
-  cameraView: {
-    flex: 1,
-  },
-
-  cameraOverlay: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-  },
-
-  cameraHint: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    lineHeight: 20,
-  },
-
-  viewfinder: {
-    width: 280,
-    height: 380,
-    position: 'relative',
-  },
-
-  corner: {
-    position: 'absolute',
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    borderColor: TEAL,
-  },
-
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: CORNER_THICKNESS,
-    borderLeftWidth: CORNER_THICKNESS,
-    borderTopLeftRadius: 6,
-  },
-
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: CORNER_THICKNESS,
-    borderRightWidth: CORNER_THICKNESS,
-    borderTopRightRadius: 6,
-  },
-
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: CORNER_THICKNESS,
-    borderLeftWidth: CORNER_THICKNESS,
-    borderBottomLeftRadius: 6,
-  },
-
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: CORNER_THICKNESS,
-    borderRightWidth: CORNER_THICKNESS,
-    borderBottomRightRadius: 6,
-  },
-
-  cameraActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 16,
-  },
-
-  cameraCancel: {
-    width: 70,
-    alignItems: 'flex-start',
-  },
-
-  cameraCancelText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
-    color: '#FFFFFF',
-  },
-
-  captureBtn: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  captureInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#FFFFFF',
-  },
-
-  cameraSpacer: {
-    width: 70,
-  },
-
-  /* ─────────────────────────────
-     PREVIEW SCREEN
-  ───────────────────────────── */
-  previewRoot: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-
-  previewImage: {
-    flex: 1,
-  },
-
-  previewActions: {
-    backgroundColor: CARD_BG,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    gap: 12,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-
-  previewLabel: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 18,
-    color: INK,
-  },
-
-  previewSub: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
-    color: MUTED,
-    lineHeight: 19,
-    marginBottom: 4,
-  },
-
-  previewPrimaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: TEAL,
-    borderRadius: 14,
-    height: 50,
-    shadowColor: TEAL,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-
-  previewPrimaryBtnText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
-    color: '#FFFFFF',
-  },
-
-  previewSecondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#F8FCFB',
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 14,
-    height: 50,
-  },
-
-  previewSecondaryBtnText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
-    color: INK,
   },
 });

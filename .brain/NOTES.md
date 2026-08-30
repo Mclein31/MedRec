@@ -23,3 +23,9 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - `DATABASE_URL`: PostgreSQL connection URI (`postgresql://user:pass@localhost:5432/medrec`)
 - `JWT_SECRET`: High-entropy string for signing user session tokens
 - `OPENAI_API_KEY`: API key for medical summarization and explanations
+
+## 📷 Document Camera & Gallery Ingestion
+- `expo-camera` (`CameraView`) is configured with `facing="back"`, `enableTorch`, and unmounts cleanly on view transitions.
+- `expo-image-picker` provides gallery import via `launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })`.
+- Captured and imported images reside strictly within the application's sandboxed local cache and are never saved to the public camera roll.
+- All form inputs in `add.tsx` are managed at the top-level parent component to prevent data loss when switching between form, camera, and preview view modes.

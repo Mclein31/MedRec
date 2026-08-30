@@ -69,3 +69,12 @@ last_updated: 2026-08-28
 2. **Emergency Medical ID**: Offline scannable QR code encodes public emergency facts directly for instant first responder scanning without authentication barrier.
 3. **Doctor Verification**: Doctor scans QR code $\rightarrow$ Backend validates token expiration and active status $\rightarrow$ Grants scoped read-only access to authorized records.
 4. **Token Invalidation**: Tapping Sign Out immediately writes JWT token `jti` to `revoked_tokens` table.
+
+---
+
+## 📷 Document Capture Subsystem (`mobile/components/camera/`)
+1. `DocumentCamera.tsx`: Full-screen camera viewport mounting `CameraView` with flashlight/torch control, shutter flash animation, haptic tap, and photo library ingestion fallback (`expo-image-picker`).
+2. `ViewfinderOverlay.tsx`: 3:4 aspect ratio document framing guide with ambient vignette masking (`rgba(10, 18, 17, 0.62)`), high-contrast teal corner markers, and animated scan line.
+3. `CameraControls.tsx`: Dual-ring tactile shutter button, torch toggle button, and gallery picker trigger.
+4. `DocumentPreview.tsx`: Full-resolution image review screen with quality self-check prompt, retake action, and confirmation action.
+5. `AttachedDocumentCard.tsx`: Interactive in-form attachment card rendered on `record/add.tsx` with 64×64px thumbnail, zoom preview modal, replace/retake, and delete actions.

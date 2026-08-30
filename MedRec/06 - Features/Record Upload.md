@@ -1,13 +1,15 @@
 ---
 project: MedRec
 type: feature
-status: proposed
+status: implemented
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-30
 tags:
   - medrec
   - feature
   - upload
+  - camera
+  - scanning
   - storage
 related:
   - "[[Digital Medical Records]]"
@@ -18,49 +20,43 @@ related:
   - "[[Patients]]"
 ---
 
-# Record Upload
+# Record Upload & Document Scanning
 
 ## Purpose
-Allows users to upload physical and digital medical documents into their MedRec repository, including camera photo captures (e.g., physical prescriptions, lab slips), PDFs (e.g., hospital discharge summaries, diagnostic imaging reports), and scanned image files.
+Allows users to upload physical and digital medical documents into their MedRec repository, including camera document photo captures (e.g., physical prescriptions, lab slips, consultation notes) and existing photos imported from the device's photo library.
 
 ## Problem it Solves
-Addresses the bottleneck of digitizing physical medical paperwork. Most clinic encounters in my region still produce paper slips, handwritten prescriptions, and printed lab reports. Without an intuitive capture and upload pipeline, records remain scattered across physical drawers ([[Scattered Health History]]).
+Addresses the bottleneck of digitizing physical medical paperwork. Most clinic encounters produce paper slips, handwritten prescriptions, and printed lab reports. Without an intuitive capture and upload pipeline, records remain scattered across physical drawers ([[Scattered Health History]]).
 
 ## Target User
-- [[Patients]]: Uploading paper slips right after a consultation or attaching digital PDFs received via email/patient portals.
+- [[Patients]]: Scanning paper slips right after a consultation or attaching digital document photos received via email or messaging apps.
 
-## Related Research
-- *Status*: Pending research validation.
-- *Hypothesis*: If the upload flow takes more than 3 taps or requires tedious manual transcription, user drop-off during onboarding will exceed 50%.
-
-## Requirements
-- [[Functional Requirements]] — Support multi-format file uploads (`.pdf`, `.jpg`, `.jpeg`, `.png`, `.heic`).
-- Multi-page document capture (stitching camera snapshots into a single record entry).
-- Metadata tagging upon upload: title, date of visit, category selection ([[Medical Record Categories]]), and optional doctor notes.
-- Client-side image compression before network transmission.
+## Implemented Camera & Scanning Experience (Phase 1 MVP)
+1. **Document-First Camera Viewport (`DocumentCamera.tsx`)**:
+   - 3:4 aspect ratio document framing guide (`ViewfinderOverlay.tsx`) with darkened ambient vignette and rounded teal corner markers.
+   - Flashlight / Torch toggle (`enableTorch`) to illuminate low-light medical papers.
+   - Dual-ring tactile shutter button with haptic feedback (`Haptics.impactAsync`) and a visual shutter flash animation.
+   - Photo library fallback button (`expo-image-picker`) to select existing document photos.
+   - Permission recovery prompt deep-linking to device settings (`Linking.openSettings()`).
+2. **Quality & Legibility Review (`DocumentPreview.tsx`)**:
+   - Full-resolution image inspection before saving.
+   - Mandatory quality self-check prompt (*"Is this document legible? Make sure text, dates, test values, and signatures are crisp and clearly readable"*).
+   - Quick **Retake** (reopens camera) vs. **Use Document** (confirms attachment) actions.
+3. **In-Form Attachment Management (`AttachedDocumentCard.tsx`)**:
+   - Interactive thumbnail card displayed on the Add Health Record form (`add.tsx`).
+   - Shows a 64×64px document thumbnail, status indicator, and quick actions: **Preview / Zoom**, **Replace / Retake**, and **Remove** (with confirmation).
+   - Preserves all typed form fields across camera and preview state transitions.
+   - Automatically pre-fills a suggested record title if left blank.
 
 ## Dependencies
 - [[Digital Medical Records]]: The parent container model that holds the uploaded assets.
-- [[File Storage]]: Cloud storage service / S3 bucket configuration for object persistence.
 - [[Medical Record Categories]]: Taxonomy for tagging uploads during the ingestion flow.
 - [[Authentication]]: User session token for authenticated upload endpoints.
 
-## UX Considerations
-- Camera scanner with auto edge-detection / document cropping to make physical document capture effortless.
-- Clear progress indicator for multi-megabyte PDF uploads.
-- Ability to quickly preview uploaded pages before saving the record.
-- Background upload queue so users aren't locked on the screen while waiting for slow network transfers.
-
-## Technical Considerations
-- Direct-to-storage upload using pre-signed S3 URLs to reduce load on the main API server.
-- MIME-type validation and virus/malware scanning on file ingestion.
-- File size caps (e.g., max 15MB per file) and client-side compression (downsampling high-res smartphone camera photos).
-- Future integration path: OCR pipeline to extract text automatically from uploaded photos/PDFs.
-
 ## Status
-- **Proposed** (Specification stage)
+- **Implemented** (Phase 1 MVP - Document Camera & Gallery Ingestion completed 2026-08-30)
 
-## Open Questions
-- Should I support multi-file batch uploads at once (e.g., 5 separate lab result sheets from one visit)?
-- How to handle offline uploads when a patient captures records in a clinic waiting room with poor cell reception?
-- What is the storage cost trajectory per active user given free-tier cloud limits?
+## Deferred to Future Iterations
+- Multi-page document batch scanning (stitching 2-5 pages into a single PDF).
+- On-device edge OCR text extraction (Apple Vision / Google ML Kit).
+- Cloud S3 object storage with pre-signed upload URLs.

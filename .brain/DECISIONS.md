@@ -12,6 +12,39 @@ last_updated: 2026-08-29
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-30 — Document-First Camera & Mandatory Pre-Commit Legibility Review
+
+### Decision
+Design the camera interface strictly as a dedicated medical document scanning experience (3:4 aspect ratio framing cutout, dark ambient vignette mask, torch toggle, tactile shutter) rather than a generic photo camera, and enforce a mandatory pre-commit legibility review screen (*Capture $\rightarrow$ Review $\rightarrow$ Confirm*) before attaching documents to a record.
+
+### Reason
+Medical records contain high-density clinical text, numeric dosages, and physician signatures. Capturing low-contrast or blurry photos directly into records creates severe downstream risks and unreadable archives. Enforcing a 3:4 document guide, torch control, and explicit quality self-check (*"Is this document legible?"*) dramatically increases capture quality and prevents corrupted or illegible records from being saved.
+
+### Alternatives
+- **Generic Unrestricted Camera**: Produced off-angle, poorly framed, and blurred photos without guidance.
+- **Silent Auto-Commit**: Confirming photo immediately without previewing caused user disorientation and lacked a quality check.
+
+### Consequences
+High capture legibility, intuitive retake loop, and clear human-in-the-loop validation before committing records to the database.
+
+---
+
+## 2026-08-30 — Modular In-Modal Viewport State Management
+
+### Decision
+Refactor `mobile/app/record/add.tsx` into a modular controller that swaps dedicated subcomponents (`DocumentCamera`, `DocumentPreview`, `AttachedDocumentCard`) while keeping all form state (`title`, `date`, `description`, `type`, `photoUri`) persisted in the top-level parent component.
+
+### Reason
+In the previous monolithic implementation, switching screen modes destroyed and recreated internal form state, risking data loss if users typed notes before tapping scan. Lifting form state to the parent ensures typed input is never lost during camera or preview transitions.
+
+### Alternatives
+- **Separate Route Stack Navigation**: Navigating to `/record/camera` as a separate route pushed multiple modals on top of each other and complicated parameter passing.
+
+### Consequences
+Zero form state loss, modular component testability, and clean separation of concerns under `mobile/components/camera/`.
+
+---
+
 ## 2026-08-30 — Dual-Identity Separation & Emergency Medical ID Architecture
 
 ### Decision
