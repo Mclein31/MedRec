@@ -1,11 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useResponsive } from '../../hooks/useResponsive';
+import { ResponsiveLimits } from '../../constants/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// 3:4 Document Aspect Ratio Viewfinder Dimensions
-const VIEWFINDER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
-const VIEWFINDER_HEIGHT = VIEWFINDER_WIDTH * 1.38; // ~3:4.14 ratio matching standard A4 / Prescription sheets
 const CORNER_SIZE = 28;
 const CORNER_THICKNESS = 4;
 const CORNER_RADIUS = 6;
@@ -20,7 +17,13 @@ export const ViewfinderOverlay: React.FC<ViewfinderOverlayProps> = ({
   guidanceText = 'Position document within frame',
   isCapturing = false,
 }) => {
+  const { width, height, isLandscape } = useResponsive();
   const scanLineAnim = useRef(new Animated.Value(0)).current;
+
+  // 3:4 Document Aspect Ratio Viewfinder Dimensions (clamped for portrait & landscape)
+  const maxViewfinder = isLandscape ? Math.min(height * 0.7, 300) : Math.min(width * 0.82, ResponsiveLimits.viewfinderMax);
+  const viewfinderWidth = Math.round(maxViewfinder);
+  const viewfinderHeight = Math.round(viewfinderWidth * 1.35);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -44,7 +47,7 @@ export const ViewfinderOverlay: React.FC<ViewfinderOverlayProps> = ({
 
   const translateY = scanLineAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [10, VIEWFINDER_HEIGHT - 14],
+    outputRange: [10, viewfinderHeight - 14],
   });
 
   return (
@@ -57,11 +60,11 @@ export const ViewfinderOverlay: React.FC<ViewfinderOverlayProps> = ({
       </View>
 
       {/* Middle row containing left mask, transparent cutout, and right mask */}
-      <View style={styles.middleRow}>
+      <View style={[styles.middleRow, { height: viewfinderHeight }]}>
         <View style={styles.maskSide} />
 
         {/* Viewfinder Cutout */}
-        <View style={styles.cutout}>
+        <View style={[styles.cutout, { width: viewfinderWidth, height: viewfinderHeight }]}>
           {/* Animated subtle scan indicator */}
           <Animated.View
             style={[
@@ -125,15 +128,12 @@ const styles = StyleSheet.create({
   },
   middleRow: {
     flexDirection: 'row',
-    height: VIEWFINDER_HEIGHT,
   },
   maskSide: {
     flex: 1,
     backgroundColor: MASK_COLOR,
   },
   cutout: {
-    width: VIEWFINDER_WIDTH,
-    height: VIEWFINDER_HEIGHT,
     position: 'relative',
     backgroundColor: 'transparent',
   },
@@ -189,4 +189,5 @@ const styles = StyleSheet.create({
     backgroundColor: MASK_COLOR,
   },
 });
+
 export default ViewfinderOverlay;

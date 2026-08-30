@@ -1,15 +1,22 @@
 import {
-  View, Text, TextInput, Pressable, Alert, StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, Image, ImageBackground,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
+  ImageBackground,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsive } from '../hooks/useResponsive';
-
-import { Colors, Spacing, Radii, Typography } from '../constants/theme';
+import { Colors, Radii } from '../constants/theme';
 
 const BLUE = Colors.blue;
 const TEAL = Colors.teal;
@@ -27,8 +34,14 @@ export default function RegisterScreen() {
 
   const { register } = useAuth();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { wp, hp, fp, isTablet, maxFormWidth } = useResponsive();
+  const {
+    isTablet,
+    isLandscape,
+    isShortScreen,
+    maxFormWidth,
+    scaleFont,
+    insets,
+  } = useResponsive();
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -66,129 +79,233 @@ export default function RegisterScreen() {
     Alert.alert('Coming soon', `${provider} sign-up will be available in a future update.`);
   };
 
+  const headerHeight = isTablet ? 180 : isLandscape ? 110 : isShortScreen ? 140 : 180;
+
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-
-          <ImageBackground
-            source={require('../assets/graphics/login-graphic.png')}
-            style={[{
-              width: '100%', height: hp(210),
-              justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF',
-              paddingTop: insets.top,
-            }]}
-            imageStyle={{ transform: [{ translateY: hp(60) }, { scale: 1.03 }] }}
-            resizeMode="cover"
-          />
-
-          <View style={[
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={[
+            styles.scroll,
             {
-              backgroundColor: '#FFFFFF', borderTopLeftRadius: wp(35), borderTopRightRadius: wp(35),
-              marginTop: hp(35), paddingHorizontal: wp(46), paddingTop: hp(20), paddingBottom: hp(10),
+              paddingTop: isLandscape ? Math.max(insets.top, 12) : 0,
+              paddingBottom: Math.max(insets.bottom, 16) + 12,
             },
-            isTablet && { maxWidth: maxFormWidth, alignSelf: 'center', width: '100%' },
-          ]}>
-            <Text style={{ fontFamily: 'LexendDeca-SemiBold', fontSize: fp(30), color: BLUE, textAlign: 'center', lineHeight: fp(37) }}>Create your Account</Text>
-            <Text style={{ fontSize: fp(11), color: TEXT_MUTED, textAlign: 'center', marginTop: 0, marginBottom: hp(12) }}>Join us and take control of your health records</Text>
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Graphic */}
+          <View style={[styles.graphicWrapper, isTablet && styles.tabletGraphicWrapper]}>
+            <ImageBackground
+              source={require('../assets/graphics/login-graphic.png')}
+              style={[
+                styles.graphicBg,
+                { height: headerHeight, paddingTop: insets.top },
+              ]}
+              imageStyle={styles.graphicImage}
+              resizeMode="cover"
+            />
+          </View>
 
-            <View style={{ gap: hp(14) }}>
-              <View style={{
-                height: hp(57.5), flexDirection: 'row', alignItems: 'center', gap: wp(18),
-                paddingHorizontal: wp(30), borderRadius: wp(18), borderWidth: 1, borderColor: '#D9E7E4', backgroundColor: '#FFFFFF',
-              }}>
-                <Image source={require('../assets/icons/person.png')} style={{ width: fp(25), height: fp(25), resizeMode: 'contain' }} />
+          {/* Form Container */}
+          <View
+            style={[
+              styles.formSheet,
+              isTablet && [
+                styles.tabletFormSheet,
+                { maxWidth: maxFormWidth, alignSelf: 'center', width: '100%' },
+              ],
+            ]}
+          >
+            <Text
+              style={[
+                styles.formTitle,
+                { fontSize: scaleFont(26, 22, 28) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              Create your Account
+            </Text>
+            <Text
+              style={[
+                styles.formSubtitle,
+                { fontSize: scaleFont(12, 11, 13) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              Join us and take control of your health records
+            </Text>
+
+            {/* Input Stack */}
+            <View style={styles.inputsStack}>
+              {/* Full Name */}
+              <View style={styles.inputRow}>
+                <Image
+                  source={require('../assets/icons/person.png')}
+                  style={styles.fieldIcon}
+                />
                 <TextInput
-                  style={{ flex: 1, fontSize: fp(14), color: TEXT_DARK, padding: 0 }}
-                  placeholder="Full Name" placeholderTextColor={TEXT_MUTED}
-                  value={name} onChangeText={setName} autoCorrect={false}
+                  style={styles.textInput}
+                  placeholder="Full Name"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={name}
+                  onChangeText={setName}
+                  autoCorrect={false}
+                  maxFontSizeMultiplier={1.35}
+                  accessibilityLabel="Full Name"
                 />
               </View>
 
-              <View style={{
-                height: hp(57.5), flexDirection: 'row', alignItems: 'center', gap: wp(18),
-                paddingHorizontal: wp(30), borderRadius: wp(18), borderWidth: 1, borderColor: '#D9E7E4', backgroundColor: '#FFFFFF',
-              }}>
-                <Image source={require('../assets/icons/mail.png')} style={{ width: fp(25), height: fp(25), resizeMode: 'contain' }} />
+              {/* Email / Phone */}
+              <View style={styles.inputRow}>
+                <Image
+                  source={require('../assets/icons/mail.png')}
+                  style={styles.fieldIcon}
+                />
                 <TextInput
-                  style={{ flex: 1, fontSize: fp(14), color: TEXT_DARK, padding: 0 }}
-                  placeholder="Email or Phone" placeholderTextColor={TEXT_MUTED}
-                  value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoCorrect={false}
+                  style={styles.textInput}
+                  placeholder="Email or Phone"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                  maxFontSizeMultiplier={1.35}
+                  accessibilityLabel="Email or phone"
                 />
               </View>
 
-              <View style={{
-                height: hp(57.5), flexDirection: 'row', alignItems: 'center', gap: wp(18),
-                paddingHorizontal: wp(30), borderRadius: wp(18), borderWidth: 1, borderColor: '#D9E7E4', backgroundColor: '#FFFFFF',
-              }}>
-                <Image source={require('../assets/icons/padlock.png')} style={{ width: fp(25), height: fp(25), resizeMode: 'contain' }} />
-                <TextInput
-                  style={{ flex: 1, fontSize: fp(14), color: TEXT_DARK, padding: 0 }}
-                  placeholder="Password" placeholderTextColor={TEXT_MUTED}
-                  value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCorrect={false}
+              {/* Password */}
+              <View style={styles.inputRow}>
+                <Image
+                  source={require('../assets/icons/padlock.png')}
+                  style={styles.fieldIcon}
                 />
-                <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-                  <Image source={showPassword ? require('../assets/icons/open-eye.png') : require('../assets/icons/closed-eye.png')} style={{ width: fp(22), height: fp(22), resizeMode: 'contain' }} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Password"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCorrect={false}
+                  maxFontSizeMultiplier={1.35}
+                  accessibilityLabel="Password"
+                />
+                <Pressable
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <Image
+                    source={
+                      showPassword
+                        ? require('../assets/icons/open-eye.png')
+                        : require('../assets/icons/closed-eye.png')
+                    }
+                    style={styles.eyeIcon}
+                  />
                 </Pressable>
               </View>
 
-              <View style={{
-                height: hp(57.5), flexDirection: 'row', alignItems: 'center', gap: wp(18),
-                paddingHorizontal: wp(30), borderRadius: wp(18), borderWidth: 1, borderColor: '#D9E7E4', backgroundColor: '#FFFFFF',
-              }}>
-                <Image source={require('../assets/icons/padlock.png')} style={{ width: fp(25), height: fp(25), resizeMode: 'contain' }} />
-                <TextInput
-                  style={{ flex: 1, fontSize: fp(14), color: TEXT_DARK, padding: 0 }}
-                  placeholder="Confirm Password" placeholderTextColor={TEXT_MUTED}
-                  value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirm} autoCorrect={false}
+              {/* Confirm Password */}
+              <View style={styles.inputRow}>
+                <Image
+                  source={require('../assets/icons/padlock.png')}
+                  style={styles.fieldIcon}
                 />
-                <Pressable onPress={() => setShowConfirm(!showConfirm)} hitSlop={8}>
-                  <Image source={showConfirm ? require('../assets/icons/open-eye.png') : require('../assets/icons/closed-eye.png')} style={{ width: fp(22), height: fp(22), resizeMode: 'contain' }} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Confirm Password"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirm}
+                  autoCorrect={false}
+                  maxFontSizeMultiplier={1.35}
+                  accessibilityLabel="Confirm Password"
+                />
+                <Pressable
+                  onPress={() => setShowConfirm(!showConfirm)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={showConfirm ? 'Hide password' : 'Show password'}
+                >
+                  <Image
+                    source={
+                      showConfirm
+                        ? require('../assets/icons/open-eye.png')
+                        : require('../assets/icons/closed-eye.png')
+                    }
+                    style={styles.eyeIcon}
+                  />
                 </Pressable>
               </View>
             </View>
 
+            {/* Create Account Button */}
             <Pressable
-              onPress={handleRegister} disabled={loading}
-              style={({ pressed }) => [{
-                height: hp(57.5), marginTop: hp(20), marginBottom: hp(28), borderRadius: wp(16),
-                backgroundColor: TEAL, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(10),
-              }, pressed && { opacity: 0.85 }]}
+              onPress={handleRegister}
+              disabled={loading}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Create Account"
             >
-              <Text style={{ fontFamily: 'LexendDeca-SemiBold', fontSize: fp(20), color: '#FFFFFF' }}>
+              <Text style={styles.primaryBtnText}>
                 {loading ? 'Creating account...' : 'Create Account'}
               </Text>
               {!loading && (
-                <Image source={require('../assets/icons/arrow.png')} style={{ position: 'absolute', right: wp(28), width: fp(28), height: fp(28), tintColor: '#FFFFFF', resizeMode: 'contain' }} />
+                <Image
+                  source={require('../assets/icons/arrow.png')}
+                  style={styles.arrowIcon}
+                />
               )}
             </Pressable>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(18), marginBottom: hp(28) }}>
+            {/* Or Divider */}
+            <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={{ color: TEXT_MUTED, fontSize: fp(15) }}>or</Text>
+              <Text style={styles.orText}>or</Text>
               <View style={styles.dividerLine} />
             </View>
 
+            {/* Social Sign Up */}
             <Pressable
               onPress={() => handleSocialPress('Google')}
-              style={({ pressed }) => [{
-                height: hp(57.5), borderRadius: wp(16), borderWidth: 1, borderColor: '#D9E7E4',
-                backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(12),
-              }, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [styles.socialBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in with Google"
             >
-              <Image source={require('../assets/icons/google.png')} style={{ width: fp(28), height: fp(28), resizeMode: 'contain' }} />
-              <Text style={{ fontSize: fp(18), fontWeight: '400', color: TEXT_DARK }}>Sign in with Google</Text>
+              <Image
+                source={require('../assets/icons/google.png')}
+                style={styles.googleIcon}
+              />
+              <Text style={styles.socialBtnText}>Sign in with Google</Text>
             </Pressable>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: hp(42) }}>
-              <Text style={{ fontSize: fp(12), color: TEXT_MUTED }}>Already have an Account? </Text>
-              <Pressable onPress={() => router.push('/login')}>
-                <Text style={{ fontSize: fp(14), color: TEAL, fontWeight: '700' }}>Sign In</Text>
+            {/* Back to Sign In Link */}
+            <View style={styles.signInRow}>
+              <Text style={styles.signInPromptText}>Already have an Account? </Text>
+              <Pressable
+                onPress={() => router.push('/login')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in"
+              >
+                <Text style={styles.signInLinkText}>Sign In</Text>
               </Pressable>
             </View>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -196,7 +313,184 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { flexGrow: 1 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#D9E7E4' },
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  keyboard: {
+    flex: 1,
+  },
+  scroll: {
+    flexGrow: 1,
+  },
+  graphicWrapper: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+  },
+  tabletGraphicWrapper: {
+    maxWidth: 500,
+    alignSelf: 'center',
+  },
+  graphicBg: {
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  graphicImage: {
+    opacity: 0.95,
+  },
+  formSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 28,
+    paddingTop: 20,
+    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  tabletFormSheet: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E5F0EE',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    marginVertical: 12,
+  },
+  formTitle: {
+    fontFamily: 'LexendDeca-SemiBold',
+    color: BLUE,
+    textAlign: 'center',
+  },
+  formSubtitle: {
+    fontFamily: 'LexendDeca-Regular',
+    color: TEXT_MUTED,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  inputsStack: {
+    gap: 12,
+  },
+  inputRow: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 16,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+    backgroundColor: '#FFFFFF',
+  },
+  fieldIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    tintColor: TEXT_MUTED,
+  },
+  eyeIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+    tintColor: TEXT_MUTED,
+  },
+  textInput: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 14,
+    color: TEXT_DARK,
+    padding: 0,
+  },
+  primaryBtn: {
+    height: 52,
+    marginTop: 20,
+    marginBottom: 20,
+    borderRadius: Radii.card,
+    backgroundColor: TEAL,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  primaryBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  arrowIcon: {
+    position: 'absolute',
+    right: 20,
+    width: 22,
+    height: 22,
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5F0EE',
+  },
+  orText: {
+    color: TEXT_MUTED,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+  },
+  socialBtn: {
+    height: 50,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  googleIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+  },
+  socialBtnText: {
+    fontSize: 14.5,
+    fontFamily: 'LexendDeca-Medium',
+    color: TEXT_DARK,
+  },
+  signInRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  signInPromptText: {
+    fontSize: 12.5,
+    fontFamily: 'LexendDeca-Regular',
+    color: TEXT_MUTED,
+  },
+  signInLinkText: {
+    fontSize: 13.5,
+    fontFamily: 'LexendDeca-Bold',
+    color: TEAL,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
 });

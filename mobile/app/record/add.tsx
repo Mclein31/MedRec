@@ -15,7 +15,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { api } from '../../lib/api';
@@ -23,7 +22,8 @@ import { DocumentCamera } from '../../components/camera/DocumentCamera';
 import { DocumentPreview } from '../../components/camera/DocumentPreview';
 import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCard';
 import { DragHandle } from '../../components/ui/DragHandle';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors, Radii, ResponsiveLimits } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 // Design Tokens matching MedRec standard palette
 const TEAL = Colors.teal;
@@ -70,7 +70,12 @@ export default function AddRecordScreen() {
   const [saving, setSaving] = useState(false);
 
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const {
+    isTablet,
+    screenPadding,
+    insets,
+    scaleFont,
+  } = useResponsive();
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -80,7 +85,13 @@ export default function AddRecordScreen() {
     }
     setSaving(true);
     try {
-      await api.addRecord({ type, title: title.trim(), description: description.trim(), date });
+      await api.addRecord({
+        type,
+        title: title.trim(),
+        description: description.trim(),
+        date,
+        attachmentUrl: photoUri || undefined,
+      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch (err: any) {
@@ -173,25 +184,45 @@ export default function AddRecordScreen() {
       <DragHandle />
 
       {/* Modal Header */}
-      <View style={[styles.header, { paddingTop: 6 }]}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [
-            styles.headerDismissBtn,
-            pressed && styles.pressed,
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top > 20 ? insets.top + 4 : 8,
+            paddingLeft: Math.max(insets.left, screenPadding),
+            paddingRight: Math.max(insets.right, screenPadding),
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.headerInner,
+            isTablet && {
+              maxWidth: ResponsiveLimits.maxModalWidth,
+              alignSelf: 'center',
+              width: '100%',
+            },
           ]}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Cancel and dismiss"
         >
-          <Ionicons name="close" size={20} color={INK} />
-        </Pressable>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.headerDismissBtn,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel and dismiss"
+          >
+            <Ionicons name="close" size={20} color={INK} />
+          </Pressable>
 
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          Add Health Record
-        </Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Add Health Record
+          </Text>
 
-        <View style={styles.headerSpacer} />
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -201,221 +232,261 @@ export default function AddRecordScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingBottom: insets.bottom + 40 },
+            {
+              paddingHorizontal: screenPadding,
+              paddingBottom: Math.max(insets.bottom, 20) + 40,
+            },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Document Attachment State vs Scan Trigger Card */}
-          {photoUri ? (
-            <AttachedDocumentCard
-              photoUri={photoUri}
-              onPressInspect={() => {
-                setTempPhotoUri(photoUri);
-                setViewMode('preview');
-              }}
-              onPressRetake={() => {
-                setViewMode('camera');
-              }}
-              onPressRemove={() => {
-                setPhotoUri(null);
-              }}
-            />
-          ) : (
-            <View style={styles.scanHeroCard}>
-              {/* Top Row: AI Icon + Title & Subtitle */}
-              <View style={styles.scanHeroTopRow}>
-                <View style={styles.scanIconBox}>
-                  <Image
-                    source={require('../../assets/icons/AI.png')}
-                    style={styles.scanIcon}
-                  />
+          <View
+            style={[
+              styles.formWrapper,
+              isTablet && {
+                maxWidth: ResponsiveLimits.maxModalWidth,
+                alignSelf: 'center',
+                width: '100%',
+              },
+            ]}
+          >
+            {/* Document Attachment State vs Scan Trigger Card */}
+            {photoUri ? (
+              <AttachedDocumentCard
+                photoUri={photoUri}
+                onPressInspect={() => {
+                  setTempPhotoUri(photoUri);
+                  setViewMode('preview');
+                }}
+                onPressRetake={() => {
+                  setViewMode('camera');
+                }}
+                onPressRemove={() => {
+                  setPhotoUri(null);
+                }}
+              />
+            ) : (
+              <View style={styles.scanHeroCard}>
+                {/* Top Row: AI Icon + Title & Subtitle */}
+                <View style={styles.scanHeroTopRow}>
+                  <View style={styles.scanIconBox}>
+                    <Image
+                      source={require('../../assets/icons/AI.png')}
+                      style={styles.scanIcon}
+                    />
+                  </View>
+                  <View style={styles.scanTextBox}>
+                    <Text
+                      style={[
+                        styles.scanTitle,
+                        { fontSize: scaleFont(16, 14.5, 18) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      Scan Health Document
+                    </Text>
+                    <Text
+                      style={[
+                        styles.scanSub,
+                        { fontSize: scaleFont(11, 10.5, 12.5) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      Point camera at prescriptions, lab tests, or bills
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.scanTextBox}>
-                  <Text style={styles.scanTitle}>Scan Health Document</Text>
-                  <Text style={styles.scanSub}>
-                    Point camera at prescriptions, lab tests, or bills
-                  </Text>
-                </View>
-              </View>
 
-              {/* Action Buttons: Primary Camera CTA + Photo Library */}
-              <View style={styles.scanActionsContainer}>
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setViewMode('camera');
-                  }}
-                  style={({ pressed }) => [
-                    styles.scanPrimaryBtn,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Scan health document with camera"
-                >
-                  <Ionicons name="camera-outline" size={17} color={BLUE} />
-                  <Text style={styles.scanPrimaryBtnText}>SCAN WITH CAMERA</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={handleOpenGallery}
-                  style={({ pressed }) => [
-                    styles.galleryHeroBtn,
-                    pressed && styles.pressed,
-                  ]}
-                  hitSlop={6}
-                  accessibilityRole="button"
-                  accessibilityLabel="Choose from photo library"
-                >
-                  <Ionicons name="images-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
-                  <Text style={styles.galleryHeroBtnText}>Or choose from Photo Library</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>record details</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Record Type Carousel */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>RECORD TYPE</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.typeCarousel}
-              style={styles.carouselScrollView}
-            >
-              {RECORD_TYPES.map((t) => {
-                const active = type === t.value;
-                return (
+                {/* Action Buttons: Primary Camera CTA + Photo Library */}
+                <View style={styles.scanActionsContainer}>
                   <Pressable
-                    key={t.value}
                     onPress={() => {
                       Haptics.selectionAsync();
-                      setType(t.value);
+                      setViewMode('camera');
                     }}
                     style={({ pressed }) => [
-                      styles.typeChip,
-                      active && styles.typeChipActive,
+                      styles.scanPrimaryBtn,
                       pressed && styles.pressed,
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel={`Select record type ${t.label}`}
-                    accessibilityState={{ selected: active }}
+                    accessibilityLabel="Scan health document with camera"
                   >
-                    <Image
-                      source={TYPE_ASSETS[t.value]}
-                      style={[
-                        styles.typeChipIcon,
-                        { tintColor: active ? TEAL : MUTED },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.typeChipText,
-                        active && styles.typeChipTextActive,
-                      ]}
-                    >
-                      {t.label}
-                    </Text>
+                    <Ionicons name="camera-outline" size={17} color={BLUE} />
+                    <Text style={styles.scanPrimaryBtnText}>SCAN WITH CAMERA</Text>
                   </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
 
-          {/* Record Information Form Card */}
-          <View style={styles.formCard}>
-            {/* Title Field */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>RECORD TITLE *</Text>
-              <View style={styles.inputContainer}>
-                <Image
-                  source={require('../../assets/icons/folder.png')}
-                  style={styles.fieldLeadingIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="e.g. Annual Blood Work & Lipid Panel"
-                  placeholderTextColor={MUTED}
-                  accessibilityLabel="Record title input"
-                />
+                  <Pressable
+                    onPress={handleOpenGallery}
+                    style={({ pressed }) => [
+                      styles.galleryHeroBtn,
+                      pressed && styles.pressed,
+                    ]}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose from photo library"
+                  >
+                    <Ionicons name="images-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
+                    <Text style={styles.galleryHeroBtnText}>Or choose from Photo Library</Text>
+                  </Pressable>
+                </View>
               </View>
-            </View>
-
-            {/* Date of Event */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>DATE OF EVENT</Text>
-              <View style={styles.inputContainer}>
-                <Image
-                  source={require('../../assets/icons/calendar.png')}
-                  style={styles.fieldLeadingIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={date}
-                  onChangeText={setDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={MUTED}
-                  accessibilityLabel="Date input"
-                />
-              </View>
-            </View>
-
-            {/* Clinical Notes / Details */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>CLINICAL NOTES / DETAILS</Text>
-              <View style={[styles.inputContainer, styles.textAreaContainer]}>
-                <TextInput
-                  style={[styles.textInput, styles.textArea]}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
-                  placeholderTextColor={MUTED}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  accessibilityLabel="Description notes input"
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* Primary Save CTA */}
-          <Pressable
-            onPress={handleSave}
-            disabled={saving}
-            style={({ pressed }) => [
-              styles.saveBtn,
-              pressed && styles.pressed,
-              saving && styles.disabledBtn,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Save medical record"
-          >
-            {saving ? (
-              <>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text style={styles.saveBtnText}>Saving Record...</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={20}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.saveBtnText}>Save Record</Text>
-              </>
             )}
-          </Pressable>
+
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>record details</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Record Type Carousel */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>RECORD TYPE</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.typeCarousel,
+                  { paddingHorizontal: screenPadding },
+                ]}
+                style={{ marginHorizontal: -screenPadding }}
+              >
+                {RECORD_TYPES.map((t) => {
+                  const active = type === t.value;
+                  return (
+                    <Pressable
+                      key={t.value}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setType(t.value);
+                      }}
+                      style={({ pressed }) => [
+                        styles.typeChip,
+                        active && styles.typeChipActive,
+                        pressed && styles.pressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select record type ${t.label}`}
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Image
+                        source={TYPE_ASSETS[t.value]}
+                        style={[
+                          styles.typeChipIcon,
+                          { tintColor: active ? TEAL : MUTED },
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.typeChipText,
+                          active && styles.typeChipTextActive,
+                          { fontSize: scaleFont(12.5, 11, 13.5) },
+                        ]}
+                        maxFontSizeMultiplier={1.35}
+                      >
+                        {t.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* Record Information Form Card */}
+            <View style={styles.formCard}>
+              {/* Title Field */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>RECORD TITLE *</Text>
+                <View style={styles.inputContainer}>
+                  <Image
+                    source={require('../../assets/icons/folder.png')}
+                    style={styles.fieldLeadingIcon}
+                  />
+                  <TextInput
+                    style={[styles.textInput, { fontSize: scaleFont(14, 13, 15) }]}
+                    value={title}
+                    onChangeText={setTitle}
+                    placeholder="e.g. Annual Blood Work & Lipid Panel"
+                    placeholderTextColor={MUTED}
+                    accessibilityLabel="Record title input"
+                    maxFontSizeMultiplier={1.35}
+                  />
+                </View>
+              </View>
+
+              {/* Date of Event */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>DATE OF EVENT</Text>
+                <View style={styles.inputContainer}>
+                  <Image
+                    source={require('../../assets/icons/calendar.png')}
+                    style={styles.fieldLeadingIcon}
+                  />
+                  <TextInput
+                    style={[styles.textInput, { fontSize: scaleFont(14, 13, 15) }]}
+                    value={date}
+                    onChangeText={setDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={MUTED}
+                    accessibilityLabel="Date input"
+                    maxFontSizeMultiplier={1.35}
+                  />
+                </View>
+              </View>
+
+              {/* Clinical Notes / Details */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>CLINICAL NOTES / DETAILS</Text>
+                <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      styles.textArea,
+                      { fontSize: scaleFont(14, 13, 15) },
+                    ]}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
+                    placeholderTextColor={MUTED}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    accessibilityLabel="Description notes input"
+                    maxFontSizeMultiplier={1.35}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Primary Save CTA */}
+            <Pressable
+              onPress={handleSave}
+              disabled={saving}
+              style={({ pressed }) => [
+                styles.saveBtn,
+                pressed && styles.pressed,
+                saving && styles.disabledBtn,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Save medical record"
+            >
+              {saving ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.saveBtnText}>Saving Record...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.saveBtnText}>Save Record</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -431,35 +502,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  /* ─────────────────────────────
-     DRAG HANDLE
-  ───────────────────────────── */
-  handleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 8,
-    paddingBottom: 2,
-    backgroundColor: BG,
-  },
-  handle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1D5DB',
-  },
-
-  /* ─────────────────────────────
-     HEADER
-  ───────────────────────────── */
+  /* Header */
   header: {
     backgroundColor: BG,
-    paddingHorizontal: 20,
     paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+  headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
   },
   headerDismissBtn: {
     width: 36,
@@ -494,21 +547,18 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
-  /* ─────────────────────────────
-     SCROLL CONTENT
-  ───────────────────────────── */
+  /* Scroll Content */
   scroll: {
-    paddingHorizontal: 20,
     paddingTop: 16,
+  },
+  formWrapper: {
     gap: 16,
   },
 
-  /* ─────────────────────────────
-     SCAN HERO CARD
-  ───────────────────────────── */
+  /* Scan Hero Card */
   scanHeroCard: {
     backgroundColor: BLUE,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     padding: 16,
     gap: 12,
     shadowColor: BLUE,
@@ -540,12 +590,10 @@ const styles = StyleSheet.create({
   },
   scanTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 16,
     color: '#FFFFFF',
   },
   scanSub: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
     color: 'rgba(255, 255, 255, 0.88)',
     lineHeight: 15,
   },
@@ -556,7 +604,7 @@ const styles = StyleSheet.create({
   scanPrimaryBtn: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    height: 38,
+    height: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -579,6 +627,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 4,
+    minHeight: 32,
   },
   galleryHeroBtnText: {
     fontFamily: 'LexendDeca-Medium',
@@ -586,9 +635,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.92)',
   },
 
-  /* ─────────────────────────────
-     DIVIDER ROW
-  ───────────────────────────── */
+  /* Divider Row */
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -608,9 +655,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
 
-  /* ─────────────────────────────
-     RECORD TYPE CHIPS CAROUSEL
-  ───────────────────────────── */
+  /* Record Type Chips Carousel */
   section: {
     gap: 8,
   },
@@ -621,14 +666,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  carouselScrollView: {
-    marginHorizontal: -20,
-  },
   typeCarousel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 20,
     paddingVertical: 2,
   },
   typeChip: {
@@ -646,6 +687,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
+    minHeight: 38,
   },
   typeChipActive: {
     backgroundColor: GREEN_LIGHT,
@@ -658,7 +700,6 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12.5,
     color: INK,
   },
   typeChipTextActive: {
@@ -666,12 +707,10 @@ const styles = StyleSheet.create({
     color: TEAL,
   },
 
-  /* ─────────────────────────────
-     FORM CARD & INPUTS
-  ───────────────────────────── */
+  /* Form Card & Inputs */
   formCard: {
     backgroundColor: CARD_BG,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 16,
@@ -717,7 +756,6 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
     color: INK,
     padding: 0,
   },
@@ -726,9 +764,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
 
-  /* ─────────────────────────────
-     SAVE CTA BUTTON
-  ───────────────────────────── */
+  /* Save CTA */
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -736,7 +772,7 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: TEAL,
     borderRadius: 16,
-    height: 54,
+    height: 52,
     marginTop: 4,
     shadowColor: TEAL,
     shadowOffset: { width: 0, height: 4 },

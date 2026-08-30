@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export interface MedicalRecord {
   id: string;
@@ -60,6 +61,8 @@ export const RecordRow: React.FC<RecordRowProps> = ({
   isLast = false,
   style,
 }) => {
+  const { scaleFont, isCompactPhone } = useResponsive();
+
   const typeKey = (record.type || 'other').toLowerCase();
   const typeAsset = TYPE_ASSETS[typeKey] || TYPE_ASSETS.other;
   const typeLabel = TYPE_LABELS[typeKey] || record.type.charAt(0).toUpperCase() + record.type.slice(1);
@@ -96,6 +99,7 @@ export const RecordRow: React.FC<RecordRowProps> = ({
         onLongPress={handleLongPress}
         style={({ pressed }) => [
           styles.row,
+          isCompactPhone && styles.rowCompact,
           pressed && styles.rowPressed,
           isSelected && styles.rowSelected,
         ]}
@@ -110,17 +114,31 @@ export const RecordRow: React.FC<RecordRowProps> = ({
           </View>
         )}
 
-        {/* 34x34 Squircle Category Icon Box */}
+        {/* Squircle Category Icon Box */}
         <View style={styles.iconBox}>
           <Image source={typeAsset} style={styles.iconAsset} />
         </View>
 
         {/* Center Text Block */}
         <View style={styles.contentBlock}>
-          <Text style={styles.titleText} numberOfLines={1}>
+          <Text
+            style={[
+              styles.titleText,
+              { fontSize: scaleFont(14.5, 13.5, 16), lineHeight: scaleFont(19, 18, 21) },
+            ]}
+            numberOfLines={2}
+            maxFontSizeMultiplier={1.35}
+          >
             {record.title}
           </Text>
-          <Text style={styles.subtitleText} numberOfLines={1}>
+          <Text
+            style={[
+              styles.subtitleText,
+              { fontSize: scaleFont(11.5, 10.5, 13), lineHeight: scaleFont(15, 14, 17) },
+            ]}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.35}
+          >
             {typeLabel}
             {record.description ? ` • ${record.description.trim()}` : ''}
           </Text>
@@ -128,7 +146,17 @@ export const RecordRow: React.FC<RecordRowProps> = ({
 
         {/* Trailing Date & Chevron */}
         <View style={styles.trailingBlock}>
-          {formattedDate ? <Text style={styles.dateText}>{formattedDate}</Text> : null}
+          {formattedDate ? (
+            <Text
+              style={[
+                styles.dateText,
+                { fontSize: scaleFont(12, 11, 13) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              {formattedDate}
+            </Text>
+          ) : null}
           {!selectionMode && (
             <Ionicons name="chevron-forward" size={15} color={Colors.muted} style={styles.chevron} />
           )}
@@ -152,6 +180,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     minHeight: 54,
     gap: 12,
+  },
+  rowCompact: {
+    paddingHorizontal: 10,
+    gap: 8,
   },
   rowPressed: {
     backgroundColor: '#F8FCFB',
@@ -194,15 +226,11 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 14.5,
     color: Colors.ink,
-    lineHeight: 19,
   },
   subtitleText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11.5,
     color: Colors.muted,
-    lineHeight: 15,
   },
   trailingBlock: {
     flexDirection: 'row',
@@ -211,7 +239,6 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
     color: Colors.muted,
   },
   chevron: {
@@ -221,6 +248,8 @@ const styles = StyleSheet.create({
   hairlineDivider: {
     height: 1,
     backgroundColor: Colors.divider,
-    marginLeft: 62, // Aligns flush with text column
+    marginLeft: 62,
   },
 });
+
+export default RecordRow;

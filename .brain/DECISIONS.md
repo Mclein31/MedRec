@@ -7,10 +7,46 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-08-30
+last_updated: 2026-08-31
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-08-31 — Partial Profile Upsert Isolation & Physical Metric Persistence
+
+### Decision
+Refactor `backend/src/models/profileModel.js` and `profileController.js` to execute dynamic SQL column updates targeting strictly the fields explicitly provided in the request payload, while adding `height VARCHAR(20)` and `weight VARCHAR(20)` to `user_profiles`.
+
+### Reason
+- **Critical Data Integrity**: In previous static SQL upserts, omitted payload fields defaulted to `null`, causing routine demographic updates (e.g. phone/address) to silently wipe life-critical emergency medical information (allergies, blood type, medications) and vice versa.
+- **Physical Metrics Support**: Users actively enter physical vitals (height and weight) in the mobile client; these require dedicated database persistence and retrieval across sessions.
+
+### Alternatives
+- **Static ON CONFLICT with COALESCE**: Lacks the ability to intentionally clear a field to `null` when a user explicitly deletes a value.
+- **Requiring Full Profile on Every Save**: Creates frontend complexity and increases payload overhead.
+
+### Consequences
+Zero data loss during partial profile modifications, complete demographic and medical baseline isolation, and reliable persistence for height and weight.
+
+---
+
+## 2026-08-31 — Medical Record Attachment Architecture & Cross-Platform API Configuration
+
+### Decision
+1. Add `attachment_url TEXT` to `medical_records` in PostgreSQL schema and integrate it throughout `recordModel.js`, `recordController.js`, `mobile/lib/api.ts`, `add.tsx`, and `record/[id].tsx`.
+2. Configure mobile API base URL dynamically using `process.env.EXPO_PUBLIC_API_URL` with cross-platform fallback (`10.0.2.2:4000` for Android emulators and `localhost:4000` for iOS/Web).
+3. Remove per-request database write locks from `tokenModel.isRevoked` to eliminate contention on read paths.
+4. Add rate limiting middleware to sensitive endpoints (`PUT /profile/password`, `POST /share`, `GET /share/:token`).
+
+### Reason
+- **Document Preservation**: Patients capture or scan physical medical records; storing and displaying `attachment_url` ensures digitized documents are preserved and accessible in record details.
+- **Cross-Platform Compatibility**: Eliminates machine-specific hardcoded hostnames (`McLnOnz.local`) so any physical device or emulator connects seamlessly.
+- **Database Scalability**: Eliminates table write locks on authenticated read requests.
+
+### Consequences
+Complete document attachment pipeline, robust multi-environment API connectivity, and high concurrency resilience.
+
+---
 
 ## 2026-08-30 — Inset Grouped Profile Architecture & Avatar Image Persistence
 

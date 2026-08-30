@@ -21,6 +21,8 @@ function formatProfileResponse(row) {
     profile: {
       dateOfBirth: row.date_of_birth || null,
       biologicalSex: row.biological_sex || null,
+      height: row.height || null,
+      weight: row.weight || null,
       bloodType: row.blood_type || null,
       allergies: row.allergies || null,
       medicalConditions: row.medical_conditions || null,
@@ -59,6 +61,8 @@ async function updateProfile(req, res, next) {
       dateOfBirth,
       biological_sex,
       biologicalSex,
+      height,
+      weight,
       blood_type,
       bloodType,
       allergies,
@@ -114,6 +118,14 @@ async function updateProfile(req, res, next) {
       }
     }
 
+    if (height !== undefined) {
+      sanitizedData.height = (height === '' || height === null) ? null : String(height).trim();
+    }
+
+    if (weight !== undefined) {
+      sanitizedData.weight = (weight === '' || weight === null) ? null : String(weight).trim();
+    }
+
     const rawBlood = blood_type !== undefined ? blood_type : bloodType;
     if (rawBlood !== undefined) {
       if (rawBlood === '' || rawBlood === null) {
@@ -129,27 +141,27 @@ async function updateProfile(req, res, next) {
       }
     }
 
-    if (allergies !== undefined) sanitizedData.allergies = allergies ? String(allergies).trim() : null;
+    if (allergies !== undefined) sanitizedData.allergies = (allergies === '' || allergies === null) ? null : String(allergies).trim();
     const rawConditions = medical_conditions !== undefined ? medical_conditions : medicalConditions;
-    if (rawConditions !== undefined) sanitizedData.medical_conditions = rawConditions ? String(rawConditions).trim() : null;
+    if (rawConditions !== undefined) sanitizedData.medical_conditions = (rawConditions === '' || rawConditions === null) ? null : String(rawConditions).trim();
 
     const rawMeds = medications_summary !== undefined ? medications_summary : medicationsSummary;
-    if (rawMeds !== undefined) sanitizedData.medications_summary = rawMeds ? String(rawMeds).trim() : null;
+    if (rawMeds !== undefined) sanitizedData.medications_summary = (rawMeds === '' || rawMeds === null) ? null : String(rawMeds).trim();
 
     const rawEcName = emergency_contact_name !== undefined ? emergency_contact_name : emergencyContactName;
-    if (rawEcName !== undefined) sanitizedData.emergency_contact_name = rawEcName ? String(rawEcName).trim() : null;
+    if (rawEcName !== undefined) sanitizedData.emergency_contact_name = (rawEcName === '' || rawEcName === null) ? null : String(rawEcName).trim();
 
     const rawEcRel = emergency_contact_relationship !== undefined ? emergency_contact_relationship : emergencyContactRelationship;
-    if (rawEcRel !== undefined) sanitizedData.emergency_contact_relationship = rawEcRel ? String(rawEcRel).trim() : null;
+    if (rawEcRel !== undefined) sanitizedData.emergency_contact_relationship = (rawEcRel === '' || rawEcRel === null) ? null : String(rawEcRel).trim();
 
     const rawEcPhone = emergency_contact_phone !== undefined ? emergency_contact_phone : emergencyContactPhone;
-    if (rawEcPhone !== undefined) sanitizedData.emergency_contact_phone = rawEcPhone ? String(rawEcPhone).trim() : null;
+    if (rawEcPhone !== undefined) sanitizedData.emergency_contact_phone = (rawEcPhone === '' || rawEcPhone === null) ? null : String(rawEcPhone).trim();
 
-    if (phone !== undefined) sanitizedData.phone = phone ? String(phone).trim() : null;
-    if (address !== undefined) sanitizedData.address = address ? String(address).trim() : null;
+    if (phone !== undefined) sanitizedData.phone = (phone === '' || phone === null) ? null : String(phone).trim();
+    if (address !== undefined) sanitizedData.address = (address === '' || address === null) ? null : String(address).trim();
 
     const rawAvatar = avatar_url !== undefined ? avatar_url : avatarUrl;
-    if (rawAvatar !== undefined) sanitizedData.avatar_url = rawAvatar ? String(rawAvatar).trim() : null;
+    if (rawAvatar !== undefined) sanitizedData.avatar_url = (rawAvatar === '' || rawAvatar === null) ? null : String(rawAvatar).trim();
 
     const rawOrganDonor = organ_donor !== undefined ? organ_donor : organDonor;
     if (rawOrganDonor !== undefined) sanitizedData.organ_donor = Boolean(rawOrganDonor);

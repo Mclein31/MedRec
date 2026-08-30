@@ -7,24 +7,19 @@ import {
   Animated,
   StyleSheet,
   ScrollView,
-  Dimensions,
   Alert,
   Share,
   Image,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { SideMenuItem } from './SideMenuItem';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
-
-const TEAL = Colors.teal;
 const INK = Colors.ink;
 const MUTED = Colors.muted;
 const BORDER = Colors.border;
@@ -45,12 +40,14 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const insets = useSafeAreaInsets();
+  const { width, insets } = useResponsive();
+
+  const drawerWidth = Math.min(width * 0.78, 340);
 
   const [activeSharesCount, setActiveSharesCount] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
 
-  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const slideAnim = useRef(new Animated.Value(-drawerWidth)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -82,7 +79,7 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, {
-          toValue: -DRAWER_WIDTH,
+          toValue: -drawerWidth,
           duration: 180,
           useNativeDriver: true,
         }),
@@ -93,12 +90,12 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, drawerWidth]);
 
   const handleClose = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
-        toValue: -DRAWER_WIDTH,
+        toValue: -drawerWidth,
         duration: 180,
         useNativeDriver: true,
       }),
@@ -202,9 +199,10 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
           style={[
             styles.drawer,
             {
-              width: DRAWER_WIDTH,
+              width: drawerWidth,
               paddingTop: insets.top + 14,
               paddingBottom: Math.max(insets.bottom, 16) + 12,
+              paddingLeft: Math.max(insets.left, 0),
               transform: [{ translateX: slideAnim }],
             },
           ]}

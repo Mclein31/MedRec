@@ -19,12 +19,14 @@ CREATE TABLE IF NOT EXISTS medical_records (
   title VARCHAR(200) NOT NULL,
   description TEXT,
   date DATE NOT NULL,
+  attachment_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_medical_records_user_id ON medical_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_medical_records_user_date ON medical_records(user_id, date DESC);
+ALTER TABLE medical_records ADD COLUMN IF NOT EXISTS attachment_url TEXT;
 
 CREATE TABLE IF NOT EXISTS shared_access (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -47,6 +49,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   date_of_birth DATE,
   biological_sex VARCHAR(20) CHECK (biological_sex IN ('male', 'female', 'other', 'undisclosed')),
+  height VARCHAR(20),
+  weight VARCHAR(20),
   blood_type VARCHAR(10) CHECK (blood_type IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown')),
   allergies TEXT,
   medical_conditions TEXT,
@@ -64,6 +68,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 
 CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS height VARCHAR(20);
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS weight VARCHAR(20);
 
 CREATE TABLE IF NOT EXISTS revoked_tokens (
   jti UUID PRIMARY KEY,

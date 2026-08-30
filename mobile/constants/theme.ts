@@ -67,6 +67,23 @@ export const Colors = {
   },
 };
 
+export const BREAKPOINTS = {
+  compact: 375,   // Below 375dp: Compact phones (iPhone SE, small Android)
+  standard: 414,  // 375 - 414dp: Standard portrait phones
+  largePhone: 600,// 415 - 599dp: Phablets / Foldables outer
+  tablet: 840,    // 600 - 839dp: Compact tablets / iPad portrait
+  desktop: 1024,  // ≥ 840dp: iPad landscape / Large tablets
+} as const;
+
+export const ResponsiveLimits = {
+  maxFormWidth: 500,          // Max width for auth forms & single-column inputs
+  maxContentWidth: 760,       // Max width for main dashboards & profile cards
+  maxDetailWidth: 920,        // Max width for record detail split views
+  maxModalWidth: 560,         // Max width for centered sheet modals on tablet
+  minTapTarget: 44,           // WCAG AA compliant minimum interactive target
+  viewfinderMax: 360,         // Max width for camera capture viewfinder
+} as const;
+
 export const Spacing = {
   xs: 4,
   sm: 8,
@@ -79,6 +96,16 @@ export const Spacing = {
   cardPadding: 16,
   tabBarClearance: 110,
 };
+
+export const getResponsiveSpacing = (isCompact: boolean, isTablet: boolean) => ({
+  screenPadding: isCompact ? 16 : isTablet ? 28 : 20,
+  cardPadding: isCompact ? 12 : isTablet ? 20 : 16,
+  cardGap: isCompact ? 8 : isTablet ? 16 : 12,
+  sectionGap: isCompact ? 10 : isTablet ? 20 : 14,
+  inputHeight: isCompact ? 48 : isTablet ? 54 : 50,
+  buttonHeight: isCompact ? 46 : isTablet ? 52 : 48,
+  tabBarClearance: isCompact ? 95 : isTablet ? 120 : 110,
+});
 
 export const Radii = {
   xs: 4,

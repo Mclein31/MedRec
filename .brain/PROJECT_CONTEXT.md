@@ -12,7 +12,7 @@ tags:
   - express
   - postgresql
   - ai
-last_updated: 2026-08-29
+last_updated: 2026-08-31
 ---
 
 # 🏥 MedRecord_App (MedRec) — Project Context
@@ -24,7 +24,7 @@ last_updated: 2026-08-29
 
 ## 🎯 Current Objectives & Status
 - **Status**: `In Active Development`
-- **Current Focus**: Connecting the React Native (Expo) mobile frontend to the Express/PostgreSQL backend API, user authentication, doctor QR scanning flows, and polished healthcare mobile UX (including the redesigned Record Details modular card view with compact metadata).
+- **Current Focus**: App-wide responsive UI architecture across phones and tablets, scanned medical record document attachments pipeline, partial profile upsert isolation, and cross-platform API resilience.
 - **Obsidian Research Vault**: A dedicated 18-module Obsidian knowledge vault is integrated in `MedRecord_App/MedRec/` containing deep research on healthcare data silos, regulatory compliance, doctor/patient user journeys, and architecture specifications.
 
 ---

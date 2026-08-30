@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 
@@ -23,7 +22,8 @@ import { useNotifications } from '../../context/NotificationContext';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { RecordSearchBar } from '../../components/records/RecordSearchBar';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export type MedicalRecord = {
   id: string;
@@ -106,7 +106,14 @@ export default function RecordsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { unreadCount, refreshNotifications } = useNotifications();
-  const insets = useSafeAreaInsets();
+  const {
+    isTablet,
+    screenPadding,
+    tabBarClearance,
+    insets,
+    scaleFont,
+    isCompactPhone,
+  } = useResponsive();
 
   const loadRecords = async () => {
     try {
@@ -244,15 +251,33 @@ export default function RecordsScreen() {
       <StatusBar style="dark" />
 
       {/* ────────────────────────────────────────────────────────
-          MAIN RECORDS FLATLIST WITH CLEAN LAYOUT
+          MAIN RECORDS FLATLIST WITH ADAPTIVE BENTO GRID ON TABLETS
       ──────────────────────────────────────────────────────── */}
       <FlatList
+        key={isTablet ? 'tablet-grid-2' : 'phone-list-1'}
         data={sortedRecords}
+        numColumns={isTablet ? 2 : 1}
+        columnWrapperStyle={
+          isTablet
+            ? [
+                styles.columnWrapper,
+                {
+                  gap: 12,
+                  paddingHorizontal: screenPadding,
+                  maxWidth: ResponsiveLimits.maxContentWidth,
+                  alignSelf: 'center',
+                  width: '100%',
+                },
+              ]
+            : undefined
+        }
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
+          {
+            paddingBottom: Math.max(insets.bottom, 20) + tabBarClearance,
+          },
         ]}
         refreshControl={
           <RefreshControl
@@ -262,9 +287,27 @@ export default function RecordsScreen() {
           />
         }
         ListHeaderComponent={
-          <View style={styles.headerContainer}>
+          <View
+            style={[
+              styles.headerContainer,
+              isTablet && {
+                maxWidth: ResponsiveLimits.maxContentWidth,
+                alignSelf: 'center',
+                width: '100%',
+              },
+            ]}
+          >
             {/* Top Toolbar */}
-            <View style={[styles.toolbar, { paddingTop: insets.top + 12 }]}>
+            <View
+              style={[
+                styles.toolbar,
+                {
+                  paddingTop: insets.top + 12,
+                  paddingLeft: Math.max(insets.left, screenPadding),
+                  paddingRight: Math.max(insets.right, screenPadding),
+                },
+              ]}
+            >
               {selectionMode ? (
                 <Pressable
                   onPress={toggleSelectMode}
@@ -282,6 +325,7 @@ export default function RecordsScreen() {
                     setMenuVisible(true);
                   }}
                   hitSlop={10}
+                  style={styles.menuIconBtn}
                   accessibilityRole="button"
                   accessibilityLabel="Open navigation menu"
                 >
@@ -326,24 +370,59 @@ export default function RecordsScreen() {
             </View>
 
             {/* Screen Greeting */}
-            <View style={styles.greetingBox}>
-              <Text style={styles.greetingTitle}>Hello, {firstName} 👋🏼</Text>
-              <Text style={styles.greetingSub}>Here's your health overview</Text>
+            <View
+              style={[
+                styles.greetingBox,
+                {
+                  paddingLeft: Math.max(insets.left, screenPadding),
+                  paddingRight: Math.max(insets.right, screenPadding),
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.greetingTitle,
+                  { fontSize: scaleFont(28, 24, 32), lineHeight: scaleFont(34, 30, 38) },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                maxFontSizeMultiplier={1.35}
+              >
+                Hello, {firstName} 👋🏼
+              </Text>
+              <Text
+                style={[
+                  styles.greetingSub,
+                  { fontSize: scaleFont(12, 11, 13.5) },
+                ]}
+                maxFontSizeMultiplier={1.35}
+              >
+                Here's your health overview
+              </Text>
             </View>
 
             {/* Multi-Selection Info Banner */}
             {selectionMode && (
-              <View style={styles.selectionBanner}>
+              <View
+                style={[
+                  styles.selectionBanner,
+                  {
+                    marginHorizontal: screenPadding,
+                  },
+                ]}
+              >
                 <View style={styles.selectionBannerLeft}>
                   <Ionicons name="checkmark-circle" size={18} color={Colors.teal} />
-                  <Text style={styles.selectionBannerText}>
+                  <Text style={styles.selectionBannerText} maxFontSizeMultiplier={1.35}>
                     {selectedIds.size === 0
                       ? 'Tap records to select'
                       : `${selectedIds.size} record${selectedIds.size !== 1 ? 's' : ''} selected`}
                   </Text>
                 </View>
                 <Pressable onPress={selectAllRecords} hitSlop={6}>
-                  <Text style={styles.selectAllText}>Select all</Text>
+                  <Text style={styles.selectAllText} maxFontSizeMultiplier={1.35}>
+                    Select all
+                  </Text>
                 </Pressable>
               </View>
             )}
@@ -353,7 +432,11 @@ export default function RecordsScreen() {
               <Pressable
                 onPress={handleSummarize}
                 disabled={summarizing}
-                style={({ pressed }) => [styles.aiBanner, pressed && styles.aiBannerPressed]}
+                style={({ pressed }) => [
+                  styles.aiBanner,
+                  { marginHorizontal: screenPadding },
+                  pressed && styles.aiBannerPressed,
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Generate AI Health Summary"
               >
@@ -361,10 +444,22 @@ export default function RecordsScreen() {
                   <Image source={require('../../assets/icons/AI.png')} style={styles.aiAsset} />
                 </View>
                 <View style={styles.aiTextBox}>
-                  <Text style={styles.aiTitle}>
+                  <Text
+                    style={[
+                      styles.aiTitle,
+                      { fontSize: scaleFont(14.5, 13.5, 16) },
+                    ]}
+                    maxFontSizeMultiplier={1.35}
+                  >
                     {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
                   </Text>
-                  <Text style={styles.aiSubtitle}>
+                  <Text
+                    style={[
+                      styles.aiSubtitle,
+                      { fontSize: scaleFont(11, 10.5, 12) },
+                    ]}
+                    maxFontSizeMultiplier={1.35}
+                  >
                     Get clinical insights and a summary of your records
                   </Text>
                 </View>
@@ -382,11 +477,17 @@ export default function RecordsScreen() {
               onChangeText={setSearchQuery}
             />
 
-            {/* Category Quick Filter Chips with Live Counts Carousel */}
+            {/* Category Quick Filter Chips Carousel */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipRow}
+              contentContainerStyle={[
+                styles.chipRow,
+                {
+                  paddingLeft: Math.max(insets.left, screenPadding),
+                  paddingRight: Math.max(insets.right, screenPadding),
+                },
+              ]}
             >
               {CATEGORY_FILTERS.map((cat) => {
                 const count = categoryCounts[cat.key] || 0;
@@ -402,7 +503,14 @@ export default function RecordsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`${cat.label}, ${count} records`}
                   >
-                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isActive && styles.chipTextActive,
+                        { fontSize: scaleFont(12, 11, 13) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
                       {cat.label} {count > 0 ? `(${count})` : ''}
                     </Text>
                   </Pressable>
@@ -411,9 +519,31 @@ export default function RecordsScreen() {
             </ScrollView>
 
             {/* Records Section Counter Header */}
-            <View style={styles.recordsSectionHeader}>
-              <Text style={styles.recordsSectionTitle}>My Records</Text>
-              <Text style={styles.recordsCountText}>
+            <View
+              style={[
+                styles.recordsSectionHeader,
+                {
+                  paddingLeft: Math.max(insets.left, screenPadding),
+                  paddingRight: Math.max(insets.right, screenPadding),
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.recordsSectionTitle,
+                  { fontSize: scaleFont(18, 16, 20) },
+                ]}
+                maxFontSizeMultiplier={1.35}
+              >
+                My Records
+              </Text>
+              <Text
+                style={[
+                  styles.recordsCountText,
+                  { fontSize: scaleFont(12, 11, 13) },
+                ]}
+                maxFontSizeMultiplier={1.35}
+              >
                 {sortedRecords.length} Record{sortedRecords.length === 1 ? '' : 's'}
               </Text>
             </View>
@@ -442,6 +572,9 @@ export default function RecordsScreen() {
               }}
               style={({ pressed }) => [
                 styles.recordCard,
+                isTablet
+                  ? styles.recordCardTablet
+                  : { marginHorizontal: screenPadding },
                 pressed && styles.cardPressed,
                 isSelected && styles.cardSelected,
               ]}
@@ -459,7 +592,7 @@ export default function RecordsScreen() {
 
               {/* Record Type Badge */}
               <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText}>
+                <Text style={styles.typeBadgeText} maxFontSizeMultiplier={1.35}>
                   {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                 </Text>
               </View>
@@ -468,14 +601,18 @@ export default function RecordsScreen() {
                 {/* Icon + Content Row */}
                 <View style={styles.recordRow}>
                   <View style={styles.recordIconBox}>
-                    <Image
-                      source={typeAsset}
-                      style={styles.recordAsset}
-                    />
+                    <Image source={typeAsset} style={styles.recordAsset} />
                   </View>
 
                   <View style={styles.recordContent}>
-                    <Text style={styles.recordTitle} numberOfLines={2}>
+                    <Text
+                      style={[
+                        styles.recordTitle,
+                        { fontSize: scaleFont(15, 13.5, 16.5) },
+                      ]}
+                      numberOfLines={2}
+                      maxFontSizeMultiplier={1.35}
+                    >
                       {item.title}
                     </Text>
                     <View style={styles.recordDateRow}>
@@ -483,12 +620,25 @@ export default function RecordsScreen() {
                         source={require('../../assets/icons/calendar.png')}
                         style={styles.dateAsset}
                       />
-                      <Text style={styles.recordDateText}>{formatDate(item.date)}</Text>
+                      <Text
+                        style={[
+                          styles.recordDateText,
+                          { fontSize: scaleFont(11.5, 10.5, 12.5) },
+                        ]}
+                        maxFontSizeMultiplier={1.35}
+                      >
+                        {formatDate(item.date)}
+                      </Text>
                     </View>
                   </View>
 
                   {!selectionMode && (
-                    <Ionicons name="chevron-forward" size={16} color={Colors.muted} style={styles.chevronArrow} />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={Colors.muted}
+                      style={styles.chevronArrow}
+                    />
                   )}
                 </View>
 
@@ -498,7 +648,13 @@ export default function RecordsScreen() {
                     source={require('../../assets/icons/open-folder.png')}
                     style={styles.footerAsset}
                   />
-                  <Text style={styles.recordFooterText}>
+                  <Text
+                    style={[
+                      styles.recordFooterText,
+                      { fontSize: scaleFont(11, 10.5, 12) },
+                    ]}
+                    maxFontSizeMultiplier={1.35}
+                  >
                     Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
                   </Text>
                 </View>
@@ -529,7 +685,14 @@ export default function RecordsScreen() {
           FLOATING SHARE SELECTED CTA BUTTON (Selection Mode)
       ──────────────────────────────────────────────────────── */}
       {selectionMode && selectedIds.size > 0 && (
-        <View style={[styles.floatingBar, { paddingBottom: Math.max(insets.bottom, 12) + 70 }]}>
+        <View
+          style={[
+            styles.floatingBar,
+            {
+              paddingBottom: Math.max(insets.bottom, 12) + (isTablet ? 90 : 70),
+            },
+          ]}
+        >
           <Pressable
             onPress={handleShareSelected}
             disabled={sharing}
@@ -590,12 +753,21 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingBottom: 4,
   },
+  columnWrapper: {
+    justifyContent: 'space-between',
+  },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.screenPadding,
     marginBottom: 14,
+  },
+  menuIconBtn: {
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toolbarRight: {
     flexDirection: 'row',
@@ -608,12 +780,16 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   bellBtn: {
-    padding: 2,
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   notificationDot: {
     position: 'absolute',
-    right: -1,
-    top: -1,
+    right: 4,
+    top: 4,
     width: 9,
     height: 9,
     borderRadius: 5,
@@ -623,11 +799,13 @@ const styles = StyleSheet.create({
   },
   selectHeaderBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: Radii.pill,
     backgroundColor: Colors.cardBg,
     borderWidth: 1,
     borderColor: Colors.border,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   selectHeaderText: {
     fontFamily: 'LexendDeca-SemiBold',
@@ -639,6 +817,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: Radii.pill,
     backgroundColor: Colors.tealLight,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   cancelBtnText: {
     fontFamily: 'LexendDeca-SemiBold',
@@ -646,7 +826,6 @@ const styles = StyleSheet.create({
     color: Colors.teal,
   },
   greetingBox: {
-    paddingHorizontal: Spacing.screenPadding,
     marginBottom: 14,
   },
   greetingTitle: {
@@ -664,7 +843,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: Spacing.screenPadding,
     marginBottom: 12,
     backgroundColor: Colors.cardBg,
     borderRadius: Radii.button,
@@ -694,7 +872,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.blue,
-    marginHorizontal: Spacing.screenPadding,
     borderRadius: Radii.card,
     paddingVertical: 13,
     paddingHorizontal: 15,
@@ -728,18 +905,15 @@ const styles = StyleSheet.create({
   },
   aiTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 14.5,
     color: Colors.white,
   },
   aiSubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
     color: 'rgba(255, 255, 255, 0.88)',
   },
 
   /* Quick Category Chips */
   chipRow: {
-    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 10,
     gap: 8,
   },
@@ -759,7 +933,6 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontFamily: 'LexendDeca-Medium',
-    fontSize: 12,
     color: Colors.muted,
   },
   chipTextActive: {
@@ -772,28 +945,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
     marginTop: 8,
     marginBottom: 10,
   },
   recordsSectionTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 18,
     color: Colors.ink,
   },
   recordsCountText: {
     fontFamily: 'LexendDeca-Medium',
-    fontSize: 12,
     color: Colors.teal,
   },
 
-  /* ─────────────────────────────
-     RECORD CARD (PRESERVED DESIGN)
-  ───────────────────────────── */
+  /* Record Card */
   recordCard: {
     backgroundColor: Colors.cardBg,
     borderRadius: Radii.card,
-    marginHorizontal: Spacing.screenPadding,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -803,6 +970,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
     overflow: 'hidden',
+  },
+  recordCardTablet: {
+    flex: 1,
+    marginHorizontal: 0,
   },
   cardPressed: {
     opacity: 0.8,
@@ -876,7 +1047,6 @@ const styles = StyleSheet.create({
   },
   recordTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 15.5,
     color: Colors.ink,
     lineHeight: 20,
   },
@@ -893,7 +1063,6 @@ const styles = StyleSheet.create({
   },
   recordDateText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11.5,
     color: Colors.muted,
   },
   chevronArrow: {
@@ -918,7 +1087,6 @@ const styles = StyleSheet.create({
   },
   recordFooterText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
     color: Colors.muted,
   },
 
@@ -949,13 +1117,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: Spacing.screenPadding,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   shareFloatingBtn: {
     width: '100%',
-    maxWidth: 320,
-    height: 48,
+    maxWidth: 340,
+    height: 50,
     borderRadius: Radii.button,
     backgroundColor: Colors.teal,
     flexDirection: 'row',

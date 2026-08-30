@@ -11,7 +11,6 @@ import {
   Image,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +20,8 @@ import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { useNotifications } from '../../context/NotificationContext';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 const TEAL = Colors.teal;
 const BLUE = Colors.blue;
@@ -89,7 +89,14 @@ export default function ShareScreen() {
   const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   const { unreadCount, refreshNotifications } = useNotifications();
-  const insets = useSafeAreaInsets();
+  const {
+    isTablet,
+    width,
+    screenPadding,
+    insets,
+    scaleFont,
+    tabBarClearance,
+  } = useResponsive();
 
   const loadShares = async () => {
     try {
@@ -179,13 +186,19 @@ export default function ShareScreen() {
     ? recentShares
     : recentShares.slice(0, 3);
 
+  const qrSize = Math.round(
+    isTablet
+      ? Math.min(width * 0.28, 220)
+      : Math.min(width * 0.42, 175)
+  );
+
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
+          { paddingBottom: Math.max(insets.bottom, 20) + tabBarClearance },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -196,298 +209,361 @@ export default function ShareScreen() {
           />
         }
       >
-        {/* Screen Header Toolbar */}
-        <ScreenHeader
-          title="Share Records"
-          subtitle="Share your health records in a limited time access"
-          onPressMenu={() => setMenuVisible(true)}
-          onPressNotifications={() => {
-            refreshNotifications();
-            setNotificationsVisible(true);
-          }}
-          unreadCount={unreadCount}
-        />
+        <View
+          style={[
+            styles.containerInner,
+            isTablet && {
+              maxWidth: ResponsiveLimits.maxContentWidth,
+              alignSelf: 'center',
+              width: '100%',
+            },
+          ]}
+        >
+          {/* Screen Header Toolbar */}
+          <ScreenHeader
+            title="Share Records"
+            subtitle="Share your health records in a limited time access"
+            onPressMenu={() => setMenuVisible(true)}
+            onPressNotifications={() => {
+              refreshNotifications();
+              setNotificationsVisible(true);
+            }}
+            unreadCount={unreadCount}
+          />
 
-        {/* ────────────────────────────────────────────────────────
-            TIER 1: ADAPTIVE HERO (Primary Action / Active QR)
-        ──────────────────────────────────────────────────────── */}
-        {activeToken ? (
-          /* Active Living QR Card */
-          <View style={styles.activeHeroCard}>
-            <Text style={styles.activeHeroTitle}>{"Doctor's QR Access"}</Text>
-            <Text style={styles.activeHeroSubtitle}>
-              All records · 60 minute temporary access
-            </Text>
+          {/* ────────────────────────────────────────────────────────
+              TIER 1: ADAPTIVE HERO (Primary Action / Active QR)
+          ──────────────────────────────────────────────────────── */}
+          <View style={{ paddingHorizontal: screenPadding, gap: 16 }}>
+            {activeToken ? (
+              /* Active Living QR Card */
+              <View style={styles.activeHeroCard}>
+                <Text
+                  style={[
+                    styles.activeHeroTitle,
+                    { fontSize: scaleFont(21, 18, 24) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  {"Doctor's QR Access"}
+                </Text>
+                <Text
+                  style={[
+                    styles.activeHeroSubtitle,
+                    { fontSize: scaleFont(12, 11, 13) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  All records · 60 minute temporary access
+                </Text>
 
-            <View style={styles.qrCodeContainer}>
-              <QRCode
-                value={activeToken}
-                size={142}
-                color="#12343B"
-                backgroundColor="#FFFFFF"
-              />
-            </View>
+                <View style={styles.qrCodeContainer}>
+                  <QRCode
+                    value={activeToken}
+                    size={qrSize}
+                    color="#12343B"
+                    backgroundColor="#FFFFFF"
+                  />
+                </View>
 
-            {activeExpiry && (
-              <Text style={styles.activeTimerText}>
-                {expiryStatus(activeExpiry)}
-              </Text>
-            )}
-
-            {activeShareForQr ? (
-              <Pressable
-                onPress={() => handleRevoke(activeShareForQr.id)}
-                disabled={revoking === activeShareForQr.id}
-                style={({ pressed }) => [
-                  styles.revokeHeroBtn,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Revoke access immediately"
-              >
-                {revoking === activeShareForQr.id ? (
-                  <ActivityIndicator size="small" color={RED} />
-                ) : (
-                  <Text style={styles.revokeHeroText}>
-                    Revoke Access Immediately
+                {activeExpiry && (
+                  <Text style={styles.activeTimerText} maxFontSizeMultiplier={1.35}>
+                    {expiryStatus(activeExpiry)}
                   </Text>
                 )}
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => {
-                  setActiveToken(null);
-                  setActiveExpiry(null);
-                }}
-                style={styles.revokeHeroBtn}
-              >
-                <Text style={styles.dismissHeroText}>Close QR View</Text>
-              </Pressable>
-            )}
-          </View>
-        ) : isLoadingQr || creating ? (
-          /* Loading State Card */
-          <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color={BLUE} />
-            <Text style={styles.loadingCardText}>Generating Doctor Access QR...</Text>
-          </View>
-        ) : (
-          /* Default Blue Generate Hero Card */
-          <Pressable
-            onPress={handleCreate}
-            style={({ pressed }) => [
-              styles.generateCard,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Generate QR Code to share records with your doctor"
-          >
-            {/* Top Row: QR Icon + Title */}
-            <View style={styles.generateTopRow}>
-              <View style={styles.generateIconBox}>
-                <Image
-                  source={require('../../assets/icons/qr-white.png')}
-                  style={styles.whiteQrAsset}
-                />
-              </View>
-              <Text style={styles.generateTitle}>
-                Share your records with your Doctor
-              </Text>
-            </View>
 
-            {/* Subtitle / Expiration info */}
-            <Text style={styles.generateSubtitle}>
-              The QR code will automatically expire in 60 minutes
-            </Text>
-
-            {/* Generate Button CTA */}
-            <View style={styles.generateButton}>
-              <Text style={styles.generateButtonText}>GENERATE QR CODE</Text>
-            </View>
-          </Pressable>
-        )}
-
-        {/* ────────────────────────────────────────────────────────
-            TIER 2: ADDITIONAL ACTIVE SHARES (If not viewing QR)
-        ──────────────────────────────────────────────────────── */}
-        {!activeToken && activeShares.length > 0 && (
-          <View style={styles.activeSection}>
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionTitle}>Active Shares</Text>
-              <Text style={styles.sectionSubtitle}>
-                Currently live doctor access sessions
-              </Text>
-            </View>
-            {activeShares.map((share) => (
-              <View key={share.id} style={styles.activeShareCard}>
-                <View style={styles.activeShareTop}>
-                  <View style={styles.activeShareIconBox}>
-                    <Ionicons name="qr-code-outline" size={18} color={BLUE} />
-                  </View>
-                  <View style={styles.activeShareInfo}>
-                    <Text style={styles.activeShareTitle}>Doctor's QR Access</Text>
-                    <Text style={styles.activeShareSub}>
-                      All records · {expiryStatus(share.expires_at)}
-                    </Text>
-                  </View>
+                {activeShareForQr ? (
                   <Pressable
-                    onPress={() => {
-                      setActiveToken(share.token);
-                      setActiveExpiry(share.expires_at);
-                    }}
+                    onPress={() => handleRevoke(activeShareForQr.id)}
+                    disabled={revoking === activeShareForQr.id}
                     style={({ pressed }) => [
-                      styles.viewQrBtn,
+                      styles.revokeHeroBtn,
                       pressed && styles.pressed,
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel="View QR Code"
+                    accessibilityLabel="Revoke access immediately"
                   >
-                    <Text style={styles.viewQrBtnText}>View QR</Text>
+                    {revoking === activeShareForQr.id ? (
+                      <ActivityIndicator size="small" color={RED} />
+                    ) : (
+                      <>
+                        <Ionicons name="close-circle-outline" size={16} color={RED} />
+                        <Text style={styles.revokeHeroBtnText}>Revoke Access Immediately</Text>
+                      </>
+                    )}
                   </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => {
+                      setActiveToken(null);
+                      setActiveExpiry(null);
+                    }}
+                    style={({ pressed }) => [
+                      styles.dismissHeroBtn,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Done viewing QR"
+                  >
+                    <Text style={styles.dismissHeroBtnText}>Done Viewing</Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : isLoadingQr ? (
+              /* Loading State when Navigating from Add Flow */
+              <View style={styles.loadingQrCard}>
+                <ActivityIndicator size="large" color={BLUE} />
+                <Text style={styles.loadingQrText}>Generating Doctor Access QR...</Text>
+              </View>
+            ) : (
+              /* Generate QR Hero Card */
+              <View style={styles.generateHeroCard}>
+                <View style={styles.generateHeroTopRow}>
+                  <View style={styles.generateHeroIconBox}>
+                    <Ionicons name="qr-code" size={24} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.generateHeroTextBox}>
+                    <Text
+                      style={[
+                        styles.generateHeroTitle,
+                        { fontSize: scaleFont(16, 14.5, 18) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      Doctor QR Access
+                    </Text>
+                    <Text
+                      style={[
+                        styles.generateHeroSubtitle,
+                        { fontSize: scaleFont(11, 10.5, 12.5) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      Instant, secure 60-min access without logins
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.activeShareDivider} />
+
                 <Pressable
-                  onPress={() => handleRevoke(share.id)}
-                  disabled={revoking === share.id}
-                  style={styles.activeShareRevokeBtn}
-                  hitSlop={6}
+                  onPress={handleCreate}
+                  disabled={creating}
+                  style={({ pressed }) => [
+                    styles.generatePrimaryBtn,
+                    pressed && styles.pressed,
+                    creating && styles.disabledBtn,
+                  ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Revoke access"
+                  accessibilityLabel="Generate QR code for doctor access"
                 >
-                  {revoking === share.id ? (
-                    <ActivityIndicator size="small" color={RED} />
+                  {creating ? (
+                    <ActivityIndicator size="small" color={BLUE} />
                   ) : (
-                    <Text style={styles.activeShareRevokeText}>Revoke Access</Text>
+                    <>
+                      <Ionicons name="sparkles" size={16} color={BLUE} />
+                      <Text style={styles.generatePrimaryBtnText}>Generate Doctor QR</Text>
+                    </>
                   )}
                 </Pressable>
               </View>
-            ))}
-          </View>
-        )}
-
-        {/* ────────────────────────────────────────────────────────
-            TIER 3: PAST SESSIONS (Unboxed, Cardless Timeline)
-        ──────────────────────────────────────────────────────── */}
-        {recentShares.length > 0 && (
-          <View style={styles.historySection}>
-            <View style={styles.historyHeader}>
-              <Text style={styles.historySectionTitle}>Past Sessions</Text>
-            </View>
-
-            {/* Unboxed Flat Row List */}
-            <View style={styles.historyList}>
-              {visibleRecentShares.map((share, index) => {
-                const isRevoked = Boolean(share.revoked_at);
-                const dateStr = formatDate(share.created_at || share.expires_at);
-                const timeStr = formatTime(share.created_at || share.expires_at);
-                const termTime = isRevoked
-                  ? formatTime(share.revoked_at)
-                  : formatTime(share.expires_at);
-
-                const scopeTitle =
-                  share.record_ids && share.record_ids.length > 0
-                    ? `Selected Records (${share.record_ids.length})`
-                    : 'Doctor QR Access';
-
-                const subtext = dateStr
-                  ? isRevoked
-                    ? `Shared ${dateStr} · Revoked at ${termTime || timeStr}`
-                    : `Shared ${dateStr} · Expired at ${termTime || timeStr}`
-                  : '60-minute temporary access';
-
-                return (
-                  <View key={share.id} style={styles.historyItemWrapper}>
-                    <View style={styles.historyRow}>
-                      <View style={styles.historyLeft}>
-                        <Text
-                          style={styles.historyItemTitle}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {scopeTitle}
-                        </Text>
-                        <Text
-                          style={styles.historyItemSubtitle}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {subtext}
-                        </Text>
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.historyStatusText,
-                          isRevoked
-                            ? styles.historyStatusRevoked
-                            : styles.historyStatusExpired,
-                        ]}
-                      >
-                        {isRevoked ? 'Revoked' : 'Expired'}
-                      </Text>
-                    </View>
-
-                    {/* Hairline Divider between items */}
-                    {index < visibleRecentShares.length - 1 && (
-                      <View style={styles.historyDivider} />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-
-            {/* Progressive Disclosure Toggle */}
-            {recentShares.length > 3 && (
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setShowAllHistory(!showAllHistory);
-                }}
-                style={({ pressed }) => [
-                  styles.expandHistoryBtn,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  showAllHistory
-                    ? 'Show fewer sessions'
-                    : `Show all ${recentShares.length} past sessions`
-                }
-              >
-                <Text style={styles.expandHistoryText}>
-                  {showAllHistory
-                    ? 'Show less'
-                    : `Show full history (${recentShares.length} sessions)`}
-                </Text>
-              </Pressable>
             )}
-          </View>
-        )}
 
-        {/* Empty State when no shares exist at all */}
-        {activeShares.length === 0 &&
-          recentShares.length === 0 &&
-          !activeToken && (
-            <View style={styles.empty}>
-              <Ionicons
-                name="share-outline"
-                size={44}
-                color={TEAL}
-                style={styles.emptyIcon}
-              />
-              <Text style={styles.emptyTitle}>No previous sharing sessions</Text>
-              <Text style={styles.emptyText}>
-                Generate a QR code to share your health records with a doctor.
+            {/* ────────────────────────────────────────────────────────
+                TIER 2: ACTIVE SHARING SESSIONS
+            ──────────────────────────────────────────────────────── */}
+            {activeShares.length > 0 && (
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
+                  Active Access Sessions ({activeShares.length})
+                </Text>
+
+                <View style={styles.cardsStack}>
+                  {activeShares.map((s) => {
+                    const isViewing = activeToken === s.token;
+                    return (
+                      <View key={s.id} style={styles.activeShareCard}>
+                        <View style={styles.shareCardHeader}>
+                          <View style={styles.statusBadgeLive}>
+                            <View style={styles.statusDotLive} />
+                            <Text style={styles.statusTextLive}>ACTIVE</Text>
+                          </View>
+                          <Text style={styles.shareCardTimer}>
+                            {expiryStatus(s.expires_at)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.shareCardMetaRow}>
+                          <Image
+                            source={require('../../assets/icons/clock.png')}
+                            style={styles.metaIcon}
+                          />
+                          <Text style={styles.shareCardMetaText}>
+                            Created {formatDate(s.created_at || s.expires_at)} at{' '}
+                            {formatTime(s.created_at || s.expires_at)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.shareCardActions}>
+                          <Pressable
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              if (isViewing) {
+                                setActiveToken(null);
+                                setActiveExpiry(null);
+                              } else {
+                                setActiveToken(s.token);
+                                setActiveExpiry(s.expires_at);
+                              }
+                            }}
+                            style={({ pressed }) => [
+                              styles.viewQrBtn,
+                              isViewing && styles.viewQrBtnActive,
+                              pressed && styles.pressed,
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={isViewing ? 'Hide QR Code' : 'Display QR Code'}
+                          >
+                            <Ionicons
+                              name={isViewing ? 'eye-off-outline' : 'qr-code-outline'}
+                              size={15}
+                              color={isViewing ? INK : TEAL}
+                            />
+                            <Text
+                              style={[
+                                styles.viewQrBtnText,
+                                isViewing && { color: INK },
+                              ]}
+                            >
+                              {isViewing ? 'Hide QR' : 'Show QR'}
+                            </Text>
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => handleRevoke(s.id)}
+                            disabled={revoking === s.id}
+                            style={({ pressed }) => [
+                              styles.revokeBtn,
+                              pressed && styles.pressed,
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel="Revoke access"
+                          >
+                            {revoking === s.id ? (
+                              <ActivityIndicator size="small" color={RED} />
+                            ) : (
+                              <>
+                                <Ionicons name="trash-outline" size={15} color={RED} />
+                                <Text style={styles.revokeBtnText}>Revoke</Text>
+                              </>
+                            )}
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* ────────────────────────────────────────────────────────
+                TIER 3: PAST SHARING SESSIONS
+            ──────────────────────────────────────────────────────── */}
+            {recentShares.length > 0 && (
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
+                  Past Share History
+                </Text>
+
+                <View style={styles.historyCard}>
+                  {visibleRecentShares.map((s, index) => {
+                    const isLast = index === visibleRecentShares.length - 1;
+                    const isRevoked = Boolean(s.revoked_at);
+
+                    return (
+                      <View key={s.id}>
+                        <View style={styles.historyRow}>
+                          <View style={styles.historyIconBox}>
+                            <Ionicons
+                              name={isRevoked ? 'close-circle' : 'checkmark-circle'}
+                              size={18}
+                              color={isRevoked ? RED : MUTED}
+                            />
+                          </View>
+
+                          <View style={styles.historyContent}>
+                            <Text style={styles.historyTitle} numberOfLines={1}>
+                              {isRevoked ? 'Manually Revoked' : 'Session Expired'}
+                            </Text>
+                            <Text style={styles.historySubtitle}>
+                              {formatDate(s.created_at || s.expires_at)} at{' '}
+                              {formatTime(s.created_at || s.expires_at)}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={[
+                              styles.historyBadge,
+                              isRevoked ? styles.historyBadgeRevoked : styles.historyBadgeExpired,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.historyBadgeText,
+                                isRevoked && { color: RED },
+                              ]}
+                            >
+                              {isRevoked ? 'REVOKED' : 'EXPIRED'}
+                            </Text>
+                          </View>
+                        </View>
+                        {!isLast && <View style={styles.historyDivider} />}
+                      </View>
+                    );
+                  })}
+
+                  {recentShares.length > 3 && (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setShowAllHistory(!showAllHistory);
+                      }}
+                      style={({ pressed }) => [
+                        styles.showMoreBtn,
+                        pressed && styles.pressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={showAllHistory ? 'Show fewer past sessions' : 'Show all past sessions'}
+                    >
+                      <Text style={styles.showMoreBtnText}>
+                        {showAllHistory
+                          ? 'Show Less'
+                          : `View All ${recentShares.length} Past Sessions`}
+                      </Text>
+                      <Ionicons
+                        name={showAllHistory ? 'chevron-up' : 'chevron-down'}
+                        size={14}
+                        color={TEAL}
+                      />
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {/* ────────────────────────────────────────────────────────
+                SECURITY GUARANTEE FOOTER
+            ──────────────────────────────────────────────────────── */}
+            <View style={styles.securityBox}>
+              <Ionicons name="shield-checkmark" size={16} color={TEAL} />
+              <Text style={styles.securityText} maxFontSizeMultiplier={1.35}>
+                MedRec sharing links are encrypted. Doctors only receive temporary, read-only viewing permissions that automatically expire.
               </Text>
             </View>
-          )}
+          </View>
+        </View>
       </ScrollView>
 
       {/* Side Menu Drawer */}
-      <SideMenuModal
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-      />
+      <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       {/* Notification Center Modal */}
       <NotificationCenterModal
@@ -506,359 +582,365 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 12,
+  containerInner: {
+    paddingBottom: 8,
   },
-  headerIcons: {
+  activeHeroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radii.card,
+    borderWidth: 1.5,
+    borderColor: '#D4EBE6',
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  activeHeroTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    color: INK,
+    textAlign: 'center',
+  },
+  activeHeroSubtitle: {
+    fontFamily: 'LexendDeca-Regular',
+    color: MUTED,
+    textAlign: 'center',
+    marginTop: 3,
+    marginBottom: 16,
+  },
+  qrCodeContainer: {
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 14,
+  },
+  activeTimerText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 13,
+    color: TEAL,
+    marginBottom: 16,
+  },
+  revokeHeroBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: RED_LIGHT,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECDCA',
+    minHeight: 44,
   },
-  notificationDot: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: 9,
-    height: 9,
-    borderRadius: 6,
-    backgroundColor: TEAL,
+  revokeHeroBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12.5,
+    color: RED,
   },
-  headerAsset: {
-    width: 25,
-    height: 25,
-    resizeMode: 'contain',
+  dismissHeroBtn: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  title: {
+  dismissHeroBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 13,
     color: INK,
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 28,
   },
-  subtitle: {
-    color: MUTED,
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  /* ─────────────────────────────
-     TIER 1: ADAPTIVE HERO
-  ───────────────────────────── */
-  generateCard: {
-    marginHorizontal: Spacing.screenPadding,
+  loadingQrCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: Radii.card,
-    backgroundColor: BLUE,
-    padding: Spacing.cardPadding,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 32,
+    alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
+  },
+  loadingQrText: {
+    fontFamily: 'LexendDeca-Medium',
+    fontSize: 14,
+    color: MUTED,
+  },
+  generateHeroCard: {
+    backgroundColor: BLUE,
+    borderRadius: Radii.card,
+    padding: 18,
+    gap: 14,
     shadowColor: BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 3,
   },
-  generateTopRow: {
+  generateHeroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  generateIconBox: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  whiteQrAsset: {
-    width: 36,
-    height: 36,
-    resizeMode: 'contain',
-    tintColor: '#FFFFFF',
-  },
-  generateTitle: {
-    flex: 1,
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'LexendDeca-Bold',
-    lineHeight: 22,
-  },
-  generateSubtitle: {
-    color: 'rgba(255, 255, 255, 0.88)',
-    fontSize: 11,
-    fontFamily: 'LexendDeca-Regular',
-    lineHeight: 16,
-  },
-  generateButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    height: 36,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  generateButtonText: {
-    color: '#111827',
-    fontSize: 12,
-    fontFamily: 'LexendDeca-Bold',
-    letterSpacing: 0.4,
-  },
-
-  activeHeroCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    borderWidth: 1.5,
-    borderColor: BLUE,
-    padding: 18,
-    marginHorizontal: Spacing.screenPadding,
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-    shadowColor: BLUE,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  activeHeroTitle: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 18,
-    color: INK,
-  },
-  activeHeroSubtitle: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
-    color: MUTED,
-  },
-  qrCodeContainer: {
-    padding: 10,
-    backgroundColor: '#FFFFFF',
+  generateHeroIconBox: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    marginVertical: 4,
-  },
-  activeTimerText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 12,
-    color: TEAL,
-    marginVertical: 4,
-  },
-  revokeHeroBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginTop: 4,
-  },
-  revokeHeroText: {
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 13,
-    color: RED,
-  },
-  dismissHeroText: {
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 13,
-    color: MUTED,
-  },
-
-  loadingCard: {
-    marginHorizontal: Spacing.screenPadding,
-    height: 120,
-    borderRadius: Radii.card,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  loadingCardText: {
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 13,
-    color: MUTED,
-  },
-
-  /* ─────────────────────────────
-     TIER 2: ACTIVE SHARES
-  ───────────────────────────── */
-  activeSection: {
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  sectionHead: {
-    marginHorizontal: Spacing.screenPadding,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 16,
-    color: INK,
-  },
-  sectionSubtitle: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 11.5,
-    color: MUTED,
-    marginTop: 1,
-  },
-  activeShareCard: {
-    marginHorizontal: Spacing.screenPadding,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: BLUE,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  activeShareTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    gap: 10,
-  },
-  activeShareIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: BLUE_LIGHT,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeShareInfo: {
+  generateHeroTextBox: {
     flex: 1,
     gap: 2,
   },
-  activeShareTitle: {
+  generateHeroTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 13.5,
-    color: INK,
+    color: '#FFFFFF',
   },
-  activeShareSub: {
+  generateHeroSubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
-    color: BLUE,
+    color: 'rgba(255, 255, 255, 0.88)',
+    lineHeight: 15,
   },
-  viewQrBtn: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: BLUE_LIGHT,
-  },
-  viewQrBtnText: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 11.5,
-    color: BLUE,
-  },
-  activeShareDivider: {
-    height: 1,
-    backgroundColor: BORDER,
-  },
-  activeShareRevokeBtn: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FAFCFC',
-  },
-  activeShareRevokeText: {
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 12,
-    color: RED,
-  },
-
-  /* ─────────────────────────────
-     TIER 3: PAST SESSIONS (UNBOXED)
-  ───────────────────────────── */
-  historySection: {
-    marginTop: 14,
-    marginHorizontal: Spacing.screenPadding,
-  },
-  historyHeader: {
-    marginBottom: 8,
-  },
-  historySectionTitle: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 16,
-    color: INK,
-  },
-  historyList: {
-    backgroundColor: 'transparent',
-  },
-  historyItemWrapper: {
-    backgroundColor: 'transparent',
-  },
-  historyRow: {
+  generatePrimaryBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radii.button,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    minHeight: 48,
-    gap: 12,
-  },
-  historyLeft: {
-    flex: 1,
-    gap: 3,
-  },
-  historyItemTitle: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 13.5,
-    color: INK,
-  },
-  historyItemSubtitle: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 11.5,
-    color: MUTED,
-  },
-  historyStatusText: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 12.5,
-    color: MUTED,
-  },
-  historyStatusRevoked: {
-    fontFamily: 'LexendDeca-Medium',
-    color: RED,
-  },
-  historyStatusExpired: {
-    color: MUTED,
-  },
-  historyDivider: {
-    height: 1,
-    backgroundColor: BORDER,
-  },
-  expandHistoryBtn: {
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    marginTop: 2,
-  },
-  expandHistoryText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 12.5,
-    color: TEAL,
-  },
-
-  /* ─────────────────────────────
-     EMPTY STATE
-  ───────────────────────────── */
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: Spacing.screenPadding,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  emptyIcon: {
-    opacity: 0.5,
-    marginBottom: 6,
+  generatePrimaryBtnText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 13.5,
+    color: BLUE,
+    letterSpacing: 0.2,
   },
-  emptyTitle: {
+  sectionContainer: {
+    gap: 10,
+  },
+  sectionTitle: {
     fontFamily: 'LexendDeca-Bold',
     fontSize: 15,
     color: INK,
   },
-  emptyText: {
+  cardsStack: {
+    gap: 10,
+  },
+  activeShareCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: '#D4EBE6',
+    padding: 14,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  shareCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statusBadgeLive: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#DDF5EE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusDotLive: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: TEAL,
+  },
+  statusTextLive: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 10,
+    color: TEAL,
+    letterSpacing: 0.5,
+  },
+  shareCardTimer: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: TEAL,
+  },
+  shareCardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaIcon: {
+    width: 12,
+    height: 12,
+    resizeMode: 'contain',
+    tintColor: MUTED,
+  },
+  shareCardMetaText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12.5,
+    fontSize: 12,
     color: MUTED,
-    textAlign: 'center',
-    maxWidth: 260,
+  },
+  shareCardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F6F5',
+  },
+  viewQrBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#F0F9F7',
+    borderRadius: Radii.button,
+    height: 38,
+    borderWidth: 1,
+    borderColor: '#D4EBE6',
+  },
+  viewQrBtnActive: {
+    backgroundColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
+  },
+  viewQrBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12.5,
+    color: TEAL,
+  },
+  revokeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: RED_LIGHT,
+    borderRadius: Radii.button,
+    height: 38,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#FECDCA',
+  },
+  revokeBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: RED,
+  },
+  historyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: BORDER,
+    overflow: 'hidden',
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  historyIconBox: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyContent: {
+    flex: 1,
+    gap: 2,
+  },
+  historyTitle: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 13,
+    color: INK,
+  },
+  historySubtitle: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    color: MUTED,
+  },
+  historyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  historyBadgeRevoked: {
+    backgroundColor: RED_LIGHT,
+  },
+  historyBadgeExpired: {
+    backgroundColor: '#F1F5F9',
+  },
+  historyBadgeText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 9.5,
+    color: MUTED,
+    letterSpacing: 0.5,
+  },
+  historyDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginLeft: 52,
+  },
+  showMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    backgroundColor: '#FAFCFC',
+  },
+  showMoreBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: TEAL,
+  },
+  securityBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#EDF8F6',
+    borderRadius: Radii.card,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#D4EBE6',
+    marginTop: 4,
+  },
+  securityText: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    color: '#12343B',
+    lineHeight: 16,
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.75,
+  },
+  disabledBtn: {
+    opacity: 0.6,
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { Colors, Radii, Spacing } from '../../constants/theme';
+import { Colors, Radii } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface CardProps {
   children: React.ReactNode;
@@ -13,10 +14,13 @@ export const Card: React.FC<CardProps> = ({
   style,
   variant = 'default',
 }) => {
+  const { cardPadding } = useResponsive();
+
   return (
     <View
       style={[
         styles.card,
+        { padding: cardPadding },
         variant === 'elevated' && styles.elevated,
         variant === 'bordered' && styles.bordered,
         style,
@@ -33,7 +37,6 @@ const styles = StyleSheet.create({
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: Spacing.cardPadding,
     overflow: 'hidden',
   },
   elevated: {
@@ -48,3 +51,5 @@ const styles = StyleSheet.create({
     borderColor: Colors.teal,
   },
 });
+
+export default Card;

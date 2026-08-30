@@ -9,13 +9,18 @@ async function revokeToken({ jti, expiresAt }) {
 }
 
 async function isRevoked(jti) {
-  await pool.query(`DELETE FROM revoked_tokens WHERE expires_at < now()`);
-
   const { rows } = await pool.query(
-    `SELECT 1 FROM revoked_tokens WHERE jti = $1`,
+    `SELECT 1 FROM revoked_tokens WHERE jti = $1 AND expires_at > now()`,
     [jti]
   );
   return rows.length > 0;
 }
 
-module.exports = { revokeToken, isRevoked };
+async function cleanExpiredTokens() {
+  const { rowCount } = await pool.query(
+    `DELETE FROM revoked_tokens WHERE expires_at < now()`
+  );
+  return rowCount;
+}
+
+module.exports = { revokeToken, isRevoked, cleanExpiredTokens };

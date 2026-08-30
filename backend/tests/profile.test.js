@@ -55,7 +55,7 @@ describe('Profile API Endpoints', () => {
   });
 
   describe('PUT /profile', () => {
-    it('should update personal demographics and user name', async () => {
+    it('should update personal demographics with height and weight', async () => {
       const res = await request(app)
         .put('/profile')
         .set('Authorization', `Bearer ${token}`)
@@ -63,6 +63,8 @@ describe('Profile API Endpoints', () => {
           name: 'Updated Name',
           dateOfBirth: '1995-05-15',
           biologicalSex: 'female',
+          height: '175',
+          weight: '68',
           phone: '+15551234567',
           address: '456 Health St, Med City',
         });
@@ -71,11 +73,13 @@ describe('Profile API Endpoints', () => {
       expect(res.body.user.name).toBe('Updated Name');
       expect(res.body.profile.dateOfBirth).toBe('1995-05-15');
       expect(res.body.profile.biologicalSex).toBe('female');
+      expect(res.body.profile.height).toBe('175');
+      expect(res.body.profile.weight).toBe('68');
       expect(res.body.profile.phone).toBe('+15551234567');
       expect(res.body.profile.address).toBe('456 Health St, Med City');
     });
 
-    it('should update medical ID & emergency contact information', async () => {
+    it('should update medical ID and preserve previously saved demographic data (Partial Upsert Isolation)', async () => {
       const res = await request(app)
         .put('/profile')
         .set('Authorization', `Bearer ${token}`)
@@ -91,16 +95,45 @@ describe('Profile API Endpoints', () => {
         });
 
       expect(res.status).toBe(200);
+      // New medical fields updated
       expect(res.body.profile.bloodType).toBe('O+');
       expect(res.body.profile.allergies).toBe('Penicillin, Peanuts');
       expect(res.body.profile.medicalConditions).toBe('Mild Asthma');
       expect(res.body.profile.medicationsSummary).toBe('Albuterol Inhaler');
       expect(res.body.profile.emergencyContactName).toBe('Jane Doe');
       expect(res.body.profile.emergencyContactRelationship).toBe('Spouse');
+      expect(res.body.profile.emergencyContactPhone).toBe('+15559876543');
       expect(res.body.profile.organDonor).toBe(true);
+
+      // Previous demographic fields are completely preserved
+      expect(res.body.user.name).toBe('Updated Name');
+      expect(res.body.profile.dateOfBirth).toBe('1995-05-15');
+      expect(res.body.profile.biologicalSex).toBe('female');
+      expect(res.body.profile.height).toBe('175');
+      expect(res.body.profile.weight).toBe('68');
+      expect(res.body.profile.phone).toBe('+15551234567');
+      expect(res.body.profile.address).toBe('456 Health St, Med City');
     });
 
-    it('should update and persist avatarUrl', async () => {
+    it('should update demographics again and preserve medical ID data', async () => {
+      const res = await request(app)
+        .put('/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          address: '789 Wellness Blvd, Suite 200',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.profile.address).toBe('789 Wellness Blvd, Suite 200');
+
+      // Medical data untouched
+      expect(res.body.profile.bloodType).toBe('O+');
+      expect(res.body.profile.allergies).toBe('Penicillin, Peanuts');
+      expect(res.body.profile.organDonor).toBe(true);
+      expect(res.body.profile.height).toBe('175');
+    });
+
+    it('should update and persist avatarUrl without wiping other fields', async () => {
       const sampleAvatar = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
       const res = await request(app)
         .put('/profile')
@@ -109,6 +142,8 @@ describe('Profile API Endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.profile.avatarUrl).toBe(sampleAvatar);
+      expect(res.body.profile.bloodType).toBe('O+');
+      expect(res.body.profile.allergies).toBe('Penicillin, Peanuts');
 
       const getRes = await request(app)
         .get('/profile')
@@ -116,6 +151,7 @@ describe('Profile API Endpoints', () => {
 
       expect(getRes.status).toBe(200);
       expect(getRes.body.profile.avatarUrl).toBe(sampleAvatar);
+      expect(getRes.body.profile.bloodType).toBe('O+');
     });
 
     it('should reject invalid biological sex', async () => {

@@ -15,7 +15,6 @@ import {
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,7 +26,8 @@ import ChangePasswordModal from '../../components/ChangePasswordModal';
 import EmergencyIdModal from '../../components/EmergencyIdModal';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors, Radii, ResponsiveLimits } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 const TEAL = Colors.teal;
 const INK = Colors.ink;
@@ -64,8 +64,14 @@ function formatDate(dateStr?: string | null): string {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user, setUser, logout } = useAuth();
+  const {
+    isTablet,
+    screenPadding,
+    insets,
+    scaleFont,
+    tabBarClearance,
+  } = useResponsive();
 
   const [profile, setProfile] = useState<ProfileData>({});
   const [recordsCount, setRecordsCount] = useState(0);
@@ -110,11 +116,9 @@ export default function ProfileScreen() {
         : asset.uri;
 
       setUploadingPhoto(true);
-      // Optimistic update
       setProfile((prev) => ({ ...prev, avatarUrl: photoPayload }));
       setUser((prev) => (prev ? { ...prev, avatarUrl: photoPayload } : null));
 
-      // Persist to backend database
       const res = await api.updateProfile({ avatarUrl: photoPayload });
       if (res && res.profile) {
         setProfile(res.profile);
@@ -311,12 +315,389 @@ export default function ProfileScreen() {
     );
   }
 
+  // Card 1: Emergency & Medical ID Card
+  const emergencyMedicalCard = (
+    <View style={styles.sectionBlock}>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionLabel} maxFontSizeMultiplier={1.35}>
+          EMERGENCY &amp; MEDICAL ID
+        </Text>
+        <Pressable
+          onPress={handleEditMedicalId}
+          style={({ pressed }) => [styles.sectionEditLink, pressed && styles.pressed]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Edit medical ID information"
+        >
+          <Text style={styles.sectionEditLinkText}>Edit</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.groupedCard}>
+        {/* Blood Type */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Blood Type</Text>
+          <Text
+            style={[
+              styles.rowValueBold,
+              profile.bloodType ? styles.bloodTypeText : styles.mutedValue,
+            ]}
+          >
+            {profile.bloodType || 'Not specified'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Known Allergies */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Known Allergies</Text>
+          <Text
+            style={[
+              styles.rowValue,
+              profile.allergies ? styles.allergyText : styles.mutedValue,
+            ]}
+            numberOfLines={2}
+          >
+            {profile.allergies || 'No known allergies'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Chronic Conditions */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Chronic Conditions</Text>
+          <Text
+            style={[styles.rowValue, !profile.medicalConditions && styles.mutedValue]}
+            numberOfLines={2}
+          >
+            {profile.medicalConditions || 'None reported'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Maintenance Medications */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Maintenance Meds</Text>
+          <Text
+            style={[styles.rowValue, !profile.medicationsSummary && styles.mutedValue]}
+            numberOfLines={2}
+          >
+            {profile.medicationsSummary || 'None reported'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Organ Donor Status */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Organ Donor</Text>
+          <Text style={styles.rowValue}>
+            {profile.organDonor ? 'Yes (Registered Donor)' : 'No / Not registered'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Primary ICE Contact */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Emergency Contact</Text>
+          <View style={styles.emergencyContactRight}>
+            <Text
+              style={[
+                styles.rowValueBold,
+                !profile.emergencyContactName && styles.mutedValue,
+              ]}
+              numberOfLines={1}
+            >
+              {profile.emergencyContactName || 'Not listed'}
+            </Text>
+            {profile.emergencyContactRelationship ? (
+              <Text style={styles.emergencyRelationBadge}>
+                {profile.emergencyContactRelationship}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        {profile.emergencyContactPhone ? (
+          <>
+            <View style={styles.rowDivider} />
+            <Pressable
+              onPress={handleCallEmergency}
+              style={({ pressed }) => [styles.callRowBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Call emergency contact ${profile.emergencyContactName}`}
+            >
+              <View style={styles.callRowIconBox}>
+                <Ionicons name="call" size={14} color="#FFFFFF" />
+              </View>
+              <Text style={styles.callRowText} numberOfLines={1}>
+                Call {profile.emergencyContactPhone}
+              </Text>
+            </Pressable>
+          </>
+        ) : null}
+
+        <View style={styles.rowDivider} />
+
+        {/* Open Full Paramedic Card Action */}
+        <Pressable
+          onPress={() => setEmergencyModalVisible(true)}
+          style={({ pressed }) => [styles.openEmergencyBtn, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Open First Responder Medical ID Card"
+        >
+          <Ionicons name="medical" size={16} color={RED} />
+          <Text style={styles.openEmergencyBtnText}>First Responder QR &amp; ID Card</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  // Card 2: Personal Demographics Card
+  const personalDemographicsCard = (
+    <View style={styles.sectionBlock}>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionLabel} maxFontSizeMultiplier={1.35}>
+          PERSONAL INFORMATION
+        </Text>
+        <Pressable
+          onPress={handleEditDemographics}
+          style={({ pressed }) => [styles.sectionEditLink, pressed && styles.pressed]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Edit personal demographics"
+        >
+          <Text style={styles.sectionEditLinkText}>Edit</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.groupedCard}>
+        {/* Date of Birth & Calculated Age */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Date of Birth</Text>
+          <Text
+            style={[styles.rowValue, !profile.dateOfBirth && styles.mutedValue]}
+          >
+            {formatDate(profile.dateOfBirth)}
+            {age !== null ? ` (${age} yrs)` : ''}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Biological Sex */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Biological Sex</Text>
+          <Text
+            style={[styles.rowValue, !profile.biologicalSex && styles.mutedValue]}
+          >
+            {profile.biologicalSex
+              ? profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)
+              : 'Not set'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Height & Weight */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Height &amp; Weight</Text>
+          <Text
+            style={[
+              styles.rowValue,
+              !profile.height && !profile.weight && styles.mutedValue,
+            ]}
+          >
+            {profile.height ? `${profile.height} cm` : '—'} /{' '}
+            {profile.weight ? `${profile.weight} kg` : '—'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Contact Phone */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Phone Number</Text>
+          <Text
+            style={[styles.rowValue, !profile.phone && styles.mutedValue]}
+            numberOfLines={1}
+          >
+            {profile.phone || 'Not set'}
+          </Text>
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Primary Address */}
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Address</Text>
+          <Text
+            style={[styles.rowValue, !profile.address && styles.mutedValue]}
+            numberOfLines={2}
+          >
+            {profile.address || 'Not set'}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Card 3: Security & Preferences Card
+  const securityCard = (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.sectionLabel} maxFontSizeMultiplier={1.35}>
+        SECURITY &amp; PREFERENCES
+      </Text>
+
+      <View style={styles.groupedCard}>
+        {/* Biometrics Toggle */}
+        <View style={styles.switchRow}>
+          <View style={styles.switchLabelGroup}>
+            <Text style={styles.switchTitle}>Biometric Unlock</Text>
+            <Text style={styles.switchSubtitle}>Use Face ID / Touch ID to open MedRec</Text>
+          </View>
+          <Switch
+            value={biometricsEnabled}
+            onValueChange={(val) => {
+              Haptics.selectionAsync();
+              setBiometricsEnabled(val);
+            }}
+            trackColor={{ false: '#E2E8F0', true: TEAL }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Health Notifications Toggle */}
+        <View style={styles.switchRow}>
+          <View style={styles.switchLabelGroup}>
+            <Text style={styles.switchTitle}>Health Alerts &amp; Logs</Text>
+            <Text style={styles.switchSubtitle}>Notifications for doctor QR shares &amp; uploads</Text>
+          </View>
+          <Switch
+            value={notificationsEnabled}
+            onValueChange={(val) => {
+              Haptics.selectionAsync();
+              setNotificationsEnabled(val);
+            }}
+            trackColor={{ false: '#E2E8F0', true: TEAL }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+
+        <View style={styles.rowDivider} />
+
+        {/* Change Password */}
+        <Pressable
+          onPress={() => setPasswordModalVisible(true)}
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Change password"
+        >
+          <View style={styles.actionIconBox}>
+            <Ionicons name="key-outline" size={16} color={INK} />
+          </View>
+          <Text style={styles.actionTitle}>Change Password</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+
+        <View style={styles.rowDivider} />
+
+        {/* Export Data Archive */}
+        <Pressable
+          onPress={handleExportData}
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Export all health data as JSON"
+        >
+          <View style={styles.actionIconBox}>
+            <Ionicons name="download-outline" size={16} color={INK} />
+          </View>
+          <Text style={styles.actionTitle}>Export Health Vault (JSON)</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  // Card 4: Legal & Account Actions Card
+  const legalAccountCard = (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.sectionLabel} maxFontSizeMultiplier={1.35}>
+        ACCOUNT &amp; LEGAL
+      </Text>
+
+      <View style={styles.groupedCard}>
+        {/* Medical Disclaimer */}
+        <Pressable
+          onPress={handleShowDisclaimer}
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="View Medical Disclaimer"
+        >
+          <View style={styles.actionIconBox}>
+            <Ionicons name="information-circle-outline" size={16} color={INK} />
+          </View>
+          <Text style={styles.actionTitle}>Medical Disclaimer</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+
+        <View style={styles.rowDivider} />
+
+        {/* Sign Out */}
+        <Pressable
+          onPress={handleSignOut}
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Sign Out"
+        >
+          <View style={[styles.actionIconBox, { backgroundColor: '#FEE4E2' }]}>
+            <Ionicons name="log-out-outline" size={16} color={RED} />
+          </View>
+          <Text style={[styles.actionTitle, { color: RED }]}>Sign Out</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+
+        <View style={styles.rowDivider} />
+
+        {/* Delete Account */}
+        <Pressable
+          onPress={handleDeleteAccount}
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Delete Account permanently"
+        >
+          <View style={[styles.actionIconBox, { backgroundColor: '#FEE4E2' }]}>
+            <Ionicons name="trash-outline" size={16} color={RED} />
+          </View>
+          <Text style={[styles.actionTitle, { color: RED }]}>Delete Account</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
 
-      {/* Fixed Global Navigation Toolbar */}
-      <View style={[styles.topToolbar, { paddingTop: insets.top + 12 }]}>
+      {/* Global Navigation Toolbar */}
+      <View
+        style={[
+          styles.topToolbar,
+          {
+            paddingTop: insets.top + 12,
+            paddingLeft: Math.max(insets.left, screenPadding),
+            paddingRight: Math.max(insets.right, screenPadding),
+          },
+        ]}
+      >
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
@@ -356,430 +737,177 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
+          { paddingBottom: Math.max(insets.bottom, 20) + tabBarClearance },
         ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TEAL} />
         }
       >
-        {/* Profile Title & Subtitle (Scrolls away naturally) */}
-        <View style={styles.titleSection}>
-          <Text style={styles.screenTitle}>Profile</Text>
-          <Text style={styles.screenSubtitle}>Manage your personal and medical ID</Text>
-        </View>
-
-        {/* ─────────────────────────────
-            1. UNBOXED PROFILE HERO
-        ───────────────────────────── */}
-        <View style={styles.heroSection}>
-          <Pressable
-            onPress={handlePickPhoto}
-            disabled={uploadingPhoto}
-            style={({ pressed }) => [styles.avatarContainer, pressed && styles.pressed]}
-            hitSlop={15}
-            accessibilityRole="button"
-            accessibilityLabel="Change profile photo"
-          >
-            {(profile.avatarUrl || user?.avatarUrl) ? (
-              <Image
-                source={{ uri: profile.avatarUrl || user?.avatarUrl || '' }}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{userInitials}</Text>
-              </View>
-            )}
-
-            {uploadingPhoto ? (
-              <View style={styles.cameraBadge}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              </View>
-            ) : (
-              <View style={styles.cameraBadge}>
-                <Ionicons name="camera" size={13} color="#FFFFFF" />
-              </View>
-            )}
-          </Pressable>
-
-          <Text style={styles.userName} numberOfLines={1}>
-            {user?.name || 'Patient'}
-          </Text>
-          <Text style={styles.userEmail} numberOfLines={1}>
-            {user?.email || 'patient@medrec.local'}
-          </Text>
-
-          {/* Plain Text Metadata Summary */}
-          <Text style={styles.metadataLine}>
-            {age !== null ? `${age} yrs` : 'Age not set'}
-            {profile.biologicalSex
-              ? ` • ${profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)}`
-              : ''}
-            {profile.bloodType ? ` • Blood ${profile.bloodType}` : ''}
-            {recordsCount > 0 ? ` • ${recordsCount} Record${recordsCount === 1 ? '' : 's'}` : ''}
-          </Text>
-
-          <Pressable
-            onPress={handleEditDemographics}
-            style={({ pressed }) => [styles.editProfileBtn, pressed && styles.pressed]}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Edit profile demographics"
-          >
-            <Ionicons name="pencil" size={13} color={TEAL} />
-            <Text style={styles.editProfileBtnText}>Edit Profile</Text>
-          </Pressable>
-        </View>
-
-        {/* ─────────────────────────────
-            2. EMERGENCY & MEDICAL ID
-        ───────────────────────────── */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>EMERGENCY &amp; MEDICAL ID</Text>
-          <Pressable
-            onPress={handleEditMedicalId}
-            style={({ pressed }) => [styles.sectionEditLink, pressed && styles.pressed]}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Edit medical ID information"
-          >
-            <Text style={styles.sectionEditLinkText}>Edit</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.groupedCard}>
-          {/* Blood Type */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Blood Type</Text>
-            <Text
-              style={[
-                styles.rowValueBold,
-                profile.bloodType ? styles.bloodTypeText : styles.mutedValue,
-              ]}
-            >
-              {profile.bloodType || 'Not specified'}
-            </Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Known Allergies */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Known Allergies</Text>
-            <Text
-              style={[
-                styles.rowValue,
-                profile.allergies ? styles.allergyText : styles.mutedValue,
-              ]}
-              numberOfLines={2}
-            >
-              {profile.allergies || 'No known allergies'}
-            </Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Chronic Conditions */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Chronic Conditions</Text>
-            <Text
-              style={[styles.rowValue, !profile.medicalConditions && styles.mutedValue]}
-              numberOfLines={2}
-            >
-              {profile.medicalConditions || 'None reported'}
-            </Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Maintenance Medications */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Maintenance Meds</Text>
-            <Text
-              style={[styles.rowValue, !profile.medicationsSummary && styles.mutedValue]}
-              numberOfLines={2}
-            >
-              {profile.medicationsSummary || 'None reported'}
-            </Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Primary Emergency Contact */}
-          <View style={styles.contactRow}>
-            <View style={styles.contactInfo}>
-              <Text style={styles.rowLabel}>Emergency Contact</Text>
-              <Text style={styles.contactName} numberOfLines={1}>
-                {profile.emergencyContactName
-                  ? `${profile.emergencyContactName}${
-                      profile.emergencyContactRelationship
-                        ? ` (${profile.emergencyContactRelationship})`
-                        : ''
-                    }`
-                  : 'No contact set'}
-              </Text>
-            </View>
-            {profile.emergencyContactPhone ? (
-              <Pressable
-                onPress={handleCallEmergency}
-                style={({ pressed }) => [styles.callActionBtn, pressed && styles.pressed]}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={`Call emergency contact ${profile.emergencyContactName || ''}`}
-              >
-                <Ionicons name="call" size={13} color={TEAL} />
-                <Text style={styles.callActionText}>Call</Text>
-              </Pressable>
-            ) : (
-              <Text style={styles.mutedValue}>Not set</Text>
-            )}
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* First Responder QR ID */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setEmergencyModalVisible(true);
-            }}
-            style={({ pressed }) => [styles.navRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="View First Responder Digital QR ID"
-          >
-            <View style={styles.navRowLeft}>
-              <Ionicons name="qr-code-outline" size={18} color={TEAL} />
-              <Text style={styles.navRowLabel}>First Responder Digital ID</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={MUTED} />
-          </Pressable>
-        </View>
-
-        {/* ─────────────────────────────
-            3. PERSONAL INFORMATION
-        ───────────────────────────── */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>PERSONAL INFORMATION</Text>
-          <Pressable
-            onPress={handleEditDemographics}
-            style={({ pressed }) => [styles.sectionEditLink, pressed && styles.pressed]}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Edit personal information"
-          >
-            <Text style={styles.sectionEditLinkText}>Edit</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.groupedCard}>
-          {/* Date of Birth */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Date of Birth</Text>
-            <Text style={styles.rowValue}>
-              {profile.dateOfBirth
-                ? `${formatDate(profile.dateOfBirth)}${age !== null ? ` (${age} yrs)` : ''}`
-                : 'Not set'}
-            </Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Biological Sex */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Biological Sex</Text>
-            <Text style={styles.rowValue}>
-              {profile.biologicalSex
-                ? profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)
-                : 'Not set'}
-            </Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Phone Number */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Phone Number</Text>
-            <Text style={styles.rowValue}>{profile.phone || 'Not set'}</Text>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Address */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Address</Text>
-            <Text style={[styles.rowValue, styles.addressValue]} numberOfLines={2}>
-              {profile.address || 'Not set'}
-            </Text>
-          </View>
-        </View>
-
-        {/* ─────────────────────────────
-            4. SECURITY & PREFERENCES
-        ───────────────────────────── */}
-        <Text style={styles.sectionLabel}>SECURITY &amp; PREFERENCES</Text>
-        <View style={styles.groupedCard}>
-          {/* Active QR Shares */}
-          <Pressable
-            onPress={() => router.push('/(tabs)/share')}
-            style={({ pressed }) => [styles.navRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="View active QR shares"
-          >
-            <View style={styles.navRowLeft}>
-              <Ionicons name="share-social-outline" size={18} color={TEAL} />
-              <Text style={styles.navRowLabel}>Active QR Shares</Text>
-            </View>
-            <View style={styles.navRowRight}>
-              <Text style={[styles.statusText, activeSharesCount > 0 && styles.activeSharesText]}>
-                {activeSharesCount === 0 ? 'None' : `${activeSharesCount} Active`}
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={MUTED} />
-            </View>
-          </Pressable>
-
-          <View style={styles.rowDivider} />
-
-          {/* Change Password */}
-          <Pressable
-            onPress={() => setPasswordModalVisible(true)}
-            style={({ pressed }) => [styles.navRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Change password"
-          >
-            <View style={styles.navRowLeft}>
-              <Ionicons name="lock-closed-outline" size={18} color={TEAL} />
-              <Text style={styles.navRowLabel}>Change Password</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={MUTED} />
-          </Pressable>
-
-          <View style={styles.rowDivider} />
-
-          {/* Export Health Vault */}
-          <Pressable
-            onPress={handleExportData}
-            style={({ pressed }) => [styles.navRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Export health vault JSON archive"
-          >
-            <View style={styles.navRowLeft}>
-              <Ionicons name="download-outline" size={18} color={TEAL} />
-              <View>
-                <Text style={styles.navRowLabel}>Export Health Vault</Text>
-                <Text style={styles.navRowSub}>JSON Archive</Text>
-              </View>
-            </View>
-            <Ionicons name="share-outline" size={18} color={TEAL} />
-          </Pressable>
-
-          <View style={styles.rowDivider} />
-
-          {/* Biometric App Unlock */}
-          <View style={styles.switchRow}>
-            <View style={styles.navRowLeft}>
-              <Ionicons name="finger-print-outline" size={18} color={TEAL} />
-              <View>
-                <Text style={styles.navRowLabel}>Biometric App Unlock</Text>
-                <Text style={styles.navRowSub}>Face ID / Touch ID on launch</Text>
-              </View>
-            </View>
-            <Switch
-              value={biometricsEnabled}
-              onValueChange={(val) => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setBiometricsEnabled(val);
-              }}
-              trackColor={{ false: '#D9E7E4', true: TEAL }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Push Notifications */}
-          <View style={styles.switchRow}>
-            <View style={styles.navRowLeft}>
-              <Ionicons name="notifications-outline" size={18} color={TEAL} />
-              <View>
-                <Text style={styles.navRowLabel}>Push Notifications</Text>
-                <Text style={styles.navRowSub}>Sharing alerts and updates</Text>
-              </View>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={(val) => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setNotificationsEnabled(val);
-              }}
-              trackColor={{ false: '#D9E7E4', true: TEAL }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* About MedRec & Disclaimer */}
-          <Pressable
-            onPress={handleShowDisclaimer}
-            style={({ pressed }) => [styles.navRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="About MedRec and clinical disclaimer"
-          >
-            <View style={styles.navRowLeft}>
-              <Ionicons name="information-circle-outline" size={18} color={TEAL} />
-              <Text style={styles.navRowLabel}>About MedRec &amp; Disclaimer</Text>
-            </View>
-            <View style={styles.navRowRight}>
-              <Text style={styles.versionText}>v1.0.0</Text>
-              <Ionicons name="chevron-forward" size={16} color={MUTED} />
-            </View>
-          </Pressable>
-        </View>
-
-        {/* ─────────────────────────────
-            5. ACCOUNT ACTIONS & FOOTER
-        ───────────────────────────── */}
-        <View style={[styles.groupedCard, { marginTop: 8 }]}>
-          <Pressable
-            onPress={handleSignOut}
-            style={({ pressed }) => [styles.signOutRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out of MedRec account"
-          >
-            <Ionicons name="log-out-outline" size={18} color={RED} />
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </Pressable>
-        </View>
-
-        {/* Delete Account Link */}
-        <Pressable
-          onPress={handleDeleteAccount}
-          style={({ pressed }) => [styles.deleteLink, pressed && styles.pressed]}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Permanently delete account and health vault"
+        <View
+          style={[
+            styles.containerInner,
+            isTablet && {
+              maxWidth: ResponsiveLimits.maxContentWidth,
+              alignSelf: 'center',
+              width: '100%',
+            },
+          ]}
         >
-          <Text style={styles.deleteLinkText}>Delete Account &amp; Health Vault</Text>
-        </Pressable>
+          {/* Profile Title */}
+          <View style={[styles.titleSection, { paddingHorizontal: screenPadding }]}>
+            <Text
+              style={[
+                styles.screenTitle,
+                { fontSize: scaleFont(26, 22, 30) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              Profile
+            </Text>
+            <Text
+              style={[
+                styles.screenSubtitle,
+                { fontSize: scaleFont(12, 11, 13.5) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              Manage your personal and medical ID
+            </Text>
+          </View>
+
+          {/* 1. UNBOXED PROFILE HERO */}
+          <View style={[styles.heroSection, { paddingHorizontal: screenPadding }]}>
+            <Pressable
+              onPress={handlePickPhoto}
+              disabled={uploadingPhoto}
+              style={({ pressed }) => [styles.avatarContainer, pressed && styles.pressed]}
+              hitSlop={15}
+              accessibilityRole="button"
+              accessibilityLabel="Change profile photo"
+            >
+              {(profile.avatarUrl || user?.avatarUrl) ? (
+                <Image
+                  source={{ uri: profile.avatarUrl || user?.avatarUrl || '' }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarText}>{userInitials}</Text>
+                </View>
+              )}
+
+              {uploadingPhoto ? (
+                <View style={styles.cameraBadge}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                </View>
+              ) : (
+                <View style={styles.cameraBadge}>
+                  <Ionicons name="camera" size={13} color="#FFFFFF" />
+                </View>
+              )}
+            </Pressable>
+
+            <Text
+              style={[
+                styles.userName,
+                { fontSize: scaleFont(20, 18, 23) },
+              ]}
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.35}
+            >
+              {user?.name || 'Patient'}
+            </Text>
+            <Text
+              style={[
+                styles.userEmail,
+                { fontSize: scaleFont(13, 11.5, 14.5) },
+              ]}
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.35}
+            >
+              {user?.email || 'patient@medrec.local'}
+            </Text>
+
+            {/* Plain Text Metadata Summary */}
+            <Text
+              style={[
+                styles.metadataLine,
+                { fontSize: scaleFont(12.5, 11, 13.5) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              {age !== null ? `${age} yrs` : 'Age not set'}
+              {profile.biologicalSex
+                ? ` • ${profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)}`
+                : ''}
+              {profile.bloodType ? ` • Blood ${profile.bloodType}` : ''}
+              {recordsCount > 0 ? ` • ${recordsCount} Record${recordsCount === 1 ? '' : 's'}` : ''}
+            </Text>
+
+            <Pressable
+              onPress={handleEditDemographics}
+              style={({ pressed }) => [styles.editProfileBtn, pressed && styles.pressed]}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile demographics"
+            >
+              <Ionicons name="pencil" size={13} color={TEAL} />
+              <Text style={styles.editProfileBtnText}>Edit Profile</Text>
+            </Pressable>
+          </View>
+
+          {/* Grouped Sections */}
+          <View style={{ paddingHorizontal: screenPadding, gap: 20 }}>
+            {isTablet ? (
+              <>
+                {/* Tablet Row 1: Emergency ID & Demographics */}
+                <View style={styles.tabletRow}>
+                  <View style={styles.tabletCol}>{emergencyMedicalCard}</View>
+                  <View style={styles.tabletCol}>{personalDemographicsCard}</View>
+                </View>
+
+                {/* Tablet Row 2: Security & Legal */}
+                <View style={styles.tabletRow}>
+                  <View style={styles.tabletCol}>{securityCard}</View>
+                  <View style={styles.tabletCol}>{legalAccountCard}</View>
+                </View>
+              </>
+            ) : (
+              <>
+                {emergencyMedicalCard}
+                {personalDemographicsCard}
+                {securityCard}
+                {legalAccountCard}
+              </>
+            )}
+
+            {/* Version Footer */}
+            <View style={styles.versionContainer}>
+              <Text style={styles.versionText} maxFontSizeMultiplier={1.35}>
+                MedRec v1.0.0 (Build 2026) · Encrypted Sovereign Health Vault
+              </Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
-      {/* ─────────────────────────────
-          SUB-MODALS
-      ───────────────────────────── */}
+      {/* Profile Edit Demographics & Medical ID Modal */}
       <ProfileEditModal
         visible={editModalVisible}
         mode={editMode}
         initialData={profile}
         userName={user?.name || ''}
         onClose={() => setEditModalVisible(false)}
-        onSuccess={handleProfileUpdated}
+        onSaved={handleProfileUpdated}
       />
 
+      {/* Change Password Modal */}
       <ChangePasswordModal
         visible={passwordModalVisible}
         onClose={() => setPasswordModalVisible(false)}
       />
 
+      {/* First Responder Medical ID Card Modal */}
       <EmergencyIdModal
         visible={emergencyModalVisible}
         profile={profile}
@@ -817,21 +945,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: MUTED,
   },
-
-  /* ─────────────────────────────
-     FIXED GLOBAL TOOLBAR
-  ───────────────────────────── */
   topToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 8,
-    backgroundColor: BG,
-    zIndex: 10,
   },
   iconBtn: {
-    padding: 2,
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toolbarIcon: {
     width: 25,
@@ -840,8 +965,8 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    right: -1,
-    top: -1,
+    right: 4,
+    top: 4,
     width: 9,
     height: 9,
     borderRadius: 5,
@@ -849,59 +974,61 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: BG,
   },
-
-  /* ─────────────────────────────
-     SCROLLABLE TITLE SECTION
-  ───────────────────────────── */
+  scrollContent: {
+    flexGrow: 1,
+  },
+  containerInner: {
+    paddingBottom: 8,
+  },
   titleSection: {
-    paddingHorizontal: 4,
-    marginBottom: 4,
+    marginBottom: 12,
   },
   screenTitle: {
-    ...Typography.display,
+    fontFamily: 'LexendDeca-Bold',
     color: INK,
   },
   screenSubtitle: {
-    ...Typography.subtitle,
+    fontFamily: 'LexendDeca-Regular',
     color: MUTED,
     marginTop: 2,
   },
 
-  scrollContent: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 4,
-    gap: 12,
-  },
-
-  /* ─────────────────────────────
-     1. UNBOXED HERO SECTION
-  ───────────────────────────── */
+  /* Unboxed Profile Hero */
   heroSection: {
     alignItems: 'center',
-    paddingVertical: 12,
-    gap: 4,
+    paddingVertical: 14,
+    marginBottom: 6,
   },
   avatarContainer: {
     position: 'relative',
-    width: 76,
-    height: 76,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  avatarImage: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
   avatarCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: TEAL,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  avatarImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#E5F0EE',
+  avatarText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 28,
+    color: '#FFFFFF',
   },
   cameraBadge: {
     position: 'absolute',
@@ -910,68 +1037,67 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: TEAL,
+    backgroundColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: BG,
-  },
-  avatarText: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 24,
-    color: '#FFFFFF',
+    borderColor: '#FFFFFF',
   },
   userName: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 20,
     color: INK,
-    textAlign: 'center',
   },
   userEmail: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
     color: MUTED,
-    textAlign: 'center',
+    marginTop: 2,
   },
   metadataLine: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
     color: MUTED,
-    textAlign: 'center',
-    marginTop: 2,
+    marginTop: 4,
   },
   editProfileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    backgroundColor: '#EAF6F3',
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginTop: 4,
+    borderRadius: 16,
+    marginTop: 10,
+    minHeight: 32,
   },
   editProfileBtnText: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 13,
+    fontSize: 12,
     color: TEAL,
   },
 
-  /* ─────────────────────────────
-     SECTION HEADERS & INSET CARDS
-  ───────────────────────────── */
+  /* Tablet Layout Rows */
+  tabletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  tabletCol: {
+    flex: 1,
+  },
+
+  /* Grouped Card Sections */
+  sectionBlock: {
+    gap: 8,
+  },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginTop: 4,
   },
   sectionLabel: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11,
     color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    paddingHorizontal: 4,
-    marginTop: 4,
+    letterSpacing: 0.6,
   },
   sectionEditLink: {
     paddingVertical: 2,
@@ -979,150 +1105,118 @@ const styles = StyleSheet.create({
   },
   sectionEditLinkText: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 13,
+    fontSize: 12.5,
     color: TEAL,
   },
   groupedCard: {
     backgroundColor: CARD_BG,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
-
-  /* ─────────────────────────────
-     KEY-VALUE & NAVIGATION ROWS
-  ───────────────────────────── */
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    minHeight: 48,
-  },
-  rowLabel: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
-    color: MUTED,
-    flex: 1,
-  },
-  rowValue: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
-    color: INK,
-    textAlign: 'right',
-    flexShrink: 1,
-  },
-  rowValueBold: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 14,
-    color: INK,
-    textAlign: 'right',
-  },
-  bloodTypeText: {
-    color: INK,
-    fontFamily: 'LexendDeca-Bold',
-  },
-  allergyText: {
-    color: RED,
-    fontFamily: 'LexendDeca-Medium',
-  },
-  addressValue: {
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  mutedValue: {
-    color: MUTED,
-    fontFamily: 'LexendDeca-Regular',
-  },
-  rowDivider: {
-    height: 1,
-    backgroundColor: DIVIDER,
-    marginLeft: 16,
-  },
-
-  /* ─────────────────────────────
-     CONTACT ROW
-  ───────────────────────────── */
-  contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    minHeight: 52,
+    minHeight: 46,
   },
-  contactInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  contactName: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 14,
+  rowLabel: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
     color: INK,
-  },
-  callActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: '#F0F9F7',
-  },
-  callActionText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 12,
-    color: TEAL,
-  },
-
-  /* ─────────────────────────────
-     NAV ROWS & SWITCHES
-  ───────────────────────────── */
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    minHeight: 48,
-  },
-  navRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     flex: 1,
   },
-  navRowLabel: {
+  rowValue: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
+    fontSize: 13,
     color: INK,
+    textAlign: 'right',
+    flex: 1.2,
   },
-  navRowSub: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
+  rowValueBold: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 13,
+    color: INK,
+    textAlign: 'right',
+    flex: 1.2,
+  },
+  bloodTypeText: {
+    color: RED,
+    fontFamily: 'LexendDeca-Bold',
+  },
+  allergyText: {
+    color: RED,
+  },
+  mutedValue: {
     color: MUTED,
-    marginTop: 1,
   },
-  navRowRight: {
+  emergencyContactRight: {
+    flex: 1.4,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  emergencyRelationBadge: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 9,
+    color: TEAL,
+    backgroundColor: '#DDF5EE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    textTransform: 'uppercase',
+  },
+  callRowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
+    backgroundColor: '#EDFAF7',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    minHeight: 44,
   },
-  statusText: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
-    color: MUTED,
+  callRowIconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: TEAL,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  activeSharesText: {
+  callRowText: {
     fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 13,
     color: TEAL,
   },
-  versionText: {
-    fontFamily: 'LexendDeca-Regular',
+  openEmergencyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+    backgroundColor: '#FFFBFA',
+    minHeight: 46,
+  },
+  openEmergencyBtnText: {
+    flex: 1,
+    fontFamily: 'LexendDeca-SemiBold',
     fontSize: 13,
-    color: MUTED,
+    color: RED,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: DIVIDER,
+    marginLeft: 16,
   },
   switchRow: {
     flexDirection: 'row',
@@ -1130,39 +1224,55 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    minHeight: 48,
   },
-
-  /* ─────────────────────────────
-     DESTRUCTIVE ACTIONS & FOOTER
-  ───────────────────────────── */
-  signOutRow: {
+  switchLabelGroup: {
+    flex: 1,
+    gap: 2,
+    paddingRight: 10,
+  },
+  switchTitle: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+    color: INK,
+  },
+  switchSubtitle: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11,
+    color: MUTED,
+  },
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    minHeight: 48,
+    gap: 10,
+    minHeight: 46,
   },
-  signOutText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
-    color: RED,
-  },
-  deleteLink: {
+  actionIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionTitle: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+    color: INK,
+  },
+  versionContainer: {
+    alignItems: 'center',
     paddingVertical: 12,
   },
-  deleteLinkText: {
+  versionText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
-    color: RED,
-    opacity: 0.75,
+    fontSize: 11,
+    color: MUTED,
+    textAlign: 'center',
   },
-
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
 });

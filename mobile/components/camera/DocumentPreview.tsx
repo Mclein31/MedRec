@@ -5,18 +5,18 @@ import {
   Image,
   Pressable,
   StyleSheet,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
+import { useResponsive } from '../../hooks/useResponsive';
+import { Colors, Radii, ResponsiveLimits } from '../../constants/theme';
 
-const TEAL = '#159A83';
-const INK = '#12343B';
-const MUTED = '#64748B';
-const BORDER = '#E5F0EE';
-const CARD_BG = '#FFFFFF';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
+const BORDER = Colors.border;
+const CARD_BG = Colors.cardBg;
 const DARK_BG = '#0A1211';
 
 export interface DocumentPreviewProps {
@@ -32,7 +32,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   onRetake,
   onCancel,
 }) => {
-  const insets = useSafeAreaInsets();
+  const { insets, isTablet, screenPadding, scaleFont } = useResponsive();
 
   const handleConfirm = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -54,7 +54,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
       <StatusBar style="light" />
 
       {/* Top Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 8,
+            paddingLeft: Math.max(insets.left, screenPadding),
+            paddingRight: Math.max(insets.right, screenPadding),
+          },
+        ]}
+      >
         <Pressable
           onPress={handleCancel}
           style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
@@ -92,6 +101,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
       <View
         style={[
           styles.bottomSheet,
+          isTablet && styles.bottomSheetTablet,
           { paddingBottom: Math.max(insets.bottom, 16) + 12 },
         ]}
       >
@@ -103,8 +113,22 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
             <Text style={styles.legibilityBadgeText}>Quality Self-Check</Text>
           </View>
 
-          <Text style={styles.sheetTitle}>Is this document legible?</Text>
-          <Text style={styles.sheetSubtitle}>
+          <Text
+            style={[
+              styles.sheetTitle,
+              { fontSize: scaleFont(18, 16, 20) },
+            ]}
+            maxFontSizeMultiplier={1.35}
+          >
+            Is this document legible?
+          </Text>
+          <Text
+            style={[
+              styles.sheetSubtitle,
+              { fontSize: scaleFont(13, 12, 14) },
+            ]}
+            maxFontSizeMultiplier={1.35}
+          >
             Make sure text, dates, test values, and signatures are crisp and clearly readable.
           </Text>
         </View>
@@ -157,7 +181,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
     paddingBottom: 12,
     zIndex: 10,
   },
@@ -202,6 +225,13 @@ const styles = StyleSheet.create({
     elevation: 8,
     gap: 16,
   },
+  bottomSheetTablet: {
+    maxWidth: ResponsiveLimits.maxModalWidth,
+    alignSelf: 'center',
+    width: '100%',
+    borderRadius: 28,
+    marginBottom: 16,
+  },
   sheetHandle: {
     width: 40,
     height: 4,
@@ -231,12 +261,10 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 18,
     color: INK,
   },
   sheetSubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
     color: MUTED,
     lineHeight: 18,
   },
@@ -286,4 +314,5 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
 });
+
 export default DocumentPreview;

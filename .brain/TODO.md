@@ -5,7 +5,7 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-08-30
+last_updated: 2026-08-31
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
@@ -15,14 +15,20 @@ last_updated: 2026-08-30
 - [x] Implement complete Profile Tab (`(tabs)/profile.tsx`) with Inset Grouped layout, Emergency Medical ID, Demographics, and Data Export.
 - [x] Implement interactive Profile Photo upload (`expo-image-picker`) and PostgreSQL `avatar_url` persistence.
 - [x] Complete UI screen in `app/record/add.tsx` for capturing/uploading prescriptions and lab result images (Document Camera, 3:4 Viewfinder, Quality Review, and In-Form Attachment Card).
+- [x] Implement full backend and mobile attachment pipeline (`medical_records.attachment_url` in PostgreSQL schema, API endpoints, and display in `record/[id].tsx`).
+- [x] Implement app-wide responsive UI across compact phones, standard phones, and tablets with stepped typography and tablet 2-column bento grids.
 - [x] Implement functional app drawer/menu navigation (`SideMenuModal`) with text-only links and MedRec logo branding.
 - [x] Implement in-app notification center (`NotificationCenterModal`) and dynamic bell trigger with backend persistence and drag affordance.
 - [ ] Wire up OpenAI summarization service in `backend/src/services/aiService.js` to process record text.
 
 ## 🟡 Medium Priority
-- [ ] Implement camera QR scanning library (`expo-camera` or `expo-barcode-scanner`) in `app/(tabs)/scan.tsx`.
+- [x] Implement camera QR scanning library (`expo-camera`) in `app/(tabs)/scan.tsx` with clamped viewfinder and tablet sheet presentation.
+- [x] Fix profile partial upsert isolation to prevent demographic edits from overwriting medical ID baselines.
+- [x] Add physical metrics persistence (`height` and `weight`) in `user_profiles` schema and controllers.
+- [x] Optimize token revocation checks to remove per-request database write locks.
+- [x] Apply rate limiting to sensitive profile and sharing endpoints.
 - [ ] Add Biometric Authentication (FaceID / Fingerprint) enforcement via `expo-local-authentication` on app launch / resumption.
-- [x] Add unit and integration tests for Profile API endpoints (`backend/tests/profile.test.js`).
+- [x] Add unit and integration tests for Profile API endpoints (`backend/tests/profile.test.js`) and Record Attachments (`backend/tests/record.test.js`).
 - [ ] Add unit and integration tests for `shareController.js` token expiration boundaries.
 
 ## 🟢 Low Priority

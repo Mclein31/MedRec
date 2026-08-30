@@ -57,10 +57,11 @@ last_updated: 2026-08-28
 
 ## 🗄️ Database Schema (`backend/src/migrations/schema.sql`)
 1. `users`: Stores user credentials, hashed passwords (`bcryptjs`), and primary identity.
-2. `user_profiles`: 1:1 linked demographic and clinical baseline (DOB, sex, blood type, allergies, conditions, maintenance medications, emergency contact name/relation/phone, address, organ donor status).
-3. `medical_records`: Stores individual clinical records (title, category: `diagnosis`, `prescription`, `lab_result`, `consultation`, record date, attachments, notes, AI summary).
+2. `user_profiles`: 1:1 linked demographic and clinical baseline (DOB, sex, height, weight, blood type, allergies, conditions, maintenance medications, emergency contact name/relation/phone, phone, address, avatar_url, organ donor status).
+3. `medical_records`: Stores individual clinical records (title, category: `diagnosis`, `prescription`, `lab`, `consultation`, `medication`, `appointment`, `other`, record date, `attachment_url` for captured document images, notes, AI summary).
 4. `shared_access`: Stores cryptographically generated access tokens, associated `user_id`, expiration timestamps, and revocation flags.
 5. `revoked_tokens`: Stores revoked JWT `jti` identifiers with TTL for instant session invalidation on logout.
+6. `notifications`: Stores user notifications and audit logs with compound indexes on `(user_id, created_at DESC)` and `(user_id, read)`.
 
 ---
 

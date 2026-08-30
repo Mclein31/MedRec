@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, Pressable, StyleSheet, Image, StyleProp, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors, Spacing, Typography } from '../../constants/theme';
+import { Colors, Typography } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export interface ScreenHeaderProps {
   title: string;
@@ -12,6 +12,7 @@ export interface ScreenHeaderProps {
   unreadCount?: number;
   rightElement?: React.ReactNode;
   hideToolbar?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
@@ -22,8 +23,9 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   unreadCount = 0,
   rightElement,
   hideToolbar = false,
+  style,
 }) => {
-  const insets = useSafeAreaInsets();
+  const { screenPadding, insets, scaleFont } = useResponsive();
 
   const handleMenuPress = () => {
     Haptics.selectionAsync();
@@ -36,7 +38,17 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   };
 
   return (
-    <View style={[styles.headerContainer, { paddingTop: insets.top + 14 }]}>
+    <View
+      style={[
+        styles.headerContainer,
+        {
+          paddingTop: insets.top + 12,
+          paddingLeft: Math.max(insets.left, screenPadding),
+          paddingRight: Math.max(insets.right, screenPadding),
+        },
+        style,
+      ]}
+    >
       {!hideToolbar && (
         <View style={styles.topToolbar}>
           {onPressMenu ? (
@@ -78,25 +90,48 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
         </View>
       )}
 
-      <Text style={styles.titleText}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitleText}>{subtitle}</Text> : null}
+      <Text
+        style={[
+          styles.titleText,
+          { fontSize: scaleFont(26, 22, 30), lineHeight: scaleFont(32, 28, 36) },
+        ]}
+        numberOfLines={2}
+        maxFontSizeMultiplier={1.35}
+      >
+        {title}
+      </Text>
+      {subtitle ? (
+        <Text
+          style={[
+            styles.subtitleText,
+            { fontSize: scaleFont(12, 11, 13.5), lineHeight: scaleFont(17, 15, 18) },
+          ]}
+          numberOfLines={2}
+          maxFontSizeMultiplier={1.35}
+        >
+          {subtitle}
+        </Text>
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   headerContainer: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingBottom: Spacing.md,
+    paddingBottom: 12,
   },
   topToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   iconBtn: {
     padding: 2,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   btnPressed: {
     opacity: 0.75,
@@ -112,8 +147,8 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    right: -1,
-    top: -1,
+    right: 8,
+    top: 8,
     width: 9,
     height: 9,
     borderRadius: 5,
@@ -122,7 +157,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.bg,
   },
   titleText: {
-    ...Typography.display,
+    ...Typography.screenTitle,
     color: Colors.ink,
   },
   subtitleText: {
@@ -131,3 +166,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+export default ScreenHeader;

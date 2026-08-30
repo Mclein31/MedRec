@@ -1,10 +1,11 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-
-const API_BASE_URL = Platform.OS === 'web'
-  ? 'http://localhost:4000'
-  : 'http://McLnOnz.local:4000'; 
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (Platform.OS === 'android'
+    ? 'http://10.0.2.2:4000'
+    : 'http://localhost:4000');
 
 const TOKEN_KEY = 'authToken';
 
@@ -71,8 +72,14 @@ export const api = {
 
   getRecord: (id: string) => request(`/records/${id}`),
 
-  addRecord: (record: { type: string; title: string; description?: string; date: string }) =>
-    request('/records', { method: 'POST', body: record }),
+  addRecord: (record: {
+    type: string;
+    title: string;
+    description?: string;
+    date: string;
+    attachmentUrl?: string;
+    attachment_url?: string;
+  }) => request('/records', { method: 'POST', body: record }),
 
   deleteRecord: (id: string) => request(`/records/${id}`, { method: 'DELETE' }),
 
@@ -82,7 +89,6 @@ export const api = {
   listShares: () => request('/share'),
 
   revokeShare: (id: string) => request(`/share/${id}`, { method: 'DELETE' }),
-
 
   getSharedRecords: (shareToken: string) => request(`/share/${shareToken}`),
 

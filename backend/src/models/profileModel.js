@@ -10,6 +10,8 @@ async function getProfileByUserId(userId) {
       p.id AS profile_id,
       to_char(p.date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
       p.biological_sex,
+      p.height,
+      p.weight,
       p.blood_type,
       p.allergies,
       p.medical_conditions,
@@ -33,78 +35,100 @@ async function getProfileByUserId(userId) {
   return rows[0] || null;
 }
 
+const ALLOWED_PROFILE_COLUMNS = [
+  'date_of_birth',
+  'biological_sex',
+  'height',
+  'weight',
+  'blood_type',
+  'allergies',
+  'medical_conditions',
+  'medications_summary',
+  'emergency_contact_name',
+  'emergency_contact_relationship',
+  'emergency_contact_phone',
+  'phone',
+  'address',
+  'avatar_url',
+  'organ_donor',
+];
+
 async function upsertProfile(userId, data) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    if (data.name !== undefined && data.name !== null && data.name.trim() !== '') {
+    // 1. Update user name if explicitly provided
+    if (data.name !== undefined && data.name !== null && String(data.name).trim() !== '') {
       await client.query(
         `UPDATE users SET name = $1, updated_at = now() WHERE id = $2`,
-        [data.name.trim(), userId]
+        [String(data.name).trim(), userId]
       );
     }
 
-    const rawAvatar = data.avatar_url !== undefined ? data.avatar_url : data.avatarUrl;
+    // Normalize avatar_url alias if passed as avatarUrl
+    const payload = { ...data };
+    if (payload.avatarUrl !== undefined && payload.avatar_url === undefined) {
+      payload.avatar_url = payload.avatarUrl;
+    }
 
-    const query = `
-      INSERT INTO user_profiles (
-        user_id,
-        date_of_birth,
-        biological_sex,
-        blood_type,
-        allergies,
-        medical_conditions,
-        medications_summary,
-        emergency_contact_name,
-        emergency_contact_relationship,
-        emergency_contact_phone,
-        phone,
-        address,
-        avatar_url,
-        organ_donor,
-        updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now()
-      )
-      ON CONFLICT (user_id) DO UPDATE SET
-        date_of_birth = EXCLUDED.date_of_birth,
-        biological_sex = EXCLUDED.biological_sex,
-        blood_type = EXCLUDED.blood_type,
-        allergies = EXCLUDED.allergies,
-        medical_conditions = EXCLUDED.medical_conditions,
-        medications_summary = EXCLUDED.medications_summary,
-        emergency_contact_name = EXCLUDED.emergency_contact_name,
-        emergency_contact_relationship = EXCLUDED.emergency_contact_relationship,
-        emergency_contact_phone = EXCLUDED.emergency_contact_phone,
-        phone = EXCLUDED.phone,
-        address = EXCLUDED.address,
-        avatar_url = COALESCE(EXCLUDED.avatar_url, user_profiles.avatar_url),
-        organ_donor = EXCLUDED.organ_donor,
-        updated_at = now()
-      RETURNING *
-    `;
+    // 2. Check if a profile record already exists for this user
+    const existing = await client.query(
+      `SELECT id FROM user_profiles WHERE user_id = $1`,
+      [userId]
+    );
 
-    const values = [
-      userId,
-      data.date_of_birth || null,
-      data.biological_sex || null,
-      data.blood_type || null,
-      data.allergies !== undefined ? data.allergies : null,
-      data.medical_conditions !== undefined ? data.medical_conditions : null,
-      data.medications_summary !== undefined ? data.medications_summary : null,
-      data.emergency_contact_name !== undefined ? data.emergency_contact_name : null,
-      data.emergency_contact_relationship !== undefined ? data.emergency_contact_relationship : null,
-      data.emergency_contact_phone !== undefined ? data.emergency_contact_phone : null,
-      data.phone !== undefined ? data.phone : null,
-      data.address !== undefined ? data.address : null,
-      rawAvatar !== undefined ? rawAvatar : null,
-      data.organ_donor !== undefined ? Boolean(data.organ_donor) : false,
-    ];
+    if (existing.rows.length === 0) {
+      // Create new profile record with only the provided columns
+      const insertCols = ['user_id'];
+      const insertPlaceholders = ['$1'];
+      const insertValues = [userId];
+      let colIdx = 2;
 
-    await client.query(query, values);
+      for (const col of ALLOWED_PROFILE_COLUMNS) {
+        if (col in payload && payload[col] !== undefined) {
+          insertCols.push(col);
+          insertPlaceholders.push(`$${colIdx++}`);
+          insertValues.push(payload[col]);
+        }
+      }
+
+      insertCols.push('updated_at');
+      insertPlaceholders.push('now()');
+
+      const insertQuery = `
+        INSERT INTO user_profiles (${insertCols.join(', ')})
+        VALUES (${insertPlaceholders.join(', ')})
+        RETURNING *
+      `;
+      await client.query(insertQuery, insertValues);
+    } else {
+      // Partial update: dynamically update ONLY fields explicitly present in payload
+      const setClauses = [];
+      const updateValues = [];
+      let colIdx = 1;
+
+      for (const col of ALLOWED_PROFILE_COLUMNS) {
+        if (col in payload && payload[col] !== undefined) {
+          setClauses.push(`${col} = $${colIdx++}`);
+          updateValues.push(payload[col]);
+        }
+      }
+
+      if (setClauses.length > 0) {
+        setClauses.push('updated_at = now()');
+        updateValues.push(userId);
+        const updateQuery = `
+          UPDATE user_profiles
+          SET ${setClauses.join(', ')}
+          WHERE user_id = $${colIdx}
+          RETURNING *
+        `;
+        await client.query(updateQuery, updateValues);
+      }
+    }
+
     await client.query('COMMIT');
-
     return await getProfileByUserId(userId);
   } catch (err) {
     await client.query('ROLLBACK');

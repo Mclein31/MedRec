@@ -14,9 +14,8 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 const app = express();
 
 const allowedOrigins = [
-  'http://localhost:8081',      
-  'http://localhost:19006',     
-  // add  real deployed web/app domain
+  'http://localhost:8081',
+  'http://localhost:19006',
 ];
 
 app.use(helmet());
@@ -33,7 +32,6 @@ app.use(express.json({ limit: '10mb' }));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 8,                   // 8 attempts per window per IP
@@ -42,10 +40,38 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const passwordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many password update attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const shareCreateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: 'Too many share sessions created. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const shareAccessLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: { error: 'Too many access attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 if (process.env.NODE_ENV !== 'test') {
   app.use('/auth/login', authLimiter);
   app.use('/auth/register', authLimiter);
+  app.use('/profile/password', passwordLimiter);
+  app.post('/share', shareCreateLimiter);
+  app.get('/share/:token', shareAccessLimiter);
 }
+
 app.use('/auth', authRoutes);
 app.use('/records', recordRoutes);
 app.use('/share', shareRoutes);

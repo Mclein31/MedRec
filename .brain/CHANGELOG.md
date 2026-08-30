@@ -5,10 +5,20 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-08-30
+last_updated: 2026-08-31
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [0.9.0] — App-Wide Responsive Architecture & Clinical Data Integrity Pass
+- **Partial Profile Upsert Isolation**: Re-architected `profileModel.js` and `profileController.js` to dynamically update only explicitly provided fields, preventing demographic updates from overwriting emergency medical ID baselines (blood type, allergies, emergency contacts) and vice versa.
+- **Physical Metrics Support**: Added `height VARCHAR(20)` and `weight VARCHAR(20)` to `user_profiles` schema, controllers, and profile edit forms with persistent storage and display.
+- **Medical Record Attachments**: Added `attachment_url TEXT` to `medical_records` schema, accepted `attachmentUrl` in record creation endpoints, and rendered attached document / scanned photos in Record Details (`record/[id].tsx`).
+- **Dynamic API Base URL Resolution**: Replaced hardcoded local hostname with `process.env.EXPO_PUBLIC_API_URL` and cross-platform fallback (`10.0.2.2:4000` for Android, `localhost:4000` for iOS/Web).
+- **Auth Revocation Performance**: Removed per-request write locks (`DELETE`) from `tokenModel.isRevoked` to eliminate database contention on authenticated read requests.
+- **Enhanced Rate Limiting**: Added rate limiting middleware to sensitive endpoints (`PUT /profile/password`, `POST /share`, `GET /share/:token`).
+- **Development Postgres SSL**: Configured SSL in `db.js` to automatically disable in local/test environments unless explicitly set.
+- **App-Wide Responsive UI**: Comprehensive adaptive layout across compact phones, standard phones, and tablets with stepped typography bounds, 2-column bento grids on tablets, floating pill tab bar, and centered modal sheets.
 
 ## [0.8.7] — Continuous Scrollable Profile Architecture
 - **Continuous Scroll Surface**: Refactored the Profile screen (`mobile/app/(tabs)/profile.tsx`) so that the "Profile" title and subtitle scroll away naturally with the profile content inside a single continuous `<ScrollView>`, significantly increasing usable vertical viewport height.

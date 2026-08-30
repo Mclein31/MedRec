@@ -11,7 +11,6 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
@@ -22,7 +21,8 @@ import { useNotifications } from '../../context/NotificationContext';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { DragHandle } from '../../components/ui/DragHandle';
 import { Button } from '../../components/ui/Button';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   consultation: 'people-outline',
@@ -63,7 +63,16 @@ export default function ScanScreen() {
   const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   const { unreadCount, refreshNotifications } = useNotifications();
-  const insets = useSafeAreaInsets();
+  const {
+    isTablet,
+    isLandscape,
+    width,
+    height,
+    screenPadding,
+    insets,
+    scaleFont,
+    tabBarClearance,
+  } = useResponsive();
 
   const handleScanned = async ({ data }: BarcodeScanningResult) => {
     if (scanned) return;
@@ -90,6 +99,12 @@ export default function ScanScreen() {
     setSelectedRecord(null);
   };
 
+  const viewfinderSize = Math.round(
+    isLandscape
+      ? Math.min(height * 0.5, 240)
+      : Math.min(width * 0.68, height * 0.42, 280)
+  );
+
   if (!permission) return <View style={styles.root} />;
 
   if (!permission.granted) {
@@ -106,7 +121,7 @@ export default function ScanScreen() {
           }}
           unreadCount={unreadCount}
         />
-        <View style={styles.permissionContainer}>
+        <View style={[styles.permissionContainer, { paddingHorizontal: screenPadding }]}>
           <View style={styles.permissionIconBox}>
             <Ionicons name="camera-outline" size={36} color={Colors.teal} />
           </View>
@@ -150,7 +165,13 @@ export default function ScanScreen() {
         />
 
         {error && (
-          <View style={styles.errorCard}>
+          <View
+            style={[
+              styles.errorCard,
+              { marginHorizontal: screenPadding },
+              isTablet && { maxWidth: ResponsiveLimits.maxContentWidth, alignSelf: 'center', width: '100%' },
+            ]}
+          >
             <Ionicons name="alert-circle-outline" size={20} color={Colors.red} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
@@ -161,7 +182,11 @@ export default function ScanScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
+            {
+              paddingHorizontal: screenPadding,
+              paddingBottom: Math.max(insets.bottom, 20) + tabBarClearance,
+            },
+            isTablet && { maxWidth: ResponsiveLimits.maxContentWidth, alignSelf: 'center', width: '100%' },
           ]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
@@ -189,7 +214,14 @@ export default function ScanScreen() {
                   />
                 </View>
                 <View style={styles.recordContent}>
-                  <Text style={styles.recordTitle} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.recordTitle,
+                      { fontSize: scaleFont(14.5, 13.5, 16) },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.35}
+                  >
                     {item.title}
                   </Text>
                   <View style={styles.recordMetaRow}>
@@ -210,7 +242,10 @@ export default function ScanScreen() {
         <View
           style={[
             styles.bottomBar,
-            { paddingBottom: Math.max(insets.bottom, 12) + 70 },
+            {
+              paddingBottom: Math.max(insets.bottom, 12) + (isTablet ? 90 : 70),
+              paddingHorizontal: screenPadding,
+            },
           ]}
         >
           <Button
@@ -225,73 +260,103 @@ export default function ScanScreen() {
         <Modal
           visible={selectedRecord !== null}
           animationType="slide"
-          presentationStyle="pageSheet"
+          presentationStyle={isTablet ? 'overFullScreen' : 'pageSheet'}
+          transparent={isTablet}
           onRequestClose={() => setSelectedRecord(null)}
         >
           {selectedRecord && (
-            <View style={styles.modalRoot}>
-              <View style={styles.modalHeader}>
-                <DragHandle />
-                <View style={styles.modalHeaderRow}>
-                  <Text style={styles.modalHeaderTitle}>Record Details</Text>
-                  <Pressable
-                    onPress={() => setSelectedRecord(null)}
-                    hitSlop={10}
-                    style={styles.modalCloseBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close record modal"
-                  >
-                    <Ionicons name="close" size={20} color={Colors.ink} />
-                  </Pressable>
-                </View>
-              </View>
-
-              <ScrollView
-                contentContainerStyle={[
-                  styles.modalScroll,
-                  { paddingBottom: Math.max(insets.bottom, 20) + 24 },
+            <View style={[styles.modalRoot, isTablet && styles.modalRootTablet]}>
+              {isTablet && (
+                <Pressable
+                  style={StyleSheet.absoluteFillObject}
+                  onPress={() => setSelectedRecord(null)}
+                />
+              )}
+              <View
+                style={[
+                  styles.modalContentWrapper,
+                  isTablet && styles.modalContentWrapperTablet,
                 ]}
-                showsVerticalScrollIndicator={false}
               >
-                <View style={styles.modalHeroCard}>
-                  <View style={styles.modalIconBox}>
-                    <Ionicons
-                      name={TYPE_ICONS[selectedRecord.type] || 'document-outline'}
-                      size={28}
-                      color={Colors.teal}
-                    />
+                <View style={styles.modalHeader}>
+                  <DragHandle />
+                  <View style={styles.modalHeaderRow}>
+                    <Text style={styles.modalHeaderTitle}>Record Details</Text>
+                    <Pressable
+                      onPress={() => setSelectedRecord(null)}
+                      hitSlop={10}
+                      style={styles.modalCloseBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close record modal"
+                    >
+                      <Ionicons name="close" size={20} color={Colors.ink} />
+                    </Pressable>
                   </View>
-                  <Text style={styles.modalTitle}>{selectedRecord.title}</Text>
-                  <View style={styles.modalMetaChips}>
-                    <View style={styles.metaChip}>
-                      <Ionicons name="pricetag-outline" size={12} color={Colors.teal} />
-                      <Text style={styles.metaChipText}>
-                        {selectedRecord.type.charAt(0).toUpperCase() + selectedRecord.type.slice(1)}
+                </View>
+
+                <ScrollView
+                  contentContainerStyle={[
+                    styles.modalScroll,
+                    { paddingBottom: Math.max(insets.bottom, 20) + 24 },
+                  ]}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.modalHeroCard}>
+                    <View style={styles.modalIconBox}>
+                      <Ionicons
+                        name={TYPE_ICONS[selectedRecord.type] || 'document-outline'}
+                        size={28}
+                        color={Colors.teal}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.modalTitle,
+                        { fontSize: scaleFont(18, 16, 21) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      {selectedRecord.title}
+                    </Text>
+                    <View style={styles.modalMetaChips}>
+                      <View style={styles.metaChip}>
+                        <Ionicons name="pricetag-outline" size={12} color={Colors.teal} />
+                        <Text style={styles.metaChipText}>
+                          {selectedRecord.type.charAt(0).toUpperCase() + selectedRecord.type.slice(1)}
+                        </Text>
+                      </View>
+                      <View style={styles.metaChip}>
+                        <Ionicons name="calendar-outline" size={12} color={Colors.teal} />
+                        <Text style={styles.metaChipText}>{formatDate(selectedRecord.date)}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Description / Clinical Notes */}
+                  {selectedRecord.description ? (
+                    <View style={styles.notesCard}>
+                      <Text style={styles.notesSectionLabel}>CLINICAL NOTES</Text>
+                      <Text
+                        style={[
+                          styles.notesText,
+                          { fontSize: scaleFont(13.5, 12.5, 15) },
+                        ]}
+                        maxFontSizeMultiplier={1.35}
+                      >
+                        {selectedRecord.description}
                       </Text>
                     </View>
-                    <View style={styles.metaChip}>
-                      <Ionicons name="calendar-outline" size={12} color={Colors.teal} />
-                      <Text style={styles.metaChipText}>{formatDate(selectedRecord.date)}</Text>
-                    </View>
-                  </View>
-                </View>
+                  ) : null}
 
-                {/* Description / Clinical Notes */}
-                {selectedRecord.description ? (
-                  <View style={styles.notesCard}>
-                    <Text style={styles.notesSectionLabel}>CLINICAL NOTES</Text>
-                    <Text style={styles.notesText}>{selectedRecord.description}</Text>
+                  {/* Read Only Notice */}
+                  <View style={styles.readOnlyNotice}>
+                    <Ionicons name="lock-closed-outline" size={16} color={Colors.teal} />
+                    <Text style={styles.readOnlyText} maxFontSizeMultiplier={1.35}>
+                      This record is shared read-only by the patient. It cannot be edited or permanently saved.
+                    </Text>
                   </View>
-                ) : null}
-
-                {/* Read Only Notice */}
-                <View style={styles.readOnlyNotice}>
-                  <Ionicons name="lock-closed-outline" size={16} color={Colors.teal} />
-                  <Text style={styles.readOnlyText}>
-                    This record is shared read-only by the patient. It cannot be edited or permanently saved.
-                  </Text>
-                </View>
-              </ScrollView>
+                </ScrollView>
+              </View>
             </View>
           )}
         </Modal>
@@ -319,7 +384,16 @@ export default function ScanScreen() {
       />
 
       {/* Top Floating Controls */}
-      <View style={[styles.cameraTopBar, { paddingTop: insets.top + 10 }]}>
+      <View
+        style={[
+          styles.cameraTopBar,
+          {
+            paddingTop: insets.top + 10,
+            paddingLeft: Math.max(insets.left, screenPadding),
+            paddingRight: Math.max(insets.right, screenPadding),
+          },
+        ]}
+      >
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
@@ -355,14 +429,28 @@ export default function ScanScreen() {
 
       {/* Scanner Target Frame */}
       <View style={styles.scanOverlay}>
-        <View style={styles.scanHeaderBox}>
-          <Text style={styles.scanTitle}>Scan Patient QR Code</Text>
-          <Text style={styles.scanSub}>
+        <View style={[styles.scanHeaderBox, { paddingHorizontal: screenPadding }]}>
+          <Text
+            style={[
+              styles.scanTitle,
+              { fontSize: scaleFont(19, 17, 22) },
+            ]}
+            maxFontSizeMultiplier={1.35}
+          >
+            Scan Patient QR Code
+          </Text>
+          <Text
+            style={[
+              styles.scanSub,
+              { fontSize: scaleFont(12.5, 11, 14) },
+            ]}
+            maxFontSizeMultiplier={1.35}
+          >
             Align the doctor access QR code inside the frame
           </Text>
         </View>
 
-        <View style={styles.viewfinder}>
+        <View style={[styles.viewfinder, { width: viewfinderSize, height: viewfinderSize }]}>
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
@@ -397,7 +485,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.screenPadding,
     gap: 12,
   },
   permissionIconBox: {
@@ -432,9 +519,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.redBorder,
     borderRadius: Radii.card,
-    padding: Spacing.cardPadding,
-    marginHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.md,
+    padding: 16,
+    marginBottom: 12,
   },
   errorText: {
     ...Typography.body,
@@ -442,7 +528,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    paddingHorizontal: Spacing.screenPadding,
     gap: 10,
   },
   recordCard: {
@@ -450,7 +535,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: Spacing.cardPadding,
+    padding: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
@@ -514,7 +599,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: Spacing.screenPadding,
     alignItems: 'center',
   },
   scanAnotherBtn: {
@@ -532,13 +616,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
+  modalRootTablet: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContentWrapper: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+  modalContentWrapperTablet: {
+    flex: 0,
+    width: '100%',
+    maxWidth: ResponsiveLimits.maxModalWidth,
+    maxHeight: '85%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
   modalHeader: {
     backgroundColor: Colors.cardBg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     paddingTop: 10,
     paddingBottom: 14,
-    paddingHorizontal: Spacing.screenPadding,
+    paddingHorizontal: 20,
   },
   modalHeaderRow: {
     flexDirection: 'row',
@@ -558,7 +667,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalScroll: {
-    padding: Spacing.screenPadding,
+    padding: 20,
     gap: 16,
   },
   modalHeroCard: {
@@ -608,7 +717,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: Spacing.cardPadding,
+    padding: 16,
     gap: 8,
   },
   notesSectionLabel: {
@@ -645,7 +754,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.screenPadding,
     zIndex: 10,
   },
   cameraIconBtn: {
@@ -680,11 +788,9 @@ const styles = StyleSheet.create({
   scanHeaderBox: {
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: Spacing.screenPadding,
   },
   scanTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 19,
     color: '#FFFFFF',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
@@ -692,7 +798,6 @@ const styles = StyleSheet.create({
   },
   scanSub: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12.5,
     color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
@@ -700,8 +805,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   viewfinder: {
-    width: 240,
-    height: 240,
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',

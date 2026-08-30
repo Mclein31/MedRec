@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radii, Typography } from '../../constants/theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface ButtonProps {
   label: string;
@@ -36,6 +37,8 @@ export const Button: React.FC<ButtonProps> = ({
   leftIcon,
   rightIcon,
 }) => {
+  const { buttonHeight, scaleFont } = useResponsive();
+
   const handlePress = () => {
     if (disabled || loading) return;
     if (variant === 'destructive') {
@@ -95,12 +98,15 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const dynamicHeight = size === 'small' ? 38 : buttonHeight;
+
   return (
     <Pressable
       onPress={handlePress}
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.baseButton,
+        { height: dynamicHeight, minHeight: 44 },
         getContainerStyle(),
         disabled && styles.disabledBtn,
         pressed && styles.pressed,
@@ -115,7 +121,16 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <>
           {leftIcon}
-          <Text style={[getTextStyle(), textStyle]}>{label}</Text>
+          <Text
+            style={[
+              getTextStyle(),
+              { fontSize: size === 'small' ? scaleFont(12, 11, 13) : scaleFont(14, 13, 15.5) },
+              textStyle,
+            ]}
+            maxFontSizeMultiplier={1.35}
+          >
+            {label}
+          </Text>
           {rightIcon}
         </>
       )}
@@ -125,7 +140,6 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   baseButton: {
-    height: 48,
     borderRadius: Radii.button,
     flexDirection: 'row',
     alignItems: 'center',
@@ -134,7 +148,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   smallBtn: {
-    height: 36,
     paddingHorizontal: 12,
     borderRadius: Radii.md,
   },
@@ -188,3 +201,5 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
   },
 });
+
+export default Button;

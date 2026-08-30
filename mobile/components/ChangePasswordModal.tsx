@@ -13,10 +13,10 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../lib/api';
 import { DragHandle } from './ui/DragHandle';
-import { Colors, Spacing, Radii, Typography } from '../constants/theme';
+import { Colors, Radii, ResponsiveLimits } from '../constants/theme';
+import { useResponsive } from '../hooks/useResponsive';
 
 const TEAL = Colors.teal;
 const INK = Colors.ink;
@@ -32,7 +32,7 @@ type Props = {
 };
 
 export default function ChangePasswordModal({ visible, onClose }: Props) {
-  const insets = useSafeAreaInsets();
+  const { isTablet, insets, scaleFont } = useResponsive();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -90,126 +90,207 @@ export default function ChangePasswordModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        {/* Header with integrated drag handle */}
-        <View style={styles.header}>
-          <DragHandle />
-
-          <View style={styles.headerContentRow}>
-            <Pressable onPress={handleClose} hitSlop={8} style={styles.cancelBtn}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </Pressable>
-            <Text style={styles.headerTitle}>Change Password</Text>
-            <Pressable
-              onPress={handleSave}
-              disabled={saving}
-              hitSlop={8}
-              style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color={TEAL} />
-              ) : (
-                <Text style={styles.saveBtnText}>Update</Text>
-              )}
-            </Pressable>
-          </View>
-        </View>
-
-        <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
-          keyboardShouldPersistTaps="handled"
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle={isTablet ? 'overFullScreen' : 'pageSheet'}
+      transparent={isTablet}
+      onRequestClose={handleClose}
+    >
+      <View style={[styles.modalRoot, isTablet && styles.modalRootTablet]}>
+        {isTablet && (
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={handleClose} />
+        )}
+        <KeyboardAvoidingView
+          style={[styles.container, isTablet && styles.containerTablet]}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={styles.card}>
-            <Text style={styles.instructions}>
-              Enter your current password and create a new secure password with at least 8 characters, one number, and one uppercase letter.
-            </Text>
+          {/* Header with integrated drag handle */}
+          <View style={styles.header}>
+            <DragHandle />
 
-            {/* Current Password */}
-            <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Current Password</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  value={currentPassword}
-                  onChangeText={setCurrentPassword}
-                  placeholder="Enter current password"
-                  placeholderTextColor={MUTED}
-                  style={[styles.input, !currentPassword && styles.placeholderInput]}
-                  secureTextEntry={!showCurrent}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <Pressable onPress={() => setShowCurrent(!showCurrent)} hitSlop={8}>
-                  <Ionicons
-                    name={showCurrent ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={MUTED}
-                  />
-                </Pressable>
-              </View>
-            </View>
-
-            {/* New Password */}
-            <View style={styles.fieldBlock}>
-              <Text style={styles.label}>New Password</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  placeholder="Enter new password"
-                  placeholderTextColor={MUTED}
-                  style={[styles.input, !newPassword && styles.placeholderInput]}
-                  secureTextEntry={!showNew}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <Pressable onPress={() => setShowNew(!showNew)} hitSlop={8}>
-                  <Ionicons
-                    name={showNew ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={MUTED}
-                  />
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Confirm New Password */}
-            <View style={styles.fieldBlock}>
-              <Text style={styles.label}>Confirm New Password</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Re-enter new password"
-                  placeholderTextColor={MUTED}
-                  style={[styles.input, !confirmPassword && styles.placeholderInput]}
-                  secureTextEntry={!showNew}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <Pressable onPress={() => setShowNew(!showNew)} hitSlop={8}>
-                  <Ionicons
-                    name={showNew ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={MUTED}
-                  />
-                </Pressable>
-              </View>
+            <View style={styles.headerContentRow}>
+              <Pressable onPress={handleClose} hitSlop={8} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+              <Text
+                style={[
+                  styles.headerTitle,
+                  { fontSize: scaleFont(16, 14.5, 18) },
+                ]}
+                maxFontSizeMultiplier={1.35}
+              >
+                Change Password
+              </Text>
+              <Pressable
+                onPress={handleSave}
+                disabled={saving}
+                hitSlop={8}
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color={TEAL} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Update</Text>
+                )}
+              </Pressable>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+
+          <ScrollView
+            contentContainerStyle={[
+              styles.content,
+              { paddingBottom: Math.max(insets.bottom, 20) + 32 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.card}>
+              <Text style={styles.instructions} maxFontSizeMultiplier={1.35}>
+                Enter your current password and create a new secure password with at least 8 characters, one number, and one uppercase letter.
+              </Text>
+
+              {/* Current Password */}
+              <View style={styles.fieldBlock}>
+                <Text style={styles.label}>Current Password</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    value={currentPassword}
+                    onChangeText={setCurrentPassword}
+                    placeholder="Enter current password"
+                    placeholderTextColor={MUTED}
+                    style={[
+                      styles.input,
+                      { fontSize: scaleFont(14, 13, 15) },
+                      !currentPassword && styles.placeholderInput,
+                    ]}
+                    secureTextEntry={!showCurrent}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    maxFontSizeMultiplier={1.35}
+                  />
+                  <Pressable
+                    onPress={() => setShowCurrent(!showCurrent)}
+                    hitSlop={10}
+                    style={styles.eyeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={showCurrent ? 'Hide password' : 'Show password'}
+                  >
+                    <Ionicons
+                      name={showCurrent ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={MUTED}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* New Password */}
+              <View style={styles.fieldBlock}>
+                <Text style={styles.label}>New Password</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    placeholder="Enter new password"
+                    placeholderTextColor={MUTED}
+                    style={[
+                      styles.input,
+                      { fontSize: scaleFont(14, 13, 15) },
+                      !newPassword && styles.placeholderInput,
+                    ]}
+                    secureTextEntry={!showNew}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    maxFontSizeMultiplier={1.35}
+                  />
+                  <Pressable
+                    onPress={() => setShowNew(!showNew)}
+                    hitSlop={10}
+                    style={styles.eyeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={showNew ? 'Hide password' : 'Show password'}
+                  >
+                    <Ionicons
+                      name={showNew ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={MUTED}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Confirm New Password */}
+              <View style={styles.fieldBlock}>
+                <Text style={styles.label}>Confirm New Password</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder="Re-enter new password"
+                    placeholderTextColor={MUTED}
+                    style={[
+                      styles.input,
+                      { fontSize: scaleFont(14, 13, 15) },
+                      !confirmPassword && styles.placeholderInput,
+                    ]}
+                    secureTextEntry={!showNew}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    maxFontSizeMultiplier={1.35}
+                  />
+                  <Pressable
+                    onPress={() => setShowNew(!showNew)}
+                    hitSlop={10}
+                    style={styles.eyeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={showNew ? 'Hide password' : 'Show password'}
+                  >
+                    <Ionicons
+                      name={showNew ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={MUTED}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+  modalRootTablet: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   container: {
     flex: 1,
     backgroundColor: BG,
+  },
+  containerTablet: {
+    flex: 0,
+    width: '100%',
+    maxWidth: ResponsiveLimits.maxFormWidth,
+    maxHeight: '85%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   header: {
     backgroundColor: CARD_BG,
@@ -219,14 +300,6 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     paddingHorizontal: 20,
   },
-  dragHandle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1D5DB',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
   headerContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -234,12 +307,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 16,
     color: INK,
   },
   cancelBtn: {
     paddingVertical: 6,
     paddingHorizontal: 8,
+    minHeight: 36,
+    justifyContent: 'center',
   },
   cancelBtnText: {
     fontFamily: 'LexendDeca-Regular',
@@ -251,6 +325,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     backgroundColor: GREEN_LIGHT,
+    minHeight: 36,
+    justifyContent: 'center',
   },
   saveBtnDisabled: {
     opacity: 0.5,
@@ -265,7 +341,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: CARD_BG,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 18,
@@ -293,16 +369,22 @@ const styles = StyleSheet.create({
     borderColor: '#D9E7E4',
     borderRadius: 12,
     paddingHorizontal: 14,
-    height: 48,
+    height: 50,
   },
   input: {
     flex: 1,
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
     color: INK,
     padding: 0,
   },
   placeholderInput: {
     fontSize: 12.5,
+  },
+  eyeBtn: {
+    padding: 6,
+    minWidth: 36,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

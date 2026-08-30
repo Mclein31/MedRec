@@ -3,7 +3,7 @@ const notificationModel = require('../models/notificationModel');
 
 async function addRecord(req, res, next) {
   try {
-    const { type, title, description, date } = req.body;
+    const { type, title, description, date, attachmentUrl, attachment_url } = req.body;
 
     if (!type || !title || !date) {
       return res.status(400).json({ error: 'type, title, and date are required' });
@@ -17,9 +17,10 @@ async function addRecord(req, res, next) {
     const record = await recordModel.createRecord({
       userId: req.user.id,
       type,
-      title,
-      description: description || null,
+      title: title.trim(),
+      description: description ? description.trim() : null,
       date,
+      attachmentUrl: attachment_url !== undefined ? attachment_url : (attachmentUrl || null),
     });
 
     // Auto-create notification for new record activity
