@@ -10,6 +10,11 @@ last_updated: 2026-08-31
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.9.1] — Automated Startup Database Migration Guard & Schema Synchronization
+- **Startup Migration Execution**: Integrated programmatic `runMigrations()` in `server.js` to automatically verify database catalog alignment and execute non-destructive schema migrations upon every service boot.
+- **Idempotent Column Alterations**: Added explicit `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` clauses in `schema.sql` for all recently evolved entities: `medical_records.attachment_url`, `user_profiles.avatar_url`, `user_profiles.height`, `user_profiles.weight`, `user_profiles.organ_donor`, `shared_access.allowed_types`, and `shared_access.record_ids`.
+- **Eliminated Undefined Column Errors**: Resolved runtime PostgreSQL 42703 exceptions (`column "attachment_url" of relation "medical_records" does not exist`) by executing live migrations across development and production PostgreSQL instances.
+
 ## [0.9.0] — App-Wide Responsive Architecture & Clinical Data Integrity Pass
 - **Partial Profile Upsert Isolation**: Re-architected `profileModel.js` and `profileController.js` to dynamically update only explicitly provided fields, preventing demographic updates from overwriting emergency medical ID baselines (blood type, allergies, emergency contacts) and vice versa.
 - **Physical Metrics Support**: Added `height VARCHAR(20)` and `weight VARCHAR(20)` to `user_profiles` schema, controllers, and profile edit forms with persistent storage and display.

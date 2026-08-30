@@ -12,6 +12,24 @@ last_updated: 2026-08-31
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-31 — Automated Startup Database Migration Guard & Schema Drift Elimination
+
+### Decision
+Integrate an automated, non-destructive schema migration runner into the server startup sequence (`backend/src/server.js`) using exported `runMigrations()` from `backend/src/migrations/runMigration.js`, and maintain comprehensive, idempotent `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` definitions for all evolved database columns in `schema.sql`.
+
+### Reason
+- **Preventing Undefined Column Runtime Errors (42703)**: PostgreSQL's `CREATE TABLE IF NOT EXISTS` only runs when a table does not exist. Adding column definitions to `CREATE TABLE` statements fails to alter existing development, staging, or production databases.
+- **Zero Schema Drift on Boot**: Executing migrations programmatically prior to `app.listen(PORT)` guarantees that whenever the server starts (via `npm run dev`, container startup, or cloud deployment), the database catalog is guaranteed to match the application code without requiring manual CLI migration execution.
+
+### Alternatives
+- **Manual Migration CLI Only**: Highly error-prone during multi-branch development and causes silent runtime 500 errors when developers switch branches without remembering to execute `npm run migrate`.
+- **Destructive Database Resets**: Unacceptable for production or persistent developer environments containing valid test patients and clinical histories.
+
+### Consequences
+Zero schema drift between backend code and database instances, automatic resilience upon service startup, and guaranteed backwards-compatible schema evolutions.
+
+---
+
 ## 2026-08-31 — Partial Profile Upsert Isolation & Physical Metric Persistence
 
 ### Decision
