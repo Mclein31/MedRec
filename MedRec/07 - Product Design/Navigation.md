@@ -54,6 +54,15 @@ A lightweight, left-slide animated overlay providing fast access to operational 
 
 ---
 
+### 3. Top-Right Notification Bell & In-App Notification Center (`NotificationCenterModal`)
+An authenticated in-app notification center triggered by the toolbar bell on Home and Share screens:
+- **Dynamic Bell Indicator**: Visual teal dot (`notificationDot`) displayed only when `unreadCount > 0`.
+- **Slide-Up Sheet Presentation (`pageSheet`)**: Features a centered neutral grey drag handle (`#D1D5DB`, `40×4px`, `borderRadius: 2`) at the top as an intuitive visual affordance for downward swipe-to-dismiss.
+- **Header Actions**: Live unread count summary, 1-tap "Mark all as read" button (`#159A83`), and close `(X)` button.
+- **Filtering & Audit**: Segmented filter tabs (`All` vs `Unread`) and categorized notification cards with 1-tap deep links to records (`/record/[id]`), active sharing (`/(tabs)/share`), emergency profile (`/(tabs)/profile`), or AI summarization.
+
+---
+
 ## 🗂️ Navigation Hierarchy (Stack Models)
 
 ```

@@ -30,7 +30,7 @@ const tokenStorage = {
 };
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
+  method?: 'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH';
   body?: unknown;
 };
 
@@ -103,6 +103,17 @@ export const api = {
     request('/profile/password', { method: 'PUT', body: data }),
 
   deleteAccount: () => request('/profile', { method: 'DELETE' }),
+
+  getNotifications: () => request('/notifications'),
+
+  markNotificationAsRead: (id: string) =>
+    request(`/notifications/${id}/read`, { method: 'PATCH' }),
+
+  markAllNotificationsAsRead: () =>
+    request('/notifications/read-all', { method: 'PATCH' }),
+
+  deleteNotification: (id: string) =>
+    request(`/notifications/${id}`, { method: 'DELETE' }),
 };
 
 export async function saveToken(token: string) {

@@ -7,6 +7,8 @@ import { api } from '../../lib/api';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
+import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
+import { useNotifications } from '../../context/NotificationContext';
 
 const TEAL = '#159A83';
 const BLUE = '#1976D2';
@@ -35,6 +37,8 @@ export default function ShareScreen() {
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
+  const { unreadCount, refreshNotifications } = useNotifications();
   const insets = useSafeAreaInsets();
 
   const loadShares = async () => {
@@ -49,11 +53,12 @@ export default function ShareScreen() {
   useFocusEffect(
     useCallback(() => {
       loadShares();
+      refreshNotifications();
       if (params.pendingToken) {
         setActiveToken(params.pendingToken);
         setActiveExpiry(params.pendingExpiry ?? null);
       }
-    }, [params.pendingToken, params.pendingExpiry])
+    }, [params.pendingToken, params.pendingExpiry, refreshNotifications])
   );
 
   const handleCreate = async () => {
@@ -202,10 +207,18 @@ export default function ShareScreen() {
               >
                 <Image source={require('../../assets/icons/burger-menu.png')} style={styles.headerAsset} />
               </Pressable>
-              <View>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setNotificationsVisible(true);
+                }}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={`Notifications, ${unreadCount} unread`}
+              >
                 <Image source={require('../../assets/icons/notification-bell.png')} style={styles.headerAsset} />
-                <View style={styles.notificationDot} />
-              </View>
+                {unreadCount > 0 && <View style={styles.notificationDot} />}
+              </Pressable>
             </View>
             <Text style={styles.title}>Share Records</Text>
             <Text style={styles.subtitle}>Share your health records in a limited time access</Text>
@@ -237,6 +250,12 @@ export default function ShareScreen() {
 
       {/* Side Menu Drawer */}
       <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
+
+      {/* Notification Center Modal */}
+      <NotificationCenterModal
+        visible={notificationsVisible}
+        onClose={() => setNotificationsVisible(false)}
+      />
     </View>
   );
 }

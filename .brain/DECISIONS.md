@@ -12,6 +12,23 @@ last_updated: 2026-08-29
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-30 — Privacy-Conscious In-App Notification Center & Two-Tier Content Architecture
+
+### Decision
+Implement an authenticated, server-persisted in-app Notification Center (`NotificationCenterModal`) triggered by the top toolbar bell, enforcing a strict two-tier privacy model where notifications provide clear operational updates (record logged, doctor token generated/revoked, emergency profile edited) while strictly omitting raw clinical metrics, diagnoses, or drug dosages.
+
+### Reason
+Healthcare data governance (HIPAA/GDPR) prohibits exposing sensitive Protected Health Information (PHI) in unauthenticated or public previews. An in-app notification center provides a permanent, searchable audit ledger for patient sharing and security events while safeguarding confidential clinical details.
+
+### Alternatives
+- **Generic Marketing / Push Spam**: Unsolicited diagnostic or engagement notifications cause alert fatigue and increase anxiety.
+- **Ephemeral OS-Only Alerts**: Push banners dismissed from lockscreens leave no audit trail of when doctors accessed records.
+
+### Consequences
+High patient trust, clear auditability of data-sharing tokens, and zero exposure of sensitive medical data on public screens.
+
+---
+
 ## 2026-08-30 — Text-Only Drawer Menu Architecture with App Logo Branding
 
 ### Decision

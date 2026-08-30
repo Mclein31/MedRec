@@ -1,4 +1,5 @@
 const recordModel = require('../models/recordModel');
+const notificationModel = require('../models/notificationModel');
 
 async function addRecord(req, res, next) {
   try {
@@ -20,6 +21,20 @@ async function addRecord(req, res, next) {
       description: description || null,
       date,
     });
+
+    // Auto-create notification for new record activity
+    try {
+      await notificationModel.createNotification({
+        userId: req.user.id,
+        type: 'record_added',
+        title: 'New Medical Record Added',
+        body: `"${record.title}" was logged to your health timeline.`,
+        data: { recordId: record.id, type: record.type },
+      });
+    } catch (notifErr) {
+      console.error('Failed to create record_added notification:', notifErr);
+    }
+
     res.status(201).json({ record });
   } catch (err) {
     next(err);

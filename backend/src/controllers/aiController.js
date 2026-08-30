@@ -1,5 +1,6 @@
 const aiService = require('../services/aiService');
 const recordModel = require('../models/recordModel');
+const notificationModel = require('../models/notificationModel');
 
 // POST /ai/summarize - summarizes the logged-in user's own records (no body needed,
 // but accepts optional { type } to scope the summary to one record type).
@@ -8,6 +9,19 @@ async function summarize(req, res, next) {
     const { type } = req.body || {};
     const records = await recordModel.getAllForUser(req.user.id, { type });
     const result = await aiService.summarizeRecords(records);
+
+    try {
+      await notificationModel.createNotification({
+        userId: req.user.id,
+        type: 'ai_summary_ready',
+        title: 'AI Health Summary Generated',
+        body: 'Your longitudinal clinical record summary is ready.',
+        data: { timestamp: new Date().toISOString() },
+      });
+    } catch (notifErr) {
+      console.error('Failed to create ai_summary_ready notification:', notifErr);
+    }
+
     res.json(result);
   } catch (err) {
     next(err);

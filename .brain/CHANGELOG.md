@@ -10,6 +10,14 @@ last_updated: 2026-08-29
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.7.0] — Privacy-Conscious In-App Notification Center & Modal Refinement
+- **Added**: Interactive notification bell trigger and dynamic unread badge dot across Records Overview (`index.tsx`) and Share Center (`share.tsx`).
+- **Added**: In-App Notification Center modal (`NotificationCenterModal.tsx`) with segmented filter tabs (All / Unread), pull-to-refresh, 1-tap batch read action, and reassuring empty state.
+- **Added**: Subtle neutral grey drag handle affordance (`40×4px`, `borderRadius: 2`, `#D1D5DB`) centered at the top of the notification modal sheet for clear swipe-down dismiss guidance.
+- **Added**: Categorized notification card components (`NotificationCard.tsx`) with high-contrast icon badges, relative timestamps, and one-tap deep linking to records (`/record/[id]`), active sharing (`/(tabs)/share`), emergency profile (`/(tabs)/profile`), or AI summaries.
+- **Added**: Global notification state provider (`NotificationContext.tsx`) with optimistic local updates and server synchronization.
+- **Added**: Backend notification engine with PostgreSQL `notifications` table, indexed queries, authenticated REST API routes (`/notifications`), and automated event triggers on record creation, share generation/revocation, security updates, and AI summarization.
+
 ## [0.6.0] — Functional Burger Navigation & Text-Only Menu Refinement
 - **Added**: Reusable left-slide navigation drawer (`mobile/components/menu/SideMenuModal.tsx`) with hardware-accelerated translation, backdrop fade, and dismiss gestures.
 - **Added**: Text-only navigation row component (`mobile/components/menu/SideMenuItem.tsx`) using pure typography (`Lexend Deca`), spacious padding, and subtle active highlights rather than icons or emojis.

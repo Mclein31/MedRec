@@ -19,8 +19,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import * as Haptics from 'expo-haptics';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
+import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 
 const GREEN = '#159A83';
 const GREEN_DARK = '#12343B';
@@ -97,9 +99,11 @@ export default function RecordsScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { unreadCount, refreshNotifications } = useNotifications();
   const insets = useSafeAreaInsets();
 
   const handleMenuPress = () => {
@@ -120,7 +124,8 @@ export default function RecordsScreen() {
     useCallback(() => {
       setLoading(true);
       loadRecords().finally(() => setLoading(false));
-    }, [])
+      refreshNotifications();
+    }, [refreshNotifications])
   );
 
   const onRefresh = async () => {
@@ -251,8 +256,28 @@ export default function RecordsScreen() {
           <>
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
               <View style={styles.toolbar}>
-                {selectionMode ? <Pressable onPress={cancelSelection} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></Pressable> : <Pressable onPress={handleMenuPress}><Image source={require('../../assets/icons/burger-menu.png')} style={styles.toolbarIcon} /></Pressable>}
-                <View style={styles.bell}><Image source={require('../../assets/icons/notification-bell.png')} style={styles.toolbarIcon} /><View style={styles.notificationDot} /></View>
+                {selectionMode ? (
+                  <Pressable onPress={cancelSelection} style={styles.cancelBtn}>
+                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={handleMenuPress} hitSlop={10}>
+                    <Image source={require('../../assets/icons/burger-menu.png')} style={styles.toolbarIcon} />
+                  </Pressable>
+                )}
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setNotificationsVisible(true);
+                  }}
+                  style={styles.bell}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Notifications, ${unreadCount} unread`}
+                >
+                  <Image source={require('../../assets/icons/notification-bell.png')} style={styles.toolbarIcon} />
+                  {unreadCount > 0 && <View style={styles.notificationDot} />}
+                </Pressable>
               </View>
               <Text style={styles.headerTitle}>Hello, {firstName} 👋🏼</Text>
               <Text style={styles.headerSub}>{"Here" + "'" + "s your health overview"}</Text>
@@ -474,6 +499,13 @@ export default function RecordsScreen() {
       <SideMenuModal
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
+        onOpenAiSummary={handleSummarize}
+      />
+
+      {/* Notification Center Modal */}
+      <NotificationCenterModal
+        visible={notificationsVisible}
+        onClose={() => setNotificationsVisible(false)}
         onOpenAiSummary={handleSummarize}
       />
     </View>

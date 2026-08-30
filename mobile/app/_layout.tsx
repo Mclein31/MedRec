@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -76,7 +77,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <NotificationProvider>
+        <RootLayoutNav />
+      </NotificationProvider>
     </AuthProvider>
   );
 }

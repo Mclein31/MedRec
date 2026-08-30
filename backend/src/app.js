@@ -8,6 +8,7 @@ const recordRoutes = require('./routes/recordRoutes');
 const shareRoutes = require('./routes/shareRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app = express();
@@ -50,6 +51,7 @@ app.use('/records', recordRoutes);
 app.use('/share', shareRoutes);
 app.use('/ai', aiRoutes);
 app.use('/profile', profileRoutes);
+app.use('/notifications', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

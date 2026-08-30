@@ -148,6 +148,26 @@ async function updateProfile(req, res, next) {
     if (rawOrganDonor !== undefined) sanitizedData.organ_donor = Boolean(rawOrganDonor);
 
     const updated = await profileModel.upsertProfile(req.user.id, sanitizedData);
+
+    if (
+      sanitizedData.emergency_contact_name !== undefined ||
+      sanitizedData.emergency_contact_phone !== undefined ||
+      sanitizedData.blood_type !== undefined ||
+      sanitizedData.allergies !== undefined
+    ) {
+      try {
+        await notificationModel.createNotification({
+          userId: req.user.id,
+          type: 'emergency_updated',
+          title: 'Emergency Medical ID Updated',
+          body: 'Your emergency contact and clinical baseline were updated.',
+          data: { timestamp: new Date().toISOString() },
+        });
+      } catch (notifErr) {
+        console.error('Failed to create emergency_updated notification:', notifErr);
+      }
+    }
+
     res.json(formatProfileResponse(updated));
   } catch (err) {
     next(err);
@@ -184,6 +204,18 @@ async function changePassword(req, res, next) {
 
     const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await profileModel.updateUserPassword(req.user.id, passwordHash);
+
+    try {
+      await notificationModel.createNotification({
+        userId: req.user.id,
+        type: 'security_alert',
+        title: 'Security Alert: Password Changed',
+        body: 'Your MedRec account password was successfully updated.',
+        data: { timestamp: new Date().toISOString() },
+      });
+    } catch (notifErr) {
+      console.error('Failed to create security_alert notification:', notifErr);
+    }
 
     res.json({ message: 'Password updated successfully' });
   } catch (err) {

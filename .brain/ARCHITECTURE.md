@@ -84,3 +84,13 @@ last_updated: 2026-08-28
 ## 🧭 Drawer Menu Subsystem (`mobile/components/menu/`)
 1. `SideMenuModal.tsx`: Lightweight left-slide animated drawer overlay (`-DRAWER_WIDTH -> 0`) with backdrop fade, official MedRec logo branding (`assets/logo/logo.png`), user summary, and text-only routing for primary tabs and secondary vault tools.
 2. `SideMenuItem.tsx`: Text-only interactive row component with active route highlight (`#F0F9F7`), dynamic badge support (e.g. active shares count), and haptic selection feedback.
+
+---
+
+## 🔔 In-App Notification Subsystem
+1. **Database & API**: PostgreSQL `notifications` table with compound indexes on `(user_id, created_at DESC)` and `(user_id, read)`. Authenticated endpoints mounted at `/notifications` (`GET /`, `PATCH /:id/read`, `PATCH /read-all`, `DELETE /:id`).
+2. **Automated Event Triggers**: Server controllers automatically generate notifications on record uploads (`record_added`), QR sharing access (`share_created`, `share_revoked`), Emergency ID modifications (`emergency_updated`), security changes (`security_alert`), and AI synthesis (`ai_summary_ready`).
+3. **State Management (`mobile/context/NotificationContext.tsx`)**: Centralized React Context managing `notifications`, `unreadCount`, and optimistic mark-as-read state.
+4. **UI Components (`mobile/components/notifications/`)**:
+   - `NotificationCenterModal.tsx`: Slide-up sheet (`pageSheet`) with centered grey drag handle (`40×4px`, `#D1D5DB`), unread filter tabs, pull-to-refresh, and one-tap deep linking.
+   - `NotificationCard.tsx`: Category icon badges, 4px teal unread indicator bar, relative timestamps, and action hints.

@@ -34,3 +34,9 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - The menu is rendered as an overlay Modal (`SideMenuModal`) with hardware-accelerated translation (`useNativeDriver: true`) rather than a full React Navigation drawer container, avoiding gesture conflicts with iOS screen pops and bottom tab switching.
 - Menu rows (`SideMenuItem`) are strictly text-only, utilizing typography (`Lexend Deca`) and padding to maintain visual hierarchy.
 - Header branding directly reuses the existing official asset `assets/logo/logo.png`.
+
+## 🔔 Notification Center Architecture
+- **Event Sources**: Server controllers trigger automatic notification creation on record logging, temporary QR token generation/revocation, security/emergency edits, and AI summaries.
+- **Privacy Standard**: Two-tier model ensures notification summaries contain actionable context while completely omitting sensitive clinical values, drug dosages, or diagnoses.
+- **Modal Affordance**: Rendered as a slide-up sheet (`presentationStyle="pageSheet"`) featuring a centered grey drag handle (`#D1D5DB`, `40×4px`, `borderRadius: 2`) above the header to indicate downward swipe dismissal.
+- **State & Deep Linking**: Optimistic read-state handling via `NotificationContext` with automatic routing to relevant records (`/record/[id]`), shares (`/(tabs)/share`), or profile screens (`/(tabs)/profile`).

@@ -36,6 +36,7 @@ This document serves as the master index of all core product and UX design decis
 | **DD-04** | **Standardized Clinical Categories over Freeform Tags** | `Active` | Medical records need immediate clinical taxonomy for doctors to parse quickly without unstructured noise. | [[07 - Product Design/Design Decisions#DD-04|DD-04]] |
 | **DD-05** | **Compact Metadata Row & Modular Cards for Record Details** | `Active` | Prevents oversized date cards from pushing clinical notes below the fold on mobile viewports. | [[07 - Product Design/Design Decisions#DD-05|DD-05]] |
 | **DD-06** | **Text-Only App Drawer Navigation with Logo Branding** | `Active` | Eliminates visual icon clutter and duplicate navigation noise by using pure typography and official logo branding. | [[07 - Product Design/Design Decisions#DD-06|DD-06]] |
+| **DD-07** | **In-App Notification Center & Privacy-First Audit Alerts** | `Active` | Enforces two-tier health privacy by keeping audit trails in-app with generic copy and providing actionable one-tap deep links. | [[07 - Product Design/Design Decisions#DD-07|DD-07]] |
 
 ---
 
@@ -64,6 +65,12 @@ This document serves as the master index of all core product and UX design decis
 - **Alternatives Considered**: (A) Icon-heavy multi-level drawer, (B) Duplicate full-screen tab list with colored icons, (C) Minimal text-only drawer with official MedRec logo branding.
 - **Decision**: Option C — Text-only navigation rows using pure typography, spacious padding, and subtle active background pills, anchored by the official MedRec app logo (`assets/logo/logo.png`) in the header.
 - **Rationale**: Removing decorative icons from secondary menu rows eliminates visual competition with primary bottom tabs, prevents icon fatigue, and creates a lightweight, clean navigation experience.
+
+### DD-07: In-App Notification Center & Two-Tier Privacy Architecture
+- **Context**: Patients need real-time awareness of doctor sharing token creation/revocation, medical record logging, and security events without compromising medical confidentiality.
+- **Alternatives Considered**: (A) Aggressive marketing push notifications, (B) Ephemeral OS push notifications with detailed lab results, (C) Authenticated in-app notification center modal with generic high-level summaries and one-tap deep linking.
+- **Decision**: Option C — Slide-up in-app notification center (`NotificationCenterModal`) with downward swipe drag handle affordance, categorized cards, and strict omission of raw diagnostic metrics.
+- **Rationale**: Exposing specific diagnostic labels or drug names on external preview surfaces violates patient privacy and regulations (HIPAA/GDPR). An in-app center provides an authenticated permanent ledger with zero privacy leakage.
 
 ---
 

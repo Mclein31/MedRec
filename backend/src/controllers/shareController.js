@@ -1,5 +1,6 @@
 const shareModel = require('../models/shareModel');
 const recordModel = require('../models/recordModel');
+const notificationModel = require('../models/notificationModel');
 const { generateSecureToken } = require('../utils/token');
 
 const DEFAULT_TTL_MINUTES = Number(process.env.SHARE_TOKEN_DEFAULT_TTL_MINUTES || 60);
@@ -36,6 +37,18 @@ async function createShare(req, res, next) {
       allowedTypes,
       recordIds,
     });
+
+    try {
+      await notificationModel.createNotification({
+        userId: req.user.id,
+        type: 'share_created',
+        title: 'Doctor QR Access Generated',
+        body: `A temporary ${minutes}-minute QR access token was generated.`,
+        data: { shareToken: share.token, expiresAt: share.expires_at },
+      });
+    } catch (notifErr) {
+      console.error('Failed to create share_created notification:', notifErr);
+    }
 
     res.status(201).json({
       token: share.token,
@@ -86,6 +99,19 @@ async function revokeShare(req, res, next) {
   try {
     const revoked = await shareModel.revoke(req.user.id, req.params.id);
     if (!revoked) return res.status(404).json({ error: 'Share not found or already revoked' });
+
+    try {
+      await notificationModel.createNotification({
+        userId: req.user.id,
+        type: 'share_revoked',
+        title: 'Doctor QR Access Terminated',
+        body: 'Your active QR sharing token has been revoked.',
+        data: { shareId: req.params.id },
+      });
+    } catch (notifErr) {
+      console.error('Failed to create share_revoked notification:', notifErr);
+    }
+
     res.status(204).send();
   } catch (err) {
     next(err);
