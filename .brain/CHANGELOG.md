@@ -10,6 +10,11 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.8.3] — Unified Blue AI Cards, Share Card Restructure & Record Type Carousel
+- **Restructured**: Redesigned the "Share your records with your Doctor" card in `mobile/app/(tabs)/share.tsx` into a balanced horizontal top row layout (`generateTopRow`, `flexDirection: 'row', alignItems: 'center', gap: 12`) pairing the white QR icon (`qr-white.png`) beside the title with responsive `flex: 1` text wrapping, expiration notice underneath, and full-width white CTA at bottom.
+- **Unified**: Standardized all AI feature cards (`mobile/app/record/[id].tsx` AI Medical Insights, `mobile/app/record/add.tsx` Scan Health Document, and `mobile/app/(tabs)/share.tsx` Share Card) to use the signature `#1976D2` blue background, white typography, white action CTA buttons, and direct icon rendering with all background highlight pills removed.
+- **Streamlined**: Converted the multi-line record type selector grid in `mobile/app/record/add.tsx` into a single-line horizontal scrolling carousel (`ScrollView horizontal`, `showsHorizontalScrollIndicator={false}`) with edge-to-edge full-bleed padding, reducing vertical height above the fold and improving form accessibility.
+
 ## [0.8.2] — Universal Sliding Modal Drag Handles & Profile Input Placeholder Refinement
 - **Standardized**: Implemented universal subtle grey drag handle affordance (`38×4px`, `borderRadius: 2`, `#D1D5DB`, `marginBottom: 12`) across all sliding sheets/modals in the application:
   - `ProfileEditModal.tsx` (Demographics & Medical ID editing)

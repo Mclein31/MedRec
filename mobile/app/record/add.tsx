@@ -223,18 +223,8 @@ export default function AddRecordScreen() {
             />
           ) : (
             <View style={styles.scanHeroCard}>
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setViewMode('camera');
-                }}
-                style={({ pressed }) => [
-                  styles.scanHeroPrimaryRow,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Scan health document with camera"
-              >
+              {/* Top Row: AI Icon + Title & Subtitle */}
+              <View style={styles.scanHeroTopRow}>
                 <View style={styles.scanIconBox}>
                   <Image
                     source={require('../../assets/icons/AI.png')}
@@ -247,13 +237,26 @@ export default function AddRecordScreen() {
                     Point camera at prescriptions, lab tests, or bills
                   </Text>
                 </View>
-                <View style={styles.scanChevronBox}>
-                  <Ionicons name="camera" size={16} color="#FFFFFF" />
-                </View>
-              </Pressable>
+              </View>
 
-              {/* Secondary Option: Photo Library Import */}
-              <View style={styles.scanHeroFooter}>
+              {/* Action Buttons: Primary Camera CTA + Photo Library */}
+              <View style={styles.scanActionsContainer}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setViewMode('camera');
+                  }}
+                  style={({ pressed }) => [
+                    styles.scanPrimaryBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scan health document with camera"
+                >
+                  <Ionicons name="camera-outline" size={17} color={BLUE} />
+                  <Text style={styles.scanPrimaryBtnText}>SCAN WITH CAMERA</Text>
+                </Pressable>
+
                 <Pressable
                   onPress={handleOpenGallery}
                   style={({ pressed }) => [
@@ -262,10 +265,10 @@ export default function AddRecordScreen() {
                   ]}
                   hitSlop={6}
                   accessibilityRole="button"
-                  accessibilityLabel="Choose from photo gallery"
+                  accessibilityLabel="Choose from photo library"
                 >
-                  <Ionicons name="images-outline" size={15} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.galleryHeroBtnText}>Choose from Photo Library</Text>
+                  <Ionicons name="images-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
+                  <Text style={styles.galleryHeroBtnText}>Or choose from Photo Library</Text>
                 </Pressable>
               </View>
             </View>
@@ -278,10 +281,15 @@ export default function AddRecordScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Record Type Grid */}
+          {/* Record Type Carousel */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>RECORD TYPE</Text>
-            <View style={styles.typeGrid}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.typeCarousel}
+              style={styles.carouselScrollView}
+            >
               {RECORD_TYPES.map((t) => {
                 const active = type === t.value;
                 return (
@@ -318,7 +326,7 @@ export default function AddRecordScreen() {
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
 
           {/* Record Information Form Card */}
@@ -500,31 +508,29 @@ const styles = StyleSheet.create({
   ───────────────────────────── */
   scanHeroCard: {
     backgroundColor: BLUE,
-    borderRadius: 18,
-    overflow: 'hidden',
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
     shadowColor: BLUE,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  scanHeroPrimaryRow: {
+  scanHeroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
     gap: 12,
   },
   scanIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   scanIcon: {
-    width: 24,
-    height: 24,
+    width: 34,
+    height: 34,
     resizeMode: 'contain',
     tintColor: '#FFFFFF',
   },
@@ -534,40 +540,50 @@ const styles = StyleSheet.create({
   },
   scanTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFFFFF',
   },
   scanSub: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
+    fontSize: 11,
     color: 'rgba(255, 255, 255, 0.88)',
-    lineHeight: 16,
+    lineHeight: 15,
   },
-  scanChevronBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  scanActionsContainer: {
+    gap: 8,
+    marginTop: 2,
+  },
+  scanPrimaryBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    height: 38,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  scanHeroFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(18, 52, 59, 0.15)',
+  scanPrimaryBtnText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 12,
+    color: '#111827',
+    letterSpacing: 0.4,
   },
   galleryHeroBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    paddingVertical: 4,
   },
   galleryHeroBtnText: {
     fontFamily: 'LexendDeca-Medium',
-    fontSize: 12,
-    color: '#FFFFFF',
+    fontSize: 11.5,
+    color: 'rgba(255, 255, 255, 0.92)',
   },
 
   /* ─────────────────────────────
@@ -593,7 +609,7 @@ const styles = StyleSheet.create({
   },
 
   /* ─────────────────────────────
-     RECORD TYPE CHIPS
+     RECORD TYPE CHIPS CAROUSEL
   ───────────────────────────── */
   section: {
     gap: 8,
@@ -605,17 +621,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  typeGrid: {
+  carouselScrollView: {
+    marginHorizontal: -20,
+  },
+  typeCarousel: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 2,
   },
   typeChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 13,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 20,
     backgroundColor: CARD_BG,
     borderWidth: 1,
@@ -637,7 +658,7 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
+    fontSize: 12.5,
     color: INK,
   },
   typeChipTextActive: {

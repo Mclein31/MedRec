@@ -54,3 +54,10 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Standard Dimensions**: All pageSheet and slide-up modals (`NotificationCenterModal`, `ProfileEditModal`, `ChangePasswordModal`, `EmergencyIdModal`, `add.tsx`, `scan.tsx`, `index.tsx`) utilize a standardized drag handle (`width: 38`, `height: 4`, `borderRadius: 2`, `backgroundColor: '#D1D5DB'`).
 - **Header Layout**: Integrated at the top of modal headers with `paddingTop: 10, paddingBottom: 14` to communicate swipe-down dismissibility without adding dead vertical space.
 - **Drawer Exception**: The side menu drawer (`SideMenuModal`) slides horizontally from the left edge and is intentionally excluded from vertical downward drag handles.
+
+## 🎨 Universal AI Card Design System & Record Type Carousel
+- **Unified Visual Language**: All AI-powered feature cards (`aiBanner` in `(tabs)/index.tsx`, `generateCard` in `(tabs)/share.tsx`, `aiCard` in `record/[id].tsx`, and `scanHeroCard` in `record/add.tsx`) share a consistent design system:
+  - Container: Signature rich blue (`#1976D2`), `borderRadius: 16`, `padding: 16`, `gap: 12`, elevation shadow (`shadowColor: '#1976D2'`, `elevation: 3`).
+  - Top Row: Icon (`34×34px` or `36×36px`, direct `#FFFFFF` rendering without highlight background pills) beside bold title (`16px`, `#FFFFFF`) and subtitle (`11px`, `rgba(255,255,255,0.88)`).
+  - Primary Action: Clean white CTA button (`backgroundColor: '#FFFFFF'`, `borderRadius: 10`, bold `#111827` typography).
+- **Horizontal Record Type Carousel**: Category selection in `mobile/app/record/add.tsx` uses a single-line horizontal `ScrollView` (`showsHorizontalScrollIndicator={false}`) with full-bleed negative margins (`marginHorizontal: -20, paddingHorizontal: 20`), preserving immediate visibility for form fields above the fold while maintaining smooth edge-to-edge swiping.

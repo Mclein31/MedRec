@@ -234,10 +234,31 @@ export default function ShareScreen() {
           ) : isLoadingQr || creating ? (
             <View style={styles.loadingCard}><ActivityIndicator color={TEAL} /><Text style={styles.qrSubtitle}>Generating QR access...</Text></View>
           ) : (
-            <Pressable onPress={handleCreate} style={({ pressed }) => [styles.generateCard, pressed && styles.pressed]}>
-              <View style={styles.generateIcon}><Image source={require('../../assets/icons/qr-white.png')} style={styles.whiteQrAsset} /></View>
-              <View><Text style={styles.generateTitle}>Share your records with your Doctor</Text><Text style={styles.generateSubtitle}>The QR code will automatically expire in 60 minutes</Text></View>
-              <View style={styles.generateButton}><Text style={styles.generateButtonText}>GENERATE QR CODE</Text></View>
+            <Pressable
+              onPress={handleCreate}
+              style={({ pressed }) => [styles.generateCard, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Generate QR Code to share records with your doctor"
+            >
+              {/* Top Row: QR Icon + Title */}
+              <View style={styles.generateTopRow}>
+                <View style={styles.generateIconBox}>
+                  <Image source={require('../../assets/icons/qr-white.png')} style={styles.whiteQrAsset} />
+                </View>
+                <Text style={styles.generateTitle}>
+                  Share your records with your Doctor
+                </Text>
+              </View>
+
+              {/* Subtitle / Expiration info */}
+              <Text style={styles.generateSubtitle}>
+                The QR code will automatically expire in 60 minutes
+              </Text>
+
+              {/* Generate Button CTA */}
+              <View style={styles.generateButton}>
+                <Text style={styles.generateButtonText}>GENERATE QR CODE</Text>
+              </View>
             </Pressable>
           )}
 
@@ -315,55 +336,68 @@ const styles = StyleSheet.create({
 
   generateCard: { 
     marginHorizontal: 28, 
-    minHeight: 125, 
-    borderRadius: 11, 
+    borderRadius: 14, 
     backgroundColor: BLUE, 
-    padding: 11, 
-    flexDirection: 'row', 
-    alignItems: 'flex-start', 
-    gap: 9, 
-    flexWrap: 'wrap', 
-    marginBottom: 14 
+    padding: 16, 
+    gap: 12,
+    marginBottom: 14,
+    shadowColor: BLUE,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  generateIcon: {
-    paddingTop: 2 
+  generateTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  generateIconBox: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   whiteQrAsset: { 
-    width: 40, 
-    height: 40, 
-    resizeMode: 'contain' 
+    width: 36, 
+    height: 36, 
+    resizeMode: 'contain',
+    tintColor: '#FFFFFF',
   },
 
   generateTitle: { 
-    color: '#fff', 
-    fontSize: 18, 
-    fontWeight: '700', 
-    maxWidth: 300,
+    flex: 1,
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontFamily: 'LexendDeca-Bold',
+    lineHeight: 22,
   },
 
   generateSubtitle: { 
-    color: '#E7F0FF', 
-    fontSize: 10, 
-    marginTop: 2,
-    marginBottom: 35,
+    color: 'rgba(255, 255, 255, 0.88)', 
+    fontSize: 11, 
+    fontFamily: 'LexendDeca-Regular',
+    lineHeight: 16,
   },
 
   generateButton: { 
-    backgroundColor: '#fff', 
-    borderRadius: 7, 
-    height: 30, 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 8, 
+    height: 36, 
     width: '100%', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    marginTop: -2 
+    marginTop: 2,
   },
 
   generateButtonText: { 
-    color: '#111', 
+    color: '#111827', 
     fontSize: 12, 
-    fontWeight: '800' 
+    fontFamily: 'LexendDeca-Bold',
+    letterSpacing: 0.4,
   },
 
   pressed: { 

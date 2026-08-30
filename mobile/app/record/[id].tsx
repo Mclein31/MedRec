@@ -348,12 +348,14 @@ export default function RecordDetailScreen() {
                     styles.aiReExplainBtn,
                     pressed && styles.pressed,
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Regenerate AI explanation"
                 >
                   {explaining ? (
-                    <ActivityIndicator size="small" color={BLUE} />
+                    <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     <>
-                      <Ionicons name="refresh" size={13} color={BLUE} />
+                      <Ionicons name="refresh" size={13} color="#FFFFFF" />
                       <Text style={styles.aiReExplainText}>Regenerate</Text>
                     </>
                   )}
@@ -369,15 +371,17 @@ export default function RecordDetailScreen() {
                 pressed && styles.pressed,
                 explaining && styles.disabledBtn,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Explain this medical record with AI"
             >
               {explaining ? (
                 <>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={BLUE} />
                   <Text style={styles.aiActionBtnText}>Analyzing record...</Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+                  <Ionicons name="sparkles" size={16} color={BLUE} />
                   <Text style={styles.aiActionBtnText}>Explain with AI</Text>
                 </>
               )}
@@ -732,38 +736,35 @@ const styles = StyleSheet.create({
      AI EXPLANATION CARD
   ───────────────────────────── */
   aiCard: {
-    backgroundColor: CARD_BG,
+    backgroundColor: BLUE,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BLUE_BORDER,
-    padding: 18,
-    gap: 14,
+    padding: 16,
+    gap: 12,
     shadowColor: BLUE,
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
   aiCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
 
   aiIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: BLUE_LIGHT,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   aiIcon: {
-    width: 20,
-    height: 20,
+    width: 34,
+    height: 34,
     resizeMode: 'contain',
+    tintColor: '#FFFFFF',
   },
 
   aiHeaderTextContainer: {
@@ -771,37 +772,39 @@ const styles = StyleSheet.create({
   },
 
   aiTitle: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
-    color: BLUE,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
 
   aiSubtitle: {
     fontFamily: 'LexendDeca-Regular',
     fontSize: 11,
-    color: MUTED,
-    marginTop: 2,
+    color: 'rgba(255, 255, 255, 0.88)',
+    lineHeight: 15,
+    marginTop: 1,
   },
 
   aiActionBtn: {
-    backgroundColor: BLUE,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: BLUE,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   aiActionBtnText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 13,
+    color: '#111827',
+    letterSpacing: 0.3,
   },
 
   aiResultWrapper: {
@@ -809,17 +812,15 @@ const styles = StyleSheet.create({
   },
 
   aiResultContainer: {
-    backgroundColor: BLUE_LIGHT,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 14,
-    borderWidth: 1,
-    borderColor: BLUE_BORDER,
   },
 
   aiResultText: {
     fontFamily: 'LexendDeca-Regular',
     fontSize: 13,
-    color: '#1E293B',
+    color: INK,
     lineHeight: 21,
   },
 
@@ -828,13 +829,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    marginTop: 2,
   },
 
   aiDisclaimer: {
     flex: 1,
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 10,
-    color: MUTED,
+    fontSize: 10.5,
+    color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: 14,
   },
 
@@ -842,16 +844,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
     borderRadius: 8,
-    backgroundColor: BLUE_LIGHT,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
   },
 
   aiReExplainText: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11,
-    color: BLUE,
+    color: '#FFFFFF',
   },
 
   /* ─────────────────────────────

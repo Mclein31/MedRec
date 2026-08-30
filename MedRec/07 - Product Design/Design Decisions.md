@@ -39,10 +39,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-07** | **In-App Notification Center & Privacy-First Audit Alerts** | `Active` | Enforces two-tier health privacy by keeping audit trails in-app with generic copy and providing actionable one-tap deep links. | [[07 - Product Design/Design Decisions#DD-07|DD-07]] |
 | **DD-08** | **Inset Grouped Profile Architecture & Avatar Persistence** | `Active` | Eliminates visual clutter and text highlight boxes in favor of clean iOS-style grouped cards and persistent photo uploads. | [[07 - Product Design/Design Decisions#DD-08|DD-08]] |
 | **DD-09** | **Universal Sliding Sheet Drag Handle & Compact Input Placeholders** | `Active` | Communicates downward drag dismissibility consistently across all sliding modals without vertical dead space, paired with compact input placeholders for long medical terms. | [[07 - Product Design/Design Decisions#DD-09|DD-09]] |
+| **DD-10** | **Unified Blue AI Card Layout & Horizontal Category Carousel** | `Active` | Creates a shared visual language for AI cards (rich blue, horizontal icon/title row, white CTA) and single-line category carousel preserving vertical form space. | [[07 - Product Design/Design Decisions#DD-10|DD-10]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-10: Unified Blue AI Card Layout & Horizontal Category Carousel
+- **Context**: AI feature entry points across the app (Record List summary, Share QR access, Record Details AI insights, Add Record scanner) had fragmented container styles, button treatments, and icon background highlights. Additionally, multi-line record type chip grids pushed form fields below the fold.
+- **Alternatives Considered**: (A) Heterogeneous card layouts with icon highlight boxes, (B) Multi-line wrapped category grids taking 2+ rows, (C) Unified AI design system (rich `#1976D2` blue container, direct icon rendering without highlight pills, white CTA button) paired with a single-line edge-to-edge category carousel.
+- **Decision**: Option C — Standardize all AI cards on the unified blue layout system and convert record type selection into a horizontal carousel.
+- **Rationale**: Reinforces AI branding consistency across all touchpoints, eliminates visual clutter from icon background boxes, and keeps primary form input fields immediately visible above the fold on mobile screens.
 
 ### DD-09: Universal Sliding Sheet Drag Handle & Compact Input Placeholders
 - **Context**: Multiple sliding sheets (`pageSheet` presentations) across Profile edit, Change Password, Emergency Medical ID, Add Record, Scan Detail, and Sort/Filter lacked a unified visual cue indicating they can be swiped down to dismiss. Additionally, long clinical placeholder prompts were crowding mobile input boxes.
