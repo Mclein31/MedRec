@@ -10,6 +10,10 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.8.1] — Add Record Scan Hero Blue AI Theming
+- **Updated**: Styled the "Scan Health Document" hero card in `mobile/app/record/add.tsx` with signature AI blue (`#1976D2`), matching the AI Health Summary card on the Records tab and AI Medical Insights on Record Details.
+- **Retained**: Preserved the standard healthcare green/teal palette (`#159A83` / `#DDF5EE`) across record type chips, form field icons, primary Save CTA button, and attached document cards.
+
 ## [0.8.0] — Profile Tab Modernization, Avatar Upload & Persistent Storage
 - **Redesigned**: Rebuilt `mobile/app/(tabs)/profile.tsx` with an iOS-inspired Inset Grouped architecture, removing visual clutter, outer card containers, and heavy background highlights behind text (e.g. red blood pills, green action icon boxes, full-width red logout buttons).
 - **Added**: Unboxed Profile Hero with centered 72×72px avatar, 20px patient name, 13px muted email, single-line bullet metadata summary, and understated "Edit Profile" link.

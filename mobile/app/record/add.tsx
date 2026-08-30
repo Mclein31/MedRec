@@ -25,8 +25,9 @@ import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCa
 
 // Design Tokens matching MedRec standard palette
 const TEAL = '#159A83';
-const INK = '#12343B';
 const GREEN_LIGHT = '#DDF5EE';
+const BLUE = '#1976D2';
+const INK = '#12343B';
 const BG = '#F4FAF9';
 const BORDER = '#E5F0EE';
 const MUTED = '#64748B';
@@ -498,10 +499,10 @@ const styles = StyleSheet.create({
      SCAN HERO CARD
   ───────────────────────────── */
   scanHeroCard: {
-    backgroundColor: TEAL,
+    backgroundColor: BLUE,
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: TEAL,
+    shadowColor: BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,

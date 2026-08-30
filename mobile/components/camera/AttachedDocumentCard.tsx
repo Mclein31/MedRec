@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 const TEAL = '#159A83';
+const GREEN_LIGHT = '#DDF5EE';
 const INK = '#12343B';
 const MUTED = '#64748B';
 const BORDER = '#E5F0EE';
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_BG,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#DDF5EE',
+    borderColor: GREEN_LIGHT,
     padding: 12,
     gap: 10,
     shadowColor: TEAL,
