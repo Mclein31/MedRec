@@ -13,17 +13,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { ProfileData } from './ProfileEditModal';
+import { DragHandle } from './ui/DragHandle';
+import { Colors, Spacing, Radii, Typography } from '../constants/theme';
 
-const TEAL = '#159A83';
-const INK = '#12343B';
-const GREEN_LIGHT = '#DDF5EE';
-const BG = '#F4FAF9';
-const BORDER = '#E5F0EE';
-const MUTED = '#64748B';
-const CARD_BG = '#FFFFFF';
-const RED = '#D92D20';
-const RED_LIGHT = '#FEF3F2';
-const RED_BORDER = '#FECDCA';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const GREEN_LIGHT = Colors.tealLight;
+const BG = Colors.bg;
+const BORDER = Colors.border;
+const MUTED = Colors.muted;
+const CARD_BG = Colors.cardBg;
+const RED = Colors.red;
+const RED_LIGHT = Colors.redLight;
+const RED_BORDER = Colors.redBorder;
 
 type Props = {
   visible: boolean;
@@ -98,7 +100,7 @@ export default function EmergencyIdModal({
       <View style={styles.container}>
         {/* Header with integrated drag handle */}
         <View style={styles.header}>
-          <View style={styles.dragHandle} />
+          <DragHandle />
 
           <View style={styles.headerContentRow}>
             <Pressable onPress={onClose} hitSlop={8} style={styles.closeBtn}>

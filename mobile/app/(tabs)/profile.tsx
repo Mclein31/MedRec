@@ -21,18 +21,23 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import ProfileEditModal, { ProfileData } from '../../components/ProfileEditModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 import EmergencyIdModal from '../../components/EmergencyIdModal';
+import { SideMenuModal } from '../../components/menu/SideMenuModal';
+import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
+import { ScreenHeader } from '../../components/ui/ScreenHeader';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
-const TEAL = '#159A83';
-const INK = '#12343B';
-const BG = '#F4FAF9';
-const BORDER = '#E5F0EE';
-const MUTED = '#64748B';
-const CARD_BG = '#FFFFFF';
-const DIVIDER = '#F0F5F4';
-const RED = '#D92D20';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const BG = Colors.bg;
+const BORDER = Colors.border;
+const MUTED = Colors.muted;
+const CARD_BG = Colors.cardBg;
+const DIVIDER = Colors.divider;
+const RED = Colors.red;
 
 function calculateAge(dobStr?: string | null): number | null {
   if (!dobStr) return null;
@@ -78,7 +83,11 @@ export default function ProfileScreen() {
   const [editMode, setEditMode] = useState<'demographics' | 'medical'>('demographics');
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
   const [emergencyModalVisible, setEmergencyModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   const handlePickPhoto = async () => {
     try {
@@ -307,14 +316,24 @@ export default function ProfileScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
 
-      {/* Screen Top Bar */}
-      <View style={[styles.screenHeader, { paddingTop: insets.top + 12 }]}>
-        <Text style={styles.screenHeaderTitle}>Profile</Text>
-      </View>
+      {/* Screen Header Toolbar */}
+      <ScreenHeader
+        title="Profile"
+        subtitle="Manage your personal and medical ID"
+        onPressMenu={() => setMenuVisible(true)}
+        onPressNotifications={() => {
+          refreshNotifications();
+          setNotificationsVisible(true);
+        }}
+        unreadCount={unreadCount}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 96 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
+        ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TEAL} />
         }
@@ -737,6 +756,15 @@ export default function ProfileScreen() {
         userName={user?.name || ''}
         userEmail={user?.email || ''}
         onClose={() => setEmergencyModalVisible(false)}
+      />
+
+      {/* Side Menu Drawer */}
+      <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
+
+      {/* Notification Center Modal */}
+      <NotificationCenterModal
+        visible={notificationsVisible}
+        onClose={() => setNotificationsVisible(false)}
       />
     </View>
   );

@@ -9,10 +9,12 @@ import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsive } from '../hooks/useResponsive';
 
-const TEAL = '#159A83';
-const BLUE = '#1976D2';
-const INK = '#12343B';
-const MUTED = '#64748B';
+import { Colors, Spacing, Radii, Typography } from '../constants/theme';
+
+const TEAL = Colors.teal;
+const BLUE = Colors.blue;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 30;
 

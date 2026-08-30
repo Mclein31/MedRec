@@ -3,8 +3,9 @@ import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../context/AuthContext';
+import { Colors } from '../../constants/theme';
 
-const GREEN = '#159A83';
+const GREEN = Colors.teal;
 
 function CustomTabBar(_props?: BottomTabBarProps) {
   const pathname = usePathname();

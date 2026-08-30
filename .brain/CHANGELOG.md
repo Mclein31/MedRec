@@ -10,7 +10,20 @@ last_updated: 2026-08-30
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
-## [0.8.4] — Adaptive Share Hero & Cardless Flat Access History
+## [0.8.5] — App-Wide UI/UX Consistency Pass & Design System Centralization
+- **Centralized Design System**: Overhauled `mobile/constants/theme.ts` with comprehensive canonical tokens:
+  - `Colors`: Canonical teal (`#159A83`), ink (`#12343B`), mint/light (`#DDF5EE`), canvas (`#F4FAF9`), surface (`#FFFFFF`), border (`#E5F0EE`), AI blue (`#1976D2`), alert red (`#D92D20`), and modal affordance colors.
+  - `Typography`: Pre-configured `LexendDeca` typography styles (`display`, `title1`, `title2`, `sectionHeader`, `body`, `caption`, `button`).
+  - `Spacing`: Standardized grid tokens with `screenPadding: 20` and `tabBarClearance: 110`.
+  - `Radii`: Standardized component border radii (`card: 16`, `button: 12`, `pill: 10`, `sheet: 24`).
+- **Unified Reusable UI Suite (`mobile/components/ui/`)**:
+  - `ScreenHeader.tsx`: Universal top toolbar for all tab roots with Burger Menu (left drawer trigger), Notification Bell with dynamic unread indicator dot, 28px `LexendDeca-Bold` title, and subtitle.
+  - `DragHandle.tsx`: Standardized 38×4px `#CBD5E1` pill affordance for sliding sheet modals.
+  - `Button.tsx`: Unified multi-variant button component with haptic feedback, loading state, and consistent touch targets (48px height, 12px radius).
+  - `Card.tsx`: Standardized 16px radius card container with `#E5F0EE` hairline border.
+- **Resolved Color Divergences**: Replaced divergent non-canonical greens (`#1D9E75`, `#085041`, `#f0f7f4`) in `mobile/app/(tabs)/scan.tsx` with canonical MedRec tokens (`#159A83`, `#12343B`, `#F4FAF9`).
+- **Standardized Screen Geometries**: Harmonized horizontal padding to universal `20px` (`Spacing.screenPadding`) across `index.tsx`, `share.tsx`, `scan.tsx`, `profile.tsx`, `record/[id].tsx`, and `record/add.tsx`, and enforced `110px` tab clearance across all scroll containers.
+- **Universal Modal Drag Handles**: Standardized modal sheet handles with `<DragHandle />` across `ProfileEditModal`, `ChangePasswordModal`, `EmergencyIdModal`, `NotificationCenterModal`, `add.tsx`, and `index.tsx` sort sheet.
 - **Redesigned**: Restructured the Share Records tab (`mobile/app/(tabs)/share.tsx`) using the Adaptive Hero and Cardless Flat Timeline architecture:
   - **Tier 1 (Adaptive Hero)**: Dynamically transitions between the primary blue generation hero card (`#1976D2`) with horizontal QR icon and the living white QR preview card (`#FFFFFF`, `QRCode` 142px) with clean countdown text and instant revocation action.
   - **Tier 2 (Active Shares)**: Displays secondary live doctor access sessions with active timers and one-tap QR inspection.

@@ -15,22 +15,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { api } from '../../lib/api';
 
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+
 // Design Tokens matching MedRec standard palette
-const TEAL = '#159A83';
-const INK = '#12343B';
-const GREEN_LIGHT = '#DDF5EE';
-const BG = '#F4FAF9';
-const BORDER = '#E5F0EE';
-const MUTED = '#64748B';
-const CARD_BG = '#FFFFFF';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const GREEN_LIGHT = Colors.tealLight;
+const BG = Colors.bg;
+const BORDER = Colors.border;
+const MUTED = Colors.muted;
+const CARD_BG = Colors.cardBg;
 
-const BLUE = '#1976D2';
-const BLUE_LIGHT = '#EBF3FB';
-const BLUE_BORDER = '#D4E5F9';
+const BLUE = Colors.blue;
+const BLUE_LIGHT = Colors.blueLight;
+const BLUE_BORDER = Colors.blueBorder;
 
-const RED = '#D92D20';
-const RED_LIGHT = '#FEF3F2';
-const RED_BORDER = '#FECDCA';
+const RED = Colors.red;
+const RED_LIGHT = Colors.redLight;
+const RED_BORDER = Colors.redBorder;
 
 const TYPE_ASSETS: Record<string, any> = {
   consultation: require('../../assets/icons/consultation.png'),

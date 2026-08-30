@@ -20,16 +20,18 @@ import { api } from '../../lib/api';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { useNotifications } from '../../context/NotificationContext';
+import { ScreenHeader } from '../../components/ui/ScreenHeader';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
-const TEAL = '#159A83';
-const BLUE = '#1976D2';
-const BLUE_LIGHT = '#EBF3FB';
-const INK = '#12343B';
-const MUTED = '#64748B';
-const BORDER = '#E5F0EE';
-const BG = '#F4FAF9';
-const RED = '#D92D20';
-const RED_LIGHT = '#FEF3F2';
+const TEAL = Colors.teal;
+const BLUE = Colors.blue;
+const BLUE_LIGHT = Colors.blueLight;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
+const BORDER = Colors.border;
+const BG = Colors.bg;
+const RED = Colors.red;
+const RED_LIGHT = Colors.redLight;
 
 type Share = {
   id: string;
@@ -183,7 +185,7 @@ export default function ShareScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + 100 },
+          { paddingBottom: Math.max(insets.bottom, 20) + Spacing.tabBarClearance },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -194,44 +196,17 @@ export default function ShareScreen() {
           />
         }
       >
-        {/* Top Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-          <View style={styles.headerIcons}>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setMenuVisible(true);
-              }}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Open navigation menu"
-            >
-              <Image
-                source={require('../../assets/icons/burger-menu.png')}
-                style={styles.headerAsset}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setNotificationsVisible(true);
-              }}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={`Notifications, ${unreadCount} unread`}
-            >
-              <Image
-                source={require('../../assets/icons/notification-bell.png')}
-                style={styles.headerAsset}
-              />
-              {unreadCount > 0 && <View style={styles.notificationDot} />}
-            </Pressable>
-          </View>
-          <Text style={styles.title}>Share Records</Text>
-          <Text style={styles.subtitle}>
-            Share your health records in a limited time access
-          </Text>
-        </View>
+        {/* Screen Header Toolbar */}
+        <ScreenHeader
+          title="Share Records"
+          subtitle="Share your health records in a limited time access"
+          onPressMenu={() => setMenuVisible(true)}
+          onPressNotifications={() => {
+            refreshNotifications();
+            setNotificationsVisible(true);
+          }}
+          unreadCount={unreadCount}
+        />
 
         {/* ────────────────────────────────────────────────────────
             TIER 1: ADAPTIVE HERO (Primary Action / Active QR)
@@ -570,10 +545,10 @@ const styles = StyleSheet.create({
      TIER 1: ADAPTIVE HERO
   ───────────────────────────── */
   generateCard: {
-    marginHorizontal: 24,
-    borderRadius: 16,
+    marginHorizontal: Spacing.screenPadding,
+    borderRadius: Radii.card,
     backgroundColor: BLUE,
-    padding: 16,
+    padding: Spacing.cardPadding,
     gap: 12,
     marginBottom: 12,
     shadowColor: BLUE,
@@ -630,11 +605,11 @@ const styles = StyleSheet.create({
 
   activeHeroCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1.5,
     borderColor: BLUE,
     padding: 18,
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     alignItems: 'center',
     gap: 8,
     marginBottom: 12,
@@ -683,9 +658,9 @@ const styles = StyleSheet.create({
   },
 
   loadingCard: {
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     height: 120,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -708,7 +683,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionHead: {
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     marginBottom: 8,
   },
   sectionTitle: {
@@ -723,7 +698,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   activeShareCard: {
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1.5,
@@ -791,7 +766,7 @@ const styles = StyleSheet.create({
   ───────────────────────────── */
   historySection: {
     marginTop: 14,
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
   },
   historyHeader: {
     marginBottom: 8,
@@ -864,7 +839,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.screenPadding,
     gap: 8,
   },
   emptyIcon: {

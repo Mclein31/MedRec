@@ -19,16 +19,17 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { SideMenuItem } from './SideMenuItem';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
 
-const TEAL = '#159A83';
-const INK = '#12343B';
-const MUTED = '#64748B';
-const BORDER = '#E5F0EE';
-const CARD_BG = '#FFFFFF';
-const BACKDROP_COLOR = 'rgba(18, 52, 59, 0.45)';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
+const BORDER = Colors.border;
+const CARD_BG = Colors.cardBg;
+const BACKDROP_COLOR = Colors.backdrop;
 
 interface SideMenuModalProps {
   visible: boolean;

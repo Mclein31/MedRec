@@ -22,16 +22,18 @@ import { api } from '../../lib/api';
 import { DocumentCamera } from '../../components/camera/DocumentCamera';
 import { DocumentPreview } from '../../components/camera/DocumentPreview';
 import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCard';
+import { DragHandle } from '../../components/ui/DragHandle';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
 // Design Tokens matching MedRec standard palette
-const TEAL = '#159A83';
-const GREEN_LIGHT = '#DDF5EE';
-const BLUE = '#1976D2';
-const INK = '#12343B';
-const BG = '#F4FAF9';
-const BORDER = '#E5F0EE';
-const MUTED = '#64748B';
-const CARD_BG = '#FFFFFF';
+const TEAL = Colors.teal;
+const GREEN_LIGHT = Colors.tealLight;
+const BLUE = Colors.blue;
+const INK = Colors.ink;
+const BG = Colors.bg;
+const BORDER = Colors.border;
+const MUTED = Colors.muted;
+const CARD_BG = Colors.cardBg;
 
 const TYPE_ASSETS: Record<string, any> = {
   consultation: require('../../assets/icons/consultation.png'),
@@ -168,9 +170,7 @@ export default function AddRecordScreen() {
       <StatusBar style="dark" />
 
       {/* Drag Handle Affordance */}
-      <View style={styles.handleContainer} pointerEvents="none">
-        <View style={styles.handle} />
-      </View>
+      <DragHandle />
 
       {/* Modal Header */}
       <View style={[styles.header, { paddingTop: 6 }]}>

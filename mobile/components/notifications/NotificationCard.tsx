@@ -3,14 +3,15 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { MedRecNotification } from '../../context/NotificationContext';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
-const TEAL = '#159A83';
-const TEAL_LIGHT = '#DDF5EE';
-const INK = '#12343B';
-const MUTED = '#64748B';
-const BORDER = '#E5F0EE';
-const CARD_BG = '#FFFFFF';
-const UNREAD_BG = '#F4FAF9';
+const TEAL = Colors.teal;
+const TEAL_LIGHT = Colors.tealLight;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
+const BORDER = Colors.border;
+const CARD_BG = Colors.cardBg;
+const UNREAD_BG = Colors.bg;
 
 interface NotificationCardProps {
   notification: MedRecNotification;

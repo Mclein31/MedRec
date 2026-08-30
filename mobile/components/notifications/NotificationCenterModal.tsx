@@ -15,13 +15,15 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useNotifications, MedRecNotification } from '../../context/NotificationContext';
 import { NotificationCard } from './NotificationCard';
+import { DragHandle } from '../ui/DragHandle';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
-const TEAL = '#159A83';
-const INK = '#12343B';
-const MUTED = '#64748B';
-const BORDER = '#E5F0EE';
-const BG = '#F4FAF9';
-const CARD_BG = '#FFFFFF';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
+const BORDER = Colors.border;
+const BG = Colors.bg;
+const CARD_BG = Colors.cardBg;
 
 interface NotificationCenterModalProps {
   visible: boolean;
@@ -106,7 +108,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       <View style={styles.container}>
         {/* Header with integrated drag handle */}
         <View style={styles.header}>
-          <View style={styles.dragHandle} />
+          <DragHandle />
 
           <View style={styles.headerContentRow}>
             <View style={styles.headerTitleGroup}>

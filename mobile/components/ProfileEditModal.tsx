@@ -16,15 +16,17 @@ import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../lib/api';
+import { DragHandle } from './ui/DragHandle';
+import { Colors, Spacing, Radii, Typography } from '../constants/theme';
 
-const TEAL = '#159A83';
-const INK = '#12343B';
-const GREEN_LIGHT = '#DDF5EE';
-const BG = '#F4FAF9';
-const BORDER = '#E5F0EE';
-const MUTED = '#64748B';
-const CARD_BG = '#FFFFFF';
-const RED = '#D92D20';
+const TEAL = Colors.teal;
+const INK = Colors.ink;
+const GREEN_LIGHT = Colors.tealLight;
+const BG = Colors.bg;
+const BORDER = Colors.border;
+const MUTED = Colors.muted;
+const CARD_BG = Colors.cardBg;
+const RED = Colors.red;
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'];
 const SEX_OPTIONS = [
@@ -189,7 +191,7 @@ export default function ProfileEditModal({
       >
         {/* Header with integrated drag handle */}
         <View style={styles.header}>
-          <View style={styles.dragHandle} />
+          <DragHandle />
 
           <View style={styles.headerContentRow}>
             <Pressable onPress={onClose} hitSlop={8} style={styles.cancelBtn}>

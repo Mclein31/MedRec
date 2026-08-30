@@ -9,10 +9,12 @@ import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsive } from '../hooks/useResponsive';
 
-const BLUE = '#1976D2';
-const TEAL = '#159A83';
-const TEXT_DARK = '#12343B';
-const TEXT_MUTED = '#64748B';
+import { Colors, Spacing, Radii, Typography } from '../constants/theme';
+
+const BLUE = Colors.blue;
+const TEAL = Colors.teal;
+const TEXT_DARK = Colors.ink;
+const TEXT_MUTED = Colors.muted;
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');

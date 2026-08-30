@@ -41,10 +41,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-09** | **Universal Sliding Sheet Drag Handle & Compact Input Placeholders** | `Active` | Communicates downward drag dismissibility consistently across all sliding modals without vertical dead space, paired with compact input placeholders for long medical terms. | [[07 - Product Design/Design Decisions#DD-09|DD-09]] |
 | **DD-10** | **Unified Blue AI Card Layout & Horizontal Category Carousel** | `Active` | Creates a shared visual language for AI cards (rich blue, horizontal icon/title row, white CTA) and single-line category carousel preserving vertical form space. | [[07 - Product Design/Design Decisions#DD-10|DD-10]] |
 | **DD-11** | **Adaptive Share Hero & Cardless Flat Access History** | `Active` | Focuses 75% of visual weight on instant QR generation/scanning while de-cluttering past activity into a calm, unboxed typography timeline without cards, pills, or repetitive icons. | [[07 - Product Design/Design Decisions#DD-11|DD-11]] |
+| **DD-12** | **Centralized Design System Tokens & Universal Screen Header** | `Active` | Enforces single-source-of-truth tokens (`theme.ts`), universal `ScreenHeader` with drawer and notification triggers, 20px screen gutters, and 110px tab bar clearance. | [[07 - Product Design/Design Decisions#DD-12|DD-12]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-12: Centralized Design System Tokens & Universal Screen Header
+- **Context**: The mobile application had minor visual inconsistencies: divergent green color values in the scan tab (`#1D9E75` vs `#159A83`), disparate horizontal margins (24px vs 20px), varying header implementations, and missing drawer menu/notification center affordances on the Doctor Scan and Profile tabs.
+- **Alternatives Considered**: (A) Ad-hoc screen-by-screen inline styles, (B) Fully autonomous dark mode styling engine, (C) Centralized design system (`mobile/constants/theme.ts`) exporting canonical `Colors`, `Typography`, `Spacing`, `Radii`, and shared core UI components (`ScreenHeader`, `DragHandle`, `Button`, `Card`).
+- **Decision**: Option C — Overhaul `mobile/constants/theme.ts` with centralized tokens, resolve palette discrepancies, standardize screen gutters to `20px` (`Spacing.screenPadding`), and unify tab screen headers with `<ScreenHeader />` featuring the Burger Menu drawer trigger and Notification Bell with dynamic unread dot.
+- **Rationale**: Eliminates styling drift, ensures visual cohesion across the patient and doctor workflows, guarantees universal access to side drawer and notification features from every tab, and prevents UI overlaps above the bottom navigation bar.
 
 ### DD-11: Adaptive Share Hero & Cardless Flat Access History
 - **Context**: The Share Records screen had visual repetition and card fatigue: every past expired or revoked share rendered as a large standalone 100px+ bordered card with a repetitive 39px teal QR icon. An initial proposal to wrap them in an enterprise audit ledger created a dense, dashboard-like table feel unsuitable for a consumer healthcare app.

@@ -69,3 +69,16 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
   - Top Row: Icon (`34×34px` or `36×36px`, direct `#FFFFFF` rendering without highlight background pills) beside bold title (`16px`, `#FFFFFF`) and subtitle (`11px`, `rgba(255,255,255,0.88)`).
   - Primary Action: Clean white CTA button (`backgroundColor: '#FFFFFF'`, `borderRadius: 10`, bold `#111827` typography).
 - **Horizontal Record Type Carousel**: Category selection in `mobile/app/record/add.tsx` uses a single-line horizontal `ScrollView` (`showsHorizontalScrollIndicator={false}`) with full-bleed negative margins (`marginHorizontal: -20, paddingHorizontal: 20`), preserving immediate visibility for form fields above the fold while maintaining smooth edge-to-edge swiping.
+
+## 📐 Centralized Design Tokens & Reusable UI Component Suite
+- **Canonical Design System (`mobile/constants/theme.ts`)**:
+  - `Colors`: Central source of truth for `teal` (`#159A83`), `ink` (`#12343B`), `bg` (`#F4FAF9`), `tealLight` (`#DDF5EE`), `cardBg` (`#FFFFFF`), `border` (`#E5F0EE`), `blue` (`#1976D2`), `red` (`#D92D20`), `dragHandle` (`#CBD5E1`), and `backdrop` (`rgba(18, 52, 59, 0.45)`).
+  - `Typography`: Pre-configured `LexendDeca` typography styles (`display`, `title1`, `title2`, `sectionHeader`, `body`, `caption`, `button`).
+  - `Spacing`: Enforces `screenPadding: 20` (20px standard horizontal gutters) and `tabBarClearance: 110` (110px bottom clearance preventing tab bar overlap).
+  - `Radii`: Standard corner radii (`card: 16`, `button: 12`, `pill: 10`, `sheet: 24`).
+- **Reusable Component Suite (`mobile/components/ui/`)**:
+  - `ScreenHeader.tsx`: Universal top toolbar for tab screens with Burger Menu, dynamic Notification Bell with unread dot, 28px `LexendDeca-Bold` title, and subtitle.
+  - `DragHandle.tsx`: Standalone 38×4px `#CBD5E1` pill for all modal sheets.
+  - `Button.tsx`: Unified button with haptics, spinner loading, and variant styling (primary, secondary, blue, outline, destructive).
+  - `Card.tsx`: Standardized 16px radius container with `#E5F0EE` hairline border.
+

@@ -23,14 +23,16 @@ import { useNotifications } from '../../context/NotificationContext';
 import * as Haptics from 'expo-haptics';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
+import { DragHandle } from '../../components/ui/DragHandle';
+import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
 
-const GREEN = '#159A83';
-const GREEN_DARK = '#12343B';
-const GREEN_LIGHT = '#DDF5EE';
-const BG = '#F4FAF9';
-const INK = '#12343B';
-const MUTED = '#64748B'
-const BORDER = '#E5F0EE';;
+const GREEN = Colors.teal;
+const GREEN_DARK = Colors.ink;
+const GREEN_LIGHT = Colors.tealLight;
+const BG = Colors.bg;
+const INK = Colors.ink;
+const MUTED = Colors.muted;
+const BORDER = Colors.border;
 
 const TYPE_COLORS: Record<string, string> = {
   consultation: '#159A83',
@@ -470,7 +472,7 @@ export default function RecordsScreen() {
               },
             ]}
           >
-            <View style={styles.modalHandle} />
+            <DragHandle />
             <Text style={styles.modalTitle}>Filter & Sort Records</Text>
             <Text style={styles.modalSubtitle}>Choose how you want to view your records.</Text>
             {SORT_OPTIONS.map((opt) => {
@@ -531,7 +533,7 @@ const styles = StyleSheet.create({
   },
 
   listContainer: {
-    paddingBottom: 126,
+    paddingBottom: Spacing.tabBarClearance,
   },
 
 
@@ -540,7 +542,7 @@ const styles = StyleSheet.create({
   // ─────────────────────────────
 
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 12,
   },
 
@@ -611,7 +613,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     marginBottom: 14,
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -643,7 +645,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1976D2',
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     borderRadius: 16,
     paddingVertical: 15,
     paddingHorizontal: 16,
@@ -695,7 +697,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.screenPadding,
     marginBottom: 12,
   },
 
@@ -746,7 +748,7 @@ const styles = StyleSheet.create({
   // ─────────────────────────────
 
   chipRow: {
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 14,
     gap: 8,
   },
@@ -759,7 +761,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#D9E7E4',
+    borderColor: BORDER,
   },
 
   chipActive: {
@@ -808,7 +810,7 @@ const styles = StyleSheet.create({
   recordCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    marginHorizontal: 24,
+    marginHorizontal: Spacing.screenPadding,
     marginBottom: 12,
 
     shadowColor: '#000',
