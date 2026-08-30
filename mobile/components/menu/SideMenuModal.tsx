@@ -256,50 +256,29 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Primary Navigation */}
+            {/* Group 1: Clinical & Emergency Utilities */}
             <View style={styles.group}>
               <SideMenuItem
-                label="Home"
-                active={pathname === '/' || pathname === '/index'}
-                onPress={() => navigateTo('/(tabs)')}
-              />
-              <SideMenuItem
-                label="My Records"
-                active={pathname === '/' || pathname === '/index'}
-                onPress={() => navigateTo('/(tabs)')}
+                label="Emergency Medical ID"
+                sublabel="Blood type, allergies & emergency contacts"
+                onPress={() => navigateTo('/(tabs)/profile')}
               />
               <SideMenuItem
                 label="Share Records"
+                sublabel="Doctor time-limited QR access"
                 badge={activeSharesCount ? `${activeSharesCount} Active` : undefined}
                 active={pathname === '/share'}
                 onPress={() => navigateTo('/(tabs)/share')}
               />
               <SideMenuItem
                 label="Scan Doctor QR"
+                sublabel="Scan patient shared QR code"
                 active={pathname === '/scan'}
                 onPress={() => navigateTo('/(tabs)/scan')}
               />
               <SideMenuItem
-                label="Add Health Record"
-                onPress={() => navigateTo('/record/add')}
-              />
-              <SideMenuItem
-                label="Profile"
-                active={pathname === '/profile'}
-                onPress={() => navigateTo('/(tabs)/profile')}
-              />
-              <SideMenuItem
-                label="Emergency Medical ID"
-                onPress={() => navigateTo('/(tabs)/profile')}
-              />
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Secondary Actions & Intelligence */}
-            <View style={styles.group}>
-              <SideMenuItem
                 label="AI Health Summary"
+                sublabel="Generate clinical record insights"
                 onPress={() => {
                   handleClose();
                   if (onOpenAiSummary) {
@@ -309,18 +288,20 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
                   }
                 }}
               />
-              <SideMenuItem
-                label="Export Health Vault"
-                onPress={handleExportVault}
-              />
             </View>
 
             <View style={styles.divider} />
 
-            {/* Information */}
+            {/* Group 2: Vault & Information */}
             <View style={styles.group}>
               <SideMenuItem
+                label="Export Health Vault"
+                sublabel="Download encrypted JSON archive"
+                onPress={handleExportVault}
+              />
+              <SideMenuItem
                 label="About MedRec"
+                sublabel="v1.0.0 • Medical Disclaimer"
                 onPress={handleAboutPress}
               />
             </View>
