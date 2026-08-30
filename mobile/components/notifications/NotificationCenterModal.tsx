@@ -103,45 +103,44 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 0) }]}>
-        {/* Drag Handle Indicator */}
-        <View style={styles.dragHandleContainer}>
-          <View style={styles.dragHandle} />
-        </View>
-
-        {/* Header */}
+      <View style={styles.container}>
+        {/* Header with integrated drag handle */}
         <View style={styles.header}>
-          <View style={styles.headerTitleGroup}>
-            <Text style={styles.headerTitle}>Notifications</Text>
-            <Text style={styles.headerSubtitle}>
-              {unreadCount > 0
-                ? `${unreadCount} unread update${unreadCount > 1 ? 's' : ''}`
-                : 'All caught up'}
-            </Text>
-          </View>
+          <View style={styles.dragHandle} />
 
-          <View style={styles.headerActions}>
-            {unreadCount > 0 && (
+          <View style={styles.headerContentRow}>
+            <View style={styles.headerTitleGroup}>
+              <Text style={styles.headerTitle}>Notifications</Text>
+              <Text style={styles.headerSubtitle}>
+                {unreadCount > 0
+                  ? `${unreadCount} unread update${unreadCount > 1 ? 's' : ''}`
+                  : 'All caught up'}
+              </Text>
+            </View>
+
+            <View style={styles.headerActions}>
+              {unreadCount > 0 && (
+                <Pressable
+                  onPress={handleMarkAllRead}
+                  style={({ pressed }) => [styles.markAllBtn, pressed && styles.pressed]}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark all notifications as read"
+                >
+                  <Text style={styles.markAllText}>Mark all as read</Text>
+                </Pressable>
+              )}
+
               <Pressable
-                onPress={handleMarkAllRead}
-                style={({ pressed }) => [styles.markAllBtn, pressed && styles.pressed]}
-                hitSlop={8}
+                onPress={onClose}
+                style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+                hitSlop={10}
                 accessibilityRole="button"
-                accessibilityLabel="Mark all notifications as read"
+                accessibilityLabel="Close notifications"
               >
-                <Text style={styles.markAllText}>Mark all as read</Text>
+                <Ionicons name="close" size={20} color={INK} />
               </Pressable>
-            )}
-
-            <Pressable
-              onPress={onClose}
-              style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Close notifications"
-            >
-              <Ionicons name="close" size={20} color={INK} />
-            </Pressable>
+            </View>
           </View>
         </View>
 
@@ -236,29 +235,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
-  dragHandleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 10,
-    paddingBottom: 4,
+  header: {
     backgroundColor: CARD_BG,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    paddingTop: 10,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
   },
   dragHandle: {
-    width: 40,
+    width: 38,
     height: 4,
     borderRadius: 2,
     backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
-  header: {
+  headerContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 6,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    backgroundColor: CARD_BG,
   },
   headerTitleGroup: {
     gap: 2,
