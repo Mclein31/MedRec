@@ -160,7 +160,7 @@ export default function AddRecordScreen() {
     );
   }
 
-  // ─── 3. TABLET INTAKE STUDIO (REFINED COMPACT FLOATING MODAL) ────────────
+  // ─── 3. TABLET SINGLE-COLUMN INTAKE STUDIO (EXPANDED & REFINED) ─────────
   if (isTablet) {
     return (
       <View style={styles.tabletRootOverlay}>
@@ -219,16 +219,16 @@ export default function AddRecordScreen() {
               </Pressable>
             </View>
 
-            {/* Content-Driven 2-Column Split Studio Body */}
+            {/* Scrollable Single-Column Content Flow */}
             <ScrollView
               style={styles.tabletScrollBody}
-              contentContainerStyle={styles.tabletStudioBody}
+              contentContainerStyle={styles.tabletSingleColContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               bounces={false}
             >
-              {/* Left Column: Document Capture & Attachment */}
-              <View style={styles.tabletColLeft}>
+              {/* 1. Document Attachment / Scan Hero Card */}
+              <View style={styles.tabletSection}>
                 <Text style={styles.tabletSectionLabel}>DOCUMENT ATTACHMENT</Text>
 
                 {photoUri ? (
@@ -258,7 +258,7 @@ export default function AddRecordScreen() {
                         <Text
                           style={[
                             styles.tabletScanTitle,
-                            { fontSize: scaleFont(15, 14, 16.5) },
+                            { fontSize: scaleFont(16, 15, 17.5) },
                           ]}
                           maxFontSizeMultiplier={1.35}
                         >
@@ -267,7 +267,7 @@ export default function AddRecordScreen() {
                         <Text
                           style={[
                             styles.tabletScanSub,
-                            { fontSize: scaleFont(11, 10.5, 12) },
+                            { fontSize: scaleFont(11.5, 11, 12.5) },
                           ]}
                           maxFontSizeMultiplier={1.35}
                         >
@@ -289,7 +289,7 @@ export default function AddRecordScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Scan health document with camera"
                       >
-                        <Ionicons name="camera-outline" size={16} color={BLUE} />
+                        <Ionicons name="camera-outline" size={17} color={BLUE} />
                         <Text style={styles.tabletScanPrimaryBtnText}>SCAN WITH CAMERA</Text>
                       </Pressable>
 
@@ -303,7 +303,7 @@ export default function AddRecordScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Choose from photo library"
                       >
-                        <Ionicons name="images-outline" size={13} color="rgba(255, 255, 255, 0.9)" />
+                        <Ionicons name="images-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
                         <Text style={styles.tabletGalleryBtnText}>Or choose from Photo Library</Text>
                       </Pressable>
                     </View>
@@ -314,153 +314,157 @@ export default function AddRecordScreen() {
                 <View style={styles.tabletVaultNotice}>
                   <Ionicons name="shield-checkmark" size={14} color={TEAL} />
                   <Text style={styles.tabletVaultNoticeText}>
-                    Stored encrypted in your sovereign personal vault.
+                    Documents are stored encrypted in your sovereign personal vault.
                   </Text>
                 </View>
               </View>
 
-              {/* Right Column: Metadata Form Fields */}
-              <View style={styles.tabletColRight}>
-                {/* Record Type Selector */}
-                <View style={styles.tabletFieldSection}>
-                  <Text style={styles.tabletSectionLabel}>RECORD TYPE</Text>
-                  <View style={styles.tabletTypeGrid}>
-                    {RECORD_TYPES.map((t) => {
-                      const active = type === t.value;
-                      return (
-                        <Pressable
-                          key={t.value}
-                          onPress={() => {
-                            Haptics.selectionAsync();
-                            setType(t.value);
-                          }}
-                          style={({ pressed }) => [
-                            styles.tabletTypeChip,
-                            active && styles.tabletTypeChipActive,
-                            pressed && styles.pressed,
-                          ]}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Select record type ${t.label}`}
-                          accessibilityState={{ selected: active }}
-                        >
-                          <Image
-                            source={TYPE_ASSETS[t.value]}
-                            style={[
-                              styles.tabletTypeChipIcon,
-                              { tintColor: active ? TEAL : MUTED },
-                            ]}
-                          />
-                          <Text
-                            style={[
-                              styles.tabletTypeChipText,
-                              active && styles.tabletTypeChipTextActive,
-                              { fontSize: scaleFont(11.5, 10.5, 12.5) },
-                            ]}
-                            maxFontSizeMultiplier={1.35}
-                          >
-                            {t.label}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Form Inputs Container */}
-                <View style={styles.tabletFormCard}>
-                  {/* Title Field */}
-                  <View style={styles.tabletFieldGroup}>
-                    <Text style={styles.tabletFieldLabel}>RECORD TITLE *</Text>
-                    <View style={styles.tabletInputContainer}>
-                      <Image
-                        source={require('../../assets/icons/folder.png')}
-                        style={styles.tabletFieldLeadingIcon}
-                      />
-                      <TextInput
-                        style={[styles.tabletTextInput, { fontSize: scaleFont(13.5, 12.5, 14.5) }]}
-                        value={title}
-                        onChangeText={setTitle}
-                        placeholder="e.g. Annual Blood Work & Lipid Panel"
-                        placeholderTextColor={MUTED}
-                        accessibilityLabel="Record title input"
-                        maxFontSizeMultiplier={1.35}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Date of Event */}
-                  <View style={styles.tabletFieldGroup}>
-                    <Text style={styles.tabletFieldLabel}>DATE OF EVENT</Text>
-                    <View style={styles.tabletInputContainer}>
-                      <Image
-                        source={require('../../assets/icons/calendar.png')}
-                        style={styles.tabletFieldLeadingIcon}
-                      />
-                      <TextInput
-                        style={[styles.tabletTextInput, { fontSize: scaleFont(13.5, 12.5, 14.5) }]}
-                        value={date}
-                        onChangeText={setDate}
-                        placeholder="YYYY-MM-DD"
-                        placeholderTextColor={MUTED}
-                        accessibilityLabel="Date input"
-                        maxFontSizeMultiplier={1.35}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Clinical Notes / Details */}
-                  <View style={styles.tabletFieldGroup}>
-                    <Text style={styles.tabletFieldLabel}>CLINICAL NOTES / DETAILS</Text>
-                    <View style={[styles.tabletInputContainer, styles.tabletTextAreaContainer]}>
-                      <TextInput
-                        style={[
-                          styles.tabletTextInput,
-                          styles.tabletTextArea,
-                          { fontSize: scaleFont(13.5, 12.5, 14.5) },
-                        ]}
-                        value={description}
-                        onChangeText={setDescription}
-                        placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
-                        placeholderTextColor={MUTED}
-                        multiline
-                        numberOfLines={3}
-                        textAlignVertical="top"
-                        accessibilityLabel="Description notes input"
-                        maxFontSizeMultiplier={1.35}
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                {/* Primary Save CTA in Right Column */}
-                <Pressable
-                  onPress={handleSave}
-                  disabled={saving}
-                  style={({ pressed }) => [
-                    styles.tabletSaveBtn,
-                    pressed && styles.pressed,
-                    saving && styles.disabledBtn,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Save medical record"
-                >
-                  {saving ? (
-                    <>
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                      <Text style={styles.tabletSaveBtnText}>Saving Record...</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="checkmark-circle-outline"
-                        size={18}
-                        color="#FFFFFF"
-                      />
-                      <Text style={styles.tabletSaveBtnText}>Save Record</Text>
-                    </>
-                  )}
-                </Pressable>
+              {/* 2. Section Divider (Matching Phone Flow) */}
+              <View style={styles.tabletDividerRow}>
+                <View style={styles.tabletDividerLine} />
+                <Text style={styles.tabletDividerText}>record details</Text>
+                <View style={styles.tabletDividerLine} />
               </View>
+
+              {/* 3. Record Type Selector */}
+              <View style={styles.tabletSection}>
+                <Text style={styles.tabletSectionLabel}>RECORD TYPE</Text>
+                <View style={styles.tabletTypeGrid}>
+                  {RECORD_TYPES.map((t) => {
+                    const active = type === t.value;
+                    return (
+                      <Pressable
+                        key={t.value}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setType(t.value);
+                        }}
+                        style={({ pressed }) => [
+                          styles.tabletTypeChip,
+                          active && styles.tabletTypeChipActive,
+                          pressed && styles.pressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select record type ${t.label}`}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Image
+                          source={TYPE_ASSETS[t.value]}
+                          style={[
+                            styles.tabletTypeChipIcon,
+                            { tintColor: active ? TEAL : MUTED },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.tabletTypeChipText,
+                            active && styles.tabletTypeChipTextActive,
+                            { fontSize: scaleFont(12, 11, 13) },
+                          ]}
+                          maxFontSizeMultiplier={1.35}
+                        >
+                          {t.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* 4. Record Information Form Card */}
+              <View style={styles.tabletFormCard}>
+                {/* Title Field */}
+                <View style={styles.tabletFieldGroup}>
+                  <Text style={styles.tabletFieldLabel}>RECORD TITLE *</Text>
+                  <View style={styles.tabletInputContainer}>
+                    <Image
+                      source={require('../../assets/icons/folder.png')}
+                      style={styles.tabletFieldLeadingIcon}
+                    />
+                    <TextInput
+                      style={[styles.tabletTextInput, { fontSize: scaleFont(14, 13, 15) }]}
+                      value={title}
+                      onChangeText={setTitle}
+                      placeholder="e.g. Annual Blood Work & Lipid Panel"
+                      placeholderTextColor={MUTED}
+                      accessibilityLabel="Record title input"
+                      maxFontSizeMultiplier={1.35}
+                    />
+                  </View>
+                </View>
+
+                {/* Date of Event */}
+                <View style={styles.tabletFieldGroup}>
+                  <Text style={styles.tabletFieldLabel}>DATE OF EVENT</Text>
+                  <View style={styles.tabletInputContainer}>
+                    <Image
+                      source={require('../../assets/icons/calendar.png')}
+                      style={styles.tabletFieldLeadingIcon}
+                    />
+                    <TextInput
+                      style={[styles.tabletTextInput, { fontSize: scaleFont(14, 13, 15) }]}
+                      value={date}
+                      onChangeText={setDate}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={MUTED}
+                      accessibilityLabel="Date input"
+                      maxFontSizeMultiplier={1.35}
+                    />
+                  </View>
+                </View>
+
+                {/* Clinical Notes / Details */}
+                <View style={styles.tabletFieldGroup}>
+                  <Text style={styles.tabletFieldLabel}>CLINICAL NOTES / DETAILS</Text>
+                  <View style={[styles.tabletInputContainer, styles.tabletTextAreaContainer]}>
+                    <TextInput
+                      style={[
+                        styles.tabletTextInput,
+                        styles.tabletTextArea,
+                        { fontSize: scaleFont(14, 13, 15) },
+                      ]}
+                      value={description}
+                      onChangeText={setDescription}
+                      placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
+                      placeholderTextColor={MUTED}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                      accessibilityLabel="Description notes input"
+                      maxFontSizeMultiplier={1.35}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* 5. Primary Save CTA */}
+              <Pressable
+                onPress={handleSave}
+                disabled={saving}
+                style={({ pressed }) => [
+                  styles.tabletSaveBtn,
+                  pressed && styles.pressed,
+                  saving && styles.disabledBtn,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Save medical record"
+              >
+                {saving ? (
+                  <>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.tabletSaveBtnText}>Saving Record...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={20}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.tabletSaveBtnText}>Save Record</Text>
+                  </>
+                )}
+              </Pressable>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -1080,7 +1084,7 @@ const styles = StyleSheet.create({
   },
 
   /* ────────────────────────────────────────────────────────
-     TABLET INTAKE STUDIO (REFINED COMPACT MODAL STYLES)
+     TABLET INTAKE STUDIO (SINGLE-COLUMN REFINED MODAL STYLES)
   ──────────────────────────────────────────────────────── */
   tabletRootOverlay: {
     flex: 1,
@@ -1091,22 +1095,22 @@ const styles = StyleSheet.create({
   },
   tabletKeyboardAvoider: {
     width: '100%',
-    maxWidth: 820,
-    alignItems: 'center',
+    maxWidth: 580,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tabletStudioCard: {
     width: '100%',
-    maxWidth: 820,
-    maxHeight: '90%',
+    maxWidth: 580,
+    maxHeight: '92%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: BORDER,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.18,
-    shadowRadius: 18,
+    shadowRadius: 20,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
@@ -1153,32 +1157,25 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 1,
   },
-  tabletStudioBody: {
-    flexDirection: 'row',
-    padding: 18,
-    gap: 18,
+  tabletSingleColContent: {
+    padding: 20,
+    gap: 16,
     flexGrow: 0,
   },
-  tabletColLeft: {
-    flex: 0.92,
-    gap: 10,
-  },
-  tabletColRight: {
-    flex: 1.08,
-    gap: 10,
+  tabletSection: {
+    gap: 8,
   },
   tabletSectionLabel: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 10.5,
+    fontSize: 11,
     color: MUTED,
     letterSpacing: 0.6,
-    marginBottom: 2,
   },
   tabletScanHeroCard: {
     backgroundColor: BLUE,
     borderRadius: 14,
-    padding: 14,
-    gap: 10,
+    padding: 16,
+    gap: 12,
     shadowColor: BLUE,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.16,
@@ -1188,25 +1185,25 @@ const styles = StyleSheet.create({
   tabletScanHeroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   tabletScanIconBox: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabletScanIcon: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     resizeMode: 'contain',
     tintColor: '#FFFFFF',
   },
   tabletScanTextBox: {
     flex: 1,
-    gap: 1,
+    gap: 2,
   },
   tabletScanTitle: {
     fontFamily: 'LexendDeca-Bold',
@@ -1215,7 +1212,7 @@ const styles = StyleSheet.create({
   tabletScanSub: {
     fontFamily: 'LexendDeca-Regular',
     color: 'rgba(255, 255, 255, 0.88)',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   tabletScanActions: {
     gap: 6,
@@ -1223,7 +1220,7 @@ const styles = StyleSheet.create({
   tabletScanPrimaryBtn: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    height: 40,
+    height: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1236,7 +1233,7 @@ const styles = StyleSheet.create({
   },
   tabletScanPrimaryBtnText: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 12,
+    fontSize: 12.5,
     color: BLUE,
     letterSpacing: 0.3,
   },
@@ -1244,12 +1241,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 3,
+    gap: 6,
+    paddingVertical: 4,
   },
   tabletGalleryBtnText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.9)',
   },
   tabletVaultNotice: {
@@ -1257,8 +1254,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#EDFAF7',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#D0EFE8',
@@ -1266,36 +1263,51 @@ const styles = StyleSheet.create({
   tabletVaultNoticeText: {
     flex: 1,
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
+    fontSize: 11.5,
     color: INK,
-    lineHeight: 15,
+    lineHeight: 16,
   },
-  tabletFieldSection: {
-    gap: 4,
+  tabletDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 2,
+  },
+  tabletDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5F0EE',
+  },
+  tabletDividerText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11,
+    color: MUTED,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   tabletTypeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   tabletTypeChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
     backgroundColor: '#F8FCFB',
     borderWidth: 1,
     borderColor: '#E5F0EE',
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5.5,
+    borderRadius: 10,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
   },
   tabletTypeChipActive: {
     backgroundColor: '#EDFAF7',
     borderColor: TEAL,
   },
   tabletTypeChipIcon: {
-    width: 13,
-    height: 13,
+    width: 14,
+    height: 14,
     resizeMode: 'contain',
   },
   tabletTypeChipText: {
@@ -1308,35 +1320,35 @@ const styles = StyleSheet.create({
   },
   tabletFormCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 12,
-    gap: 8,
+    padding: 16,
+    gap: 12,
   },
   tabletFieldGroup: {
-    gap: 4,
+    gap: 5,
   },
   tabletFieldLabel: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 10.5,
+    fontSize: 11,
     color: INK,
     letterSpacing: 0.4,
   },
   tabletInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: '#F8FCFB',
     borderWidth: 1,
     borderColor: '#E2EBE9',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 40,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 46,
   },
   tabletFieldLeadingIcon: {
-    width: 14,
-    height: 14,
+    width: 15,
+    height: 15,
     resizeMode: 'contain',
     tintColor: TEAL,
   },
@@ -1348,32 +1360,32 @@ const styles = StyleSheet.create({
   },
   tabletTextAreaContainer: {
     alignItems: 'flex-start',
-    paddingVertical: 8,
-    minHeight: 68,
+    paddingVertical: 10,
+    minHeight: 84,
     height: 'auto',
   },
   tabletTextArea: {
-    minHeight: 52,
+    minHeight: 64,
     textAlignVertical: 'top',
   },
   tabletSaveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: TEAL,
-    borderRadius: 12,
-    height: 44,
-    marginTop: 2,
+    borderRadius: 14,
+    height: 48,
+    marginTop: 4,
     shadowColor: TEAL,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
     elevation: 3,
   },
   tabletSaveBtnText: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 14.5,
+    fontSize: 15.5,
     color: '#FFFFFF',
   },
 });

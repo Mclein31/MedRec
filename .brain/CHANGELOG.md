@@ -23,8 +23,8 @@ last_updated: 2026-08-31
     - **Master Column (380pt)**: Search input, category filter carousel chips, multi-select action banner, and records list with active item selection state.
     - **Detail Column (Flex 1)**: Live inline document preview with tap-to-inspect zoom modal, clinical notes card, AI Medical Insights card with 1-tap regenerate button (`api.explain`), and delete record CTA.
   - **Portrait Tablet**: 2-column Bento Grid (`numColumns={2}`) with category chips and search.
-- **Record Intake 2-Column Studio (`app/record/add.tsx`)**:
-  - Centered 880pt bounded 2-column Intake Studio on tablet (Left: Document scan / attachment card with retake/replace; Right: Record type chips, title, date, notes, and primary Save CTA).
+- **Record Intake Single-Column Studio (`app/record/add.tsx`)**:
+  - Centered 580pt bounded single-column intake studio on tablet matching the phone's vertical hierarchy and flow (Document Attachment → Record Details divider → Record Type chips → Form Card → Primary Save CTA).
 - **Sharing Center 2-Column Hub (`app/(tabs)/share.tsx`)**:
   - Centered 920pt bounded 2-column Sharing Hub on tablet (Left: 220×220 Living QR hero card with live timer and instant revoke CTA; Right: Active Doctor Sessions & Past Share History timeline).
 - **Doctor Scanner Master-Detail Workspace (`app/(tabs)/scan.tsx`)**:
@@ -37,7 +37,7 @@ last_updated: 2026-08-31
   - Reset `detailExplanation` state on record selection switch in landscape Master-Detail view (`app/(tabs)/index.tsx`).
   - Added active interval ticker (`15s`) in `app/(tabs)/share.tsx` to maintain accurate living QR expiry countdown on static tablet displays.
   - Formatted dedicated floating modal for AI Health Summary in `TabletPersistentSidebar.tsx` with clinical disclaimer and scrollable synthesis card.
-  - Refined "Add Health Record" tablet modal into a content-driven floating studio card (`maxWidth: 820pt`) with `transparentModal` presentation and dimmed backdrop dismiss, eliminating trailing native white sheet space while maintaining 2-column ergonomics and 100% phone modal isolation.
+  - Refined "Add Health Record" tablet modal into a content-driven single-column floating studio card (`maxWidth: 580pt`) matching the phone's unified mental model and component flow with `transparentModal` presentation and dimmed backdrop dismiss, maintaining 100% phone modal isolation.
 
 ## [0.9.5] — Burger Navigation Drawer UI/UX Architecture & Scannability Upgrade
 - **Dual-Coded Iconography**: Added 18×18 icons housed in dedicated 32×32 squircle containers (`#DDF5EE` teal for clinical tools, `#EBF3FB` blue for scan, `#F1F5F9` slate for data, `#FEF3F2` red for destructive logout), increasing visual search velocity.
