@@ -34,15 +34,11 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   other: 'folder-outline',
 };
 
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+import { formatDateLong } from '../../utils/dateUtils';
+
+const formatDate = (dateStr: string) => formatDateLong(dateStr, dateStr, 'UTC');
+
+const scanRecordKeyExtractor = (item: { id: string }) => item.id;
 
 type SharedRecord = {
   id: string;
@@ -179,7 +175,7 @@ export default function ScanScreen() {
 
         <FlatList
           data={records || []}
-          keyExtractor={(item) => item.id}
+          keyExtractor={scanRecordKeyExtractor}
           contentContainerStyle={[
             styles.list,
             {

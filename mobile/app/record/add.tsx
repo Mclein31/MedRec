@@ -35,25 +35,10 @@ const BORDER = Colors.border;
 const MUTED = Colors.muted;
 const CARD_BG = Colors.cardBg;
 
-const TYPE_ASSETS: Record<string, any> = {
-  consultation: require('../../assets/icons/consultation.png'),
-  diagnosis: require('../../assets/icons/diagnosis.png'),
-  lab: require('../../assets/icons/lab.png'),
-  prescription: require('../../assets/icons/prescription.png'),
-  medication: require('../../assets/icons/prescription.png'),
-  appointment: require('../../assets/icons/calendar.png'),
-  other: require('../../assets/icons/folder.png'),
-};
+import { RECORD_TYPE_ASSETS, RECORD_TYPE_OPTIONS } from '../../constants/records';
 
-const RECORD_TYPES = [
-  { value: 'consultation', label: 'Consultation' },
-  { value: 'diagnosis', label: 'Diagnosis' },
-  { value: 'lab', label: 'Lab' },
-  { value: 'prescription', label: 'Prescription' },
-  { value: 'medication', label: 'Medication' },
-  { value: 'appointment', label: 'Appointment' },
-  { value: 'other', label: 'Other' },
-] as const;
+const TYPE_ASSETS = RECORD_TYPE_ASSETS;
+const RECORD_TYPES = RECORD_TYPE_OPTIONS;
 
 type ViewMode = 'form' | 'camera' | 'preview';
 

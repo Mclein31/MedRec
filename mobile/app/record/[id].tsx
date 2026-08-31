@@ -27,53 +27,17 @@ const MUTED = Colors.muted;
 const CARD_BG = Colors.cardBg;
 
 const BLUE = Colors.blue;
+import { MedicalRecord } from '../../types/record';
+import { RECORD_TYPE_ASSETS, RECORD_TYPE_LABELS } from '../../constants/records';
+import { formatDateLong } from '../../utils/dateUtils';
+
 const RED = Colors.red;
 const RED_LIGHT = Colors.redLight;
 const RED_BORDER = Colors.redBorder;
 
-const TYPE_ASSETS: Record<string, any> = {
-  consultation: require('../../assets/icons/consultation.png'),
-  diagnosis: require('../../assets/icons/diagnosis.png'),
-  lab: require('../../assets/icons/lab.png'),
-  prescription: require('../../assets/icons/prescription.png'),
-  medication: require('../../assets/icons/prescription.png'),
-  appointment: require('../../assets/icons/calendar.png'),
-  other: require('../../assets/icons/folder.png'),
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  consultation: 'Consultation',
-  diagnosis: 'Diagnosis',
-  lab: 'Lab Result',
-  prescription: 'Prescription',
-  medication: 'Medication',
-  appointment: 'Appointment',
-  other: 'General Record',
-};
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return 'Not specified';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-type MedicalRecord = {
-  id: string;
-  type: string;
-  title: string;
-  description: string | null;
-  date: string;
-  attachment_url?: string | null;
-  attachmentUrl?: string | null;
-  created_at?: string;
-  updated_at?: string;
-};
+const TYPE_ASSETS = RECORD_TYPE_ASSETS;
+const TYPE_LABELS = RECORD_TYPE_LABELS;
+const formatDate = (dateStr?: string | null) => formatDateLong(dateStr, 'Not specified', undefined);
 
 export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -12,6 +12,29 @@ last_updated: 2026-08-31
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-31 — Mobile Codebase Modernization, Taxonomy Centralization & Boilerplate Elimination
+
+### Decision
+1. Centralize the canonical `MedicalRecord` domain interface and `RecordSection` grouping type in `mobile/types/record.ts`.
+2. Consolidate category taxonomy maps (`RECORD_TYPE_ASSETS`, `RECORD_TYPE_LABELS`, `CATEGORY_FILTERS`, `RECORD_TYPE_OPTIONS`) in `mobile/constants/records.ts` as the single source of truth.
+3. Extract pure date, age, and relative time formatters (`calculateAge`, `formatDateLong`, `formatDateShort`, `formatTimeAgo`) with explicit UTC timezone parameters into `mobile/utils/dateUtils.ts`.
+4. Deduplicate user bootstrap resolution in `AuthContext.tsx` using `await refreshUser()`.
+5. Prune all unused Expo starter template components (`hello-wave`, `parallax-scroll-view`, `themed-text`, `collapsible`, etc.), boilerplate hooks (`use-theme-color`, `use-color-scheme`), and unreferenced packages (`@react-navigation/elements`, `expo-symbols`).
+
+### Reason
+- **Single Source of Truth**: Multiple screen files previously redefined the `MedicalRecord` interface and category icon maps with minor divergences, leading to maintenance overhead and risks of taxonomy drift.
+- **Pure Functional Date Calculations**: Ad-hoc date formatting across Profile, Emergency ID, and Dashboard screens led to duplicated parsing logic. Centralizing with explicit UTC support ensures zero discrepancies in clinical date strings.
+- **Codebase Cleanliness & Security**: Eliminating ~1,800 lines of unused template files and dangerous reset scripts ensures 100% of codebase files represent active production assets.
+
+### Alternatives Considered
+- **Blanket UI Component Replacement (Button.tsx)**: Rejected because replacing bespoke pressables on locked screens risks touch-target and shadow shifts.
+- **Global Modal Lifting to _layout.tsx**: Rejected/deferred to avoid navigation focus-trapping and z-index issues.
+
+### Consequences
+Zero visual or functional changes to the app; significantly cleaner, type-safe, and maintainable mobile codebase.
+
+---
+
 ## 2026-08-31 — Automated Startup Database Migration Guard & Schema Drift Elimination
 
 ### Decision

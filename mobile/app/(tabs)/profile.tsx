@@ -38,29 +38,9 @@ const CARD_BG = Colors.cardBg;
 const DIVIDER = Colors.divider;
 const RED = Colors.red;
 
-function calculateAge(dobStr?: string | null): number | null {
-  if (!dobStr) return null;
-  const dob = new Date(dobStr);
-  if (isNaN(dob.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-    age--;
-  }
-  return age >= 0 ? age : null;
-}
+import { calculateAge, formatDateShort } from '../../utils/dateUtils';
 
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return 'Not set';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+const formatDate = (dateStr?: string | null) => formatDateShort(dateStr, 'Not set', true);
 
 export default function ProfileScreen() {
   const router = useRouter();

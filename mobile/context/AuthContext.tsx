@@ -50,23 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getToken().then(async (stored) => {
       setToken(stored);
       if (stored) {
-        try {
-          const [meData, profileData] = await Promise.all([
-            api.getMe().catch(() => null),
-            api.getProfile().catch(() => null),
-          ]);
-          const userData = meData?.user || profileData?.user;
-          if (userData) {
-            setUser({
-              id: userData.id,
-              name: userData.name,
-              email: userData.email,
-              avatarUrl: profileData?.profile?.avatarUrl || userData.avatarUrl || null,
-            });
-          }
-        } catch {
-          // Token might be invalid/expired
-        }
+        await refreshUser();
       }
       setIsLoading(false);
     });

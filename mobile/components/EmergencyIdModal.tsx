@@ -33,18 +33,7 @@ type Props = {
   onClose: () => void;
 };
 
-function calculateAge(dobStr?: string | null): number | null {
-  if (!dobStr) return null;
-  const dob = new Date(dobStr);
-  if (isNaN(dob.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-    age--;
-  }
-  return age >= 0 ? age : null;
-}
+import { calculateAge } from '../utils/dateUtils';
 
 export default function EmergencyIdModal({
   visible,

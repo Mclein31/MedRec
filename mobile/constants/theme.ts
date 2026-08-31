@@ -47,24 +47,6 @@ export const Colors = {
   // UI Overlays & Affordances
   dragHandle: '#CBD5E1',
   backdrop: 'rgba(18, 52, 59, 0.45)',
-
-  // Backwards compatibility for boilerplate hooks (useThemeColor, etc.)
-  light: {
-    text: '#12343B',
-    background: '#F4FAF9',
-    tint: '#159A83',
-    icon: '#64748B',
-    tabIconDefault: '#64748B',
-    tabIconSelected: '#159A83',
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: '#159A83',
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: '#159A83',
-  },
 };
 
 export const BREAKPOINTS = {

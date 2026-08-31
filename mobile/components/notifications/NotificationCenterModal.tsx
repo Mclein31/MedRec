@@ -25,6 +25,8 @@ const BORDER = Colors.border;
 const BG = Colors.bg;
 const CARD_BG = Colors.cardBg;
 
+const notificationKeyExtractor = (item: MedRecNotification) => item.id;
+
 interface NotificationCenterModalProps {
   visible: boolean;
   onClose: () => void;
@@ -206,7 +208,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           ) : (
             <FlatList
               data={filteredNotifications}
-              keyExtractor={(item) => item.id}
+              keyExtractor={notificationKeyExtractor}
               renderItem={({ item }) => (
                 <NotificationCard
                   notification={item}

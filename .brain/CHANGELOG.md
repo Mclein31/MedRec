@@ -10,6 +10,14 @@ last_updated: 2026-08-31
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.9.4] — Codebase Modernization, Dead Code Elimination & Architecture Consolidation
+- **Domain Types & Category Map Centralization**: Created canonical `mobile/types/record.ts` (`MedicalRecord`, `RecordSection`) and `mobile/constants/records.ts` (`RECORD_TYPE_ASSETS`, `RECORD_TYPE_LABELS`, `CATEGORY_FILTERS`, `RECORD_TYPE_OPTIONS`), eliminating duplicate type declarations and asset dictionaries across 6+ screen files.
+- **Shared Date & Age Utilities**: Created `mobile/utils/dateUtils.ts` containing pure, tested formatters (`calculateAge`, `formatDateLong`, `formatDateShort`, `formatTimeAgo`) with explicit UTC timezone flags, replacing copy-pasted date parsing in profile, emergency ID, records dashboard, and detail views.
+- **Auth Bootstrap Deduplication**: Consolidated user state resolution in `mobile/context/AuthContext.tsx` by eliminating redundant `Promise.all([api.getMe(), api.getProfile()])` blocks in favor of `refreshUser()`.
+- **API Client Generics**: Added `<T = any>` response typing to `request()` in `mobile/lib/api.ts` for type-safe API communication.
+- **Dead Code & Template Pruning**: Safely removed 14 unused Expo starter boilerplate files (~1,800 lines of dead code), legacy boilerplate theme objects, and unreferenced packages (`@react-navigation/elements`, `expo-symbols`).
+- **Render Performance**: Stabilized `keyExtractor` across `FlatList` components in records dashboard, scan viewer, and notification center modal.
+
 ## [0.9.3] — Login & Register Visual Design Restoration & Safe-Area Header Alignment
 - **Login Visual Design Restoration (`01acaad`)**: Restored the canonical 320pt hero graphic with 75×75pt brand logo mark, 24pt bold wordmark, 30pt "Welcome Back!" title, 57.5pt input rows, primary teal CTA, Google sign-in card, and outlined "Create an Account" action.
 - **Top Safe-Area Branding Alignment**: Adjusted `brandRow` in `login.tsx` to anchor at the top of the hero header (`top: insets.top > 0 ? insets.top + 5 : 40`, `left: -20`), providing seamless hardware notch/status bar clearance.

@@ -12,35 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
+import { MedicalRecord } from '../../types/record';
+import { RECORD_TYPE_ASSETS, RECORD_TYPE_LABELS } from '../../constants/records';
+import { formatDateShort } from '../../utils/dateUtils';
 
-export interface MedicalRecord {
-  id: string;
-  type: string;
-  title: string;
-  description: string | null;
-  date: string;
-  created_at?: string;
-}
-
-const TYPE_ASSETS: Record<string, any> = {
-  consultation: require('../../assets/icons/consultation.png'),
-  diagnosis: require('../../assets/icons/diagnosis.png'),
-  lab: require('../../assets/icons/lab.png'),
-  prescription: require('../../assets/icons/prescription.png'),
-  medication: require('../../assets/icons/prescription.png'),
-  appointment: require('../../assets/icons/calendar.png'),
-  other: require('../../assets/icons/folder.png'),
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  consultation: 'Consultation',
-  diagnosis: 'Diagnosis',
-  lab: 'Lab Result',
-  prescription: 'Prescription',
-  medication: 'Medication',
-  appointment: 'Appointment',
-  other: 'General Record',
-};
+export type { MedicalRecord };
 
 interface RecordRowProps {
   record: MedicalRecord;
@@ -64,19 +40,10 @@ export const RecordRow: React.FC<RecordRowProps> = ({
   const { scaleFont, isCompactPhone } = useResponsive();
 
   const typeKey = (record.type || 'other').toLowerCase();
-  const typeAsset = TYPE_ASSETS[typeKey] || TYPE_ASSETS.other;
-  const typeLabel = TYPE_LABELS[typeKey] || record.type.charAt(0).toUpperCase() + record.type.slice(1);
+  const typeAsset = RECORD_TYPE_ASSETS[typeKey] || RECORD_TYPE_ASSETS.other;
+  const typeLabel = RECORD_TYPE_LABELS[typeKey] || record.type.charAt(0).toUpperCase() + record.type.slice(1);
 
-  const formattedDate = (() => {
-    if (!record.date) return '';
-    const d = new Date(record.date);
-    if (isNaN(d.getTime())) return record.date;
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      timeZone: 'UTC',
-    });
-  })();
+  const formattedDate = formatDateShort(record.date, '', false, 'UTC');
 
   const handlePress = () => {
     if (selectionMode) {

@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
   forgotText: {
     color: BLUE,
     fontSize: 12,
-    lineHeight: 0,
     marginTop: 0,
   },
 

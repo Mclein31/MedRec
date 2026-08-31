@@ -35,7 +35,7 @@ type RequestOptions = {
   body?: unknown;
 };
 
-async function request(path: string, options: RequestOptions = {}) {
+async function request<T = any>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = await tokenStorage.get(TOKEN_KEY);
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -49,7 +49,7 @@ async function request(path: string, options: RequestOptions = {}) {
 
   if (response.status === 204) {
     if (!response.ok) throw new Error('Request failed');
-    return null;
+    return null as T;
   }
 
   const data = await response.json().catch(() => ({}));
@@ -58,7 +58,7 @@ async function request(path: string, options: RequestOptions = {}) {
     throw new Error(data.error || `Request failed with status ${response.status}`);
   }
 
-  return data;
+  return data as T;
 }
 
 export const api = {
