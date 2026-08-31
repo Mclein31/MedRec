@@ -96,3 +96,18 @@ last_updated: 2026-08-28
 4. **UI Components (`mobile/components/notifications/`)**:
    - `NotificationCenterModal.tsx`: Slide-up sheet (`pageSheet`) with centered grey drag handle (`40×4px`, `#D1D5DB`), unread filter tabs, pull-to-refresh, and one-tap deep linking.
    - `NotificationCard.tsx`: Category icon badges, 4px teal unread indicator bar, relative timestamps, and action hints.
+
+---
+
+## 📱 Tablet & iPad Adaptive Architecture Subsystem
+1. **Phone UI Quarantine Invariant**: All tablet adaptive behavior is guarded by `isTablet` boolean checks (`shorterDimension >= 600 || width >= 800`), guaranteeing zero layout shifts, visual regressions, or performance overhead on mobile phones.
+2. **Navigation Adaptive Partitioning**:
+   - **Tablet Landscape (`isTablet && isLandscape`, 260pt)**: Persistent Left Sidebar (`TabletPersistentSidebar.tsx`) with patient avatar card, main navigation routes, "+ Add Health Record" CTA, AI Health Summary trigger, Emergency Medical ID trigger, JSON vault export, and Sign Out.
+   - **Tablet Portrait (`isTablet && !isLandscape`)**: Centered floating pill navbar (`maxWidth: 480pt`, `height: 68pt`, `borderRadius: 24`).
+3. **Master-Detail Workspace Pattern**:
+   - **Records Dashboard (`index.tsx`)**: 380pt master list with search, category filters, and multi-select banner on left; full document zoom preview, clinical notes, and AI insights with 1-tap regenerate on right.
+   - **Doctor Scanner (`scan.tsx`)**: Master list of authorized records on left; inline clinical review pane on right.
+4. **2-Column Split Layouts**:
+   - **Record Intake (`add.tsx`)**: 880pt bounded 2-column studio (Document scan card left; metadata form fields right).
+   - **Sharing Hub (`share.tsx`)**: 920pt bounded 2-column hub (220×220 Living QR hero with live countdown timer left; active sessions and history right).
+   - **Patient Profile (`profile.tsx`)**: 920pt bounded 2×2 Inset Grouped Bento grid.

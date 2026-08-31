@@ -38,6 +38,7 @@ export interface ResponsiveLayoutState {
   maxModalWidth: number;
   containerWidth: number;
   gridColumns: number;
+  sidebarWidth: number;
 
   // Fluid Dimension Calculators (with strict bounding floors and ceilings)
   scaleFont: (baseSize: number, min?: number, max?: number) => number;
@@ -70,13 +71,15 @@ export function useResponsive(): ResponsiveLayoutState {
   const isStandardPhone = !isTablet && width >= BREAKPOINTS.compact;
   const isShortScreen = height < 700;
 
-  // Responsive Spacing Tokens
+  // Spacing Tokens
   const spacing = getResponsiveSpacing(isCompactPhone, isTablet);
+  const sidebarWidth = (isTablet && isLandscape) ? 260 : 0;
+  const effectiveTabBarClearance = (isTablet && isLandscape) ? 24 : spacing.tabBarClearance;
 
   // Grid & Container metrics
   const gridColumns = isLargeTablet ? 3 : isTablet ? 2 : 1;
   const containerWidth = isTablet
-    ? Math.min(width - (isLargeTablet ? 64 : 48), isLargeTablet ? ResponsiveLimits.maxDetailWidth : ResponsiveLimits.maxContentWidth)
+    ? Math.min(width - sidebarWidth - (isLargeTablet ? 64 : 48), isLargeTablet ? ResponsiveLimits.maxDetailWidth : ResponsiveLimits.maxContentWidth)
     : width;
 
   // Scaling factors with strict caps
@@ -135,6 +138,8 @@ export function useResponsive(): ResponsiveLayoutState {
     height,
     insets,
     ...spacing,
+    tabBarClearance: effectiveTabBarClearance,
+    sidebarWidth,
     maxFormWidth: ResponsiveLimits.maxFormWidth,
     maxContentWidth: ResponsiveLimits.maxContentWidth,
     maxDetailWidth: ResponsiveLimits.maxDetailWidth,

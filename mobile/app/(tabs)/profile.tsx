@@ -47,6 +47,7 @@ export default function ProfileScreen() {
   const { user, setUser, logout } = useAuth();
   const {
     isTablet,
+    isLandscape,
     screenPadding,
     insets,
     scaleFont,
@@ -664,7 +665,12 @@ export default function ProfileScreen() {
   );
 
   return (
-    <View style={styles.root}>
+    <View
+      style={[
+        styles.root,
+        isTablet && isLandscape && { paddingLeft: 260 },
+      ]}
+    >
       <StatusBar style="dark" />
 
       {/* Global Navigation Toolbar */}

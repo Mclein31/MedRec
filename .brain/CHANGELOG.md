@@ -10,6 +10,34 @@ last_updated: 2026-08-31
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [1.0.0] — Approved Tablet & iPad UI Redesign (Master-Detail, Persistent Sidebar, Split Workspaces)
+- **Zero Phone UI Regression (100% Locked & Isolated)**: Strictly quarantined all tablet layouts behind `isTablet` ternary checks, preserving the existing phone UI pixel-for-pixel across all phone form factors.
+- **Adaptive Tablet Navigation Architecture**:
+  - **Landscape Persistent Left Sidebar (`isTablet && isLandscape`, 260pt)**: Pinned left sidebar (`TabletPersistentSidebar.tsx`) with patient avatar card, main tab routes, "+ Add Health Record" CTA, AI Health summary trigger, Emergency Medical ID trigger, JSON vault export, and Sign Out.
+  - **Portrait Floating Centered Pill Navbar (`isTablet && !isLandscape`)**: Clamped floating pill navbar (`maxWidth: 480`, `height: 68`, `borderRadius: 24`).
+- **Auth Flow 2-Column Split & Centered Forms (`login.tsx`, `register.tsx`)**:
+  - **Landscape Tablet**: 2-column split with Brand/Value-prop Showcase hero on left (75×75 logo mark, sovereign trust guarantees) and bounded 480pt form card on right.
+  - **Portrait Tablet**: Centered bounded form card (`maxWidth: 480`) with top brand hero.
+- **Records Dashboard Master-Detail Split Workspace (`app/(tabs)/index.tsx`)**:
+  - **Landscape Tablet**: Interactive 2-column split workspace:
+    - **Master Column (380pt)**: Search input, category filter carousel chips, multi-select action banner, and records list with active item selection state.
+    - **Detail Column (Flex 1)**: Live inline document preview with tap-to-inspect zoom modal, clinical notes card, AI Medical Insights card with 1-tap regenerate button (`api.explain`), and delete record CTA.
+  - **Portrait Tablet**: 2-column Bento Grid (`numColumns={2}`) with category chips and search.
+- **Record Intake 2-Column Studio (`app/record/add.tsx`)**:
+  - Centered 880pt bounded 2-column Intake Studio on tablet (Left: Document scan / attachment card with retake/replace; Right: Record type chips, title, date, notes, and primary Save CTA).
+- **Sharing Center 2-Column Hub (`app/(tabs)/share.tsx`)**:
+  - Centered 920pt bounded 2-column Sharing Hub on tablet (Left: 220×220 Living QR hero card with live timer and instant revoke CTA; Right: Active Doctor Sessions & Past Share History timeline).
+- **Doctor Scanner Master-Detail Workspace (`app/(tabs)/scan.tsx`)**:
+  - Clamped 320×320 viewfinder in camera mode; Interactive Master-Detail split pane in loaded records mode (Left: Authorized records list; Right: Selected record full details & clinical notes inline).
+- **Patient Profile Inset Grouped Bento Layout (`app/(tabs)/profile.tsx`)**:
+  - 2-column bento layout on tablet with sidebar clearance offset (Left: Profile hero + Emergency & Medical ID; Right: Personal Demographics + Security Preferences + Legal/Account).
+- **Centered Floating Modals**: All modals (`ProfileEditModal`, `EmergencyIdModal`, `ChangePasswordModal`, `NotificationCenterModal`) clamped with `maxWidth: 560-640pt`, dark backdrop dismiss, and paired 2-column form rows.
+- **Review Hardening & Precision Polish**:
+  - Enforced explicit `'UTC'` timezone flag in `app/record/[id].tsx` date formatting to eliminate day-shift anomalies across negative UTC offset devices.
+  - Reset `detailExplanation` state on record selection switch in landscape Master-Detail view (`app/(tabs)/index.tsx`).
+  - Added active interval ticker (`15s`) in `app/(tabs)/share.tsx` to maintain accurate living QR expiry countdown on static tablet displays.
+  - Formatted dedicated floating modal for AI Health Summary in `TabletPersistentSidebar.tsx` with clinical disclaimer and scrollable synthesis card.
+
 ## [0.9.5] — Burger Navigation Drawer UI/UX Architecture & Scannability Upgrade
 - **Dual-Coded Iconography**: Added 18×18 icons housed in dedicated 32×32 squircle containers (`#DDF5EE` teal for clinical tools, `#EBF3FB` blue for scan, `#F1F5F9` slate for data, `#FEF3F2` red for destructive logout), increasing visual search velocity.
 - **Interactive Patient Demographic Card**: Upgraded user section to a 38×38 avatar/monogram card displaying patient name, email, and trailing chevron affordance linking directly to `/(tabs)/profile`.

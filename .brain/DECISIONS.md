@@ -12,6 +12,37 @@ last_updated: 2026-08-31
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-31 — Tablet & iPad UI Redesign (Adaptive Layout, Master-Detail & Sidebar Navigation)
+
+### Decision
+1. **Preserve Phone UI Invariant (100% Locked & Isolated)**: Quarantine all tablet-specific UX modifications strictly behind `isTablet` conditions (`shorterDimension >= 600 || width >= 800`). Phone UI layout, geometry, navigation, and styling remain untouched.
+2. **Navigation Adaptive Partitioning**:
+   - **Landscape Tablets (`isTablet && isLandscape`, width 260pt)**: Persistent Left Sidebar (`TabletPersistentSidebar.tsx`) with patient avatar card, main tabs, "+ Add Health Record" CTA, AI Health Summary trigger, Emergency Medical ID trigger, JSON vault export, and Sign Out.
+   - **Portrait Tablets (`isTablet && !isLandscape`)**: Centered floating pill tab bar (`maxWidth: 480pt`, `height: 68pt`, `borderRadius: 24`).
+3. **Master-Detail Workspace Pattern**:
+   - **Records Dashboard (`index.tsx`)**: In landscape tablet, implement interactive 2-column split workspace (Left: 380pt master list with search, category carousel, and multi-select banner; Right: flex 1 detail pane with inline document zoom, clinical notes, AI Medical Insights card with 1-tap re-explain, and delete CTA). In portrait tablet, render 2-column Bento Grid.
+   - **Doctor Scanner (`scan.tsx`)**: In landscape/portrait tablet, implement Master-Detail split pane for authorized patient records (Left: authorized record list; Right: selected record full details and clinical notes inline).
+4. **Intake Studio & Sharing Hub 2-Column Split**:
+   - **Record Intake (`add.tsx`)**: 2-column Intake Studio bounded at 880pt (Left: Document scan / attachment card; Right: Record type chips, title, date, notes, and save CTA).
+   - **Sharing Center (`share.tsx`)**: 2-column Sharing Hub bounded at 920pt (Left: 220×220 Living QR hero card with live timer and revoke CTA; Right: Active Doctor Sessions & Past History timeline).
+5. **Patient Profile Bento Layout (`profile.tsx`)**:
+   - 2-column / 2×2 Inset Grouped Bento Layout bounded at 920pt with persistent sidebar offset on landscape.
+6. **Centered Floating Dialog Modals**:
+   - Clamp all modals (`ProfileEditModal`, `EmergencyIdModal`, `ChangePasswordModal`, `NotificationCenterModal`) with `maxWidth: 560-640pt`, dark backdrop dismiss, and paired form rows.
+
+### Reason
+- **Ergonomics & Large-Screen Utility**: Tablets have expansive screen real estate. Single-column phone layouts stretched horizontally waste ~60% of viewport area and make reading difficult due to excessive line lengths. Master-Detail and 2-column split workspaces provide high clinical utility and reduce context switching.
+- **Zero Phone Regressions**: Isolating all tablet logic ensures phone users experience zero layout shifts, visual regressions, or performance overhead.
+
+### Alternatives Considered
+- **Universal Adaptive Breakpoint Layouts without Isolation**: Rejected because modifying phone-shared styles could alter pixel spacing on locked phone screens.
+- **Drawer Navigation on Tablet Landscape**: Rejected because persistent left sidebar leverages horizontal width more efficiently and prevents repetitive modal opening.
+
+### Consequences
+Significantly elevated iPad and Android tablet productivity with rich master-detail clinical viewing, living QR management, inline AI insight regeneration, and zero impact on the locked phone experience.
+
+---
+
 ## 2026-08-31 — Burger Navigation Drawer Hierarchy, Iconography & Active Parity
 
 ### Decision

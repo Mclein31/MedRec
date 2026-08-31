@@ -68,6 +68,7 @@ last_updated: 2026-08-31
   - `record/[id].tsx`: Record detail view with modular cards, compact 2-column metadata, clinical notes, and AI insights.
   - `record/add.tsx`: New record entry form with integrated document camera, gallery import, and attachment card.
 - `mobile/components/`:
+  - `navigation/TabletPersistentSidebar.tsx`: Persistent left navigation sidebar for tablet landscape mode with quick actions and formatted AI modal.
   - `camera/DocumentCamera.tsx`: Full-screen document camera with torch, haptic shutter, and permissions recovery.
   - `camera/DocumentPreview.tsx`: Full-image quality and legibility review screen.
   - `camera/ViewfinderOverlay.tsx`: 3:4 document aspect ratio framing guide with teal corner accents.
@@ -76,8 +77,8 @@ last_updated: 2026-08-31
   - `ProfileEditModal.tsx`: Modular edit modal for patient demographics and clinical baseline.
   - `ChangePasswordModal.tsx`: Authenticated password change modal.
   - `EmergencyIdModal.tsx`: High-contrast first responder Emergency Medical ID with offline QR code.
-  - `menu/SideMenuModal.tsx`: Left-slide animated drawer menu with MedRec app logo and text-only navigation.
-  - `menu/SideMenuItem.tsx`: Text-only interactive row component with active route highlights.
+  - `menu/SideMenuModal.tsx`: Left-slide animated drawer menu with MedRec app logo and dual-coded navigation.
+  - `menu/SideMenuItem.tsx`: Interactive row component with active route highlights.
   - `notifications/NotificationCenterModal.tsx`: In-app notification center modal with drag handle affordance and filter tabs.
   - `notifications/NotificationCard.tsx`: Actionable notification item card with category badges and deep links.
 - `mobile/context/`: Global React state providers (`AuthContext.tsx`, `NotificationContext.tsx`).

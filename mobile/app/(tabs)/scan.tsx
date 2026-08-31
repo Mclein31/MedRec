@@ -142,6 +142,225 @@ export default function ScanScreen() {
   }
 
   if (records || error) {
+    // Default selected record for tablet split view
+    const activeTabletRecord = selectedRecord || (records && records.length > 0 ? records[0] : null);
+
+    // ─── TABLET MASTER-DETAIL WORKSPACE (Shared Records) ───────────────────
+    if (isTablet) {
+      return (
+        <View
+          style={[
+            styles.root,
+            isLandscape && { paddingLeft: 260 },
+          ]}
+        >
+          <StatusBar style="dark" />
+          <ScreenHeader
+            title={error ? 'Scan Error' : 'Shared Records'}
+            subtitle={
+              error
+                ? 'Could not load records from QR code'
+                : `${records?.length || 0} record${records?.length !== 1 ? 's' : ''} shared by patient`
+            }
+            onPressMenu={isLandscape ? undefined : () => setMenuVisible(true)}
+            onPressNotifications={() => {
+              refreshNotifications();
+              setNotificationsVisible(true);
+            }}
+            unreadCount={unreadCount}
+          />
+
+          {error && (
+            <View
+              style={[
+                styles.errorCard,
+                { marginHorizontal: screenPadding, maxWidth: 920, alignSelf: 'center', width: '100%' },
+              ]}
+            >
+              <Ionicons name="alert-circle-outline" size={20} color={Colors.red} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          <View style={styles.tabletScanContainer}>
+            {/* Left Master Column: Shared Records List */}
+            <View style={styles.tabletScanColLeft}>
+              <Text style={styles.sectionTitle}>
+                Authorized Patient Records ({records?.length || 0})
+              </Text>
+
+              <FlatList
+                data={records || []}
+                keyExtractor={scanRecordKeyExtractor}
+                contentContainerStyle={[
+                  styles.tabletScanListContent,
+                  { paddingBottom: Math.max(insets.bottom, 24) + 80 },
+                ]}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  <View style={styles.empty}>
+                    <Ionicons name="document-outline" size={40} color={Colors.muted} style={{ opacity: 0.5 }} />
+                    <Text style={styles.emptyText}>No records in this share session</Text>
+                  </View>
+                }
+                renderItem={({ item }) => {
+                  const isActive = activeTabletRecord?.id === item.id;
+                  return (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setSelectedRecord(item);
+                      }}
+                      style={[
+                        styles.recordCard,
+                        isActive && styles.recordCardActive,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${item.title}, ${item.type}, ${formatDate(item.date)}`}
+                    >
+                      <View style={styles.recordTopRow}>
+                        <View style={[styles.recordIconBox, isActive && { backgroundColor: Colors.tealLight }]}>
+                          <Ionicons
+                            name={TYPE_ICONS[item.type] || 'document-outline'}
+                            size={20}
+                            color={Colors.teal}
+                          />
+                        </View>
+                        <View style={styles.recordContent}>
+                          <Text
+                            style={[
+                              styles.recordTitle,
+                              { fontSize: scaleFont(14, 13, 15.5) },
+                            ]}
+                            numberOfLines={2}
+                            maxFontSizeMultiplier={1.35}
+                          >
+                            {item.title}
+                          </Text>
+                          <View style={styles.recordMetaRow}>
+                            <Text style={styles.typePillText}>
+                              {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                            </Text>
+                            <Text style={styles.metaDot}>•</Text>
+                            <Text style={styles.recordMetaDate}>{formatDate(item.date)}</Text>
+                          </View>
+                        </View>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={14}
+                          color={isActive ? Colors.teal : Colors.muted}
+                        />
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
+
+            {/* Right Detail Column: Selected Record Inline View */}
+            <View style={styles.tabletScanColRight}>
+              {activeTabletRecord ? (
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={[
+                    styles.tabletScanDetailScroll,
+                    { paddingBottom: Math.max(insets.bottom, 24) + 80 },
+                  ]}
+                >
+                  <View style={styles.modalHeroCard}>
+                    <View style={styles.modalIconBox}>
+                      <Ionicons
+                        name={TYPE_ICONS[activeTabletRecord.type] || 'document-outline'}
+                        size={28}
+                        color={Colors.teal}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.modalTitle,
+                        { fontSize: scaleFont(18, 16, 21) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      {activeTabletRecord.title}
+                    </Text>
+                    <View style={styles.modalMetaChips}>
+                      <View style={styles.metaChip}>
+                        <Ionicons name="pricetag-outline" size={12} color={Colors.teal} />
+                        <Text style={styles.metaChipText}>
+                          {activeTabletRecord.type.charAt(0).toUpperCase() + activeTabletRecord.type.slice(1)}
+                        </Text>
+                      </View>
+                      <View style={styles.metaChip}>
+                        <Ionicons name="calendar-outline" size={12} color={Colors.teal} />
+                        <Text style={styles.metaChipText}>{formatDate(activeTabletRecord.date)}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Description / Clinical Notes */}
+                  {activeTabletRecord.description ? (
+                    <View style={styles.notesCard}>
+                      <Text style={styles.notesSectionLabel}>CLINICAL NOTES</Text>
+                      <Text
+                        style={[
+                          styles.notesText,
+                          { fontSize: scaleFont(13.5, 12.5, 15) },
+                        ]}
+                        maxFontSizeMultiplier={1.35}
+                      >
+                        {activeTabletRecord.description}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* Read Only Sovereign Notice */}
+                  <View style={styles.readOnlyNotice}>
+                    <Ionicons name="shield-checkmark-outline" size={16} color={Colors.teal} />
+                    <Text style={styles.readOnlyText} maxFontSizeMultiplier={1.35}>
+                      This patient record is shared securely with read-only access. It cannot be modified or permanently stored.
+                    </Text>
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyText}>Select a record to view details</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Bottom Floating Scan Another Action */}
+          <View
+            style={[
+              styles.bottomBar,
+              {
+                paddingBottom: Math.max(insets.bottom, 16) + (isLandscape ? 16 : 80),
+                paddingHorizontal: screenPadding,
+              },
+            ]}
+          >
+            <Button
+              label="Scan Another Patient QR"
+              onPress={reset}
+              leftIcon={<Ionicons name="qr-code-outline" size={18} color={Colors.white} />}
+              style={styles.scanAnotherBtn}
+            />
+          </View>
+
+          {/* Side Menu Drawer */}
+          <SideMenuModal visible={menuVisible} onClose={() => setMenuVisible(false)} />
+
+          {/* Notification Center Modal */}
+          <NotificationCenterModal
+            visible={notificationsVisible}
+            onClose={() => setNotificationsVisible(false)}
+          />
+        </View>
+      );
+    }
+
+    // ─── PHONE VIEW (100% LOCKED & UNTOUCHED) ───────────────────────────────
     return (
       <View style={styles.root}>
         <StatusBar style="dark" />
@@ -854,5 +1073,43 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-Medium',
     fontSize: 12.5,
     color: Colors.ink,
+  },
+
+  /* ────────────────────────────────────────────────────────
+     TABLET MASTER-DETAIL STYLES
+  ──────────────────────────────────────────────────────── */
+  tabletScanContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    maxWidth: 920,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  tabletScanColLeft: {
+    flex: 0.95,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 15,
+    color: Colors.ink,
+  },
+  tabletScanColRight: {
+    flex: 1.05,
+  },
+  tabletScanListContent: {
+    gap: 10,
+    paddingTop: 4,
+  },
+  tabletScanDetailScroll: {
+    gap: 16,
+    paddingTop: 4,
+  },
+  recordCardActive: {
+    borderColor: Colors.teal,
+    borderWidth: 1.5,
+    backgroundColor: '#F1FAF8',
   },
 });

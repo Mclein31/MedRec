@@ -37,7 +37,7 @@ const RED_BORDER = Colors.redBorder;
 
 const TYPE_ASSETS = RECORD_TYPE_ASSETS;
 const TYPE_LABELS = RECORD_TYPE_LABELS;
-const formatDate = (dateStr?: string | null) => formatDateLong(dateStr, 'Not specified', undefined);
+const formatDate = (dateStr?: string | null) => formatDateLong(dateStr, 'Not specified', 'UTC');
 
 export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
