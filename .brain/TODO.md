@@ -5,7 +5,7 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-08-31
+last_updated: 2026-09-01
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
@@ -17,7 +17,7 @@ last_updated: 2026-08-31
 - [x] Complete UI screen in `app/record/add.tsx` for capturing/uploading prescriptions and lab result images (Document Camera, 3:4 Viewfinder, Quality Review, and In-Form Attachment Card).
 - [x] Implement full backend and mobile attachment pipeline (`medical_records.attachment_url` in PostgreSQL schema, API endpoints, and display in `record/[id].tsx`).
 - [x] Implement app-wide responsive UI across compact phones, standard phones, and tablets with stepped typography and tablet 2-column bento grids.
-- [x] Implement approved Tablet & iPad UI redesign with persistent left sidebar on landscape, master-detail workspaces on dashboard and doctor scanner, 2-column intake studio, 2-column living QR sharing hub, and 100% phone UI isolation.
+- [x] Implement approved Tablet & iPad UI redesign with persistent left sidebar on landscape, master-detail workspaces on dashboard and doctor scanner, centered single-column intake studio, centered single-column living QR sharing hub, centered single-column record details, and 100% phone UI isolation.
 - [x] Implement functional app drawer/menu navigation (`SideMenuModal`) with dual-coded iconography and MedRec logo branding.
 - [x] Implement in-app notification center (`NotificationCenterModal`) and dynamic bell trigger with backend persistence and drag affordance.
 - [ ] Wire up OpenAI summarization service in `backend/src/services/aiService.js` to process record text.
