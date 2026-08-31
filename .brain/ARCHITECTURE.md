@@ -109,5 +109,6 @@ last_updated: 2026-08-28
    - **Doctor Scanner (`scan.tsx`)**: Master list of authorized records on left; inline clinical review pane on right.
 4. **Layout Architectures**:
    - **Record Intake (`add.tsx`)**: 580pt centered single-column studio with `transparentModal` presentation and content-driven height matching the phone's unified vertical flow.
-   - **Sharing Hub (`share.tsx`)**: 920pt bounded 2-column hub (220×220 Living QR hero with live countdown timer left; active sessions and history right).
+   - **Sharing Center (`share.tsx`)**: 600pt centered single-column layout matching the phone's vertical hierarchy and flow.
+   - **Record Details (`record/[id].tsx`)**: 600pt centered single-column layout matching the phone's stacked section flow.
    - **Patient Profile (`profile.tsx`)**: 920pt bounded 2×2 Inset Grouped Bento grid.

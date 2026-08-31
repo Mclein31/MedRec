@@ -12,6 +12,32 @@ last_updated: 2026-08-31
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-01 — Single-Column Tablet Redesign for Share Records & Record Details
+
+### Decision
+1. **Single-Column Unified Mental Model for Share Records (`app/(tabs)/share.tsx`)**:
+   - Convert tablet Share screen from 2-column layout into a centered, spacious **single-column layout** (`maxWidth: 600pt`) matching the phone's established vertical hierarchy:
+     - Header (Title, Subtitle, Menu & Notification triggers)
+     - Tier 1: Adaptive Hero Card (Doctor's QR Access with centered ~200pt QR code, live expiry timer, and Revoke Access CTA, or Generate Doctor QR CTA)
+     - Tier 2: Active Access Sessions list
+     - Tier 3: Past Share History list with expandable view
+     - Tier 4: Encrypted personal vault security guarantee footer
+2. **Single-Column Unified Mental Model for Record Details (`app/record/[id].tsx`)**:
+   - Convert tablet Record Details screen from 2-column split into a centered **single-column layout** (`maxWidth: 600pt`) matching the phone's vertical section stack:
+     - Header (Back, "Record Details", Delete button)
+     - Record Overview Card (Type badge, Title, Date of Event, Logged date)
+     - Attached Document / Photo Card
+     - Clinical Notes & Observations Card
+     - AI Medical Insights Card
+     - Delete Record secondary button
+3. **Phone UI Quarantine**: Maintain 100% isolation of phone layouts, geometry, and styling.
+
+### Reason
+- **Familiarity & Cognitive Continuity**: Patients and physicians moving between iPhone and iPad experience identical section hierarchies and muscle memory without artificial layout disorientation.
+- **Natural Content Proportions**: Eliminates awkward column height disparities, preventing excessive white space and oversized QR codes.
+
+---
+
 ## 2026-09-01 — Single-Column Tablet Add Health Record Modal & Content-Driven Dialog Architecture
 
 ### Decision

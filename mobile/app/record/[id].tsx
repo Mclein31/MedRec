@@ -478,41 +478,18 @@ export default function RecordDetailScreen() {
         <View
           style={[
             styles.contentContainer,
-            isTablet && [
-              styles.tabletSplitContainer,
-              {
-                maxWidth: ResponsiveLimits.maxDetailWidth,
-                alignSelf: 'center',
-                width: '100%',
-              },
-            ],
+            isTablet && {
+              maxWidth: ResponsiveLimits.maxDetailWidth,
+              alignSelf: 'center',
+              width: '100%',
+            },
           ]}
         >
-          {isTablet ? (
-            <>
-              {/* Tablet Left Column: Overview + Attached Photo + Delete CTA */}
-              <View style={styles.tabletColLeft}>
-                {overviewCard}
-                {attachmentCard}
-                {deleteActionBtn}
-              </View>
-
-              {/* Tablet Right Column: Notes + AI Insights */}
-              <View style={styles.tabletColRight}>
-                {clinicalNotesCard}
-                {aiInsightsCard}
-              </View>
-            </>
-          ) : (
-            <>
-              {/* Phone Stacked Layout */}
-              {overviewCard}
-              {attachmentCard}
-              {clinicalNotesCard}
-              {aiInsightsCard}
-              {deleteActionBtn}
-            </>
-          )}
+          {overviewCard}
+          {attachmentCard}
+          {clinicalNotesCard}
+          {aiInsightsCard}
+          {deleteActionBtn}
         </View>
       </ScrollView>
     </View>
@@ -654,19 +631,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   contentContainer: {
-    gap: 16,
-  },
-  tabletSplitContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-  },
-  tabletColLeft: {
-    flex: 1,
-    gap: 16,
-  },
-  tabletColRight: {
-    flex: 1.25,
     gap: 16,
   },
 

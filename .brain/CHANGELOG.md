@@ -25,8 +25,10 @@ last_updated: 2026-08-31
   - **Portrait Tablet**: 2-column Bento Grid (`numColumns={2}`) with category chips and search.
 - **Record Intake Single-Column Studio (`app/record/add.tsx`)**:
   - Centered 580pt bounded single-column intake studio on tablet matching the phone's vertical hierarchy and flow (Document Attachment → Record Details divider → Record Type chips → Form Card → Primary Save CTA).
-- **Sharing Center 2-Column Hub (`app/(tabs)/share.tsx`)**:
-  - Centered 920pt bounded 2-column Sharing Hub on tablet (Left: 220×220 Living QR hero card with live timer and instant revoke CTA; Right: Active Doctor Sessions & Past Share History timeline).
+- **Sharing Center Single-Column Screen (`app/(tabs)/share.tsx`)**:
+  - Centered 600pt bounded single-column layout on tablet matching the phone's vertical hierarchy (Adaptive Hero QR card / Generate QR CTA → Active Access Sessions → Past Share History → Encrypted Vault security footer).
+- **Record Details Single-Column Screen (`app/record/[id].tsx`)**:
+  - Centered 600pt bounded single-column layout on tablet matching phone flow (Record Overview card → Attached Photo card → Clinical Notes card → AI Medical Insights card → Delete CTA).
 - **Doctor Scanner Master-Detail Workspace (`app/(tabs)/scan.tsx`)**:
   - Clamped 320×320 viewfinder in camera mode; Interactive Master-Detail split pane in loaded records mode (Left: Authorized records list; Right: Selected record full details & clinical notes inline).
 - **Patient Profile Inset Grouped Bento Layout (`app/(tabs)/profile.tsx`)**:
