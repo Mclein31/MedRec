@@ -12,6 +12,26 @@ last_updated: 2026-08-31
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-01 — Single-Column Tablet Add Health Record Modal & Content-Driven Dialog Architecture
+
+### Decision
+1. **Single-Column Unified Mental Model on Tablet**: Convert `mobile/app/record/add.tsx` on tablets from a 2-column studio layout into a centered, spacious **single-column layout** (`maxWidth: 580pt`) matching the phone's established vertical hierarchy:
+   - Header (Close + "Add Health Record" + Save)
+   - 1. Document Attachment / Scan Hero Card
+   - 2. "record details" section divider
+   - 3. Record Type wrapped chip selector
+   - 4. Form Card (Title, Date, Clinical Notes)
+   - 5. Primary Save CTA
+2. **Transparent Modal Presentation on Tablet**: In `mobile/app/_layout.tsx`, configure `presentation: isTablet ? 'transparentModal' : 'modal'` to bypass iOS's rigid UIKit `UIModalPresentationFormSheet` height restrictions, rendering a centered floating card over a dimmed translucent backdrop (`rgba(0, 0, 0, 0.45)`).
+3. **Strict Content-Driven Sizing (`flexGrow: 0, flexShrink: 1`)**: Constrain `ScrollView` to `flexGrow: 0` so the white modal card wraps snugly around the form content with zero trailing white space, enabling internal scrolling only when viewport height is constrained.
+4. **Phone UI Isolation**: Maintain 100% quarantine of the locked phone experience.
+
+### Reason
+- **Visual Consistency & Familiarity**: Users navigating between iPhone and iPad experience identical cognitive flow and muscle memory without artificial layout divergence.
+- **Elimination of Trailing Dead Space**: The single-column card auto-sizes around the vertical content, preventing awkward column height imbalances and bottom white space.
+
+---
+
 ## 2026-08-31 — Tablet & iPad UI Redesign (Adaptive Layout, Master-Detail & Sidebar Navigation)
 
 ### Decision

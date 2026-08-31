@@ -107,7 +107,7 @@ last_updated: 2026-08-28
 3. **Master-Detail Workspace Pattern**:
    - **Records Dashboard (`index.tsx`)**: 380pt master list with search, category filters, and multi-select banner on left; full document zoom preview, clinical notes, and AI insights with 1-tap regenerate on right.
    - **Doctor Scanner (`scan.tsx`)**: Master list of authorized records on left; inline clinical review pane on right.
-4. **2-Column Split Layouts**:
-   - **Record Intake (`add.tsx`)**: 880pt bounded 2-column studio (Document scan card left; metadata form fields right).
+4. **Layout Architectures**:
+   - **Record Intake (`add.tsx`)**: 580pt centered single-column studio with `transparentModal` presentation and content-driven height matching the phone's unified vertical flow.
    - **Sharing Hub (`share.tsx`)**: 920pt bounded 2-column hub (220×220 Living QR hero with live countdown timer left; active sessions and history right).
    - **Patient Profile (`profile.tsx`)**: 920pt bounded 2×2 Inset Grouped Bento grid.
