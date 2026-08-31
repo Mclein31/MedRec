@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsive } from '../hooks/useResponsive';
-import { Colors, Radii } from '../constants/theme';
+import { Colors } from '../constants/theme';
 
 const BLUE = Colors.blue;
 const TEAL = Colors.teal;
@@ -34,14 +34,7 @@ export default function RegisterScreen() {
 
   const { register } = useAuth();
   const router = useRouter();
-  const {
-    isTablet,
-    isLandscape,
-    isShortScreen,
-    maxFormWidth,
-    scaleFont,
-    insets,
-  } = useResponsive();
+  const { insets } = useResponsive();
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -79,96 +72,45 @@ export default function RegisterScreen() {
     Alert.alert('Coming soon', `${provider} sign-up will be available in a future update.`);
   };
 
-  const headerHeight = isTablet ? 180 : isLandscape ? 110 : isShortScreen ? 140 : 180;
-
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
-      <KeyboardAvoidingView
-        style={styles.keyboard}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scroll,
-            {
-              paddingTop: isLandscape ? Math.max(insets.top, 12) : 0,
-              paddingBottom: Math.max(insets.bottom, 16) + 12,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header Graphic */}
-          <View style={[styles.graphicWrapper, isTablet && styles.tabletGraphicWrapper]}>
-            <ImageBackground
-              source={require('../assets/graphics/login-graphic.png')}
-              style={[
-                styles.graphicBg,
-                { height: headerHeight, paddingTop: insets.top },
-              ]}
-              imageStyle={styles.graphicImage}
-              resizeMode="cover"
-            />
-          </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-          {/* Form Container */}
-          <View
-            style={[
-              styles.formSheet,
-              isTablet && [
-                styles.tabletFormSheet,
-                { maxWidth: maxFormWidth, alignSelf: 'center', width: '100%' },
+          <ImageBackground
+            source={require('../assets/graphics/login-graphic.png')}
+            style={[styles.graphicHeader, { paddingTop: insets.top }]}
+            imageStyle={{
+              transform: [
+                { translateY: 60 },
+                { scale: 1.03 },
               ],
-            ]}
-          >
-            <Text
-              style={[
-                styles.formTitle,
-                { fontSize: scaleFont(26, 22, 28) },
-              ]}
-              maxFontSizeMultiplier={1.35}
-            >
-              Create your Account
-            </Text>
-            <Text
-              style={[
-                styles.formSubtitle,
-                { fontSize: scaleFont(12, 11, 13) },
-              ]}
-              maxFontSizeMultiplier={1.35}
-            >
-              Join us and take control of your health records
-            </Text>
+            }}
+            resizeMode="cover"
+          />
 
-            {/* Input Stack */}
-            <View style={styles.inputsStack}>
-              {/* Full Name */}
+          <View style={styles.body}>
+            <Text style={styles.title}>Create your Account</Text>
+            <Text style={styles.subtitle}>Join us and take control of your health records</Text>
+
+            <View style={styles.fields}>
               <View style={styles.inputRow}>
-                <Image
-                  source={require('../assets/icons/person.png')}
-                  style={styles.fieldIcon}
-                />
+                <Image source={require('../assets/icons/person.png')} style={styles.fieldIcon} />
                 <TextInput
-                  style={styles.textInput}
+                  style={styles.input}
                   placeholder="Full Name"
                   placeholderTextColor={TEXT_MUTED}
                   value={name}
                   onChangeText={setName}
                   autoCorrect={false}
-                  maxFontSizeMultiplier={1.35}
-                  accessibilityLabel="Full Name"
                 />
               </View>
 
-              {/* Email / Phone */}
               <View style={styles.inputRow}>
-                <Image
-                  source={require('../assets/icons/mail.png')}
-                  style={styles.fieldIcon}
-                />
+                <Image source={require('../assets/icons/mail.png')} style={styles.fieldIcon} />
                 <TextInput
-                  style={styles.textInput}
+                  style={styles.input}
                   placeholder="Email or Phone"
                   placeholderTextColor={TEXT_MUTED}
                   value={email}
@@ -176,136 +118,87 @@ export default function RegisterScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoCorrect={false}
-                  maxFontSizeMultiplier={1.35}
-                  accessibilityLabel="Email or phone"
                 />
               </View>
 
-              {/* Password */}
               <View style={styles.inputRow}>
-                <Image
-                  source={require('../assets/icons/padlock.png')}
-                  style={styles.fieldIcon}
-                />
+                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.input, { flex: 1 }]}
                   placeholder="Password"
                   placeholderTextColor={TEXT_MUTED}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                   autoCorrect={false}
-                  maxFontSizeMultiplier={1.35}
-                  accessibilityLabel="Password"
                 />
-                <Pressable
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                >
+                <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
                   <Image
-                    source={
-                      showPassword
-                        ? require('../assets/icons/open-eye.png')
-                        : require('../assets/icons/closed-eye.png')
-                    }
+                    source={showPassword
+                      ? require('../assets/icons/open-eye.png')
+                      : require('../assets/icons/closed-eye.png')}
                     style={styles.eyeIcon}
                   />
                 </Pressable>
               </View>
 
-              {/* Confirm Password */}
               <View style={styles.inputRow}>
-                <Image
-                  source={require('../assets/icons/padlock.png')}
-                  style={styles.fieldIcon}
-                />
+                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.input, { flex: 1 }]}
                   placeholder="Confirm Password"
                   placeholderTextColor={TEXT_MUTED}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirm}
                   autoCorrect={false}
-                  maxFontSizeMultiplier={1.35}
-                  accessibilityLabel="Confirm Password"
                 />
-                <Pressable
-                  onPress={() => setShowConfirm(!showConfirm)}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={showConfirm ? 'Hide password' : 'Show password'}
-                >
+                <Pressable onPress={() => setShowConfirm(!showConfirm)} hitSlop={8}>
                   <Image
-                    source={
-                      showConfirm
-                        ? require('../assets/icons/open-eye.png')
-                        : require('../assets/icons/closed-eye.png')
-                    }
+                    source={showConfirm
+                      ? require('../assets/icons/open-eye.png')
+                      : require('../assets/icons/closed-eye.png')}
                     style={styles.eyeIcon}
                   />
                 </Pressable>
               </View>
             </View>
 
-            {/* Create Account Button */}
             <Pressable
               onPress={handleRegister}
               disabled={loading}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Create Account"
+              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
             >
               <Text style={styles.primaryBtnText}>
                 {loading ? 'Creating account...' : 'Create Account'}
               </Text>
               {!loading && (
-                <Image
-                  source={require('../assets/icons/arrow.png')}
-                  style={styles.arrowIcon}
-                />
+                <Image source={require('../assets/icons/arrow.png')} style={styles.arrowIcon} />
               )}
             </Pressable>
 
-            {/* Or Divider */}
-            <View style={styles.dividerRow}>
+            <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.orText}>or</Text>
+              <Text style={styles.dividerText}>or</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Social Sign Up */}
             <Pressable
               onPress={() => handleSocialPress('Google')}
-              style={({ pressed }) => [styles.socialBtn, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in with Google"
+              style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
             >
-              <Image
-                source={require('../assets/icons/google.png')}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.socialBtnText}>Sign in with Google</Text>
+              <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
+              <Text style={styles.outlineBtnText}>Sign in with Google</Text>
             </Pressable>
 
-            {/* Back to Sign In Link */}
-            <View style={styles.signInRow}>
-              <Text style={styles.signInPromptText}>Already have an Account? </Text>
-              <Pressable
-                onPress={() => router.push('/login')}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Sign in"
-              >
-                <Text style={styles.signInLinkText}>Sign In</Text>
+            <View style={styles.loginRow}>
+              <Text style={styles.loginText}>Already have an Account? </Text>
+              <Pressable onPress={() => router.push('/login')}>
+                <Text style={styles.loginLink}>Sign In</Text>
               </Pressable>
             </View>
           </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -317,180 +210,189 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  keyboard: {
-    flex: 1,
-  },
+
   scroll: {
     flexGrow: 1,
   },
-  graphicWrapper: {
+
+  graphicHeader: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
-  },
-  tabletGraphicWrapper: {
-    maxWidth: 500,
-    alignSelf: 'center',
-  },
-  graphicBg: {
-    width: '100%',
+    height: 210,
+
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
-  graphicImage: {
-    opacity: 0.95,
-  },
-  formSheet: {
+
+  body: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 28,
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+
+    marginTop: 35,
+
+    paddingHorizontal: 46,
     paddingTop: 20,
-    paddingBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 3,
+    paddingBottom: 10,
   },
-  tabletFormSheet: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E5F0EE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    marginVertical: 12,
-  },
-  formTitle: {
+
+  title: {
     fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 30,
     color: BLUE,
     textAlign: 'center',
+    lineHeight: 37,
   },
-  formSubtitle: {
-    fontFamily: 'LexendDeca-Regular',
+
+  subtitle: {
+    fontSize: 11,
     color: TEXT_MUTED,
     textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
+
+    marginTop: 0,
+    marginBottom: 12,
   },
-  inputsStack: {
-    gap: 12,
+
+  fields: {
+    gap: 14,
   },
+
   inputRow: {
-    height: 52,
+    height: 57.5,
+
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 16,
-    borderRadius: Radii.card,
+
+    gap: 18,
+
+    paddingHorizontal: 30,
+
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: '#D9E7E4',
+
     backgroundColor: '#FFFFFF',
   },
+
   fieldIcon: {
-    width: 22,
-    height: 22,
+    width: 25,
+    height: 25,
     resizeMode: 'contain',
-    tintColor: TEXT_MUTED,
   },
+
+  input: {
+    flex: 1,
+
+    fontSize: 14,
+    color: TEXT_DARK,
+
+    padding: 0,
+  },
+
   eyeIcon: {
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: TEXT_MUTED,
   },
-  textInput: {
-    flex: 1,
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
-    color: TEXT_DARK,
-    padding: 0,
-  },
+
   primaryBtn: {
-    height: 52,
+    height: 57.5,
+
     marginTop: 20,
-    marginBottom: 20,
-    borderRadius: Radii.card,
+    marginBottom: 28,
+
+    borderRadius: 16,
+
     backgroundColor: TEAL,
+
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+
     gap: 10,
-    shadowColor: TEAL,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
+
   primaryBtnText: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 16,
+    fontSize: 20,
     color: '#FFFFFF',
   },
+
   arrowIcon: {
     position: 'absolute',
-    right: 20,
-    width: 22,
-    height: 22,
+    right: 28,
+
+    width: 28,
+    height: 28,
+
     tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
-  dividerRow: {
+
+  divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 20,
+
+    gap: 18,
+
+    marginBottom: 28,
   },
+
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5F0EE',
+
+    backgroundColor: '#D9E7E4',
   },
-  orText: {
+
+  dividerText: {
     color: TEXT_MUTED,
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
+    fontSize: 15,
   },
-  socialBtn: {
-    height: 50,
-    borderRadius: Radii.card,
+
+  outlineBtn: {
+    height: 57.5,
+
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#D9E7E4',
+
     backgroundColor: '#FFFFFF',
+
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+
     gap: 12,
   },
-  googleIcon: {
-    width: 22,
-    height: 22,
+
+  socialIcon: {
+    width: 28,
+    height: 28,
     resizeMode: 'contain',
   },
-  socialBtnText: {
-    fontSize: 14.5,
-    fontFamily: 'LexendDeca-Medium',
+
+  outlineBtnText: {
+    fontSize: 18,
+    fontWeight: '400',
     color: TEXT_DARK,
   },
-  signInRow: {
+
+  loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
+
+    marginTop: 42,
   },
-  signInPromptText: {
-    fontSize: 12.5,
-    fontFamily: 'LexendDeca-Regular',
+
+  loginText: {
+    fontSize: 12,
     color: TEXT_MUTED,
   },
-  signInLinkText: {
-    fontSize: 13.5,
-    fontFamily: 'LexendDeca-Bold',
+
+  loginLink: {
+    fontSize: 14,
     color: TEAL,
-  },
-  pressed: {
-    opacity: 0.75,
+    fontWeight: '700',
   },
 });

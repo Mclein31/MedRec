@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsive } from '../hooks/useResponsive';
-import { Colors, Radii } from '../constants/theme';
+import { Colors } from '../constants/theme';
 
 const TEAL = Colors.teal;
 const BLUE = Colors.blue;
@@ -36,14 +36,7 @@ export default function LoginScreen() {
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { login } = useAuth();
   const router = useRouter();
-  const {
-    isTablet,
-    isLandscape,
-    isShortScreen,
-    maxFormWidth,
-    scaleFont,
-    insets,
-  } = useResponsive();
+  const { insets } = useResponsive();
 
   useEffect(() => () => {
     if (countdownRef.current) clearInterval(countdownRef.current);
@@ -94,241 +87,69 @@ export default function LoginScreen() {
   const handleSocialPress = () => Alert.alert('Coming soon', 'Google sign-in will be available in a future update.');
   const handleForgotPassword = () => Alert.alert('Coming soon', 'Password reset will be available in a future update.');
 
-  const headerHeight = isTablet ? 260 : isLandscape ? 140 : isShortScreen ? 180 : 260;
-
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
-      <KeyboardAvoidingView
-        style={styles.keyboard}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scroll,
-            {
-              paddingTop: isLandscape ? Math.max(insets.top, 12) : 0,
-              paddingBottom: Math.max(insets.bottom, 16) + 12,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Top Graphic Header */}
-          <View style={[styles.graphicWrapper, isTablet && styles.tabletGraphicWrapper]}>
-            <ImageBackground
-              source={require('../assets/graphics/login-graphic.png')}
-              style={[styles.graphicBg, { height: headerHeight }]}
-              imageStyle={styles.graphicImage}
-              resizeMode="contain"
-            >
-              <View style={[styles.brandContainer, { paddingTop: insets.top + 8 }]}>
-                <Image
-                  source={require('../assets/logo/logo.png')}
-                  style={styles.brandLogo}
-                />
-                <View style={styles.brandTextGroup}>
-                  <Text
-                    style={[
-                      styles.brandName,
-                      { fontSize: scaleFont(24, 20, 26), lineHeight: scaleFont(28, 24, 30) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    MedRec
-                  </Text>
-                  <Text
-                    style={[
-                      styles.brandTagline,
-                      { fontSize: scaleFont(12, 10.5, 13) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    Your Health Records in Your Pockets
-                  </Text>
-                </View>
-              </View>
-            </ImageBackground>
-          </View>
-
-          {/* Form Container */}
-          <View
-            style={[
-              styles.formSheet,
-              isTablet && [
-                styles.tabletFormSheet,
-                { maxWidth: maxFormWidth, alignSelf: 'center', width: '100%' },
-              ],
-            ]}
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <ImageBackground
+            source={require('../assets/graphics/login-graphic.png')}
+            style={styles.hero}
+            imageStyle={styles.heroGraphic}
+            resizeMode="contain"
           >
-            <Text
-              style={[
-                styles.welcomeTitle,
-                { fontSize: scaleFont(26, 22, 28) },
-              ]}
-              maxFontSizeMultiplier={1.35}
-            >
-              Welcome Back!
-            </Text>
-            <Text
-              style={[
-                styles.welcomeSubtitle,
-                { fontSize: scaleFont(12, 11, 13) },
-              ]}
-              maxFontSizeMultiplier={1.35}
-            >
-              Sign in to access your health records
-            </Text>
+            <View style={[styles.brandRow, { top: insets.top > 0 ? insets.top + 5 : 40 }]}>
+              <Image
+                source={require('../assets/logo/logo.png')}
+                style={styles.brandMark}
+              />
 
-            {lockedOut && (
-              <Text style={styles.lockoutText} maxFontSizeMultiplier={1.35}>
-                Too many attempts. Try again in {countdown}s.
-              </Text>
-            )}
-            {attempts > 0 && !lockedOut && (
-              <Text style={styles.attemptsText} maxFontSizeMultiplier={1.35}>
-                {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts === 1 ? '' : 's'} remaining
-              </Text>
-            )}
-
-            {/* Input Fields */}
-            <View style={styles.inputsStack}>
-              {/* Email / Phone Field */}
-              <View style={[styles.inputRow, lockedOut && styles.disabled]}>
-                <Image
-                  source={require('../assets/icons/mail.png')}
-                  style={styles.fieldIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Email or Phone"
-                  placeholderTextColor={MUTED}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoCorrect={false}
-                  editable={!lockedOut}
-                  maxFontSizeMultiplier={1.35}
-                  accessibilityLabel="Email or phone number"
-                />
+              <View style={styles.brandTextContainer}>
+                <Text style={styles.brand}>MedRec</Text>
+                <Text style={styles.tagline}>
+                  Your Health Records in Your Pockets
+                </Text>
               </View>
+            </View>
+          </ImageBackground>
 
-              {/* Password Field */}
+          <View style={styles.body}>
+            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={styles.subtitle}>Sign in to access your health records</Text>
+            {lockedOut && <Text style={styles.error}>Too many attempts. Try again in {countdown}s.</Text>}
+            {attempts > 0 && !lockedOut && <Text style={styles.warning}>{MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts === 1 ? '' : 's'} remaining</Text>}
+
+            <View style={styles.fields}>
               <View style={[styles.inputRow, lockedOut && styles.disabled]}>
-                <Image
-                  source={require('../assets/icons/padlock.png')}
-                  style={styles.fieldIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Password"
-                  placeholderTextColor={MUTED}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCorrect={false}
-                  editable={!lockedOut}
-                  maxFontSizeMultiplier={1.35}
-                  accessibilityLabel="Password"
-                />
-                <Pressable
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  <Image
-                    source={
-                      showPassword
-                        ? require('../assets/icons/open-eye.png')
-                        : require('../assets/icons/closed-eye.png')
-                    }
-                    style={styles.eyeIcon}
-                  />
+                <Image source={require('../assets/icons/mail.png')} style={styles.fieldIcon} />
+                <TextInput style={styles.input} placeholder="Email or Phone" placeholderTextColor={MUTED} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoCorrect={false} editable={!lockedOut} />
+              </View>
+              <View style={[styles.inputRow, lockedOut && styles.disabled]}>
+                <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
+                <TextInput style={styles.input} placeholder="Password" placeholderTextColor={MUTED} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCorrect={false} editable={!lockedOut} />
+                <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                  <Image source={showPassword ? require('../assets/icons/open-eye.png') : require('../assets/icons/closed-eye.png')} style={styles.eyeIcon} />
                 </Pressable>
               </View>
-
-              {/* Forgot Password Link */}
-              <Pressable
-                onPress={handleForgotPassword}
-                style={styles.forgotBtn}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Forgot password"
-              >
-                <Text style={styles.forgotText}>Forgot Password?</Text>
-              </Pressable>
+              <Pressable onPress={handleForgotPassword} style={styles.forgot}><Text style={styles.forgotText}>Forgot Password?</Text></Pressable>
             </View>
 
-            {/* Sign In Primary CTA */}
-            <Pressable
-              onPress={handleLogin}
-              disabled={loading || lockedOut}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                (pressed || lockedOut) && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Sign In"
-            >
-              <Text style={styles.primaryBtnText}>
-                {loading ? 'Signing in...' : lockedOut ? `Locked (${countdown}s)` : 'Sign In'}
-              </Text>
-              {!loading && !lockedOut && (
-                <Image
-                  source={require('../assets/icons/arrow.png')}
-                  style={styles.arrowIcon}
-                />
-              )}
+            <Pressable onPress={handleLogin} disabled={loading || lockedOut} style={({ pressed }) => [styles.primaryButton, (pressed || lockedOut) && styles.pressed]}>
+              <Text style={styles.primaryText}>{loading ? 'Signing in...' : lockedOut ? `Locked (${countdown}s)` : 'Sign In'}</Text>
+              {!loading && !lockedOut && <Image source={require('../assets/icons/arrow.png')} style={styles.arrow} />}
             </Pressable>
 
-            {/* Or Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.line} />
-              <Text style={styles.orText}>or</Text>
-              <View style={styles.line} />
-            </View>
-
-            {/* Social Sign In */}
-            <Pressable
-              onPress={handleSocialPress}
-              style={({ pressed }) => [styles.socialBtn, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in with Google"
-            >
-              <Image
-                source={require('../assets/icons/google.png')}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.socialBtnText}>Sign in with Google</Text>
+            <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or</Text><View style={styles.line} /></View>
+            <Pressable onPress={handleSocialPress} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}>
+              <Image source={require('../assets/icons/google.png')} style={styles.google} /><Text style={styles.googleText}>Sign in with Google</Text>
             </Pressable>
-
-            {/* Create Account Link */}
-            <Pressable
-              onPress={() => router.push('/register')}
-              style={({ pressed }) => [styles.createAccountBtn, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Create an Account"
-            >
-              <Image
-                source={require('../assets/icons/user-add.png')}
-                style={styles.createAccountIcon}
-              />
-              <Text style={styles.createAccountText}>Create an Account</Text>
+            <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
+              <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} /><Text style={styles.createText}>Create an Account</Text>
             </Pressable>
-          </View>
-
-          {/* Footer Terms & Policy */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText} maxFontSizeMultiplier={1.35}>
-              By continuing, you agree to our{' '}
-              <Text style={styles.footerLink}>Terms of Use</Text> and{' '}
-              <Text style={styles.footerLink}>Privacy Policy</Text>
-            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <View style={styles.footer}><Text style={styles.footerText}>By continuing, you agree to our <Text style={styles.footerLink}>Terms of Use</Text> and <Text style={styles.footerLink}>Privacy Policy</Text></Text></View>
     </View>
   );
 }
@@ -338,247 +159,266 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+
   keyboard: {
     flex: 1,
   },
+
   scroll: {
     flexGrow: 1,
   },
-  graphicWrapper: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
+
+  hero: {
+    height: 320,
+    paddingHorizontal: 40,
+    marginTop: 0,
   },
-  tabletGraphicWrapper: {
-    maxWidth: 500,
-    alignSelf: 'center',
+
+  heroGraphic: {
+    transform: [
+      { translateX: 0 },
+      { translateY: 50 },
+    ],
   },
-  graphicBg: {
-    width: '100%',
-    justifyContent: 'flex-start',
-  },
-  graphicImage: {
-    opacity: 0.95,
-  },
-  brandContainer: {
+
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 24,
+    gap: 5,
+    position: 'relative',
+    top: 40,
+    left: -20,
   },
-  brandLogo: {
-    width: 60,
-    height: 60,
+
+  brandMark: {
+    width: 75,
+    height: 75,
     resizeMode: 'contain',
   },
-  brandTextGroup: {
+
+  brandTextContainer: {
     justifyContent: 'center',
   },
-  brandName: {
+
+  brand: {
     color: INK,
     fontFamily: 'LexendDeca-Bold',
+    fontSize: 24,
+    lineHeight: 27,
   },
-  brandTagline: {
+
+  tagline: {
     color: MUTED,
-    fontFamily: 'LexendDeca-Regular',
-    marginTop: 1,
+    fontSize: 12,
+    lineHeight: 12,
+    marginTop: 0,
   },
-  formSheet: {
+
+  body: {
+    marginTop: -15,
+    paddingHorizontal: 50,
+    paddingTop: 15,
+    paddingBottom: 20,
+
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 28,
-    paddingTop: 20,
-    paddingBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 3,
+
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+
+    overflow: 'hidden',
   },
-  tabletFormSheet: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E5F0EE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    marginVertical: 12,
-  },
-  welcomeTitle: {
+
+  title: {
     color: BLUE,
     fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 30,
     textAlign: 'center',
   },
-  welcomeSubtitle: {
+
+  subtitle: {
     color: MUTED,
-    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11,
     textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
+    marginTop: 0,
+    lineHeight: 12,
+    marginBottom: 20,
   },
-  lockoutText: {
+
+  error: {
     color: '#D73A49',
     fontSize: 13,
-    fontFamily: 'LexendDeca-Medium',
     textAlign: 'center',
     marginBottom: 10,
   },
-  attemptsText: {
+
+  warning: {
     color: '#C77A00',
     fontSize: 13,
-    fontFamily: 'LexendDeca-Medium',
     textAlign: 'center',
     marginBottom: 10,
   },
-  inputsStack: {
-    gap: 12,
+
+  fields: {
+    gap: 14,
   },
+
   inputRow: {
-    height: 52,
+    height: 57.5,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 16,
-    borderRadius: Radii.card,
+    gap: 20,
+    paddingHorizontal: 25,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#D9E7E4',
     backgroundColor: '#FFFFFF',
   },
-  fieldIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    tintColor: MUTED,
+
+  disabled: {
+    backgroundColor: '#DDF5EE',
   },
+
+  fieldIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+
+  input: {
+    flex: 1,
+    color: INK,
+    fontSize: 14,
+    padding: 0,
+  },
+
   eyeIcon: {
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: MUTED,
   },
-  textInput: {
-    flex: 1,
-    color: INK,
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
-    padding: 0,
+
+  forgot: {
+    alignItems: 'flex-end',
   },
-  disabled: {
-    backgroundColor: '#DDF5EE',
-  },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    paddingVertical: 2,
-  },
+
   forgotText: {
     color: BLUE,
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 12.5,
+    fontSize: 12,
+    lineHeight: 0,
+    marginTop: 0,
   },
-  primaryBtn: {
-    height: 52,
+
+  primaryButton: {
+    height: 57.5,
     backgroundColor: TEAL,
-    borderRadius: Radii.card,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginTop: 20,
-    marginBottom: 16,
-    shadowColor: TEAL,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    marginTop: 25,
+    marginBottom: 18,
   },
-  primaryBtnText: {
+
+  primaryText: {
     color: '#FFFFFF',
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 16,
+    fontSize: 18,
   },
-  arrowIcon: {
+
+  arrow: {
     position: 'absolute',
-    right: 20,
-    width: 22,
-    height: 22,
+    right: 24,
+    width: 30,
+    height: 30,
     tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
-  dividerRow: {
+
+  pressed: {
+    opacity: 0.72,
+  },
+
+  divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 16,
+    gap: 18,
+    marginBottom: 18,
   },
+
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5F0EE',
+    backgroundColor: '#C9D4D2',
   },
-  orText: {
+
+  dividerText: {
     color: MUTED,
-    fontFamily: 'LexendDeca-Regular',
     fontSize: 12,
   },
-  socialBtn: {
-    height: 50,
+
+  googleButton: {
+    height: 55,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    borderRadius: Radii.card,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#D9E7E4',
-    backgroundColor: '#FFFFFF',
   },
-  googleIcon: {
-    width: 22,
-    height: 22,
+
+  google: {
+    width: 26,
+    height: 26,
     resizeMode: 'contain',
   },
-  socialBtnText: {
+
+  googleText: {
     color: INK,
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 14.5,
+    fontSize: 16,
+    fontWeight: '400',
   },
-  createAccountBtn: {
-    height: 50,
-    marginTop: 18,
-    borderRadius: Radii.card,
-    borderWidth: 1.5,
+
+  createButton: {
+    height: 57.5,
+    marginTop: 38,
+    borderRadius: 16,
+    borderWidth: 1,
     borderColor: TEAL,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
-  createAccountIcon: {
-    width: 22,
-    height: 22,
+
+  createIcon: {
+    width: 25,
+    height: 25,
     tintColor: TEAL,
     resizeMode: 'contain',
   },
-  createAccountText: {
+
+  createText: {
     color: TEAL,
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
+    fontSize: 18,
+    fontWeight: '600',
   },
-  pressed: {
-    opacity: 0.75,
-  },
+
   footer: {
-    paddingHorizontal: 28,
-    paddingVertical: 12,
+    paddingHorizontal: 40,
+    paddingBottom: 20,
+    paddingTop: 5,
   },
+
   footerText: {
     textAlign: 'center',
-    fontSize: 11.5,
-    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
     color: MUTED,
-    lineHeight: 16,
+    lineHeight: 14,
+    marginBottom: 10,
   },
+
   footerLink: {
     color: TEAL,
-    fontFamily: 'LexendDeca-Medium',
   },
 });

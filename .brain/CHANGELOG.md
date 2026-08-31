@@ -10,6 +10,12 @@ last_updated: 2026-08-31
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.9.3] — Login & Register Visual Design Restoration & Safe-Area Header Alignment
+- **Login Visual Design Restoration (`01acaad`)**: Restored the canonical 320pt hero graphic with 75×75pt brand logo mark, 24pt bold wordmark, 30pt "Welcome Back!" title, 57.5pt input rows, primary teal CTA, Google sign-in card, and outlined "Create an Account" action.
+- **Top Safe-Area Branding Alignment**: Adjusted `brandRow` in `login.tsx` to anchor at the top of the hero header (`top: insets.top > 0 ? insets.top + 5 : 40`, `left: -20`), providing seamless hardware notch/status bar clearance.
+- **Register Visual Design Restoration (`0b579ad`)**: Restored the 210pt pure hero graphic banner with image transform (`translateY: 60`, `scale: 1.03`), 30pt "Create your Account" title, 57.5pt input rows, and bottom "Already have an Account? Sign In" transition row without extraneous header branding.
+- **Preserved Core Security & Functionality**: Maintained active 5-attempt lockout countdown (`30s`), strict password complexity validation (min 8 chars, numbers, uppercase), and `useResponsive` integration.
+
 ## [0.9.2] — Global Header Toolbar & Notification Dot Alignment
 - **Universal Toolbar Button Geometry**: Standardized top toolbar touch targets across all tab views (`Records`, `Profile`, `Share`, `Scan`, and `ScreenHeader.tsx`) with `padding: 4`, `minWidth: 40`, `minHeight: 40`, and `25×25px` icon containment.
 - **Consistent Notification Dot Offsets**: Harmonized active notification dot badge dimensions and positioning to `right: 8`, `top: 5`, `width: 10`, `height: 9`, `borderRadius: 5` across all screens and camera overlay headers.

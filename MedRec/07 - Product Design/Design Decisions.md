@@ -44,10 +44,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-12** | **Centralized Design System Tokens & Universal Screen Header** | `Active` | Enforces single-source-of-truth tokens (`theme.ts`), universal `ScreenHeader` with drawer and notification triggers, 20px screen gutters, and 110px tab bar clearance. | [[07 - Product Design/Design Decisions#DD-12|DD-12]] |
 | **DD-13** | **Records Screen Layout & Quick Category Carousel** | `Active` | Replaces cramped search inputs and redundant sort modals with a full-width search bar and direct horizontal category quick chips with live counts. | [[07 - Product Design/Design Decisions#DD-13|DD-13]] |
 | **DD-14** | **Continuous Scrollable Profile Content & Compact Fixed Navigation Toolbar** | `Active` | Moves the Profile title into the top-level scrollable content while keeping a compact global navigation toolbar fixed at the top, unlocking maximum usable vertical space. | [[07 - Product Design/Design Decisions#DD-14|DD-14]] |
+| **DD-15** | **Authentic Login & Register Visual Architecture & Dynamic Top Safe-Area Alignment** | `Active` | Restores canonical visual designs from historical commits 01acaad & 0b579ad while positioning Login branding at top safe-area and preserving pure hero graphic on Register. | [[07 - Product Design/Design Decisions#DD-15|DD-15]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-15: Authentic Login & Register Visual Architecture & Dynamic Top Safe-Area Alignment
+- **Context**: The authentication entrypoints required restoration of their approved visual identities from reference commits `01acaad` (Login) and `0b579ad` (Register) without disrupting newer security features (5-attempt rate-limiting lockout timer, password regex complexity validations, `useResponsive` integration).
+- **Alternatives Considered**: (A) Full synthetic screen redesigns changing layout proportions, (B) Direct commit file reversion discarding subsequent security checks and insets, (C) Surgical restoration of original geometries, typography, touch targets, and button styles while dynamically anchoring the Login brand mark to the top safe area (`insets.top + 5 / 40`) and preserving the clean Register graphic hero banner.
+- **Decision**: Option C — Implement the exact visual hierarchy, dimensions, and paddings of `01acaad` (Login) and `0b579ad` (Register), with top safe-area brand alignment on Login and pure graphic banner on Register.
+- **Rationale**: Preserves brand familiarity, eliminates visual dead space naturally, and maintains 100% of modern authentication security and responsive behavior.
 
 ### DD-14: Continuous Scrollable Profile Content & Compact Fixed Navigation Toolbar
 - **Context**: The Profile tab previously rendered a static header (`ScreenHeader`) containing the large "Profile" title and subtitle above the scroll container, permanently consuming significant vertical screen space and reducing visible profile information on smaller iPhone viewports.
