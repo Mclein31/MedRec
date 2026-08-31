@@ -5,11 +5,13 @@ import { NotificationProvider } from '../context/NotificationContext';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { useResponsive } from '../hooks/useResponsive';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { token, isLoading } = useAuth();
+  const { isTablet } = useResponsive();
 
   if (isLoading) {
     return (
@@ -38,7 +40,8 @@ function RootLayoutNav() {
         <Stack.Screen
           name="record/add"
           options={{
-            presentation: 'modal',
+            presentation: isTablet ? 'transparentModal' : 'modal',
+            animation: isTablet ? 'fade' : 'default',
             headerShown: false,
           }}
         />

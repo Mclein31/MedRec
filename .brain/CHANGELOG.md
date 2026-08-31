@@ -37,7 +37,7 @@ last_updated: 2026-08-31
   - Reset `detailExplanation` state on record selection switch in landscape Master-Detail view (`app/(tabs)/index.tsx`).
   - Added active interval ticker (`15s`) in `app/(tabs)/share.tsx` to maintain accurate living QR expiry countdown on static tablet displays.
   - Formatted dedicated floating modal for AI Health Summary in `TabletPersistentSidebar.tsx` with clinical disclaimer and scrollable synthesis card.
-  - Refined "Add Health Record" tablet modal into a content-driven floating studio card (`maxWidth: 820pt`), eliminating excessive vertical dead space while maintaining 2-column ergonomics and balanced vertical proportions.
+  - Refined "Add Health Record" tablet modal into a content-driven floating studio card (`maxWidth: 820pt`) with `transparentModal` presentation and dimmed backdrop dismiss, eliminating trailing native white sheet space while maintaining 2-column ergonomics and 100% phone modal isolation.
 
 ## [0.9.5] — Burger Navigation Drawer UI/UX Architecture & Scannability Upgrade
 - **Dual-Coded Iconography**: Added 18×18 icons housed in dedicated 32×32 squircle containers (`#DDF5EE` teal for clinical tools, `#EBF3FB` blue for scan, `#F1F5F9` slate for data, `#FEF3F2` red for destructive logout), increasing visual search velocity.

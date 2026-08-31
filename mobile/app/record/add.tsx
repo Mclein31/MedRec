@@ -160,54 +160,283 @@ export default function AddRecordScreen() {
     );
   }
 
-  // ─── 3. TABLET INTAKE STUDIO (REFINED COMPACT MODAL) ──────────────────────
+  // ─── 3. TABLET INTAKE STUDIO (REFINED COMPACT FLOATING MODAL) ────────────
   if (isTablet) {
     return (
       <View style={styles.tabletRootOverlay}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
+
+        {/* Backdrop Tap to Dismiss */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss modal backdrop"
+        />
 
         <KeyboardAvoidingView
-          style={styles.flexOne}
+          style={styles.tabletKeyboardAvoider}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          pointerEvents="box-none"
         >
-          <ScrollView
-            contentContainerStyle={[
-              styles.tabletScrollContainer,
-              {
-                paddingTop: insets.top > 20 ? insets.top + 16 : 24,
-                paddingBottom: Math.max(insets.bottom, 24) + 16,
-                paddingHorizontal: screenPadding,
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Centered Floating Content-Driven Studio Card */}
-            <View style={styles.tabletStudioCard}>
-              {/* Card Embedded Header */}
-              <View style={styles.tabletCardHeader}>
-                <Pressable
-                  onPress={() => router.back()}
-                  style={({ pressed }) => [
-                    styles.tabletHeaderDismissBtn,
-                    pressed && styles.pressed,
-                  ]}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel and dismiss"
-                >
-                  <Ionicons name="close" size={18} color={INK} />
-                </Pressable>
+          {/* Centered Floating Content-Driven Studio Card */}
+          <View style={styles.tabletStudioCard}>
+            {/* Card Embedded Header */}
+            <View style={styles.tabletCardHeader}>
+              <Pressable
+                onPress={() => router.back()}
+                style={({ pressed }) => [
+                  styles.tabletHeaderDismissBtn,
+                  pressed && styles.pressed,
+                ]}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel and dismiss"
+              >
+                <Ionicons name="close" size={18} color={INK} />
+              </Pressable>
 
-                <Text style={styles.tabletHeaderTitle} numberOfLines={1}>
-                  Add Health Record
-                </Text>
+              <Text style={styles.tabletHeaderTitle} numberOfLines={1}>
+                Add Health Record
+              </Text>
 
+              <Pressable
+                onPress={handleSave}
+                disabled={saving}
+                style={({ pressed }) => [
+                  styles.tabletHeaderSaveBtn,
+                  pressed && styles.pressed,
+                  saving && styles.disabledBtn,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Save medical record"
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.tabletHeaderSaveText}>Save</Text>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Content-Driven 2-Column Split Studio Body */}
+            <ScrollView
+              contentContainerStyle={styles.tabletStudioBody}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {/* Left Column: Document Capture & Attachment */}
+              <View style={styles.tabletColLeft}>
+                <Text style={styles.tabletSectionLabel}>DOCUMENT ATTACHMENT</Text>
+
+                {photoUri ? (
+                  <AttachedDocumentCard
+                    photoUri={photoUri}
+                    onPressInspect={() => {
+                      setTempPhotoUri(photoUri);
+                      setViewMode('preview');
+                    }}
+                    onPressRetake={() => {
+                      setViewMode('camera');
+                    }}
+                    onPressRemove={() => {
+                      setPhotoUri(null);
+                    }}
+                  />
+                ) : (
+                  <View style={styles.tabletScanHeroCard}>
+                    <View style={styles.tabletScanHeroTopRow}>
+                      <View style={styles.tabletScanIconBox}>
+                        <Image
+                          source={require('../../assets/icons/AI.png')}
+                          style={styles.tabletScanIcon}
+                        />
+                      </View>
+                      <View style={styles.tabletScanTextBox}>
+                        <Text
+                          style={[
+                            styles.tabletScanTitle,
+                            { fontSize: scaleFont(15, 14, 16.5) },
+                          ]}
+                          maxFontSizeMultiplier={1.35}
+                        >
+                          Scan Health Document
+                        </Text>
+                        <Text
+                          style={[
+                            styles.tabletScanSub,
+                            { fontSize: scaleFont(11, 10.5, 12) },
+                          ]}
+                          maxFontSizeMultiplier={1.35}
+                        >
+                          Point camera at prescriptions, lab tests, or bills
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.tabletScanActions}>
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setViewMode('camera');
+                        }}
+                        style={({ pressed }) => [
+                          styles.tabletScanPrimaryBtn,
+                          pressed && styles.pressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Scan health document with camera"
+                      >
+                        <Ionicons name="camera-outline" size={16} color={BLUE} />
+                        <Text style={styles.tabletScanPrimaryBtnText}>SCAN WITH CAMERA</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={handleOpenGallery}
+                        style={({ pressed }) => [
+                          styles.tabletGalleryBtn,
+                          pressed && styles.pressed,
+                        ]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Choose from photo library"
+                      >
+                        <Ionicons name="images-outline" size={13} color="rgba(255, 255, 255, 0.9)" />
+                        <Text style={styles.tabletGalleryBtnText}>Or choose from Photo Library</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+
+                {/* Secure Vault Guarantee Notice */}
+                <View style={styles.tabletVaultNotice}>
+                  <Ionicons name="shield-checkmark" size={14} color={TEAL} />
+                  <Text style={styles.tabletVaultNoticeText}>
+                    Stored encrypted in your sovereign personal vault.
+                  </Text>
+                </View>
+              </View>
+
+              {/* Right Column: Metadata Form Fields */}
+              <View style={styles.tabletColRight}>
+                {/* Record Type Selector */}
+                <View style={styles.tabletFieldSection}>
+                  <Text style={styles.tabletSectionLabel}>RECORD TYPE</Text>
+                  <View style={styles.tabletTypeGrid}>
+                    {RECORD_TYPES.map((t) => {
+                      const active = type === t.value;
+                      return (
+                        <Pressable
+                          key={t.value}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setType(t.value);
+                          }}
+                          style={({ pressed }) => [
+                            styles.tabletTypeChip,
+                            active && styles.tabletTypeChipActive,
+                            pressed && styles.pressed,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Select record type ${t.label}`}
+                          accessibilityState={{ selected: active }}
+                        >
+                          <Image
+                            source={TYPE_ASSETS[t.value]}
+                            style={[
+                              styles.tabletTypeChipIcon,
+                              { tintColor: active ? TEAL : MUTED },
+                            ]}
+                          />
+                          <Text
+                            style={[
+                              styles.tabletTypeChipText,
+                              active && styles.tabletTypeChipTextActive,
+                              { fontSize: scaleFont(11.5, 10.5, 12.5) },
+                            ]}
+                            maxFontSizeMultiplier={1.35}
+                          >
+                            {t.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Form Inputs Container */}
+                <View style={styles.tabletFormCard}>
+                  {/* Title Field */}
+                  <View style={styles.tabletFieldGroup}>
+                    <Text style={styles.tabletFieldLabel}>RECORD TITLE *</Text>
+                    <View style={styles.tabletInputContainer}>
+                      <Image
+                        source={require('../../assets/icons/folder.png')}
+                        style={styles.tabletFieldLeadingIcon}
+                      />
+                      <TextInput
+                        style={[styles.tabletTextInput, { fontSize: scaleFont(13.5, 12.5, 14.5) }]}
+                        value={title}
+                        onChangeText={setTitle}
+                        placeholder="e.g. Annual Blood Work & Lipid Panel"
+                        placeholderTextColor={MUTED}
+                        accessibilityLabel="Record title input"
+                        maxFontSizeMultiplier={1.35}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Date of Event */}
+                  <View style={styles.tabletFieldGroup}>
+                    <Text style={styles.tabletFieldLabel}>DATE OF EVENT</Text>
+                    <View style={styles.tabletInputContainer}>
+                      <Image
+                        source={require('../../assets/icons/calendar.png')}
+                        style={styles.tabletFieldLeadingIcon}
+                      />
+                      <TextInput
+                        style={[styles.tabletTextInput, { fontSize: scaleFont(13.5, 12.5, 14.5) }]}
+                        value={date}
+                        onChangeText={setDate}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor={MUTED}
+                        accessibilityLabel="Date input"
+                        maxFontSizeMultiplier={1.35}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Clinical Notes / Details */}
+                  <View style={styles.tabletFieldGroup}>
+                    <Text style={styles.tabletFieldLabel}>CLINICAL NOTES / DETAILS</Text>
+                    <View style={[styles.tabletInputContainer, styles.tabletTextAreaContainer]}>
+                      <TextInput
+                        style={[
+                          styles.tabletTextInput,
+                          styles.tabletTextArea,
+                          { fontSize: scaleFont(13.5, 12.5, 14.5) },
+                        ]}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
+                        placeholderTextColor={MUTED}
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                        accessibilityLabel="Description notes input"
+                        maxFontSizeMultiplier={1.35}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Primary Save CTA in Right Column */}
                 <Pressable
                   onPress={handleSave}
                   disabled={saving}
                   style={({ pressed }) => [
-                    styles.tabletHeaderSaveBtn,
+                    styles.tabletSaveBtn,
                     pressed && styles.pressed,
                     saving && styles.disabledBtn,
                   ]}
@@ -215,252 +444,24 @@ export default function AddRecordScreen() {
                   accessibilityLabel="Save medical record"
                 >
                   {saving ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={styles.tabletSaveBtnText}>Saving Record...</Text>
+                    </>
                   ) : (
-                    <Text style={styles.tabletHeaderSaveText}>Save</Text>
+                    <>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={18}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.tabletSaveBtnText}>Save Record</Text>
+                    </>
                   )}
                 </Pressable>
               </View>
-
-              {/* 2-Column Split Studio Body */}
-              <View style={styles.tabletStudioBody}>
-                {/* Left Column: Document Capture & Attachment */}
-                <View style={styles.tabletColLeft}>
-                  <Text style={styles.tabletSectionLabel}>DOCUMENT ATTACHMENT</Text>
-
-                  {photoUri ? (
-                    <AttachedDocumentCard
-                      photoUri={photoUri}
-                      onPressInspect={() => {
-                        setTempPhotoUri(photoUri);
-                        setViewMode('preview');
-                      }}
-                      onPressRetake={() => {
-                        setViewMode('camera');
-                      }}
-                      onPressRemove={() => {
-                        setPhotoUri(null);
-                      }}
-                    />
-                  ) : (
-                    <View style={styles.tabletScanHeroCard}>
-                      <View style={styles.tabletScanHeroTopRow}>
-                        <View style={styles.tabletScanIconBox}>
-                          <Image
-                            source={require('../../assets/icons/AI.png')}
-                            style={styles.tabletScanIcon}
-                          />
-                        </View>
-                        <View style={styles.tabletScanTextBox}>
-                          <Text
-                            style={[
-                              styles.tabletScanTitle,
-                              { fontSize: scaleFont(15, 14, 16.5) },
-                            ]}
-                            maxFontSizeMultiplier={1.35}
-                          >
-                            Scan Health Document
-                          </Text>
-                          <Text
-                            style={[
-                              styles.tabletScanSub,
-                              { fontSize: scaleFont(11, 10.5, 12) },
-                            ]}
-                            maxFontSizeMultiplier={1.35}
-                          >
-                            Point camera at prescriptions, lab tests, or bills
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.tabletScanActions}>
-                        <Pressable
-                          onPress={() => {
-                            Haptics.selectionAsync();
-                            setViewMode('camera');
-                          }}
-                          style={({ pressed }) => [
-                            styles.tabletScanPrimaryBtn,
-                            pressed && styles.pressed,
-                          ]}
-                          accessibilityRole="button"
-                          accessibilityLabel="Scan health document with camera"
-                        >
-                          <Ionicons name="camera-outline" size={16} color={BLUE} />
-                          <Text style={styles.tabletScanPrimaryBtnText}>SCAN WITH CAMERA</Text>
-                        </Pressable>
-
-                        <Pressable
-                          onPress={handleOpenGallery}
-                          style={({ pressed }) => [
-                            styles.tabletGalleryBtn,
-                            pressed && styles.pressed,
-                          ]}
-                          hitSlop={8}
-                          accessibilityRole="button"
-                          accessibilityLabel="Choose from photo library"
-                        >
-                          <Ionicons name="images-outline" size={13} color="rgba(255, 255, 255, 0.9)" />
-                          <Text style={styles.tabletGalleryBtnText}>Or choose from Photo Library</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* Secure Vault Guarantee Notice */}
-                  <View style={styles.tabletVaultNotice}>
-                    <Ionicons name="shield-checkmark" size={14} color={TEAL} />
-                    <Text style={styles.tabletVaultNoticeText}>
-                      Stored encrypted in your sovereign personal vault.
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Right Column: Metadata Form Fields */}
-                <View style={styles.tabletColRight}>
-                  {/* Record Type Selector */}
-                  <View style={styles.tabletFieldSection}>
-                    <Text style={styles.tabletSectionLabel}>RECORD TYPE</Text>
-                    <View style={styles.tabletTypeGrid}>
-                      {RECORD_TYPES.map((t) => {
-                        const active = type === t.value;
-                        return (
-                          <Pressable
-                            key={t.value}
-                            onPress={() => {
-                              Haptics.selectionAsync();
-                              setType(t.value);
-                            }}
-                            style={({ pressed }) => [
-                              styles.tabletTypeChip,
-                              active && styles.tabletTypeChipActive,
-                              pressed && styles.pressed,
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Select record type ${t.label}`}
-                            accessibilityState={{ selected: active }}
-                          >
-                            <Image
-                              source={TYPE_ASSETS[t.value]}
-                              style={[
-                                styles.tabletTypeChipIcon,
-                                { tintColor: active ? TEAL : MUTED },
-                              ]}
-                            />
-                            <Text
-                              style={[
-                                styles.tabletTypeChipText,
-                                active && styles.tabletTypeChipTextActive,
-                                { fontSize: scaleFont(11.5, 10.5, 12.5) },
-                              ]}
-                              maxFontSizeMultiplier={1.35}
-                            >
-                              {t.label}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
-
-                  {/* Form Inputs Container */}
-                  <View style={styles.tabletFormCard}>
-                    {/* Title Field */}
-                    <View style={styles.tabletFieldGroup}>
-                      <Text style={styles.tabletFieldLabel}>RECORD TITLE *</Text>
-                      <View style={styles.tabletInputContainer}>
-                        <Image
-                          source={require('../../assets/icons/folder.png')}
-                          style={styles.tabletFieldLeadingIcon}
-                        />
-                        <TextInput
-                          style={[styles.tabletTextInput, { fontSize: scaleFont(13.5, 12.5, 14.5) }]}
-                          value={title}
-                          onChangeText={setTitle}
-                          placeholder="e.g. Annual Blood Work & Lipid Panel"
-                          placeholderTextColor={MUTED}
-                          accessibilityLabel="Record title input"
-                          maxFontSizeMultiplier={1.35}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Date of Event */}
-                    <View style={styles.tabletFieldGroup}>
-                      <Text style={styles.tabletFieldLabel}>DATE OF EVENT</Text>
-                      <View style={styles.tabletInputContainer}>
-                        <Image
-                          source={require('../../assets/icons/calendar.png')}
-                          style={styles.tabletFieldLeadingIcon}
-                        />
-                        <TextInput
-                          style={[styles.tabletTextInput, { fontSize: scaleFont(13.5, 12.5, 14.5) }]}
-                          value={date}
-                          onChangeText={setDate}
-                          placeholder="YYYY-MM-DD"
-                          placeholderTextColor={MUTED}
-                          accessibilityLabel="Date input"
-                          maxFontSizeMultiplier={1.35}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Clinical Notes / Details */}
-                    <View style={styles.tabletFieldGroup}>
-                      <Text style={styles.tabletFieldLabel}>CLINICAL NOTES / DETAILS</Text>
-                      <View style={[styles.tabletInputContainer, styles.tabletTextAreaContainer]}>
-                        <TextInput
-                          style={[
-                            styles.tabletTextInput,
-                            styles.tabletTextArea,
-                            { fontSize: scaleFont(13.5, 12.5, 14.5) },
-                          ]}
-                          value={description}
-                          onChangeText={setDescription}
-                          placeholder="Add doctor notes, dosage, follow-up instructions, or observations..."
-                          placeholderTextColor={MUTED}
-                          multiline
-                          numberOfLines={3}
-                          textAlignVertical="top"
-                          accessibilityLabel="Description notes input"
-                          maxFontSizeMultiplier={1.35}
-                        />
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Primary Save CTA in Right Column */}
-                  <Pressable
-                    onPress={handleSave}
-                    disabled={saving}
-                    style={({ pressed }) => [
-                      styles.tabletSaveBtn,
-                      pressed && styles.pressed,
-                      saving && styles.disabledBtn,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Save medical record"
-                  >
-                    {saving ? (
-                      <>
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                        <Text style={styles.tabletSaveBtnText}>Saving Record...</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Ionicons
-                          name="checkmark-circle-outline"
-                          size={18}
-                          color="#FFFFFF"
-                        />
-                        <Text style={styles.tabletSaveBtnText}>Save Record</Text>
-                      </>
-                    )}
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </View>
     );
@@ -1082,27 +1083,31 @@ const styles = StyleSheet.create({
   ──────────────────────────────────────────────────────── */
   tabletRootOverlay: {
     flex: 1,
-    backgroundColor: BG,
-  },
-  tabletScrollContainer: {
-    flexGrow: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
+  },
+  tabletKeyboardAvoider: {
+    width: '100%',
+    maxWidth: 820,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabletStudioCard: {
     width: '100%',
     maxWidth: 820,
+    maxHeight: '90%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
     borderColor: BORDER,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    alignSelf: 'center',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   tabletCardHeader: {
     flexDirection: 'row',
