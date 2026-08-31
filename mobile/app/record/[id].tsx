@@ -449,18 +449,7 @@ export default function RecordDetailScreen() {
             Record Details
           </Text>
 
-          <Pressable
-            onPress={handleDelete}
-            style={({ pressed }) => [
-              styles.headerDeleteBtn,
-              pressed && styles.pressed,
-            ]}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Delete record"
-          >
-            <Ionicons name="trash-outline" size={18} color={RED} />
-          </Pressable>
+          <View style={styles.headerSpacer} />
         </View>
       </View>
 
@@ -604,20 +593,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 8,
   },
-  headerDeleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: CARD_BG,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: BORDER,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+  headerSpacer: {
+    width: 68,
   },
   pressed: {
     opacity: 0.75,

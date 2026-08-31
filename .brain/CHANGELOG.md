@@ -28,7 +28,7 @@ last_updated: 2026-08-31
 - **Sharing Center Single-Column Screen (`app/(tabs)/share.tsx`)**:
   - Centered 600pt bounded single-column layout on tablet matching the phone's vertical hierarchy (Adaptive Hero QR card / Generate QR CTA → Active Access Sessions → Past Share History displaying top 10 sessions with expandable toggle → Encrypted Vault security footer).
 - **Record Details Single-Column Screen (`app/record/[id].tsx`)**:
-  - Centered 600pt bounded single-column layout on tablet matching phone flow (Record Overview card → Attached Photo card → Clinical Notes card → AI Medical Insights card → Delete CTA).
+  - Centered 600pt bounded single-column layout on tablet matching phone flow (Record Overview card → Attached Photo card → Clinical Notes card → AI Medical Insights card → Dedicated bottom Delete CTA); removed redundant navigation bar delete button.
 - **Doctor Scanner Master-Detail Workspace (`app/(tabs)/scan.tsx`)**:
   - Clamped 320×320 viewfinder in camera mode; Interactive Master-Detail split pane in loaded records mode (Left: Authorized records list; Right: Selected record full details & clinical notes inline).
 - **Patient Profile Inset Grouped Bento Layout (`app/(tabs)/profile.tsx`)**:
