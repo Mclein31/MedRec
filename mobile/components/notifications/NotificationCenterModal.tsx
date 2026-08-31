@@ -38,7 +38,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   onClose,
   onOpenAiSummary,
 }) => {
-  const { isTablet, insets, scaleFont } = useResponsive();
+  const { isTablet, isLandscape, insets, scaleFont } = useResponsive();
   const router = useRouter();
   const {
     notifications,
@@ -107,11 +107,23 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       transparent={isTablet}
       onRequestClose={onClose}
     >
-      <View style={[styles.modalRoot, isTablet && styles.modalRootTablet]}>
+      <View
+        style={[
+          styles.modalRoot,
+          isTablet && styles.modalRootTablet,
+          isTablet && isLandscape && styles.modalRootTabletLandscape,
+        ]}
+      >
         {isTablet && (
           <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
         )}
-        <View style={[styles.container, isTablet && styles.containerTablet]}>
+        <View
+          style={[
+            styles.container,
+            isTablet && styles.containerTablet,
+            isTablet && isLandscape && styles.containerTabletLandscape,
+          ]}
+        >
           {/* Header with integrated drag handle */}
           <View style={styles.header}>
             <DragHandle />
@@ -260,6 +272,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
+  modalRootTabletLandscape: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    padding: 0,
+  },
   container: {
     flex: 1,
     backgroundColor: BG,
@@ -278,6 +295,18 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
+  },
+  containerTabletLandscape: {
+    maxWidth: 420,
+    height: '100%',
+    maxHeight: '100%',
+    borderRadius: 0,
+    borderTopLeftRadius: 24,
+    borderBottomLeftRadius: 24,
+    borderLeftWidth: 1,
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
   },
   header: {
     backgroundColor: CARD_BG,

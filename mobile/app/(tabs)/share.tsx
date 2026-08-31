@@ -208,8 +208,333 @@ export default function ShareScreen() {
       : Math.min(width * 0.42, 175)
   );
 
-  // ─── TABLET SINGLE-COLUMN SHARING SCREEN ──────────────────────────────────
+  // ─── TABLET SHARING SCREEN (Landscape 2-Column / Portrait Single-Column) ─
   if (isTablet) {
+    // Tier 1: Hero Block
+    const heroCardBlock = (
+      <View style={{ gap: 16 }}>
+        {activeToken ? (
+          /* Active Living QR Card */
+          <View style={styles.activeHeroCard}>
+            <Text
+              style={[
+                styles.activeHeroTitle,
+                { fontSize: scaleFont(20, 18, 22) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              {"Doctor's QR Access"}
+            </Text>
+            <Text
+              style={[
+                styles.activeHeroSubtitle,
+                { fontSize: scaleFont(12, 11, 13) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              All records · 60 minute temporary access
+            </Text>
+
+            <View style={styles.qrCodeContainer}>
+              <QRCode
+                value={activeToken}
+                size={qrSize}
+                color="#12343B"
+                backgroundColor="#FFFFFF"
+              />
+            </View>
+
+            {activeExpiry && (
+              <Text style={styles.activeTimerText} maxFontSizeMultiplier={1.35}>
+                {expiryStatus(activeExpiry)}
+              </Text>
+            )}
+
+            {activeShareForQr ? (
+              <Pressable
+                onPress={() => handleRevoke(activeShareForQr.id)}
+                disabled={revoking === activeShareForQr.id}
+                style={({ pressed }) => [
+                  styles.revokeHeroBtn,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Revoke access immediately"
+              >
+                {revoking === activeShareForQr.id ? (
+                  <ActivityIndicator size="small" color={RED} />
+                ) : (
+                  <>
+                    <Ionicons name="close-circle-outline" size={16} color={RED} />
+                    <Text style={styles.revokeHeroBtnText}>Revoke Access Immediately</Text>
+                  </>
+                )}
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setActiveToken(null);
+                  setActiveExpiry(null);
+                }}
+                style={({ pressed }) => [
+                  styles.dismissHeroBtn,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Done viewing QR"
+              >
+                <Text style={styles.dismissHeroBtnText}>Done Viewing</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : isLoadingQr ? (
+          /* Loading State when Navigating from Add Flow */
+          <View style={styles.loadingQrCard}>
+            <ActivityIndicator size="large" color={BLUE} />
+            <Text style={styles.loadingQrText}>Generating Doctor Access QR...</Text>
+          </View>
+        ) : (
+          /* Generate QR Hero Card */
+          <View style={styles.generateHeroCard}>
+            <View style={styles.generateHeroTopRow}>
+              <View style={styles.generateHeroIconBox}>
+                <Ionicons name="qr-code" size={24} color="#FFFFFF" />
+              </View>
+              <View style={styles.generateHeroTextBox}>
+                <Text
+                  style={[
+                    styles.generateHeroTitle,
+                    { fontSize: scaleFont(17, 15, 19) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  Doctor QR Access
+                </Text>
+                <Text
+                  style={[
+                    styles.generateHeroSubtitle,
+                    { fontSize: scaleFont(11.5, 11, 13) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  Instant, secure 60-min access without logins
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={handleCreate}
+              disabled={creating}
+              style={({ pressed }) => [
+                styles.generatePrimaryBtn,
+                pressed && styles.pressed,
+                creating && styles.disabledBtn,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Generate QR code for doctor access"
+            >
+              {creating ? (
+                <ActivityIndicator size="small" color={BLUE} />
+              ) : (
+                <>
+                  <Ionicons name="sparkles" size={16} color={BLUE} />
+                  <Text style={styles.generatePrimaryBtnText}>Generate Doctor QR</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        )}
+      </View>
+    );
+
+    // Tier 2: Active Sessions Block
+    const activeSessionsBlock = activeShares.length > 0 ? (
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
+          Active Access Sessions ({activeShares.length})
+        </Text>
+
+        <View style={styles.cardsStack}>
+          {activeShares.map((s) => {
+            const isViewing = activeToken === s.token;
+            return (
+              <View key={s.id} style={styles.activeShareCard}>
+                <View style={styles.shareCardHeader}>
+                  <View style={styles.statusBadgeLive}>
+                    <View style={styles.statusDotLive} />
+                    <Text style={styles.statusTextLive}>ACTIVE</Text>
+                  </View>
+                  <Text style={styles.shareCardTimer}>
+                    {expiryStatus(s.expires_at)}
+                  </Text>
+                </View>
+
+                <View style={styles.shareCardMetaRow}>
+                  <Image
+                    source={require('../../assets/icons/clock.png')}
+                    style={styles.metaIcon}
+                  />
+                  <Text style={styles.shareCardMetaText}>
+                    Created {formatDate(s.created_at || s.expires_at)} at{' '}
+                    {formatTime(s.created_at || s.expires_at)}
+                  </Text>
+                </View>
+
+                <View style={styles.shareCardActions}>
+                  <Pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      if (isViewing) {
+                        setActiveToken(null);
+                        setActiveExpiry(null);
+                      } else {
+                        setActiveToken(s.token);
+                        setActiveExpiry(s.expires_at);
+                      }
+                    }}
+                    style={({ pressed }) => [
+                      styles.viewQrBtn,
+                      isViewing && styles.viewQrBtnActive,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={isViewing ? 'Hide QR Code' : 'Display QR Code'}
+                  >
+                    <Ionicons
+                      name={isViewing ? 'eye-off-outline' : 'qr-code-outline'}
+                      size={15}
+                      color={isViewing ? INK : TEAL}
+                    />
+                    <Text
+                      style={[
+                        styles.viewQrBtnText,
+                        isViewing && { color: INK },
+                      ]}
+                    >
+                      {isViewing ? 'Hide QR' : 'Show QR'}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => handleRevoke(s.id)}
+                    disabled={revoking === s.id}
+                    style={({ pressed }) => [
+                      styles.revokeBtn,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Revoke access"
+                  >
+                    {revoking === s.id ? (
+                      <ActivityIndicator size="small" color={RED} />
+                    ) : (
+                      <>
+                        <Ionicons name="trash-outline" size={15} color={RED} />
+                        <Text style={styles.revokeBtnText}>Revoke</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    ) : null;
+
+    // Tier 3: Past History Block
+    const pastHistoryBlock = recentShares.length > 0 ? (
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
+          Past Share History
+        </Text>
+
+        <View style={styles.historyCard}>
+          {tabletRecentShares.map((s, index) => {
+            const isLast = index === tabletRecentShares.length - 1;
+            const isRevoked = Boolean(s.revoked_at);
+
+            return (
+              <View key={s.id}>
+                <View style={styles.historyRow}>
+                  <View style={styles.historyIconBox}>
+                    <Ionicons
+                      name={isRevoked ? 'close-circle' : 'checkmark-circle'}
+                      size={18}
+                      color={isRevoked ? RED : MUTED}
+                    />
+                  </View>
+
+                  <View style={styles.historyContent}>
+                    <Text style={styles.historyTitle} numberOfLines={1}>
+                      {isRevoked ? 'Manually Revoked' : 'Session Expired'}
+                    </Text>
+                    <Text style={styles.historySubtitle}>
+                      {formatDate(s.created_at || s.expires_at)} at{' '}
+                      {formatTime(s.created_at || s.expires_at)}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.historyBadge,
+                      isRevoked ? styles.historyBadgeRevoked : styles.historyBadgeExpired,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.historyBadgeText,
+                        isRevoked && { color: RED },
+                      ]}
+                    >
+                      {isRevoked ? 'REVOKED' : 'EXPIRED'}
+                    </Text>
+                  </View>
+                </View>
+                {!isLast && <View style={styles.historyDivider} />}
+              </View>
+            );
+          })}
+
+          {recentShares.length > 10 && (
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShowAllHistory(!showAllHistory);
+              }}
+              style={({ pressed }) => [
+                styles.showMoreBtn,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={showAllHistory ? 'Show fewer past sessions' : 'Show all past sessions'}
+            >
+              <Text style={styles.showMoreBtnText}>
+                {showAllHistory
+                  ? 'Show Less'
+                  : `View All ${recentShares.length} Past Sessions`}
+              </Text>
+              <Ionicons
+                name={showAllHistory ? 'chevron-up' : 'chevron-down'}
+                size={14}
+                color={TEAL}
+              />
+            </Pressable>
+          )}
+        </View>
+      </View>
+    ) : null;
+
+    // Tier 4: Security Guarantee Block
+    const securityGuaranteeBlock = (
+      <View style={styles.securityBox}>
+        <Ionicons name="shield-checkmark" size={16} color={TEAL} />
+        <Text style={styles.securityText} maxFontSizeMultiplier={1.35}>
+          MedRec sharing links are end-to-end encrypted. Healthcare providers only receive temporary, read-only viewing permissions that automatically expire.
+        </Text>
+      </View>
+    );
+
     return (
       <View
         style={[
@@ -234,7 +559,13 @@ export default function ShareScreen() {
             />
           }
         >
-          <View style={styles.tabletSingleColContainer}>
+          <View
+            style={
+              isLandscape
+                ? styles.tabletLandscapeContainer
+                : styles.tabletSingleColContainer
+            }
+          >
             {/* Header */}
             <ScreenHeader
               title="Share Records"
@@ -248,334 +579,30 @@ export default function ShareScreen() {
               style={{ paddingHorizontal: 0 }}
             />
 
-            {/* ────────────────────────────────────────────────────────
-                TIER 1: ADAPTIVE HERO (Primary Action / Active QR)
-            ──────────────────────────────────────────────────────── */}
-            <View style={{ gap: 16 }}>
-              {activeToken ? (
-                /* Active Living QR Card */
-                <View style={styles.activeHeroCard}>
-                  <Text
-                    style={[
-                      styles.activeHeroTitle,
-                      { fontSize: scaleFont(20, 18, 22) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    {"Doctor's QR Access"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.activeHeroSubtitle,
-                      { fontSize: scaleFont(12, 11, 13) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    All records · 60 minute temporary access
-                  </Text>
-
-                  <View style={styles.qrCodeContainer}>
-                    <QRCode
-                      value={activeToken}
-                      size={qrSize}
-                      color="#12343B"
-                      backgroundColor="#FFFFFF"
-                    />
-                  </View>
-
-                  {activeExpiry && (
-                    <Text style={styles.activeTimerText} maxFontSizeMultiplier={1.35}>
-                      {expiryStatus(activeExpiry)}
-                    </Text>
-                  )}
-
-                  {activeShareForQr ? (
-                    <Pressable
-                      onPress={() => handleRevoke(activeShareForQr.id)}
-                      disabled={revoking === activeShareForQr.id}
-                      style={({ pressed }) => [
-                        styles.revokeHeroBtn,
-                        pressed && styles.pressed,
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Revoke access immediately"
-                    >
-                      {revoking === activeShareForQr.id ? (
-                        <ActivityIndicator size="small" color={RED} />
-                      ) : (
-                        <>
-                          <Ionicons name="close-circle-outline" size={16} color={RED} />
-                          <Text style={styles.revokeHeroBtnText}>Revoke Access Immediately</Text>
-                        </>
-                      )}
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      onPress={() => {
-                        setActiveToken(null);
-                        setActiveExpiry(null);
-                      }}
-                      style={({ pressed }) => [
-                        styles.dismissHeroBtn,
-                        pressed && styles.pressed,
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Done viewing QR"
-                    >
-                      <Text style={styles.dismissHeroBtnText}>Done Viewing</Text>
-                    </Pressable>
-                  )}
+            {isLandscape ? (
+              /* ─── TABLET LANDSCAPE: 2-COLUMN SHARING STUDIO ─── */
+              <View style={styles.tabletLandscapeSplitRow}>
+                {/* Left Column (48%): QR Hero + Security */}
+                <View style={styles.tabletLandscapeColLeft}>
+                  {heroCardBlock}
+                  {securityGuaranteeBlock}
                 </View>
-              ) : isLoadingQr ? (
-                /* Loading State when Navigating from Add Flow */
-                <View style={styles.loadingQrCard}>
-                  <ActivityIndicator size="large" color={BLUE} />
-                  <Text style={styles.loadingQrText}>Generating Doctor Access QR...</Text>
+
+                {/* Right Column (52%): Active Sessions + Past History */}
+                <View style={styles.tabletLandscapeColRight}>
+                  {activeSessionsBlock}
+                  {pastHistoryBlock}
                 </View>
-              ) : (
-                /* Generate QR Hero Card */
-                <View style={styles.generateHeroCard}>
-                  <View style={styles.generateHeroTopRow}>
-                    <View style={styles.generateHeroIconBox}>
-                      <Ionicons name="qr-code" size={24} color="#FFFFFF" />
-                    </View>
-                    <View style={styles.generateHeroTextBox}>
-                      <Text
-                        style={[
-                          styles.generateHeroTitle,
-                          { fontSize: scaleFont(17, 15, 19) },
-                        ]}
-                        maxFontSizeMultiplier={1.35}
-                      >
-                        Doctor QR Access
-                      </Text>
-                      <Text
-                        style={[
-                          styles.generateHeroSubtitle,
-                          { fontSize: scaleFont(11.5, 11, 13) },
-                        ]}
-                        maxFontSizeMultiplier={1.35}
-                      >
-                        Instant, secure 60-min access without logins
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Pressable
-                    onPress={handleCreate}
-                    disabled={creating}
-                    style={({ pressed }) => [
-                      styles.generatePrimaryBtn,
-                      pressed && styles.pressed,
-                      creating && styles.disabledBtn,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Generate QR code for doctor access"
-                  >
-                    {creating ? (
-                      <ActivityIndicator size="small" color={BLUE} />
-                    ) : (
-                      <>
-                        <Ionicons name="sparkles" size={16} color={BLUE} />
-                        <Text style={styles.generatePrimaryBtnText}>Generate Doctor QR</Text>
-                      </>
-                    )}
-                  </Pressable>
-                </View>
-              )}
-
-              {/* ────────────────────────────────────────────────────────
-                  TIER 2: ACTIVE SHARING SESSIONS
-              ──────────────────────────────────────────────────────── */}
-              {activeShares.length > 0 && (
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
-                    Active Access Sessions ({activeShares.length})
-                  </Text>
-
-                  <View style={styles.cardsStack}>
-                    {activeShares.map((s) => {
-                      const isViewing = activeToken === s.token;
-                      return (
-                        <View key={s.id} style={styles.activeShareCard}>
-                          <View style={styles.shareCardHeader}>
-                            <View style={styles.statusBadgeLive}>
-                              <View style={styles.statusDotLive} />
-                              <Text style={styles.statusTextLive}>ACTIVE</Text>
-                            </View>
-                            <Text style={styles.shareCardTimer}>
-                              {expiryStatus(s.expires_at)}
-                            </Text>
-                          </View>
-
-                          <View style={styles.shareCardMetaRow}>
-                            <Image
-                              source={require('../../assets/icons/clock.png')}
-                              style={styles.metaIcon}
-                            />
-                            <Text style={styles.shareCardMetaText}>
-                              Created {formatDate(s.created_at || s.expires_at)} at{' '}
-                              {formatTime(s.created_at || s.expires_at)}
-                            </Text>
-                          </View>
-
-                          <View style={styles.shareCardActions}>
-                            <Pressable
-                              onPress={() => {
-                                Haptics.selectionAsync();
-                                if (isViewing) {
-                                  setActiveToken(null);
-                                  setActiveExpiry(null);
-                                } else {
-                                  setActiveToken(s.token);
-                                  setActiveExpiry(s.expires_at);
-                                }
-                              }}
-                              style={({ pressed }) => [
-                                styles.viewQrBtn,
-                                isViewing && styles.viewQrBtnActive,
-                                pressed && styles.pressed,
-                              ]}
-                              accessibilityRole="button"
-                              accessibilityLabel={isViewing ? 'Hide QR Code' : 'Display QR Code'}
-                            >
-                              <Ionicons
-                                name={isViewing ? 'eye-off-outline' : 'qr-code-outline'}
-                                size={15}
-                                color={isViewing ? INK : TEAL}
-                              />
-                              <Text
-                                style={[
-                                  styles.viewQrBtnText,
-                                  isViewing && { color: INK },
-                                ]}
-                              >
-                                {isViewing ? 'Hide QR' : 'Show QR'}
-                              </Text>
-                            </Pressable>
-
-                            <Pressable
-                              onPress={() => handleRevoke(s.id)}
-                              disabled={revoking === s.id}
-                              style={({ pressed }) => [
-                                styles.revokeBtn,
-                                pressed && styles.pressed,
-                              ]}
-                              accessibilityRole="button"
-                              accessibilityLabel="Revoke access"
-                            >
-                              {revoking === s.id ? (
-                                <ActivityIndicator size="small" color={RED} />
-                              ) : (
-                                <>
-                                  <Ionicons name="trash-outline" size={15} color={RED} />
-                                  <Text style={styles.revokeBtnText}>Revoke</Text>
-                                </>
-                              )}
-                            </Pressable>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-              )}
-
-              {/* ────────────────────────────────────────────────────────
-                  TIER 3: PAST SHARING SESSIONS
-              ──────────────────────────────────────────────────────── */}
-              {recentShares.length > 0 && (
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
-                    Past Share History
-                  </Text>
-
-                  <View style={styles.historyCard}>
-                    {tabletRecentShares.map((s, index) => {
-                      const isLast = index === tabletRecentShares.length - 1;
-                      const isRevoked = Boolean(s.revoked_at);
-
-                      return (
-                        <View key={s.id}>
-                          <View style={styles.historyRow}>
-                            <View style={styles.historyIconBox}>
-                              <Ionicons
-                                name={isRevoked ? 'close-circle' : 'checkmark-circle'}
-                                size={18}
-                                color={isRevoked ? RED : MUTED}
-                              />
-                            </View>
-
-                            <View style={styles.historyContent}>
-                              <Text style={styles.historyTitle} numberOfLines={1}>
-                                {isRevoked ? 'Manually Revoked' : 'Session Expired'}
-                              </Text>
-                              <Text style={styles.historySubtitle}>
-                                {formatDate(s.created_at || s.expires_at)} at{' '}
-                                {formatTime(s.created_at || s.expires_at)}
-                              </Text>
-                            </View>
-
-                            <View
-                              style={[
-                                styles.historyBadge,
-                                isRevoked ? styles.historyBadgeRevoked : styles.historyBadgeExpired,
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.historyBadgeText,
-                                  isRevoked && { color: RED },
-                                ]}
-                              >
-                                {isRevoked ? 'REVOKED' : 'EXPIRED'}
-                              </Text>
-                            </View>
-                          </View>
-                          {!isLast && <View style={styles.historyDivider} />}
-                        </View>
-                      );
-                    })}
-
-                    {recentShares.length > 10 && (
-                      <Pressable
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          setShowAllHistory(!showAllHistory);
-                        }}
-                        style={({ pressed }) => [
-                          styles.showMoreBtn,
-                          pressed && styles.pressed,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={showAllHistory ? 'Show fewer past sessions' : 'Show all past sessions'}
-                      >
-                        <Text style={styles.showMoreBtnText}>
-                          {showAllHistory
-                            ? 'Show Less'
-                            : `View All ${recentShares.length} Past Sessions`}
-                        </Text>
-                        <Ionicons
-                          name={showAllHistory ? 'chevron-up' : 'chevron-down'}
-                          size={14}
-                          color={TEAL}
-                        />
-                      </Pressable>
-                    )}
-                  </View>
-                </View>
-              )}
-
-              {/* ────────────────────────────────────────────────────────
-                  TIER 4: SECURITY GUARANTEE FOOTER
-              ──────────────────────────────────────────────────────── */}
-              <View style={styles.securityBox}>
-                <Ionicons name="shield-checkmark" size={16} color={TEAL} />
-                <Text style={styles.securityText} maxFontSizeMultiplier={1.35}>
-                  MedRec sharing links are end-to-end encrypted. Healthcare providers only receive temporary, read-only viewing permissions that automatically expire.
-                </Text>
               </View>
-            </View>
+            ) : (
+              /* ─── TABLET PORTRAIT: SINGLE COLUMN STACK (LOCKED) ─── */
+              <View style={{ gap: 16 }}>
+                {heroCardBlock}
+                {activeSessionsBlock}
+                {pastHistoryBlock}
+                {securityGuaranteeBlock}
+              </View>
+            )}
           </View>
         </ScrollView>
 
@@ -1345,13 +1372,33 @@ const styles = StyleSheet.create({
   },
 
   /* ────────────────────────────────────────────────────────
-     TABLET SINGLE-COLUMN SHARING SCREEN STYLES
+     TABLET SHARING SCREEN STYLES
   ──────────────────────────────────────────────────────── */
   tabletSingleColContainer: {
     maxWidth: 600,
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: 24,
+    gap: 16,
+  },
+  tabletLandscapeContainer: {
+    maxWidth: 1060,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  tabletLandscapeSplitRow: {
+    flexDirection: 'row',
+    gap: 24,
+    alignItems: 'flex-start',
+  },
+  tabletLandscapeColLeft: {
+    flex: 0.48,
+    gap: 16,
+  },
+  tabletLandscapeColRight: {
+    flex: 0.52,
     gap: 16,
   },
 });

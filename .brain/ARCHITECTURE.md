@@ -107,8 +107,10 @@ last_updated: 2026-08-28
 3. **Master-Detail Workspace Pattern**:
    - **Records Dashboard (`index.tsx`)**: 380pt master list with search, category filters, and multi-select banner on left; full document zoom preview, clinical notes, and AI insights with 1-tap regenerate on right.
    - **Doctor Scanner (`scan.tsx`)**: Master list of authorized records on left; inline clinical review pane on right.
-4. **Layout Architectures**:
-   - **Record Intake (`add.tsx`)**: 580pt centered single-column studio with `transparentModal` presentation and content-driven height matching the phone's unified vertical flow.
-   - **Sharing Center (`share.tsx`)**: 600pt centered single-column layout matching the phone's vertical hierarchy and flow.
-   - **Record Details (`record/[id].tsx`)**: 600pt centered single-column layout matching the phone's stacked section flow.
-   - **Patient Profile (`profile.tsx`)**: 920pt bounded 2×2 Inset Grouped Bento grid.
+4. **Layout Architectures (Tri-State Engine)**:
+   - **Records Dashboard (`index.tsx`)**: Landscape Master-Detail Workspace (380pt Master Left / Flex 1 Live Record Details & AI Insights Right). Portrait 2-column Bento Grid. Phone single-column stack.
+   - **Record Intake (`add.tsx`)**: 580pt centered single-column floating studio with `transparentModal` presentation and content-driven height matching the phone's unified vertical flow.
+   - **Sharing Center (`share.tsx`)**: Landscape 2-Column Sharing Studio (1060pt max width; QR Hero + Security Left / Active Sessions + History Right). Portrait centered 600pt stack. Phone single-column stack.
+   - **Record Details (`record/[id].tsx`)**: Landscape 2-Column Clinical Split Workspace (1100pt max width; Overview + Document Photo + Delete Left / Notes + AI Insights Right). Portrait centered 600pt stack. Phone single-column stack.
+   - **Patient Profile (`profile.tsx`)**: 920pt bounded 2×2 Inset Grouped Bento grid in landscape with sidebar clearance.
+   - **Modals & Overlays**: Emergency ID 2-column triage placard (680pt in landscape), Notification Center right slide-over panel (420pt in landscape), Profile Edit 2-column form dialog (640pt in landscape).

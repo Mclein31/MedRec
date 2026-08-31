@@ -12,6 +12,22 @@ last_updated: 2026-09-01
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-01 — Tri-State Tablet Landscape UI Architecture & Split Workspaces
+
+### Decision
+1. **MedRec Tri-State UI Engine**: Enforce three mutually exclusive, strictly isolated runtime UI states:
+   - **Phone (Locked 🔒)**: `!isTablet` — Single-column vertical flow, bottom tab bar (85pt), edge-to-edge sheets.
+   - **Tablet Portrait (Locked 🔒)**: `isTablet && !isLandscape` — Single-column / 2-column bento grids, centered 480pt floating pill nav.
+   - **Tablet Landscape (Target 🎯)**: `isTablet && isLandscape` — 260pt persistent left sidebar, Master-Detail clinical workspaces (`index.tsx`, `scan.tsx`), 2-Column Sharing Studio (`share.tsx`, 1060pt), 2-Column Clinical Split Workspace (`record/[id].tsx`, 1100pt), 2×2 Inset Grouped Bento Matrix (`profile.tsx`, 920pt), 2-Column Triage Placard (`EmergencyIdModal.tsx`, 680pt), and Right Slide-Over Panel (`NotificationCenterModal.tsx`, 420pt).
+2. **Strict Reading Length Limits**: Constrain plain text containers to 380–520pt max width across landscape viewports to preserve the 50–75 CPL readability ceiling.
+3. **Zero Phone / Portrait UI Regression Invariant**: Any responsive presentation logic or layout branch introduced for Tablet Landscape evaluates conditionally via `isTabletLandscape = isTablet && isLandscape`.
+
+### Reason
+- **Biomechanical & Ergonomic Optimization**: Adapts to widescreen tablet lateral thumb zones, desk stands, and keyboard folios without stretching single-column forms into unwieldy full-width banners.
+- **Clinical Cognitive Co-Presence**: Allows clinicians and patients to review related clinical documents (list + details, photo + notes, QR + ledger) side by side without screen transitions.
+
+---
+
 ## 2026-09-01 — Single-Column Tablet Redesign for Share Records & Record Details
 
 ### Decision

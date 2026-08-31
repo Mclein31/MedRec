@@ -17,6 +17,10 @@ export interface ResponsiveLayoutState {
   isLandscape: boolean;
   isShortScreen: boolean;
 
+  // Dedicated Tri-State Layout Flags
+  isTabletLandscape: boolean;
+  isTabletPortrait: boolean;
+
   // Dimensions & Safe Areas
   width: number;
   height: number;
@@ -36,6 +40,10 @@ export interface ResponsiveLayoutState {
   maxContentWidth: number;
   maxDetailWidth: number;
   maxModalWidth: number;
+  maxLandscapeWidth: number;
+  landscapeSplitLeft: number;
+  landscapeSplitRight: number;
+  maxDrawerWidthLandscape: number;
   containerWidth: number;
   gridColumns: number;
   sidebarWidth: number;
@@ -127,6 +135,9 @@ export function useResponsive(): ResponsiveLayoutState {
     return scaleFont(size, min, max);
   };
 
+  const isTabletLandscape = isTablet && isLandscape;
+  const isTabletPortrait = isTablet && !isLandscape;
+
   return {
     isCompactPhone,
     isStandardPhone,
@@ -134,6 +145,8 @@ export function useResponsive(): ResponsiveLayoutState {
     isLargeTablet,
     isLandscape,
     isShortScreen,
+    isTabletLandscape,
+    isTabletPortrait,
     width,
     height,
     insets,
@@ -144,6 +157,10 @@ export function useResponsive(): ResponsiveLayoutState {
     maxContentWidth: ResponsiveLimits.maxContentWidth,
     maxDetailWidth: ResponsiveLimits.maxDetailWidth,
     maxModalWidth: ResponsiveLimits.maxModalWidth,
+    maxLandscapeWidth: 1140,
+    landscapeSplitLeft: 0.44,
+    landscapeSplitRight: 0.56,
+    maxDrawerWidthLandscape: 420,
     containerWidth,
     gridColumns,
     scaleFont,

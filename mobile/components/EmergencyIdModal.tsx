@@ -42,7 +42,7 @@ export default function EmergencyIdModal({
   userEmail,
   onClose,
 }: Props) {
-  const { isTablet, insets, width, scaleFont } = useResponsive();
+  const { isTablet, isLandscape, insets, width, scaleFont } = useResponsive();
 
   const handleCallEmergency = () => {
     const rawPhone = profile.emergencyContactPhone;
@@ -84,6 +84,173 @@ export default function EmergencyIdModal({
 
   const qrSize = Math.round(isTablet ? 170 : Math.min(width * 0.42, 160));
 
+  // Medical baselines block
+  const medicalBaselinesBlock = (
+    <>
+      {/* Emergency Alert Banner */}
+      <View style={styles.alertBanner}>
+        <View style={styles.alertIconBox}>
+          <Ionicons name="alert-circle" size={22} color={RED} />
+        </View>
+        <View style={styles.alertTextBox}>
+          <Text style={styles.alertTitle} maxFontSizeMultiplier={1.35}>
+            First Responder Summary
+          </Text>
+          <Text style={styles.alertSub} maxFontSizeMultiplier={1.35}>
+            Critical medical baselines and emergency contacts for acute clinical triage.
+          </Text>
+        </View>
+      </View>
+
+      {/* Primary Patient Card */}
+      <View style={styles.card}>
+        <View style={styles.patientRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {userName
+                ? userName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)
+                : 'MR'}
+            </Text>
+          </View>
+          <View style={styles.patientInfo}>
+            <Text
+              style={[
+                styles.patientName,
+                { fontSize: scaleFont(18, 16, 20) },
+              ]}
+              maxFontSizeMultiplier={1.35}
+            >
+              {userName || 'Patient'}
+            </Text>
+            <Text style={styles.patientSub} maxFontSizeMultiplier={1.35}>
+              {age !== null ? `${age} yrs` : 'Age not set'}
+              {profile.biologicalSex ? ` • ${profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)}` : ''}
+            </Text>
+          </View>
+          {profile.bloodType && (
+            <View style={styles.bloodBadge}>
+              <Text style={styles.bloodBadgeSub}>BLOOD</Text>
+              <Text style={styles.bloodBadgeText}>{profile.bloodType}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Allergies Highlight */}
+        <View style={styles.allergySection}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="warning" size={16} color={RED} />
+            <Text style={styles.allergyTitle}>Allergies &amp; Contraindications</Text>
+          </View>
+          {profile.allergies && profile.allergies.trim() ? (
+            <View style={styles.allergyBox}>
+              <Text style={styles.allergyText}>{profile.allergies}</Text>
+            </View>
+          ) : (
+            <View style={styles.safeBox}>
+              <Ionicons name="checkmark-circle-outline" size={16} color={TEAL} />
+              <Text style={styles.safeText}>No known severe allergies reported</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Medical Conditions */}
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Chronic Medical Conditions</Text>
+          <Text style={styles.infoValue}>
+            {profile.medicalConditions || 'None reported'}
+          </Text>
+        </View>
+
+        {/* Medications */}
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Maintenance Medications</Text>
+          <Text style={styles.infoValue}>
+            {profile.medicationsSummary || 'None reported'}
+          </Text>
+        </View>
+
+        {/* Organ Donor */}
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Organ Donor</Text>
+          <Text style={styles.infoValue}>
+            {profile.organDonor ? 'Yes (Registered Donor)' : 'No / Not registered'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Emergency Contact Action Card */}
+      <View style={styles.contactCard}>
+        <View style={styles.contactHeader}>
+          <View style={styles.phoneIconBox}>
+            <Ionicons name="call" size={18} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.contactCardTitle}>Primary Emergency Contact</Text>
+            <Text style={styles.contactCardSub}>
+              {profile.emergencyContactRelationship
+                ? profile.emergencyContactRelationship.toUpperCase()
+                : 'EMERGENCY ICE'}
+            </Text>
+          </View>
+        </View>
+
+        {profile.emergencyContactName ? (
+          <View style={styles.contactDetails}>
+            <Text style={styles.contactName}>{profile.emergencyContactName}</Text>
+            <Text style={styles.contactPhone}>{profile.emergencyContactPhone || 'No phone number'}</Text>
+
+            {profile.emergencyContactPhone && (
+              <Pressable
+                onPress={handleCallEmergency}
+                style={({ pressed }) => [styles.callBtn, pressed && styles.pressed]}
+              >
+                <Ionicons name="call" size={18} color="#FFFFFF" />
+                <Text style={styles.callBtnText}>Call Emergency Contact</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          <View style={styles.emptyContact}>
+            <Text style={styles.emptyContactText}>
+              No emergency contact registered. Tap &ldquo;Edit Medical ID&rdquo; to add one.
+            </Text>
+          </View>
+        )}
+      </View>
+    </>
+  );
+
+  // Paramedic QR Block
+  const paramedicQrBlock = (
+    <View style={styles.qrCard}>
+      <Text
+        style={[
+          styles.qrTitle,
+          { fontSize: scaleFont(15, 14, 17) },
+        ]}
+        maxFontSizeMultiplier={1.35}
+      >
+        Offline Paramedic QR Code
+      </Text>
+      <Text style={styles.qrSub} maxFontSizeMultiplier={1.35}>
+        First responders can scan this code with any camera to read emergency data instantly without internet or login.
+      </Text>
+      <View style={styles.qrWrapper}>
+        <QRCode value={qrPayload} size={qrSize} color="#12343B" backgroundColor="#FFFFFF" />
+      </View>
+      <Text style={styles.qrFooterNote} maxFontSizeMultiplier={1.35}>
+        Generated from verified patient vault data.
+      </Text>
+    </View>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -96,7 +263,15 @@ export default function EmergencyIdModal({
         {isTablet && (
           <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
         )}
-        <View style={[styles.container, isTablet && styles.containerTablet]}>
+        <View
+          style={[
+            styles.container,
+            isTablet && [
+              styles.containerTablet,
+              isLandscape && { maxWidth: 680, maxHeight: '90%' },
+            ],
+          ]}
+        >
           {/* Header with integrated drag handle */}
           <View style={styles.header}>
             <DragHandle />
@@ -128,165 +303,21 @@ export default function EmergencyIdModal({
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {/* Emergency Alert Banner */}
-            <View style={styles.alertBanner}>
-              <View style={styles.alertIconBox}>
-                <Ionicons name="alert-circle" size={22} color={RED} />
-              </View>
-              <View style={styles.alertTextBox}>
-                <Text style={styles.alertTitle} maxFontSizeMultiplier={1.35}>
-                  First Responder Summary
-                </Text>
-                <Text style={styles.alertSub} maxFontSizeMultiplier={1.35}>
-                  Critical medical baselines and emergency contacts for acute clinical triage.
-                </Text>
-              </View>
-            </View>
-
-            {/* Primary Patient Card */}
-            <View style={styles.card}>
-              <View style={styles.patientRow}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {userName
-                      ? userName
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .toUpperCase()
-                          .slice(0, 2)
-                      : 'MR'}
-                  </Text>
+            {isTablet && isLandscape ? (
+              <View style={styles.landscapeRow}>
+                <View style={styles.landscapeColLeft}>
+                  {medicalBaselinesBlock}
                 </View>
-                <View style={styles.patientInfo}>
-                  <Text
-                    style={[
-                      styles.patientName,
-                      { fontSize: scaleFont(18, 16, 20) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    {userName || 'Patient'}
-                  </Text>
-                  <Text style={styles.patientSub} maxFontSizeMultiplier={1.35}>
-                    {age !== null ? `${age} yrs` : 'Age not set'}
-                    {profile.biologicalSex ? ` • ${profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)}` : ''}
-                  </Text>
-                </View>
-                {profile.bloodType && (
-                  <View style={styles.bloodBadge}>
-                    <Text style={styles.bloodBadgeSub}>BLOOD</Text>
-                    <Text style={styles.bloodBadgeText}>{profile.bloodType}</Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.divider} />
-
-              {/* Allergies Highlight */}
-              <View style={styles.allergySection}>
-                <View style={styles.sectionHeaderRow}>
-                  <Ionicons name="warning" size={16} color={RED} />
-                  <Text style={styles.allergyTitle}>Allergies &amp; Contraindications</Text>
-                </View>
-                {profile.allergies && profile.allergies.trim() ? (
-                  <View style={styles.allergyBox}>
-                    <Text style={styles.allergyText}>{profile.allergies}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.safeBox}>
-                    <Ionicons name="checkmark-circle-outline" size={16} color={TEAL} />
-                    <Text style={styles.safeText}>No known severe allergies reported</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Medical Conditions */}
-              <View style={styles.infoSection}>
-                <Text style={styles.sectionTitle}>Chronic Medical Conditions</Text>
-                <Text style={styles.infoValue}>
-                  {profile.medicalConditions || 'None reported'}
-                </Text>
-              </View>
-
-              {/* Medications */}
-              <View style={styles.infoSection}>
-                <Text style={styles.sectionTitle}>Maintenance Medications</Text>
-                <Text style={styles.infoValue}>
-                  {profile.medicationsSummary || 'None reported'}
-                </Text>
-              </View>
-
-              {/* Organ Donor */}
-              <View style={styles.infoSection}>
-                <Text style={styles.sectionTitle}>Organ Donor</Text>
-                <Text style={styles.infoValue}>
-                  {profile.organDonor ? 'Yes (Registered Donor)' : 'No / Not registered'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Emergency Contact Action Card */}
-            <View style={styles.contactCard}>
-              <View style={styles.contactHeader}>
-                <View style={styles.phoneIconBox}>
-                  <Ionicons name="call" size={18} color="#FFFFFF" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.contactCardTitle}>Primary Emergency Contact</Text>
-                  <Text style={styles.contactCardSub}>
-                    {profile.emergencyContactRelationship
-                      ? profile.emergencyContactRelationship.toUpperCase()
-                      : 'EMERGENCY ICE'}
-                  </Text>
+                <View style={styles.landscapeColRight}>
+                  {paramedicQrBlock}
                 </View>
               </View>
-
-              {profile.emergencyContactName ? (
-                <View style={styles.contactDetails}>
-                  <Text style={styles.contactName}>{profile.emergencyContactName}</Text>
-                  <Text style={styles.contactPhone}>{profile.emergencyContactPhone || 'No phone number'}</Text>
-
-                  {profile.emergencyContactPhone && (
-                    <Pressable
-                      onPress={handleCallEmergency}
-                      style={({ pressed }) => [styles.callBtn, pressed && styles.pressed]}
-                    >
-                      <Ionicons name="call" size={18} color="#FFFFFF" />
-                      <Text style={styles.callBtnText}>Call Emergency Contact</Text>
-                    </Pressable>
-                  )}
-                </View>
-              ) : (
-                <View style={styles.emptyContact}>
-                  <Text style={styles.emptyContactText}>
-                    No emergency contact registered. Tap &ldquo;Edit Medical ID&rdquo; to add one.
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Offline Paramedic QR Code */}
-            <View style={styles.qrCard}>
-              <Text
-                style={[
-                  styles.qrTitle,
-                  { fontSize: scaleFont(15, 14, 17) },
-                ]}
-                maxFontSizeMultiplier={1.35}
-              >
-                Offline Paramedic QR Code
-              </Text>
-              <Text style={styles.qrSub} maxFontSizeMultiplier={1.35}>
-                First responders can scan this code with any camera to read emergency data instantly without internet or login.
-              </Text>
-              <View style={styles.qrWrapper}>
-                <QRCode value={qrPayload} size={qrSize} color="#12343B" backgroundColor="#FFFFFF" />
-              </View>
-              <Text style={styles.qrFooterNote} maxFontSizeMultiplier={1.35}>
-                Generated from verified patient vault data.
-              </Text>
-            </View>
+            ) : (
+              <>
+                {medicalBaselinesBlock}
+                {paramedicQrBlock}
+              </>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -614,5 +645,18 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  landscapeRow: {
+    flexDirection: 'row',
+    gap: 20,
+    alignItems: 'flex-start',
+  },
+  landscapeColLeft: {
+    flex: 0.52,
+    gap: 16,
+  },
+  landscapeColRight: {
+    flex: 0.48,
+    gap: 16,
   },
 });

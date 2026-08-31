@@ -44,6 +44,7 @@ export default function RecordDetailScreen() {
   const router = useRouter();
   const {
     isTablet,
+    isLandscape,
     screenPadding,
     insets,
     scaleFont,
@@ -468,17 +469,36 @@ export default function RecordDetailScreen() {
           style={[
             styles.contentContainer,
             isTablet && {
-              maxWidth: ResponsiveLimits.maxDetailWidth,
+              maxWidth: isLandscape ? 1100 : ResponsiveLimits.maxDetailWidth,
               alignSelf: 'center',
               width: '100%',
             },
           ]}
         >
-          {overviewCard}
-          {attachmentCard}
-          {clinicalNotesCard}
-          {aiInsightsCard}
-          {deleteActionBtn}
+          {isTablet && isLandscape ? (
+            <View style={styles.tabletLandscapeSplitRow}>
+              {/* Left Column (44%): Overview, Document Attachment, Delete */}
+              <View style={styles.tabletLandscapeColLeft}>
+                {overviewCard}
+                {attachmentCard}
+                {deleteActionBtn}
+              </View>
+
+              {/* Right Column (56%): Clinical Notes & AI Medical Insights */}
+              <View style={styles.tabletLandscapeColRight}>
+                {clinicalNotesCard}
+                {aiInsightsCard}
+              </View>
+            </View>
+          ) : (
+            <>
+              {overviewCard}
+              {attachmentCard}
+              {clinicalNotesCard}
+              {aiInsightsCard}
+              {deleteActionBtn}
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -885,5 +905,20 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 220,
     borderRadius: Radii.md,
+  },
+
+  /* Tablet Landscape Clinical Split Workspace */
+  tabletLandscapeSplitRow: {
+    flexDirection: 'row',
+    gap: 20,
+    alignItems: 'flex-start',
+  },
+  tabletLandscapeColLeft: {
+    flex: 0.44,
+    gap: 16,
+  },
+  tabletLandscapeColRight: {
+    flex: 0.56,
+    gap: 16,
   },
 });

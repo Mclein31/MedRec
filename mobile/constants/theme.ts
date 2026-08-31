@@ -62,6 +62,8 @@ export const ResponsiveLimits = {
   maxContentWidth: 760,       // Max width for main dashboards & profile cards
   maxDetailWidth: 920,        // Max width for record detail split views
   maxModalWidth: 560,         // Max width for centered sheet modals on tablet
+  maxLandscapeWidth: 1140,    // Max container width for widescreen tablet landscape
+  maxModalLandscapeWidth: 640,// Max width for 2-column centered dialogs in landscape
   minTapTarget: 44,           // WCAG AA compliant minimum interactive target
   viewfinderMax: 360,         // Max width for camera capture viewfinder
 } as const;
