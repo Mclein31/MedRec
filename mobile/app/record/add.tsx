@@ -221,6 +221,7 @@ export default function AddRecordScreen() {
 
             {/* Content-Driven 2-Column Split Studio Body */}
             <ScrollView
+              style={styles.tabletScrollBody}
               contentContainerStyle={styles.tabletStudioBody}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
@@ -1148,10 +1149,15 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: '#FFFFFF',
   },
+  tabletScrollBody: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
   tabletStudioBody: {
     flexDirection: 'row',
     padding: 18,
     gap: 18,
+    flexGrow: 0,
   },
   tabletColLeft: {
     flex: 0.92,
