@@ -198,6 +198,10 @@ export default function ShareScreen() {
     ? recentShares
     : recentShares.slice(0, 3);
 
+  const tabletRecentShares = showAllHistory
+    ? recentShares
+    : recentShares.slice(0, 10);
+
   const qrSize = Math.round(
     isTablet
       ? 200
@@ -487,8 +491,8 @@ export default function ShareScreen() {
                   </Text>
 
                   <View style={styles.historyCard}>
-                    {visibleRecentShares.map((s, index) => {
-                      const isLast = index === visibleRecentShares.length - 1;
+                    {tabletRecentShares.map((s, index) => {
+                      const isLast = index === tabletRecentShares.length - 1;
                       const isRevoked = Boolean(s.revoked_at);
 
                       return (
@@ -533,7 +537,7 @@ export default function ShareScreen() {
                       );
                     })}
 
-                    {recentShares.length > 3 && (
+                    {recentShares.length > 10 && (
                       <Pressable
                         onPress={() => {
                           Haptics.selectionAsync();
