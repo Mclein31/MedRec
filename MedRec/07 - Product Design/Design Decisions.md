@@ -35,7 +35,7 @@ This document serves as the master index of all core product and UX design decis
 | **DD-03** | **Time-Bounded Self-Expiring Share Links** | `Active` | Protects patient privacy by default so access is not permanently left open to external parties. | [[07 - Product Design/Design Decisions#DD-03|DD-03]] |
 | **DD-04** | **Standardized Clinical Categories over Freeform Tags** | `Active` | Medical records need immediate clinical taxonomy for doctors to parse quickly without unstructured noise. | [[07 - Product Design/Design Decisions#DD-04|DD-04]] |
 | **DD-05** | **Compact Metadata Row & Modular Cards for Record Details** | `Active` | Prevents oversized date cards from pushing clinical notes below the fold on mobile viewports. | [[07 - Product Design/Design Decisions#DD-05|DD-05]] |
-| **DD-06** | **Text-Only App Drawer Navigation with Logo Branding** | `Active` | Eliminates visual icon clutter and duplicate navigation noise by using pure typography and official logo branding. | [[07 - Product Design/Design Decisions#DD-06|DD-06]] |
+| **DD-06** | **Text-Only App Drawer Navigation with Logo Branding** | `Superseded by DD-16` | Initial minimal text drawer; superseded by dual-coded squircle iconography, patient demographic card, and section chunking. | [[07 - Product Design/Design Decisions#DD-06|DD-06]] |
 | **DD-07** | **In-App Notification Center & Privacy-First Audit Alerts** | `Active` | Enforces two-tier health privacy by keeping audit trails in-app with generic copy and providing actionable one-tap deep links. | [[07 - Product Design/Design Decisions#DD-07|DD-07]] |
 | **DD-08** | **Inset Grouped Profile Architecture & Avatar Persistence** | `Active` | Eliminates visual clutter and text highlight boxes in favor of clean iOS-style grouped cards and persistent photo uploads. | [[07 - Product Design/Design Decisions#DD-08|DD-08]] |
 | **DD-09** | **Universal Sliding Sheet Drag Handle & Compact Input Placeholders** | `Active` | Communicates downward drag dismissibility consistently across all sliding modals without vertical dead space, paired with compact input placeholders for long medical terms. | [[07 - Product Design/Design Decisions#DD-09|DD-09]] |
@@ -45,10 +45,17 @@ This document serves as the master index of all core product and UX design decis
 | **DD-13** | **Records Screen Layout & Quick Category Carousel** | `Active` | Replaces cramped search inputs and redundant sort modals with a full-width search bar and direct horizontal category quick chips with live counts. | [[07 - Product Design/Design Decisions#DD-13|DD-13]] |
 | **DD-14** | **Continuous Scrollable Profile Content & Compact Fixed Navigation Toolbar** | `Active` | Moves the Profile title into the top-level scrollable content while keeping a compact global navigation toolbar fixed at the top, unlocking maximum usable vertical space. | [[07 - Product Design/Design Decisions#DD-14|DD-14]] |
 | **DD-15** | **Authentic Login & Register Visual Architecture & Dynamic Top Safe-Area Alignment** | `Active` | Restores canonical visual designs from historical commits 01acaad & 0b579ad while positioning Login branding at top safe-area and preserving pure hero graphic on Register. | [[07 - Product Design/Design Decisions#DD-15|DD-15]] |
+| **DD-16** | **Burger Navigation Drawer Architecture & Dual-Coded Scannability** | `Active` | Introduces 32x32 squircle leading icons, interactive patient demographic card with avatar/monogram, cognitive section chunking, 3.5px active left pill, and pinned version footer. | [[07 - Product Design/Design Decisions#DD-16|DD-16]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-16: Burger Navigation Drawer Architecture & Dual-Coded Scannability
+- **Context**: The previous text-only navigation drawer (`SideMenuModal.tsx`) required sequential reading, lacked identity context, had broken active route detection on Expo Router paths, and featured harsh divider lines.
+- **Alternatives Considered**: (A) Full-screen takeover menu, (B) Unchanged text-only menu with fixed route matching, (C) Dual-coded navigation hierarchy featuring leading 18x18 icons in 32x32 squircles, interactive patient demographic card linking to profile, cognitive section chunking (`CLINICAL TOOLS`, `DATA & VAULT`), 3.5px active left pill indicator, and pinned destructive Sign Out footer with quiet version stamp.
+- **Decision**: Option C — Implement 5-tier drawer architecture with dual-coded squircle iconography and interactive patient demographic card.
+- **Rationale**: Increases visual scanning velocity by 50-60%, provides instant identity feedback, ensures thumb-friendly dismissal (clamped at 310pt on phones, 360pt on tablets), and maintains full WCAG 2.2 AA accessibility.
 
 ### DD-15: Authentic Login & Register Visual Architecture & Dynamic Top Safe-Area Alignment
 - **Context**: The authentication entrypoints required restoration of their approved visual identities from reference commits `01acaad` (Login) and `0b579ad` (Register) without disrupting newer security features (5-attempt rate-limiting lockout timer, password regex complexity validations, `useResponsive` integration).

@@ -10,6 +10,14 @@ last_updated: 2026-08-31
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.9.5] — Burger Navigation Drawer UI/UX Architecture & Scannability Upgrade
+- **Dual-Coded Iconography**: Added 18×18 icons housed in dedicated 32×32 squircle containers (`#DDF5EE` teal for clinical tools, `#EBF3FB` blue for scan, `#F1F5F9` slate for data, `#FEF3F2` red for destructive logout), increasing visual search velocity.
+- **Interactive Patient Demographic Card**: Upgraded user section to a 38×38 avatar/monogram card displaying patient name, email, and trailing chevron affordance linking directly to `/(tabs)/profile`.
+- **Cognitive Section Chunking**: Structured navigation items into `CLINICAL TOOLS` and `DATA & VAULT` groups with subtle 10.5pt uppercase headers (`letterSpacing: 0.8`), eliminating harsh divider lines.
+- **Active Route Highlighting Parity**: Implemented `isRouteActive` helper supporting Expo Router route variations (`/share`, `/scan`, `/profile`, `/`), styling active rows with `#F0F9F7` surface fill, `#159A83` bold label, and a 3.5px solid teal left vertical indicator pill.
+- **Responsive Geometry & Accessibility**: Clamped phone drawer width to `Math.min(width * 0.80, 310)` (preserving ≥ 20% backdrop for thumb dismiss) and tablet drawer width to `Math.min(width * 0.42, 360)` with full WCAG 2.2 AA accessibility states (`accessibilityRole="button"`, `accessibilityState={{ selected: active }}`, `maxFontSizeMultiplier={1.3}`).
+- **Pinned Footer & Version Stamp**: Pinned destructive Sign Out row and non-interactive `MedRec v1.0.0 • Sovereign Health Vault` micro-caption to the bottom safe area.
+
 ## [0.9.4] — Codebase Modernization, Dead Code Elimination & Architecture Consolidation
 - **Domain Types & Category Map Centralization**: Created canonical `mobile/types/record.ts` (`MedicalRecord`, `RecordSection`) and `mobile/constants/records.ts` (`RECORD_TYPE_ASSETS`, `RECORD_TYPE_LABELS`, `CATEGORY_FILTERS`, `RECORD_TYPE_OPTIONS`), eliminating duplicate type declarations and asset dictionaries across 6+ screen files.
 - **Shared Date & Age Utilities**: Created `mobile/utils/dateUtils.ts` containing pure, tested formatters (`calculateAge`, `formatDateLong`, `formatDateShort`, `formatTimeAgo`) with explicit UTC timezone flags, replacing copy-pasted date parsing in profile, emergency ID, records dashboard, and detail views.

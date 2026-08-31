@@ -10,6 +10,7 @@ import {
   Alert,
   Share,
   Image,
+  Easing,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,9 +18,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { SideMenuItem } from './SideMenuItem';
-import { Colors } from '../../constants/theme';
+import { Colors, Radii } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
+const TEAL = Colors.teal;
 const INK = Colors.ink;
 const MUTED = Colors.muted;
 const BORDER = Colors.border;
@@ -32,6 +34,15 @@ interface SideMenuModalProps {
   onOpenAiSummary?: () => void;
 }
 
+function getInitials(name?: string | null): string {
+  if (!name || !name.trim()) return 'MR';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export const SideMenuModal: React.FC<SideMenuModalProps> = ({
   visible,
   onClose,
@@ -40,9 +51,11 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const { width, insets } = useResponsive();
+  const { width, insets, isTablet } = useResponsive();
 
-  const drawerWidth = Math.min(width * 0.78, 340);
+  const drawerWidth = isTablet
+    ? Math.min(width * 0.42, 360)
+    : Math.min(width * 0.80, 310);
 
   const [activeSharesCount, setActiveSharesCount] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -67,12 +80,13 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 230,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 230,
+          duration: 220,
           useNativeDriver: true,
         }),
       ]).start();
@@ -81,6 +95,7 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
         Animated.timing(slideAnim, {
           toValue: -drawerWidth,
           duration: 180,
+          easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
@@ -97,6 +112,7 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
       Animated.timing(slideAnim, {
         toValue: -drawerWidth,
         duration: 180,
+        easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
@@ -109,11 +125,19 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
     });
   };
 
+  const isRouteActive = (route: string) => {
+    if (route === '/(tabs)/share') return pathname.includes('share');
+    if (route === '/(tabs)/scan') return pathname.includes('scan');
+    if (route === '/(tabs)/profile') return pathname.includes('profile');
+    if (route === '/(tabs)') return pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/index';
+    return false;
+  };
+
   const navigateTo = (route: string) => {
     handleClose();
     setTimeout(() => {
       router.push(route as any);
-    }, 190);
+    }, 180);
   };
 
   const handleSignOut = () => {
@@ -200,14 +224,13 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
             styles.drawer,
             {
               width: drawerWidth,
-              paddingTop: insets.top + 14,
-              paddingBottom: Math.max(insets.bottom, 16) + 12,
+              paddingTop: insets.top + 12,
               paddingLeft: Math.max(insets.left, 0),
               transform: [{ translateX: slideAnim }],
             },
           ]}
         >
-          {/* Header Branding with Existing MedRec App Logo */}
+          {/* Header Branding */}
           <View style={styles.header}>
             <View style={styles.brandGroup}>
               <Image
@@ -228,54 +251,82 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Close menu"
             >
-              <Ionicons name="close" size={20} color={INK} />
+              <Ionicons name="close" size={18} color={INK} />
             </Pressable>
           </View>
 
-          {/* User Demographic Summary */}
+          {/* User Profile Card */}
           <Pressable
             onPress={() => navigateTo('/(tabs)/profile')}
-            style={({ pressed }) => [styles.userSection, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.userCard, pressed && styles.userCardPressed]}
             accessibilityRole="button"
-            accessibilityLabel="View profile"
+            accessibilityLabel={`Profile: ${user?.name || 'Patient'}, ${user?.email || 'View Profile'}`}
           >
-            <Text style={styles.userName} numberOfLines={1}>
-              {user?.name || 'Patient'}
-            </Text>
-            <Text style={styles.userEmail} numberOfLines={1}>
-              {user?.email || ''}
-            </Text>
+            <View style={styles.avatarBox}>
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarMonogram}>
+                  <Text style={styles.avatarInitials}>{getInitials(user?.name)}</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.userInfo}>
+              <Text style={styles.userName} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                {user?.name || 'Patient'}
+              </Text>
+              <Text style={styles.userEmail} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                {user?.email || 'View Profile & Emergency ID'}
+              </Text>
+            </View>
+
+            <Ionicons name="chevron-forward" size={15} color={MUTED} style={styles.profileChevron} />
           </Pressable>
 
-          <View style={styles.divider} />
-
-          {/* Menu Items (Text Only) */}
+          {/* Scrollable Navigation Groups */}
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Group 1: Clinical & Emergency Utilities */}
-            <View style={styles.group}>
+            {/* Section 1: Clinical Tools */}
+            <View style={styles.section}>
+              <Text style={styles.sectionHeader} maxFontSizeMultiplier={1.3}>
+                CLINICAL TOOLS
+              </Text>
+
               <SideMenuItem
+                icon="shield-checkmark-outline"
+                iconColor={TEAL}
+                iconBg={Colors.tealLight}
                 label="Emergency Medical ID"
-                sublabel="Blood type, allergies & emergency contacts"
+                sublabel="Blood type, allergies & contacts"
                 onPress={() => navigateTo('/(tabs)/profile')}
               />
               <SideMenuItem
+                icon="share-social-outline"
+                iconColor={TEAL}
+                iconBg={Colors.tealLight}
                 label="Share Records"
                 sublabel="Doctor time-limited QR access"
                 badge={activeSharesCount ? `${activeSharesCount} Active` : undefined}
-                active={pathname === '/share'}
+                active={isRouteActive('/(tabs)/share')}
                 onPress={() => navigateTo('/(tabs)/share')}
               />
               <SideMenuItem
+                icon="qr-code-outline"
+                iconColor={Colors.blue}
+                iconBg={Colors.blueLight}
                 label="Scan Doctor QR"
                 sublabel="Scan patient shared QR code"
-                active={pathname === '/scan'}
+                active={isRouteActive('/(tabs)/scan')}
                 onPress={() => navigateTo('/(tabs)/scan')}
               />
               <SideMenuItem
+                icon="sparkles-outline"
+                iconColor={TEAL}
+                iconBg={Colors.tealLight}
                 label="AI Health Summary"
                 sublabel="Generate clinical record insights"
                 onPress={() => {
@@ -289,16 +340,24 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
               />
             </View>
 
-            <View style={styles.divider} />
+            {/* Section 2: Data & Vault */}
+            <View style={styles.section}>
+              <Text style={styles.sectionHeader} maxFontSizeMultiplier={1.3}>
+                DATA & VAULT
+              </Text>
 
-            {/* Group 2: Vault & Information */}
-            <View style={styles.group}>
               <SideMenuItem
+                icon="cloud-download-outline"
+                iconColor={INK}
+                iconBg="#F1F5F9"
                 label="Export Health Vault"
                 sublabel="Download encrypted JSON archive"
                 onPress={handleExportVault}
               />
               <SideMenuItem
+                icon="information-circle-outline"
+                iconColor={MUTED}
+                iconBg="#F1F5F9"
                 label="About MedRec"
                 sublabel="v1.0.0 • Medical Disclaimer"
                 onPress={handleAboutPress}
@@ -306,13 +365,22 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
             </View>
           </ScrollView>
 
-          {/* Footer Action */}
-          <View style={styles.footer}>
+          {/* Pinned Footer Action & Version Stamp */}
+          <View
+            style={[
+              styles.footer,
+              { paddingBottom: Math.max(insets.bottom, 12) + 4 },
+            ]}
+          >
             <SideMenuItem
+              icon="log-out-outline"
               label="Sign Out"
               destructive
               onPress={handleSignOut}
             />
+            <Text style={styles.versionText} maxFontSizeMultiplier={1.2}>
+              MedRec v1.0.0 • Sovereign Health Vault
+            </Text>
           </View>
         </Animated.View>
       </View>
@@ -334,11 +402,11 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     backgroundColor: CARD_BG,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
+    borderTopRightRadius: Radii.sheet,
+    borderBottomRightRadius: Radii.sheet,
     shadowColor: '#000',
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
     shadowOffset: { width: 3, height: 0 },
     elevation: 10,
   },
@@ -346,17 +414,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
   },
   brandGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   logo: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
   },
   brandTitle: {
     fontFamily: 'LexendDeca-Bold',
@@ -368,54 +436,109 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-Regular',
     fontSize: 11,
     color: MUTED,
-    lineHeight: 13,
+    lineHeight: 14,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F4FAF9',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: BORDER,
   },
-  userSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    gap: 2,
+  userCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FCFB',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E5F0EE',
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  userCardPressed: {
+    backgroundColor: '#EDF5F3',
+    opacity: 0.9,
+  },
+  avatarBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  avatarMonogram: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.tealLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 14,
+    color: TEAL,
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 10,
+    gap: 1,
   },
   userName: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 15,
+    fontSize: 14.5,
     color: INK,
+    letterSpacing: -0.2,
   },
   userEmail: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
+    fontSize: 11.5,
     color: MUTED,
+  },
+  profileChevron: {
+    opacity: 0.5,
+    marginLeft: 6,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
-  group: {
-    gap: 1,
+  section: {
+    marginBottom: 10,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#EDF4F3',
-    marginVertical: 8,
-    marginHorizontal: 16,
+  sectionHeader: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 10.5,
+    color: MUTED,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: '#EDF4F3',
-    paddingHorizontal: 10,
-    paddingTop: 8,
+    borderTopColor: '#F0F5F4',
+    paddingTop: 6,
+  },
+  versionText: {
+    textAlign: 'center',
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 10.5,
+    color: Colors.textMuted,
+    marginTop: 6,
   },
   pressed: {
     opacity: 0.7,

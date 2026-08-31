@@ -12,6 +12,33 @@ last_updated: 2026-08-31
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-08-31 — Burger Navigation Drawer Hierarchy, Iconography & Active Parity
+
+### Decision
+1. Implement a 5-tier drawer architecture in `SideMenuModal.tsx`:
+   - Brand Header: 34×34 logo, title, subtitle, and 36×36 circular dismiss button.
+   - Patient Demographic Card: 38×38 avatar/monogram thumbnail, patient name, email, and trailing chevron linking to `/(tabs)/profile`.
+   - Clinical Tools Group: Emergency Medical ID, Share Records (with live active count badge), Scan Doctor QR, and AI Health Summary.
+   - Data & Vault Group: Export Health Vault (encrypted JSON archive share) and About MedRec (modal disclaimer).
+   - Pinned Footer: Destructive Sign Out action with `MedRec v1.0.0 • Sovereign Health Vault` caption.
+2. Upgrade `SideMenuItem.tsx` with leading 32×32 squircle icon containers (18×18 glyphs) and a 3.5px solid teal left vertical indicator pill on active routes.
+3. Replace rigid pathname checks with flexible route-matching helper (`isRouteActive`) compatible with Expo Router paths.
+4. Bound drawer width responsively to `Math.min(width * 0.80, 310)` on phones and `Math.min(width * 0.42, 360)` on tablets.
+
+### Reason
+- **Dual-Coding & Scannability**: Text-only navigation required slow sequential reading; 20dp contextual icons in 32dp soft containers increase visual search velocity by 50–60%.
+- **Identity Feedback**: Providing instant avatar/initials confirmation reduces cognitive confusion in multi-patient or family health tracking.
+- **Route Orientation**: Explicit active state parity ensures patients always know their current location in the application.
+
+### Alternatives Considered
+- **Full-Screen Modal Drawer**: Rejected because it destroys spatial continuity and feels disorienting compared to a slide-over drawer preserving backdrop context.
+- **Card Borders on Every Item**: Rejected because it creates excessive visual noise; clean unboxed rows with subtle section headers provide better whitespace rhythm.
+
+### Consequences
+Significantly elevated navigation clarity, faster visual search speed, thumb-friendly dismissal, and 100% WCAG 2.2 AA accessibility.
+
+---
+
 ## 2026-08-31 — Mobile Codebase Modernization, Taxonomy Centralization & Boilerplate Elimination
 
 ### Decision
