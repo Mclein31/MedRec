@@ -965,9 +965,9 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    right: 4,
-    top: 4,
-    width: 9,
+    right: 8,
+    top: 5,
+    width: 10,
     height: 9,
     borderRadius: 5,
     backgroundColor: TEAL,

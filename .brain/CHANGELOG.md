@@ -10,6 +10,11 @@ last_updated: 2026-08-31
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [0.9.2] — Global Header Toolbar & Notification Dot Alignment
+- **Universal Toolbar Button Geometry**: Standardized top toolbar touch targets across all tab views (`Records`, `Profile`, `Share`, `Scan`, and `ScreenHeader.tsx`) with `padding: 4`, `minWidth: 40`, `minHeight: 40`, and `25×25px` icon containment.
+- **Consistent Notification Dot Offsets**: Harmonized active notification dot badge dimensions and positioning to `right: 8`, `top: 5`, `width: 10`, `height: 9`, `borderRadius: 5` across all screens and camera overlay headers.
+- **Top Safe-Area Alignment**: Unified `cameraTopBar` and `ScreenHeader` top padding to `insets.top + 12` with interactive haptic feedback (`Haptics.selectionAsync()`) on bell triggers.
+
 ## [0.9.1] — Automated Startup Database Migration Guard & Schema Synchronization
 - **Startup Migration Execution**: Integrated programmatic `runMigrations()` in `server.js` to automatically verify database catalog alignment and execute non-destructive schema migrations upon every service boot.
 - **Idempotent Column Alterations**: Added explicit `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` clauses in `schema.sql` for all recently evolved entities: `medical_records.attachment_url`, `user_profiles.avatar_url`, `user_profiles.height`, `user_profiles.weight`, `user_profiles.organ_donor`, `shared_access.allowed_types`, and `shared_access.record_ids`.

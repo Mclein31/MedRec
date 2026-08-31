@@ -388,7 +388,7 @@ export default function ScanScreen() {
         style={[
           styles.cameraTopBar,
           {
-            paddingTop: insets.top + 10,
+            paddingTop: insets.top + 12,
             paddingLeft: Math.max(insets.left, screenPadding),
             paddingRight: Math.max(insets.right, screenPadding),
           },
@@ -411,6 +411,7 @@ export default function ScanScreen() {
         </Pressable>
         <Pressable
           onPress={() => {
+            Haptics.selectionAsync();
             refreshNotifications();
             setNotificationsVisible(true);
           }}
@@ -757,27 +758,30 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   cameraIconBtn: {
-    width: 40,
-    height: 40,
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cameraToolbarIcon: {
-    width: 22,
-    height: 22,
+    width: 25,
+    height: 25,
     resizeMode: 'contain',
     tintColor: '#FFFFFF',
   },
   cameraNotificationDot: {
     position: 'absolute',
     right: 8,
-    top: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 5,
+    width: 10,
+    height: 9,
+    borderRadius: 5,
     backgroundColor: Colors.teal,
+    borderWidth: 1.5,
+    borderColor: '#000000',
   },
   scanOverlay: {
     flex: 1,
