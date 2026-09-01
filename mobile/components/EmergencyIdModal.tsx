@@ -53,8 +53,11 @@ export default function EmergencyIdModal({
   const translateYAnim = useRef(new Animated.Value(16)).current;
   const modalOpacityAnim = useRef(new Animated.Value(0)).current;
 
+  const isClosingRef = useRef(false);
+
   useEffect(() => {
     if (visible) {
+      isClosingRef.current = false;
       setModalVisible(true);
       backdropFadeAnim.setValue(0);
       slideAnim.setValue(height || 800);
@@ -111,6 +114,9 @@ export default function EmergencyIdModal({
   }, [visible, isTablet, height]);
 
   const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
     // Independent Layer 1: Background Dimming Fade Out
     Animated.timing(backdropFadeAnim, {
       toValue: 0,
