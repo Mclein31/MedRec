@@ -4,7 +4,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
-import { TabletPersistentSidebar } from '../../components/navigation/TabletPersistentSidebar';
+import { TabletLandscapeNavRail } from '../../components/navigation/TabletLandscapeNavRail';
 
 const GREEN = Colors.teal;
 
@@ -14,9 +14,9 @@ function CustomTabBar(_props?: BottomTabBarProps) {
   const { isTablet, isLandscape, insets } = useResponsive();
   const { user } = useAuth();
 
-  // Tablet Landscape: Render Persistent Left Sidebar Navigation
+  // Tablet Landscape: Render Purpose-Built Left Navigation Rail (88pt)
   if (isTablet && isLandscape) {
-    return <TabletPersistentSidebar />;
+    return <TabletLandscapeNavRail />;
   }
 
   const tabs = [

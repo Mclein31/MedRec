@@ -26,7 +26,7 @@ import ChangePasswordModal from '../../components/ChangePasswordModal';
 import EmergencyIdModal from '../../components/EmergencyIdModal';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
-import { Colors, Radii, ResponsiveLimits } from '../../constants/theme';
+import { Colors, Radii, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
 const TEAL = Colors.teal;
@@ -664,13 +664,244 @@ export default function ProfileScreen() {
     </View>
   );
 
+  // ─── TABLET LANDSCAPE VIEW: THEMATIC DUAL-COLUMN STUDIO ─────────────────
+  if (isTablet && isLandscape) {
+    return (
+      <View style={[styles.root, { paddingLeft: LandscapeTokens.navRailWidth, backgroundColor: Colors.bg }]}>
+        <StatusBar style="dark" />
+
+        {/* Global Navigation Toolbar */}
+        <View
+          style={[
+            styles.topToolbar,
+            {
+              paddingTop: insets.top + 12,
+              paddingLeft: Math.max(insets.left, screenPadding),
+              paddingRight: Math.max(insets.right, screenPadding),
+            },
+          ]}
+        >
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMenuVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open navigation menu"
+          >
+            <Image
+              source={require('../../assets/icons/burger-menu.png')}
+              style={styles.toolbarIcon}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              refreshNotifications();
+              setNotificationsVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications, ${unreadCount} unread`}
+          >
+            <Image
+              source={require('../../assets/icons/notification-bell.png')}
+              style={styles.toolbarIcon}
+            />
+            {unreadCount > 0 && <View style={styles.notificationDot} />}
+          </Pressable>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.landscapeScrollContent,
+            {
+              paddingTop: 8,
+              paddingBottom: Math.max(insets.bottom, 24) + 24,
+            },
+          ]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TEAL} />
+          }
+        >
+          <View style={styles.landscapeStudioContainer}>
+            {/* Header Title Section */}
+            <View style={styles.landscapeHeaderSection}>
+              <View>
+                <Text style={styles.landscapeScreenTitle} maxFontSizeMultiplier={1.35}>
+                  Profile &amp; Medical ID
+                </Text>
+                <Text style={styles.landscapeScreenSubtitle} maxFontSizeMultiplier={1.35}>
+                  Manage your sovereign health baseline, emergency ICE parameters, and security settings
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => setEmergencyModalVisible(true)}
+                style={({ pressed }) => [styles.landscapePlacardBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="View emergency ID placard"
+              >
+                <Ionicons name="medical" size={16} color={RED} />
+                <Text style={styles.landscapePlacardBtnText}>Emergency Placard</Text>
+              </Pressable>
+            </View>
+
+            {/* 2-Column Balanced Studio */}
+            <View style={styles.landscapeStudioRow}>
+              {/* Left Column (48%): Clinical Baseline & Emergency ICE */}
+              <View style={styles.landscapeStudioColLeft}>
+                {emergencyMedicalCard}
+
+                {/* Emergency Contact Quick Dial Banner */}
+                {profile.emergencyContactPhone && (
+                  <Pressable
+                    onPress={handleCallEmergency}
+                    style={({ pressed }) => [styles.landscapeIceCallCard, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Call emergency contact at ${profile.emergencyContactPhone}`}
+                  >
+                    <View style={styles.landscapeIceIconBox}>
+                      <Ionicons name="call" size={18} color="#FFFFFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.landscapeIceTitle}>Call Primary ICE Contact</Text>
+                      <Text style={styles.landscapeIceSub}>
+                        {profile.emergencyContactName ? `${profile.emergencyContactName} • ` : ''}
+                        {profile.emergencyContactPhone}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.red} />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Right Column (52%): Identity, Demographics, Security & Vault */}
+              <View style={styles.landscapeStudioColRight}>
+                {/* Unboxed Identity Hero */}
+                <View style={styles.landscapeHeroCard}>
+                  <View style={styles.landscapeHeroTop}>
+                    <Pressable
+                      onPress={handlePickPhoto}
+                      disabled={uploadingPhoto}
+                      style={({ pressed }) => [styles.landscapeAvatarBox, pressed && styles.pressed]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Change profile photo"
+                    >
+                      {(profile.avatarUrl || user?.avatarUrl) ? (
+                        <Image
+                          source={{ uri: profile.avatarUrl || user?.avatarUrl || '' }}
+                          style={styles.landscapeAvatarImg}
+                        />
+                      ) : (
+                        <View style={styles.landscapeAvatarMonogram}>
+                          <Text style={styles.landscapeAvatarText}>{userInitials}</Text>
+                        </View>
+                      )}
+
+                      {uploadingPhoto ? (
+                        <View style={styles.landscapeCameraBadge}>
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        </View>
+                      ) : (
+                        <View style={styles.landscapeCameraBadge}>
+                          <Ionicons name="camera" size={12} color="#FFFFFF" />
+                        </View>
+                      )}
+                    </Pressable>
+
+                    <View style={styles.landscapeHeroInfo}>
+                      <Text style={styles.landscapeHeroName} numberOfLines={1}>
+                        {user?.name || 'Patient'}
+                      </Text>
+                      <Text style={styles.landscapeHeroEmail} numberOfLines={1}>
+                        {user?.email || 'patient@medrec.local'}
+                      </Text>
+                      <Text style={styles.landscapeHeroMeta}>
+                        {age !== null ? `${age} yrs` : 'Age not set'}
+                        {profile.biologicalSex
+                          ? ` • ${profile.biologicalSex.charAt(0).toUpperCase() + profile.biologicalSex.slice(1)}`
+                          : ''}
+                        {profile.bloodType ? ` • Blood ${profile.bloodType}` : ''}
+                        {recordsCount > 0 ? ` • ${recordsCount} Records` : ''}
+                      </Text>
+                    </View>
+
+                    <Pressable
+                      onPress={handleEditDemographics}
+                      style={({ pressed }) => [styles.landscapeEditProfileBtn, pressed && styles.pressed]}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Edit profile demographics"
+                    >
+                      <Ionicons name="pencil" size={13} color={TEAL} />
+                      <Text style={styles.landscapeEditProfileText}>Edit</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Personal Demographics */}
+                {personalDemographicsCard}
+
+                {/* Security & Preferences */}
+                {securityCard}
+
+                {/* Legal & Danger Zone */}
+                {legalAccountCard}
+
+                {/* Version Footer */}
+                <View style={styles.versionContainer}>
+                  <Text style={styles.versionText} maxFontSizeMultiplier={1.35}>
+                    MedRec v1.0.0 (Build 2026) · Sovereign Encrypted Health Vault
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Profile Edit Demographics & Medical ID Modal */}
+        <ProfileEditModal
+          visible={editModalVisible}
+          mode={editMode}
+          initialData={profile}
+          userName={user?.name || ''}
+          onClose={() => setEditModalVisible(false)}
+          onSaved={handleProfileUpdated}
+        />
+
+        {/* Change Password Modal */}
+        <ChangePasswordModal
+          visible={passwordModalVisible}
+          onClose={() => setPasswordModalVisible(false)}
+        />
+
+        {/* First Responder Medical ID Card Modal */}
+        <EmergencyIdModal
+          visible={emergencyModalVisible}
+          profile={profile}
+          userName={user?.name || ''}
+          userEmail={user?.email || ''}
+          onClose={() => setEmergencyModalVisible(false)}
+        />
+
+        {/* Notification Center Modal */}
+        <NotificationCenterModal
+          visible={notificationsVisible}
+          onClose={() => setNotificationsVisible(false)}
+        />
+      </View>
+    );
+  }
+
+  // ─── PHONE & TABLET PORTRAIT VIEW (100% PRESERVED & LOCKED 🔒) ──────────
   return (
-    <View
-      style={[
-        styles.root,
-        isTablet && isLandscape && { paddingLeft: 260 },
-      ]}
-    >
+    <View style={styles.root}>
       <StatusBar style="dark" />
 
       {/* Global Navigation Toolbar */}
@@ -1260,5 +1491,173 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+
+  /* ────────────────────────────────────────────────────────
+     TABLET LANDSCAPE THEMATIC DUAL-COLUMN STUDIO STYLES
+  ──────────────────────────────────────────────────────── */
+  landscapeScrollContent: {
+    paddingHorizontal: 28,
+  },
+  landscapeStudioContainer: {
+    maxWidth: LandscapeTokens.maxBoundedWidth,
+    width: '100%',
+    alignSelf: 'center',
+    gap: 20,
+  },
+  landscapeHeaderSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 4,
+  },
+  landscapeScreenTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 24,
+    color: INK,
+  },
+  landscapeScreenSubtitle: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13,
+    color: MUTED,
+    marginTop: 2,
+  },
+  landscapePlacardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FFE4E6',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  landscapePlacardBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12.5,
+    color: RED,
+  },
+  landscapeStudioRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 20,
+  },
+  landscapeStudioColLeft: {
+    flex: 0.48,
+    gap: 16,
+  },
+  landscapeStudioColRight: {
+    flex: 0.52,
+    gap: 16,
+  },
+  landscapeIceCallCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FFE4E6',
+    borderRadius: Radii.card,
+    padding: 14,
+  },
+  landscapeIceIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: RED,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landscapeIceTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 13,
+    color: RED,
+  },
+  landscapeIceSub: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    color: INK,
+    marginTop: 1,
+  },
+  landscapeHeroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 16,
+  },
+  landscapeHeroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  landscapeAvatarBox: {
+    position: 'relative',
+  },
+  landscapeAvatarImg: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+  },
+  landscapeAvatarMonogram: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#EAF6F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landscapeAvatarText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 20,
+    color: TEAL,
+  },
+  landscapeCameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: TEAL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  landscapeHeroInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  landscapeHeroName: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 17,
+    color: INK,
+  },
+  landscapeHeroEmail: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: MUTED,
+  },
+  landscapeHeroMeta: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    color: INK,
+    marginTop: 2,
+  },
+  landscapeEditProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EDFAF7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  landscapeEditProfileText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: TEAL,
   },
 });

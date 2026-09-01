@@ -42,7 +42,7 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
       style={[
         styles.headerContainer,
         {
-          paddingTop: insets.top + 12,
+          paddingTop: hideToolbar ? 0 : insets.top + 12,
           paddingLeft: Math.max(insets.left, screenPadding),
           paddingRight: Math.max(insets.right, screenPadding),
         },
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    paddingBottom: 8,
   },
   iconBtn: {
     padding: 4,

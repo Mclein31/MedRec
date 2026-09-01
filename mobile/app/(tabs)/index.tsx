@@ -23,7 +23,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { RecordSearchBar } from '../../components/records/RecordSearchBar';
-import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
+import { Colors, Radii, Typography, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { MedicalRecord } from '../../types/record';
 import { RECORD_TYPE_ASSETS, RECORD_TYPE_LABELS, CATEGORY_FILTERS } from '../../constants/records';
@@ -250,20 +250,67 @@ export default function RecordsScreen() {
     const activeTypeKey = (activeDetailRecord?.type || 'other').toLowerCase();
     const activeTypeAsset = RECORD_TYPE_ASSETS[activeTypeKey] || RECORD_TYPE_ASSETS.other;
     const activeTypeLabel = RECORD_TYPE_LABELS[activeTypeKey] || 'Record';
+    const activeAttachment = activeDetailRecord?.attachment_url || activeDetailRecord?.attachmentUrl;
 
     return (
-      <View style={[styles.root, { paddingLeft: 260, backgroundColor: Colors.bg }]}>
+      <View style={[styles.root, { paddingLeft: LandscapeTokens.navRailWidth, backgroundColor: Colors.bg }]}>
         <StatusBar style="dark" />
 
-        {/* Master-Detail Container */}
+        {/* Global Navigation Toolbar */}
+        <View
+          style={[
+            styles.topToolbar,
+            {
+              paddingTop: insets.top + 12,
+              paddingLeft: Math.max(insets.left, screenPadding),
+              paddingRight: Math.max(insets.right, screenPadding),
+            },
+          ]}
+        >
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMenuVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open navigation menu"
+          >
+            <Image
+              source={require('../../assets/icons/burger-menu.png')}
+              style={styles.toolbarIcon}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              refreshNotifications();
+              setNotificationsVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications, ${unreadCount} unread`}
+          >
+            <Image
+              source={require('../../assets/icons/notification-bell.png')}
+              style={styles.toolbarIcon}
+            />
+            {unreadCount > 0 && <View style={styles.notificationDot} />}
+          </Pressable>
+        </View>
+
+        {/* Master-Detail Workspace Row */}
         <View style={styles.masterDetailRoot}>
-          {/* 1. Left Master Column */}
+          {/* 1. Left Master Column (360pt Browser Pane) */}
           <View style={styles.masterColumn}>
             {/* Top Toolbar in Master Column */}
-            <View style={[styles.masterHeader, { paddingTop: insets.top + 10 }]}>
+            <View style={styles.masterHeader}>
               <View style={styles.masterHeaderLeft}>
                 <Text style={styles.masterHeaderTitle}>My Records</Text>
-                <Text style={styles.masterHeaderCount}>{records.length} items</Text>
+                <Text style={styles.masterHeaderCount}>{records.length} records</Text>
               </View>
 
               <View style={styles.masterHeaderActions}>
@@ -290,20 +337,13 @@ export default function RecordsScreen() {
                 )}
 
                 <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setNotificationsVisible(true);
-                  }}
+                  onPress={() => router.push('/record/add')}
                   hitSlop={8}
-                  style={styles.iconBtn}
+                  style={styles.masterAddBtn}
                   accessibilityRole="button"
-                  accessibilityLabel={`Notifications, ${unreadCount} unread`}
+                  accessibilityLabel="Add record"
                 >
-                  <Image
-                    source={require('../../assets/icons/notification-bell.png')}
-                    style={styles.bellIcon}
-                  />
-                  {unreadCount > 0 && <View style={styles.notifDot} />}
+                  <Ionicons name="add" size={18} color="#FFFFFF" />
                 </Pressable>
               </View>
             </View>
@@ -319,7 +359,7 @@ export default function RecordsScreen() {
               />
             </View>
 
-            {/* Category Filter Chips */}
+            {/* Category Filter Chips Carousel */}
             <View style={styles.masterCategoriesWrapper}>
               <ScrollView
                 horizontal
@@ -357,13 +397,13 @@ export default function RecordsScreen() {
               </ScrollView>
             </View>
 
-            {/* Selection Banner in Master Column */}
+            {/* Selection Mode Banner in Master Column */}
             {selectionMode && (
               <View style={styles.masterSelectionBanner}>
                 <Text style={styles.masterSelectionText}>
                   {selectedIds.size} record{selectedIds.size === 1 ? '' : 's'} selected
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                   <Pressable onPress={selectAllRecords} hitSlop={6}>
                     <Text style={styles.selectAllLink}>All</Text>
                   </Pressable>
@@ -383,14 +423,14 @@ export default function RecordsScreen() {
               </View>
             )}
 
-            {/* Master Records List */}
+            {/* Master Records FlatList */}
             <FlatList
               data={sortedRecords}
               keyExtractor={recordKeyExtractor}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={[
                 styles.masterListContent,
-                { paddingBottom: Math.max(insets.bottom, 24) },
+                { paddingBottom: Math.max(insets.bottom, 24) + 16 },
               ]}
               refreshControl={
                 <RefreshControl
@@ -471,7 +511,7 @@ export default function RecordsScreen() {
             />
           </View>
 
-          {/* 2. Right Detail Workspace */}
+          {/* 2. Right Detail Clinical Workspace (Flex 1) */}
           <View style={styles.detailColumn}>
             {activeDetailRecord ? (
               <ScrollView
@@ -484,7 +524,7 @@ export default function RecordsScreen() {
                   },
                 ]}
               >
-                {/* Detail Overview Card */}
+                {/* Detail Overview Header Card */}
                 <View style={styles.detailOverviewCard}>
                   <View style={styles.detailHeaderTopRow}>
                     <View style={styles.detailBadge}>
@@ -522,109 +562,180 @@ export default function RecordsScreen() {
                   </View>
                 </View>
 
-                {/* Attached Document Card (if attached) */}
-                {(activeDetailRecord.attachment_url || activeDetailRecord.attachmentUrl) && (
-                  <View style={styles.detailAttachmentCard}>
-                    <View style={styles.detailCardHeader}>
-                      <Ionicons name="document-attach-outline" size={17} color={Colors.teal} />
-                      <Text style={styles.detailCardTitle}>Attached Medical Document</Text>
+                {/* Clinical Content: Side-by-Side Split if Attachment Exists */}
+                {activeAttachment ? (
+                  <View style={styles.detailSplitRow}>
+                    {/* Left Split Column: Document Attachment & Delete CTA */}
+                    <View style={styles.detailSplitLeft}>
+                      <View style={styles.detailAttachmentCard}>
+                        <View style={styles.detailCardHeader}>
+                          <Ionicons name="document-attach-outline" size={17} color={Colors.teal} />
+                          <Text style={styles.detailCardTitle}>Scanned Document</Text>
+                        </View>
+
+                        <Pressable
+                          onPress={() => setInspectPhotoUri(activeAttachment)}
+                          style={styles.detailAttachmentPreview}
+                          accessibilityRole="button"
+                          accessibilityLabel="Inspect document photo full screen"
+                        >
+                          <Image
+                            source={{ uri: activeAttachment }}
+                            style={styles.detailAttachmentImg}
+                            resizeMode="cover"
+                          />
+                          <View style={styles.detailZoomOverlay}>
+                            <Ionicons name="scan-outline" size={15} color="#FFFFFF" />
+                            <Text style={styles.detailZoomText}>Tap to Inspect Photo</Text>
+                          </View>
+                        </Pressable>
+                      </View>
+
+                      {/* Destructive Delete Button */}
+                      <Pressable
+                        onPress={() => handleDetailDelete(activeDetailRecord)}
+                        style={({ pressed }) => [
+                          styles.detailDeleteBtn,
+                          pressed && { opacity: 0.75 },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Delete this medical record"
+                      >
+                        <Ionicons name="trash-outline" size={16} color={Colors.red} />
+                        <Text style={styles.detailDeleteBtnText}>Delete Record</Text>
+                      </Pressable>
                     </View>
 
-                    <Pressable
-                      onPress={() =>
-                        setInspectPhotoUri(
-                          (activeDetailRecord.attachment_url || activeDetailRecord.attachmentUrl)!
-                        )
-                      }
-                      style={styles.detailAttachmentPreview}
-                    >
-                      <Image
-                        source={{
-                          uri:
-                            (activeDetailRecord.attachment_url || activeDetailRecord.attachmentUrl)!,
-                        }}
-                        style={styles.detailAttachmentImg}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.detailZoomOverlay}>
-                        <Ionicons name="scan-outline" size={16} color="#FFFFFF" />
-                        <Text style={styles.detailZoomText}>Tap to Inspect Full Size</Text>
+                    {/* Right Split Column: Clinical Notes & AI Insights */}
+                    <View style={styles.detailSplitRight}>
+                      {/* Clinical Notes & Observations */}
+                      <View style={styles.detailNotesCard}>
+                        <View style={styles.detailCardHeader}>
+                          <Ionicons name="clipboard-outline" size={17} color={Colors.ink} />
+                          <Text style={styles.detailCardTitle}>Clinical Notes &amp; Observations</Text>
+                        </View>
+                        <Text style={styles.detailNotesBody}>
+                          {activeDetailRecord.description || 'No additional clinical notes recorded.'}
+                        </Text>
                       </View>
+
+                      {/* AI Medical Insights Card */}
+                      <View style={styles.detailAiCard}>
+                        <View style={styles.detailAiHeader}>
+                          <View style={styles.detailAiTitleGroup}>
+                            <Image
+                              source={require('../../assets/icons/AI.png')}
+                              style={styles.detailAiIcon}
+                            />
+                            <Text style={styles.detailAiTitle}>AI Medical Insights</Text>
+                          </View>
+
+                          <Pressable
+                            onPress={() => handleDetailExplain(activeDetailRecord)}
+                            disabled={detailExplaining}
+                            style={({ pressed }) => [
+                              styles.detailAiRegenerateBtn,
+                              pressed && { opacity: 0.7 },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel="Regenerate AI medical explanation"
+                          >
+                            {detailExplaining ? (
+                              <ActivityIndicator size="small" color={Colors.blue} />
+                            ) : (
+                              <>
+                                <Ionicons name="sparkles" size={13} color={Colors.blue} />
+                                <Text style={styles.detailAiRegenerateText}>
+                                  {detailExplanation ? 'Regenerate' : 'Analyze'}
+                                </Text>
+                              </>
+                            )}
+                          </Pressable>
+                        </View>
+
+                        <Text style={styles.detailAiBody}>
+                          {detailExplanation ||
+                            'Get an instant, plain-language clinical explanation of medical terms, lab biomarkers, and diagnoses in this record.'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  /* Single Wide Flow when No Attachment */
+                  <View style={{ gap: 16 }}>
+                    {/* Clinical Notes & Observations */}
+                    <View style={styles.detailNotesCard}>
+                      <View style={styles.detailCardHeader}>
+                        <Ionicons name="clipboard-outline" size={17} color={Colors.ink} />
+                        <Text style={styles.detailCardTitle}>Clinical Notes &amp; Observations</Text>
+                      </View>
+                      <Text style={styles.detailNotesBody}>
+                        {activeDetailRecord.description || 'No additional clinical notes recorded.'}
+                      </Text>
+                    </View>
+
+                    {/* AI Medical Insights Card */}
+                    <View style={styles.detailAiCard}>
+                      <View style={styles.detailAiHeader}>
+                        <View style={styles.detailAiTitleGroup}>
+                          <Image
+                            source={require('../../assets/icons/AI.png')}
+                            style={styles.detailAiIcon}
+                          />
+                          <Text style={styles.detailAiTitle}>AI Medical Insights</Text>
+                        </View>
+
+                        <Pressable
+                          onPress={() => handleDetailExplain(activeDetailRecord)}
+                          disabled={detailExplaining}
+                          style={({ pressed }) => [
+                            styles.detailAiRegenerateBtn,
+                            pressed && { opacity: 0.7 },
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Regenerate AI medical explanation"
+                        >
+                          {detailExplaining ? (
+                            <ActivityIndicator size="small" color={Colors.blue} />
+                          ) : (
+                            <>
+                              <Ionicons name="sparkles" size={13} color={Colors.blue} />
+                              <Text style={styles.detailAiRegenerateText}>
+                                {detailExplanation ? 'Regenerate' : 'Analyze'}
+                              </Text>
+                            </>
+                          )}
+                        </Pressable>
+                      </View>
+
+                      <Text style={styles.detailAiBody}>
+                        {detailExplanation ||
+                          'Get an instant, plain-language clinical explanation of medical terms, lab biomarkers, and diagnoses in this record.'}
+                      </Text>
+                    </View>
+
+                    {/* Destructive Delete Button */}
+                    <Pressable
+                      onPress={() => handleDetailDelete(activeDetailRecord)}
+                      style={({ pressed }) => [
+                        styles.detailDeleteBtn,
+                        pressed && { opacity: 0.75 },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete this medical record"
+                    >
+                      <Ionicons name="trash-outline" size={16} color={Colors.red} />
+                      <Text style={styles.detailDeleteBtnText}>Delete Record</Text>
                     </Pressable>
                   </View>
                 )}
-
-                {/* Clinical Notes & Observations Card */}
-                <View style={styles.detailNotesCard}>
-                  <View style={styles.detailCardHeader}>
-                    <Ionicons name="clipboard-outline" size={17} color={Colors.ink} />
-                    <Text style={styles.detailCardTitle}>Clinical Notes &amp; Observations</Text>
-                  </View>
-                  <Text style={styles.detailNotesBody}>
-                    {activeDetailRecord.description || 'No additional clinical notes recorded.'}
-                  </Text>
-                </View>
-
-                {/* AI Medical Insights Card */}
-                <View style={styles.detailAiCard}>
-                  <View style={styles.detailAiHeader}>
-                    <View style={styles.detailAiTitleGroup}>
-                      <Image
-                        source={require('../../assets/icons/AI.png')}
-                        style={styles.detailAiIcon}
-                      />
-                      <Text style={styles.detailAiTitle}>AI Medical Insights</Text>
-                    </View>
-
-                    <Pressable
-                      onPress={() => handleDetailExplain(activeDetailRecord)}
-                      disabled={detailExplaining}
-                      style={({ pressed }) => [
-                        styles.detailAiRegenerateBtn,
-                        pressed && { opacity: 0.7 },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Regenerate AI medical explanation"
-                    >
-                      {detailExplaining ? (
-                        <ActivityIndicator size="small" color={Colors.blue} />
-                      ) : (
-                        <>
-                          <Ionicons name="sparkles" size={13} color={Colors.blue} />
-                          <Text style={styles.detailAiRegenerateText}>
-                            {detailExplanation ? 'Regenerate' : 'Analyze'}
-                          </Text>
-                        </>
-                      )}
-                    </Pressable>
-                  </View>
-
-                  <Text style={styles.detailAiBody}>
-                    {detailExplanation ||
-                      'Get an instant, plain-language clinical explanation of medical terms, lab biomarkers, and diagnoses in this record.'}
-                  </Text>
-                </View>
-
-                {/* Destructive Delete Button */}
-                <Pressable
-                  onPress={() => handleDetailDelete(activeDetailRecord)}
-                  style={({ pressed }) => [
-                    styles.detailDeleteBtn,
-                    pressed && { opacity: 0.75 },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete this medical record"
-                >
-                  <Ionicons name="trash-outline" size={16} color={Colors.red} />
-                  <Text style={styles.detailDeleteBtnText}>Delete Record</Text>
-                </Pressable>
               </ScrollView>
             ) : (
               <View style={styles.detailNoSelection}>
-                <Ionicons name="medical-outline" size={48} color={Colors.muted} />
-                <Text style={styles.detailNoSelectionTitle}>Select a Medical Record</Text>
+                <Ionicons name="medical-outline" size={54} color={Colors.teal} style={{ opacity: 0.6 }} />
+                <Text style={styles.detailNoSelectionTitle}>No Health Record Selected</Text>
                 <Text style={styles.detailNoSelectionSub}>
-                  Choose a record from the list to view its complete clinical summary, document scans, and AI insights.
+                  Choose a record from the browser on the left or tap '+ Record' to scan a new clinical document.
                 </Text>
               </View>
             )}
@@ -664,6 +775,12 @@ export default function RecordsScreen() {
           </View>
         </Modal>
 
+        {/* Side Navigation Menu Drawer Modal */}
+        <SideMenuModal
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+        />
+
         {/* Notifications Modal */}
         <NotificationCenterModal
           visible={notificationsVisible}
@@ -679,6 +796,78 @@ export default function RecordsScreen() {
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
+
+      {/* Global Navigation Toolbar (matching Profile screen exact reference) */}
+      <View
+        style={[
+          styles.topToolbar,
+          {
+            paddingTop: insets.top + 12,
+            paddingLeft: Math.max(insets.left, screenPadding),
+            paddingRight: Math.max(insets.right, screenPadding),
+          },
+        ]}
+      >
+        {selectionMode ? (
+          <Pressable
+            onPress={toggleSelectMode}
+            hitSlop={8}
+            style={styles.cancelBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel selection mode"
+          >
+            <Text style={styles.cancelBtnText}>Done</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMenuVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open navigation menu"
+          >
+            <Image
+              source={require('../../assets/icons/burger-menu.png')}
+              style={styles.toolbarIcon}
+            />
+          </Pressable>
+        )}
+
+        <View style={styles.toolbarRight}>
+          {records.length > 0 && !selectionMode && (
+            <Pressable
+              onPress={toggleSelectMode}
+              hitSlop={8}
+              style={styles.selectHeaderBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Enter multi-record selection mode"
+            >
+              <Text style={styles.selectHeaderText}>Select</Text>
+            </Pressable>
+          )}
+
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              refreshNotifications();
+              setNotificationsVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications, ${unreadCount} unread`}
+          >
+            <Image
+              source={require('../../assets/icons/notification-bell.png')}
+              style={styles.toolbarIcon}
+            />
+            {unreadCount > 0 && <View style={styles.notificationDot} />}
+          </Pressable>
+        </View>
+      </View>
 
       {/* ────────────────────────────────────────────────────────
           MAIN RECORDS FLATLIST WITH ADAPTIVE BENTO GRID ON TABLETS
@@ -727,77 +916,6 @@ export default function RecordsScreen() {
               },
             ]}
           >
-            {/* Top Toolbar */}
-            <View
-              style={[
-                styles.toolbar,
-                {
-                  paddingTop: insets.top + 12,
-                  paddingLeft: Math.max(insets.left, screenPadding),
-                  paddingRight: Math.max(insets.right, screenPadding),
-                },
-              ]}
-            >
-              {selectionMode ? (
-                <Pressable
-                  onPress={toggleSelectMode}
-                  hitSlop={8}
-                  style={styles.cancelBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel selection mode"
-                >
-                  <Text style={styles.cancelBtnText}>Done</Text>
-                </Pressable>
-              ) : (
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setMenuVisible(true);
-                  }}
-                  hitSlop={10}
-                  style={styles.menuIconBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open navigation menu"
-                >
-                  <Image
-                    source={require('../../assets/icons/burger-menu.png')}
-                    style={styles.toolbarIcon}
-                  />
-                </Pressable>
-              )}
-
-              <View style={styles.toolbarRight}>
-                {records.length > 0 && !selectionMode && (
-                  <Pressable
-                    onPress={toggleSelectMode}
-                    hitSlop={8}
-                    style={styles.selectHeaderBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel="Enter multi-record selection mode"
-                  >
-                    <Text style={styles.selectHeaderText}>Select</Text>
-                  </Pressable>
-                )}
-
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    refreshNotifications();
-                    setNotificationsVisible(true);
-                  }}
-                  hitSlop={10}
-                  style={styles.bellBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Notifications, ${unreadCount} unread`}
-                >
-                  <Image
-                    source={require('../../assets/icons/notification-bell.png')}
-                    style={styles.toolbarIcon}
-                  />
-                  {unreadCount > 0 && <View style={styles.notificationDot} />}
-                </Pressable>
-              </View>
-            </View>
 
             {/* Screen Greeting */}
             <View
@@ -1186,18 +1304,11 @@ const styles = StyleSheet.create({
   columnWrapper: {
     justifyContent: 'space-between',
   },
-  toolbar: {
+  topToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  menuIconBtn: {
-    padding: 4,
-    minWidth: 40,
-    minHeight: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingBottom: 8,
   },
   toolbarRight: {
     flexDirection: 'row',
@@ -1208,13 +1319,6 @@ const styles = StyleSheet.create({
     width: 25,
     height: 25,
     resizeMode: 'contain',
-  },
-  bellBtn: {
-    padding: 4,
-    minWidth: 40,
-    minHeight: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   notificationDot: {
     position: 'absolute',
@@ -1582,7 +1686,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   masterColumn: {
-    width: 380,
+    width: LandscapeTokens.masterPaneWidth,
     backgroundColor: '#FFFFFF',
     borderRightWidth: 1,
     borderRightColor: Colors.border,
@@ -1612,6 +1716,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  masterAddBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selectBtn: {
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -1624,24 +1736,11 @@ const styles = StyleSheet.create({
     color: Colors.teal,
   },
   iconBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: '#F8FCFB',
-    position: 'relative',
-  },
-  bellIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: Colors.teal,
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   masterSearchWrapper: {
     paddingHorizontal: 14,
@@ -1785,11 +1884,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   detailScrollContent: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     gap: 16,
-    maxWidth: 720,
+    maxWidth: 960,
     width: '100%',
     alignSelf: 'center',
+  },
+  detailSplitRow: {
+    flexDirection: 'row',
+    gap: 16,
+    alignItems: 'flex-start',
+  },
+  detailSplitLeft: {
+    flex: 0.46,
+    gap: 14,
+  },
+  detailSplitRight: {
+    flex: 0.54,
+    gap: 14,
   },
   detailNoSelection: {
     flex: 1,

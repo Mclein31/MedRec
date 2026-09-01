@@ -20,7 +20,7 @@ import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { useNotifications } from '../../context/NotificationContext';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
-import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
+import { Colors, Radii, Typography, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
 const TEAL = Colors.teal;
@@ -539,14 +539,62 @@ export default function ShareScreen() {
       <View
         style={[
           styles.root,
-          isLandscape && { paddingLeft: 260 },
+          isLandscape && { paddingLeft: LandscapeTokens.navRailWidth },
         ]}
       >
         <StatusBar style="dark" />
+
+        {/* Global Navigation Toolbar (matching Profile screen exact reference) */}
+        <View
+          style={[
+            styles.topToolbar,
+            {
+              paddingTop: insets.top + 12,
+              paddingLeft: Math.max(insets.left, screenPadding),
+              paddingRight: Math.max(insets.right, screenPadding),
+            },
+          ]}
+        >
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMenuVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open navigation menu"
+          >
+            <Image
+              source={require('../../assets/icons/burger-menu.png')}
+              style={styles.toolbarIcon}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              refreshNotifications();
+              setNotificationsVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications, ${unreadCount} unread`}
+          >
+            <Image
+              source={require('../../assets/icons/notification-bell.png')}
+              style={styles.toolbarIcon}
+            />
+            {unreadCount > 0 && <View style={styles.notificationDot} />}
+          </Pressable>
+        </View>
+
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
             {
+              paddingTop: 8,
               paddingBottom: Math.max(insets.bottom, 24) + tabBarClearance,
             },
           ]}
@@ -566,16 +614,11 @@ export default function ShareScreen() {
                 : styles.tabletSingleColContainer
             }
           >
-            {/* Header */}
+            {/* Header Title & Subtitle (toolbar hidden because global topToolbar is rendered above) */}
             <ScreenHeader
               title="Share Records"
               subtitle="Share your health records in a limited time access"
-              onPressMenu={isLandscape ? undefined : () => setMenuVisible(true)}
-              onPressNotifications={() => {
-                refreshNotifications();
-                setNotificationsVisible(true);
-              }}
-              unreadCount={unreadCount}
+              hideToolbar={true}
               style={{ paddingHorizontal: 0 }}
             />
 
@@ -1005,6 +1048,35 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: BG,
+  },
+  topToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+  },
+  iconBtn: {
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolbarIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+  notificationDot: {
+    position: 'absolute',
+    right: 8,
+    top: 5,
+    width: 10,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: TEAL,
+    borderWidth: 1.5,
+    borderColor: BG,
   },
   scrollContent: {
     flexGrow: 1,

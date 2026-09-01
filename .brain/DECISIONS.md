@@ -12,6 +12,50 @@ last_updated: 2026-09-01
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-01 — Global Top Toolbar Canonical Positioning Pattern (DD-18)
+
+### Decision
+1. **Canonical Root-Level Top Toolbar Positioning Pattern**: Enforce that the Global Top Toolbar (`topToolbar` container with `paddingTop: insets.top + 12`, `paddingLeft: Math.max(insets.left, screenPadding)`, `paddingRight: Math.max(insets.right, screenPadding)`, `paddingBottom: 8`, and 40×40pt minimum hit targets for Burger Navigation and Notification Bell) is the definitive, unified pattern for all top-level tab screens (`(tabs)/profile.tsx`, `(tabs)/index.tsx`, `(tabs)/share.tsx`, `(tabs)/scan.tsx`) on Tablet Portrait and Tablet Landscape.
+2. **Root Container Placement**: The toolbar is mounted as a direct child of the screen root container (`<View style={styles.root}>`), strictly outside scrollable surfaces (`ScrollView`, `FlatList`) and outside sub-containers with clamped `maxWidth` or centering.
+3. **ScreenHeader Coordination**: When `hideToolbar={true}` is passed to `ScreenHeader.tsx`, its `paddingTop` resets to `0` (`paddingTop: hideToolbar ? 0 : insets.top + 12`) to prevent duplicate safe-area inset stacking above screen titles.
+4. **Phone UI Isolation**: Phone layouts (`!isTablet`) retain their dedicated styling and behavior without regressions.
+
+### Reason
+- Eliminates visual jumps, coordinate drifts, and horizontal misalignment when switching between tabs (`Profile → Records → Share Records → Scan`) on tablet viewports.
+- Anchors primary global navigation controls directly to the tablet shell rather than letting individual tab scroll containers dictate button positions.
+
+### Consequences
+Zero jumping or flickering of navigation and notification controls across tab transitions; clean separation between fixed tablet navigation controls and scrollable content bodies.
+
+---
+
+## 2026-09-01 — Tablet Landscape UI Redesign & Content-Driven Layout Archetypes (DD-17)
+
+### Decision
+1. **88pt Left Navigation Rail Subsystem (`TabletLandscapeNavRail.tsx`)**: Replace the old 260pt wide sidebar with a dedicated, compact 88pt left navigation rail on `isTablet && isLandscape`. Features top MedRec logo, 4 primary tab triggers (Records, Share, Scan, Profile) with active indicator bar and teal tint, active share count badge, high-contrast `+ Record` pill CTA button, AI health summary trigger, notification bell with unread badge, paramedic emergency ID trigger, and patient avatar monogram.
+2. **Master-Detail Clinical Workspace for Records (`app/(tabs)/index.tsx`)**:
+   - Left Master Browser Pane (360pt): Sticky header with title & record count, `RecordSearchBar`, horizontal category chips with live distribution counts, batch selection mode with share bar, and independent scrolling FlatList.
+   - Right Detail Clinical Canvas (Flex 1): Overview Header with classification badge, full page link, record title, event date, and logged date. When an attachment exists, renders a side-by-side clinical split (Left: Document scan photo preview with tap-to-inspect zoom modal and delete button; Right: Clinical notes card and AI medical insights card).
+3. **2-Column Intake Studio for Add Record (`app/record/add.tsx`)**:
+   - On `isTablet && isLandscape`, replace single-column modal with a 960pt centered 2-column intake studio (Left: Classification chips, Title, Date, Multiline Notes with `KeyboardAvoidingView`; Right: Scanned document card preview/retake or camera/gallery capture hero, AI analysis badge, sovereign vault encryption notice).
+   - Tablet portrait (`isTablet && !isLandscape`) and phone remain 100% locked and preserved.
+4. **Thematic Dual-Column Studio for Profile (`app/(tabs)/profile.tsx`)**:
+   - On `isTablet && isLandscape`, deploy 1040pt bounded dual-column studio (Left: Clinical baseline & Medical ID with blood type, severe allergies, conditions, meds, organ donor, ICE contact with 1-tap call, emergency placard trigger; Right: Patient identity hero, personal demographics, security toggles, password modal trigger, JSON vault export, legal/danger zone).
+   - Tablet portrait and phone views remain 100% locked and preserved.
+5. **Balanced Split Sharing Studio & Doctor Scanner (`share.tsx` & `scan.tsx`)**:
+   - `share.tsx`: 1040pt balanced split (Left 44%: Living QR code with live countdown ticker and revoke CTA; Right 56%: Active access sessions and past history ledger).
+   - `scan.tsx`: 88pt rail clearance, centered 280pt 1:1 camera viewfinder pre-scan, and master-detail workspace post-scan.
+6. **Strict Platform Isolation (Invariant)**: All phone layouts (`!isTablet`) and tablet portrait layouts (`isTablet && !isLandscape`) remain strictly locked and unmodified.
+
+### Reason
+- Eliminates visual fragmentation, artificial 280pt column compression, and cognitive overload caused by universal 3-column layouts on wide tablet screens.
+- Utilizes wide horizontal space with content-driven layout archetypes tailored specifically to medical review, scanning, and clinical intake workflows.
+
+### Consequences
+High clinical scanning efficiency, ergonomic touch targets on tablet landscape, natural reading line lengths, and zero regressions on phone and tablet portrait.
+
+---
+
 ## 2026-09-01 — Tri-State Tablet Landscape UI Architecture & Split Workspaces
 
 ### Decision

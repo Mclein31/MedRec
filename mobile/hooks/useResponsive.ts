@@ -1,6 +1,6 @@
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BREAKPOINTS, ResponsiveLimits, getResponsiveSpacing } from '../constants/theme';
+import { BREAKPOINTS, ResponsiveLimits, LandscapeTokens, getResponsiveSpacing } from '../constants/theme';
 
 /**
  * Base design dimensions — iPhone 14 Plus (428 × 926 pt).
@@ -47,6 +47,7 @@ export interface ResponsiveLayoutState {
   containerWidth: number;
   gridColumns: number;
   sidebarWidth: number;
+  navRailWidth: number;
 
   // Fluid Dimension Calculators (with strict bounding floors and ceilings)
   scaleFont: (baseSize: number, min?: number, max?: number) => number;
@@ -137,6 +138,7 @@ export function useResponsive(): ResponsiveLayoutState {
 
   const isTabletLandscape = isTablet && isLandscape;
   const isTabletPortrait = isTablet && !isLandscape;
+  const navRailWidth = isTabletLandscape ? LandscapeTokens.navRailWidth : 0;
 
   return {
     isCompactPhone,
@@ -153,13 +155,14 @@ export function useResponsive(): ResponsiveLayoutState {
     ...spacing,
     tabBarClearance: effectiveTabBarClearance,
     sidebarWidth,
+    navRailWidth,
     maxFormWidth: ResponsiveLimits.maxFormWidth,
     maxContentWidth: ResponsiveLimits.maxContentWidth,
     maxDetailWidth: ResponsiveLimits.maxDetailWidth,
     maxModalWidth: ResponsiveLimits.maxModalWidth,
-    maxLandscapeWidth: 1140,
-    landscapeSplitLeft: 0.44,
-    landscapeSplitRight: 0.56,
+    maxLandscapeWidth: LandscapeTokens.maxBoundedWidth,
+    landscapeSplitLeft: LandscapeTokens.splitLeftRatio,
+    landscapeSplitRight: LandscapeTokens.splitRightRatio,
     maxDrawerWidthLandscape: 420,
     containerWidth,
     gridColumns,

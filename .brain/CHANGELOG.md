@@ -5,10 +5,37 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-08-31
+last_updated: 2026-09-01
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.1.1] — Tablet Portrait Global Navigation Toolbar Parity & Inset Normalization
+- **Unified Global Top Toolbar Architecture**: Standardized Burger Navigation and Notification Bell positions across `(tabs)/profile.tsx` (Source of Truth), `(tabs)/index.tsx`, `(tabs)/share.tsx`, and `(tabs)/scan.tsx` on Tablet Portrait and Tablet Landscape, anchoring the controls as fixed direct children of the root view (`paddingTop: insets.top + 12`, `paddingLeft/Right: Math.max(insets, screenPadding)`).
+- **ScreenHeader Safe-Area Inset Normalization**: Updated `ScreenHeader.tsx` to conditionally reset `paddingTop: hideToolbar ? 0 : insets.top + 12`, eliminating duplicate whitespace above titles when the global top toolbar is mounted above.
+- **Codebase Style Cleanup**: Removed deprecated unreferenced styles (`toolbar`, `menuIconBtn`, `bellBtn`, `bellIcon`, `notifDot`) in `mobile/app/(tabs)/index.tsx`.
+
+## [1.1.0] — Complete Tablet Landscape UI Redesign (88pt Nav Rail, Master-Detail & 2-Column Studios)
+- **Zero Phone & Tablet Portrait UI Regression (100% Locked & Isolated)**: Strictly quarantined all tablet landscape architecture behind `isTablet && isLandscape` (and `isTabletLandscape`), preserving Phone (`!isTablet`) and Tablet Portrait (`isTablet && !isLandscape`) pixel-for-pixel with zero regressions.
+- **Archetype 1 — 88pt Left Navigation Rail (`TabletLandscapeNavRail.tsx`)**:
+  - Pinned 88pt left rail replacing the legacy 260pt sidebar, reducing lateral overhead to <8% screen width.
+  - 36×36 MedRec logo brand glyph routing to `/(tabs)`.
+  - 4 Primary vertical navigation tabs (Records, Share with active count badge, Scan, Profile) with 3.5px active teal vertical pill indicator and `#EDFAF7` background tint.
+  - Centered quick action CTA: `+ Record` (44×44 teal circular button, white plus glyph) routing directly to `/record/add`.
+  - Bottom utility cluster: AI Health Summary trigger, Notification Bell with red unread badge dot (opening 420pt right slide-over panel), Paramedic Emergency ID trigger (opening 680pt 2-column triage placard), and Patient Avatar/Monogram.
+- **Archetype 2 — Master-Detail Clinical Workspaces (`(tabs)/index.tsx`, `(tabs)/scan.tsx`)**:
+  - **Records Dashboard (`index.tsx`)**: Fixed 360pt browser pane on the left with sticky search input, category chips carousel with live record distribution counts, multi-select action banner, and independent scrolling FlatList with active state border (1.5px `#159A83`) and background highlight (`#F1FAF8`). Live detail canvas on the right (Flex 1) dynamically rendering balanced 2-column split when attachment exists (document zoom preview + delete on left, clinical notes + AI insights with 1-tap re-explain on right) or full-width bounded clinical canvas when no attachment exists.
+  - **Doctor Scanner (`scan.tsx`)**: Pre-scan centered 280pt 1:1 camera viewfinder with teal corners + torch/guidance; Post-scan Master-Detail workspace (Left 340pt: authorized records list; Right Flex 1: complete read-only clinical notes, metadata, read-only notice, and floating "Scan Another Patient QR" CTA).
+- **Archetype 3 — 2-Column Clinical & Intake Studios**:
+  - **Add Record Studio (`record/add.tsx`)**: Centered 960pt 2-column intake studio (`transparentModal`, dimmed backdrop `rgba(0,0,0,0.45)`) pairing Left 48% (classification chips, title, date, multiline clinical notes with `KeyboardAvoidingView`) and Right 52% (camera capture hero / `AttachedDocumentCard`, AI analysis badge, sovereign vault notice).
+  - **Sharing Studio (`(tabs)/share.tsx`)**: Centered 1040pt 2-column studio pairing Left 44% (high-contrast 200pt living QR code with 15s countdown ticker and instant revoke) and Right 56% (active doctor access sessions ledger + past history timeline).
+  - **Record Details Studio (`record/[id].tsx`)**: Centered 1040–1100pt 2-column clinical split pairing Left 44% (overview + document photo preview with tap-to-inspect zoom modal + delete action) and Right 56% (clinical notes & observations + AI medical insights).
+  - **Patient Profile Studio (`(tabs)/profile.tsx`)**: Centered 1040pt dual-column studio pairing Left 48% (Emergency Medical ID, clinical baseline, 1-tap ICE call button) and Right 52% (unboxed identity hero, personal demographics, security & preferences with JSON export, account & legal actions).
+- **Archetype 4 — Content-Driven Clamped Modals**:
+  - `EmergencyIdModal.tsx`: 680pt clamped 2-column triage placard with auto-height sizing (`flexGrow: 0, flexShrink: 1`).
+  - `ProfileEditModal.tsx`: 640pt clamped form dialog with 2-column paired form grid and inline validation.
+  - `ChangePasswordModal.tsx`: 480pt clamped security dialog with `flexGrow: 0` content-driven height.
+  - `NotificationCenterModal.tsx`: 420pt right slide-over panel preserving workspace continuity.
 
 ## [1.0.0] — Approved Tablet & iPad UI Redesign (Master-Detail, Persistent Sidebar, Split Workspaces)
 - **Zero Phone UI Regression (100% Locked & Isolated)**: Strictly quarantined all tablet layouts behind `isTablet` ternary checks, preserving the existing phone UI pixel-for-pixel across all phone form factors.

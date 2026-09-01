@@ -46,10 +46,24 @@ This document serves as the master index of all core product and UX design decis
 | **DD-14** | **Continuous Scrollable Profile Content & Compact Fixed Navigation Toolbar** | `Active` | Moves the Profile title into the top-level scrollable content while keeping a compact global navigation toolbar fixed at the top, unlocking maximum usable vertical space. | [[07 - Product Design/Design Decisions#DD-14|DD-14]] |
 | **DD-15** | **Authentic Login & Register Visual Architecture & Dynamic Top Safe-Area Alignment** | `Active` | Restores canonical visual designs from historical commits 01acaad & 0b579ad while positioning Login branding at top safe-area and preserving pure hero graphic on Register. | [[07 - Product Design/Design Decisions#DD-15|DD-15]] |
 | **DD-16** | **Burger Navigation Drawer Architecture & Dual-Coded Scannability** | `Active` | Introduces 32x32 squircle leading icons, interactive patient demographic card with avatar/monogram, cognitive section chunking, 3.5px active left pill, and pinned version footer. | [[07 - Product Design/Design Decisions#DD-16|DD-16]] |
+| **DD-17** | **Tablet Landscape UI Redesign & Content-Driven Layout Archetypes** | `Active` | Replaces universal 3-column compression with an 88pt Left Navigation Rail, Master-Detail clinical workspaces, 2-Column Intake Studio, and Thematic Dual-Column Profile while strictly locking Phone and Tablet Portrait UI. | [[07 - Product Design/Design Decisions#DD-17|DD-17]] |
+| **DD-18** | **Global Top Toolbar Canonical Positioning Pattern** | `Active` | Enforces unified root-level top toolbar positioning across all top-level tab screens (Profile, Records, Share, Scan) on tablet portrait and landscape, eliminating visual jumps. | [[07 - Product Design/Design Decisions#DD-18|DD-18]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-18: Global Top Toolbar Canonical Positioning Pattern
+- **Context**: On Tablet Portrait, the Burger Navigation and Notification Bell buttons on Records and Share Records screens were previously nested inside scroll containers or centered sub-containers, causing coordinate drift and visual jumps compared to the Profile screen.
+- **Alternatives Considered**: (A) Adjusting margin offsets visually inside individual tab scroll headers, (B) Unifying the root layout tree so all top-level tab screens render the global top toolbar as a fixed direct child of the root `<View style={styles.root}>` at `paddingTop: insets.top + 12` with standard 40×40pt hit targets.
+- **Decision**: Option B — Adopt the Profile screen's root-level top toolbar as the canonical architecture across all tabs (`profile.tsx`, `index.tsx`, `share.tsx`, `scan.tsx`), and normalize `ScreenHeader.tsx` safe-area padding when `hideToolbar={true}`.
+- **Rationale**: Completely eliminates coordinate discrepancies and visual jumps across tab transitions while keeping phone layouts isolated and untouched.
+
+### DD-17: Tablet Landscape UI Redesign & Content-Driven Layout Archetypes
+- **Context**: The previous tablet landscape interface suffered from visual fragmentation and artificial 280pt column compression caused by forcing an arbitrary 3-vertical-band layout across wide tablet screens.
+- **Alternatives Considered**: (A) Universal 3-column subdivision across all screens, (B) Unchanged stretched single-column layouts, (C) Content-driven layout archetypes tailored to clinical workflows: 88pt Left Navigation Rail (`TabletLandscapeNavRail`), 360pt Master Browser + Flex 1 Live Clinical Detail Canvas (`index.tsx`), 960pt 2-Column Intake Studio (`add.tsx`), 1040pt Thematic Dual-Column Studio (`profile.tsx`), and Balanced Split Studios (`share.tsx`, `scan.tsx`), while strictly locking phone and tablet portrait code paths.
+- **Decision**: Option C — Implement content-driven layout archetypes and 88pt Left Nav Rail on `isTablet && isLandscape`.
+- **Rationale**: Eliminates cognitive overload, optimizes widescreen lateral thumb zones, provides natural 50–75 CPL readability, and ensures 100% zero-regression isolation for phone and tablet portrait.
 
 ### DD-16: Burger Navigation Drawer Architecture & Dual-Coded Scannability
 - **Context**: The previous text-only navigation drawer (`SideMenuModal.tsx`) required sequential reading, lacked identity context, had broken active route detection on Expo Router paths, and featured harsh divider lines.

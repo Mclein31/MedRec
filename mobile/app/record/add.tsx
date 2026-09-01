@@ -22,7 +22,7 @@ import { DocumentCamera } from '../../components/camera/DocumentCamera';
 import { DocumentPreview } from '../../components/camera/DocumentPreview';
 import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCard';
 import { DragHandle } from '../../components/ui/DragHandle';
-import { Colors, Radii, ResponsiveLimits } from '../../constants/theme';
+import { Colors, Radii, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
 // Design Tokens matching MedRec standard palette
@@ -57,6 +57,7 @@ export default function AddRecordScreen() {
   const router = useRouter();
   const {
     isTablet,
+    isLandscape,
     screenPadding,
     insets,
     scaleFont,
@@ -160,7 +161,286 @@ export default function AddRecordScreen() {
     );
   }
 
-  // ─── 3. TABLET SINGLE-COLUMN INTAKE STUDIO (EXPANDED & REFINED) ─────────
+  // ─── 3. TABLET LANDSCAPE 2-COLUMN INTAKE STUDIO (PURPOSE-BUILT) ──────────
+  if (isTablet && isLandscape) {
+    return (
+      <View style={styles.tabletRootOverlay}>
+        <StatusBar style="light" />
+
+        {/* Backdrop Tap to Dismiss */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss modal backdrop"
+        />
+
+        <View style={styles.landscapeStudioCard}>
+          {/* Studio Header Bar */}
+          <View style={styles.landscapeHeader}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [
+                styles.landscapeDismissBtn,
+                pressed && styles.pressed,
+              ]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel and dismiss"
+            >
+              <Ionicons name="close" size={20} color={INK} />
+            </Pressable>
+
+            <Text style={styles.landscapeHeaderTitle} numberOfLines={1}>
+              Add Health Record
+            </Text>
+
+            <Pressable
+              onPress={handleSave}
+              disabled={saving}
+              style={({ pressed }) => [
+                styles.landscapeSaveBtn,
+                pressed && styles.pressed,
+                saving && styles.disabledBtn,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Save medical record"
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  <Text style={styles.landscapeSaveText}>Save Record</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+
+          {/* 2-Column Intake Canvas */}
+          <View style={styles.landscapeBodyRow}>
+            {/* Left Column (48%): Form Metadata */}
+            <KeyboardAvoidingView
+              style={styles.landscapeFormCol}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+              <ScrollView
+                style={styles.landscapeScroll}
+                contentContainerStyle={styles.landscapeFormScrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {/* 1. Category Classification */}
+                <View style={styles.landscapeSection}>
+                  <Text style={styles.landscapeSectionLabel}>RECORD CLASSIFICATION</Text>
+                  <View style={styles.landscapeTypeGrid}>
+                    {RECORD_TYPES.map((t) => {
+                      const active = type === t.value;
+                      return (
+                        <Pressable
+                          key={t.value}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setType(t.value);
+                          }}
+                          style={({ pressed }) => [
+                            styles.landscapeTypeChip,
+                            active && styles.landscapeTypeChipActive,
+                            pressed && styles.pressed,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Select record type ${t.label}`}
+                          accessibilityState={{ selected: active }}
+                        >
+                          <Image
+                            source={TYPE_ASSETS[t.value]}
+                            style={[
+                              styles.landscapeTypeChipIcon,
+                              { tintColor: active ? TEAL : MUTED },
+                            ]}
+                          />
+                          <Text
+                            style={[
+                              styles.landscapeTypeChipText,
+                              active && styles.landscapeTypeChipTextActive,
+                            ]}
+                            maxFontSizeMultiplier={1.3}
+                          >
+                            {t.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* 2. Structured Metadata Inputs */}
+                <View style={styles.landscapeInputsCard}>
+                  {/* Title Field */}
+                  <View style={styles.landscapeFieldGroup}>
+                    <Text style={styles.landscapeFieldLabel}>RECORD TITLE *</Text>
+                    <View style={styles.landscapeInputBox}>
+                      <Image
+                        source={require('../../assets/icons/folder.png')}
+                        style={styles.landscapeFieldIcon}
+                      />
+                      <TextInput
+                        style={styles.landscapeTextInput}
+                        value={title}
+                        onChangeText={setTitle}
+                        placeholder="e.g. Annual Comprehensive Metabolic Panel"
+                        placeholderTextColor={MUTED}
+                        accessibilityLabel="Record title input"
+                        maxFontSizeMultiplier={1.35}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Date of Event */}
+                  <View style={styles.landscapeFieldGroup}>
+                    <Text style={styles.landscapeFieldLabel}>DATE OF EVENT</Text>
+                    <View style={styles.landscapeInputBox}>
+                      <Image
+                        source={require('../../assets/icons/calendar.png')}
+                        style={styles.landscapeFieldIcon}
+                      />
+                      <TextInput
+                        style={styles.landscapeTextInput}
+                        value={date}
+                        onChangeText={setDate}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor={MUTED}
+                        accessibilityLabel="Date of event input"
+                        maxFontSizeMultiplier={1.35}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Clinical Notes & Observations */}
+                  <View style={styles.landscapeFieldGroup}>
+                    <Text style={styles.landscapeFieldLabel}>CLINICAL NOTES &amp; OBSERVATIONS</Text>
+                    <View style={[styles.landscapeInputBox, styles.landscapeTextAreaBox]}>
+                      <TextInput
+                        style={[styles.landscapeTextInput, styles.landscapeTextArea]}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="Add clinical findings, provider notes, prescription dosages, or follow-up instructions..."
+                        placeholderTextColor={MUTED}
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                        accessibilityLabel="Clinical notes input"
+                        maxFontSizeMultiplier={1.35}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+
+            {/* Right Column (52%): Visual Document Canvas & Guidance */}
+            <View style={styles.landscapePreviewCol}>
+              <ScrollView
+                style={styles.landscapeScroll}
+                contentContainerStyle={styles.landscapePreviewScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.landscapeSection}>
+                  <Text style={styles.landscapeSectionLabel}>DOCUMENT ATTACHMENT</Text>
+
+                  {photoUri ? (
+                    <AttachedDocumentCard
+                      photoUri={photoUri}
+                      onPressInspect={() => {
+                        setTempPhotoUri(photoUri);
+                        setViewMode('preview');
+                      }}
+                      onPressRetake={() => {
+                        setViewMode('camera');
+                      }}
+                      onPressRemove={() => {
+                        setPhotoUri(null);
+                      }}
+                    />
+                  ) : (
+                    <View style={styles.landscapeScanHeroCard}>
+                      <View style={styles.landscapeScanHeroTop}>
+                        <View style={styles.landscapeScanIconBox}>
+                          <Image
+                            source={require('../../assets/icons/AI.png')}
+                            style={styles.landscapeScanIcon}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.landscapeScanTitle}>Document Capture</Text>
+                          <Text style={styles.landscapeScanSub}>
+                            Attach physical lab reports, prescriptions, or discharge summaries
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.landscapeScanActions}>
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setViewMode('camera');
+                          }}
+                          style={({ pressed }) => [
+                            styles.landscapeScanPrimaryBtn,
+                            pressed && styles.pressed,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Open document camera"
+                        >
+                          <Ionicons name="camera" size={18} color={BLUE} />
+                          <Text style={styles.landscapeScanPrimaryBtnText}>SCAN WITH CAMERA</Text>
+                        </Pressable>
+
+                        <Pressable
+                          onPress={handleOpenGallery}
+                          style={({ pressed }) => [
+                            styles.landscapeGalleryBtn,
+                            pressed && styles.pressed,
+                          ]}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="Choose photo from library"
+                        >
+                          <Ionicons name="images-outline" size={16} color="rgba(255, 255, 255, 0.95)" />
+                          <Text style={styles.landscapeGalleryBtnText}>Choose from Photo Library</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
+                </View>
+
+                {/* AI Document Intelligence Badge */}
+                <View style={styles.landscapeAiBanner}>
+                  <Ionicons name="sparkles" size={18} color={Colors.blue} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.landscapeAiBannerTitle}>AI Clinical Assistance</Text>
+                    <Text style={styles.landscapeAiBannerText}>
+                      Scanned medical document text is automatically analyzed for biomarkers and plain-language translations.
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Sovereign Encryption Guarantee */}
+                <View style={styles.landscapeVaultNotice}>
+                  <Ionicons name="shield-checkmark" size={15} color={TEAL} />
+                  <Text style={styles.landscapeVaultNoticeText}>
+                    All document scans are encrypted and stored inside your sovereign health vault.
+                  </Text>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ─── 4. TABLET PORTRAIT SINGLE-COLUMN INTAKE STUDIO (LOCKED 🔒) ──────────
   if (isTablet) {
     return (
       <View style={styles.tabletRootOverlay}>
@@ -1387,5 +1667,292 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 15.5,
     color: '#FFFFFF',
+  },
+
+  /* ────────────────────────────────────────────────────────
+     TABLET LANDSCAPE 2-COLUMN INTAKE STUDIO STYLES
+  ──────────────────────────────────────────────────────── */
+  landscapeStudioCard: {
+    width: '94%',
+    maxWidth: 1000,
+    height: '90%',
+    maxHeight: 740,
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radii.sheet,
+    borderWidth: 1,
+    borderColor: BORDER,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  landscapeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F5F4',
+    backgroundColor: '#FFFFFF',
+  },
+  landscapeDismissBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F7F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landscapeHeaderTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 18,
+    color: INK,
+  },
+  landscapeSaveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: TEAL,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 10,
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  landscapeSaveText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 13.5,
+    color: '#FFFFFF',
+  },
+  landscapeBodyRow: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  landscapeFormCol: {
+    flex: 0.5,
+    borderRightWidth: 1,
+    borderRightColor: '#F0F5F4',
+    backgroundColor: '#FAFDFD',
+  },
+  landscapePreviewCol: {
+    flex: 0.5,
+    backgroundColor: '#FFFFFF',
+  },
+  landscapeScroll: {
+    flex: 1,
+  },
+  landscapeFormScrollContent: {
+    padding: 20,
+    gap: 16,
+  },
+  landscapePreviewScrollContent: {
+    padding: 20,
+    gap: 16,
+  },
+  landscapeSection: {
+    gap: 8,
+  },
+  landscapeSectionLabel: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 10.5,
+    color: MUTED,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  landscapeTypeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  landscapeTypeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5F0EE',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  landscapeTypeChipActive: {
+    backgroundColor: '#EDFAF7',
+    borderColor: TEAL,
+  },
+  landscapeTypeChipIcon: {
+    width: 15,
+    height: 15,
+    resizeMode: 'contain',
+  },
+  landscapeTypeChipText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: MUTED,
+  },
+  landscapeTypeChipTextActive: {
+    fontFamily: 'LexendDeca-SemiBold',
+    color: TEAL,
+  },
+  landscapeInputsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 16,
+    gap: 14,
+  },
+  landscapeFieldGroup: {
+    gap: 5,
+  },
+  landscapeFieldLabel: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 11,
+    color: INK,
+    letterSpacing: 0.4,
+  },
+  landscapeInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8FCFB',
+    borderWidth: 1,
+    borderColor: '#E2EBE9',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  landscapeFieldIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+    tintColor: TEAL,
+  },
+  landscapeTextInput: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 13.5,
+    color: INK,
+    padding: 0,
+  },
+  landscapeTextAreaBox: {
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    minHeight: 110,
+    height: 'auto',
+  },
+  landscapeTextArea: {
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  landscapeScanHeroCard: {
+    backgroundColor: '#12343B',
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  landscapeScanHeroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  landscapeScanIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landscapeScanIcon: {
+    width: 24,
+    height: 24,
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+  landscapeScanTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  landscapeScanSub: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 16,
+  },
+  landscapeScanActions: {
+    gap: 10,
+  },
+  landscapeScanPrimaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    height: 44,
+  },
+  landscapeScanPrimaryBtnText: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 12.5,
+    color: BLUE,
+    letterSpacing: 0.5,
+  },
+  landscapeGalleryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 6,
+  },
+  landscapeGalleryBtnText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.95)',
+  },
+  landscapeAiBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  landscapeAiBannerTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 12.5,
+    color: '#1E40AF',
+  },
+  landscapeAiBannerText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: '#1E40AF',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  landscapeVaultNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F0FDF9',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  landscapeVaultNoticeText: {
+    flex: 1,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    color: TEAL,
+    lineHeight: 16,
   },
 });

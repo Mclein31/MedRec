@@ -68,6 +68,19 @@ export const ResponsiveLimits = {
   viewfinderMax: 360,         // Max width for camera capture viewfinder
 } as const;
 
+export const LandscapeTokens = {
+  navRailWidth: 88,              // Compact touch-friendly icon+label rail
+  navSidebarWidth: 240,          // Expanded sidebar for Pro 12.9" widescreen
+  masterPaneWidth: 360,          // Ideal width for record list browsing
+  splitLeftRatio: 0.44,          // Proportional split left
+  splitRightRatio: 0.56,         // Proportional split right
+  maxBoundedWidth: 1040,         // Centered forms & profile container cap
+  maxModalLandscapeWidth: 680,   // Standard landscape dialog modal cap
+  cardPaddingLandscape: 20,      // Elevated touch surface padding
+  gutterLandscape: 24,           // Spacing between split columns
+  minTouchTarget: 44,            // WCAG AA compliant hit target floor
+} as const;
+
 export const Spacing = {
   xs: 4,
   sm: 8,

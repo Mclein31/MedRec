@@ -21,7 +21,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { DragHandle } from '../../components/ui/DragHandle';
 import { Button } from '../../components/ui/Button';
-import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
+import { Colors, Radii, Typography, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -151,10 +151,57 @@ export default function ScanScreen() {
         <View
           style={[
             styles.root,
-            isLandscape && { paddingLeft: 260 },
+            isLandscape && { paddingLeft: LandscapeTokens.navRailWidth },
           ]}
         >
           <StatusBar style="dark" />
+
+          {/* Global Navigation Toolbar (matching Profile screen exact reference) */}
+          <View
+            style={[
+              styles.topToolbar,
+              {
+                paddingTop: insets.top + 12,
+                paddingLeft: Math.max(insets.left, screenPadding),
+                paddingRight: Math.max(insets.right, screenPadding),
+              },
+            ]}
+          >
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setMenuVisible(true);
+              }}
+              hitSlop={10}
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Open navigation menu"
+            >
+              <Image
+                source={require('../../assets/icons/burger-menu.png')}
+                style={styles.toolbarIcon}
+              />
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                refreshNotifications();
+                setNotificationsVisible(true);
+              }}
+              hitSlop={10}
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel={`Notifications, ${unreadCount} unread`}
+            >
+              <Image
+                source={require('../../assets/icons/notification-bell.png')}
+                style={styles.toolbarIcon}
+              />
+              {unreadCount > 0 && <View style={styles.notificationDot} />}
+            </Pressable>
+          </View>
+
           <ScreenHeader
             title={error ? 'Scan Error' : 'Shared Records'}
             subtitle={
@@ -162,12 +209,7 @@ export default function ScanScreen() {
                 ? 'Could not load records from QR code'
                 : `${records?.length || 0} record${records?.length !== 1 ? 's' : ''} shared by patient`
             }
-            onPressMenu={isLandscape ? undefined : () => setMenuVisible(true)}
-            onPressNotifications={() => {
-              refreshNotifications();
-              setNotificationsVisible(true);
-            }}
-            unreadCount={unreadCount}
+            hideToolbar={true}
           />
 
           {error && (
@@ -589,7 +631,12 @@ export default function ScanScreen() {
   }
 
   return (
-    <View style={styles.cameraRoot}>
+    <View
+      style={[
+        styles.cameraRoot,
+        isTablet && isLandscape && { paddingLeft: LandscapeTokens.navRailWidth },
+      ]}
+    >
       <StatusBar style="light" />
       <CameraView
         style={StyleSheet.absoluteFillObject}
@@ -624,6 +671,7 @@ export default function ScanScreen() {
             style={styles.cameraToolbarIcon}
           />
         </Pressable>
+
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
@@ -696,6 +744,35 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.bg,
+  },
+  topToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+  },
+  iconBtn: {
+    padding: 4,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolbarIcon: {
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+  },
+  notificationDot: {
+    position: 'absolute',
+    right: 8,
+    top: 5,
+    width: 10,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: Colors.teal,
+    borderWidth: 1.5,
+    borderColor: Colors.bg,
   },
   permissionContainer: {
     flex: 1,
@@ -970,6 +1047,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingBottom: 8,
     zIndex: 10,
   },
   cameraIconBtn: {
