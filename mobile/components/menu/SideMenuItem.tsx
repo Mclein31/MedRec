@@ -4,15 +4,17 @@ import {
   Text,
   Pressable,
   StyleSheet,
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/theme';
 
 export interface SideMenuItemProps {
+  imageSource?: ImageSourcePropType;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
-  iconBg?: string;
   label: string;
   sublabel?: string;
   badge?: string | number;
@@ -23,9 +25,9 @@ export interface SideMenuItemProps {
 }
 
 export const SideMenuItem: React.FC<SideMenuItemProps> = ({
+  imageSource,
   icon,
-  iconColor = Colors.ink,
-  iconBg = Colors.bg,
+  iconColor = Colors.muted,
   label,
   sublabel,
   badge,
@@ -49,36 +51,31 @@ export const SideMenuItem: React.FC<SideMenuItemProps> = ({
     ? Colors.teal
     : iconColor;
 
-  const resolvedIconBg = destructive
-    ? Colors.redLight
-    : active
-    ? Colors.tealLight
-    : iconBg;
-
   return (
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [
         styles.row,
-        active && styles.rowActive,
         pressed && styles.rowPressed,
       ]}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      accessibilityLabel={accessibilityLabel || `${label}${sublabel ? `, ${sublabel}` : ''}`}
+      accessibilityLabel={accessibilityLabel || `${label}${badge ? `, ${badge}` : ''}`}
     >
-      {/* Active Left Indicator Pill */}
+      {/* Slim 2.5px Leading Active Indicator */}
       {active && <View style={styles.activeIndicator} />}
 
-      {/* Leading Squircle Icon */}
-      {icon && (
-        <View style={[styles.iconContainer, { backgroundColor: resolvedIconBg }]}>
-          <Ionicons name={icon} size={18} color={resolvedIconColor} />
-        </View>
-      )}
+      {/* Free-Standing Icon Glyph Area (Zero Background Box) */}
+      <View style={styles.iconArea}>
+        {imageSource ? (
+          <Image source={imageSource} style={styles.imageIcon} resizeMode="contain" />
+        ) : icon ? (
+          <Ionicons name={icon} size={20} color={resolvedIconColor} />
+        ) : null}
+      </View>
 
-      {/* Text Group */}
-      <View style={[styles.textContainer, !icon && styles.textContainerNoIcon]}>
+      {/* Label Group */}
+      <View style={styles.textContainer}>
         <Text
           style={[
             styles.label,
@@ -115,63 +112,61 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    minHeight: 50,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minHeight: 48,
+    backgroundColor: 'transparent',
     position: 'relative',
-    marginHorizontal: 8,
-  },
-  rowActive: {
-    backgroundColor: '#F0F9F7',
   },
   rowPressed: {
-    backgroundColor: '#F1F5F9',
-    opacity: 0.85,
+    opacity: 0.65,
   },
   activeIndicator: {
     position: 'absolute',
     left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3.5,
+    top: 13,
+    bottom: 13,
+    width: 2.5,
     backgroundColor: Colors.teal,
-    borderTopRightRadius: 3,
-    borderBottomRightRadius: 3,
+    borderTopRightRadius: 1.5,
+    borderBottomRightRadius: 1.5,
   },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+  iconArea: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  imageIcon: {
+    width: 22,
+    height: 22,
+  },
   textContainer: {
     flex: 1,
-    marginLeft: 12,
-    gap: 2,
-  },
-  textContainerNoIcon: {
-    marginLeft: 0,
+    marginLeft: 14,
+    justifyContent: 'center',
   },
   label: {
-    fontFamily: 'LexendDeca-Medium',
-    fontSize: 14.5,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 15,
+    lineHeight: 20,
     color: Colors.ink,
     letterSpacing: -0.2,
   },
   labelActive: {
-    fontFamily: 'LexendDeca-Bold',
+    fontFamily: 'LexendDeca-SemiBold',
     color: Colors.teal,
   },
   labelDestructive: {
-    fontFamily: 'LexendDeca-SemiBold',
+    fontFamily: 'LexendDeca-Medium',
     color: Colors.red,
   },
   sublabel: {
     fontFamily: 'LexendDeca-Regular',
     fontSize: 11.5,
+    lineHeight: 15,
     color: Colors.muted,
+    marginTop: 1,
   },
   sublabelActive: {
     color: Colors.tealDark,
@@ -179,13 +174,13 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
     backgroundColor: Colors.tealLight,
     marginLeft: 8,
   },
   badgeText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 11,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 10.5,
     color: Colors.teal,
   },
 });

@@ -84,8 +84,8 @@ last_updated: 2026-08-28
 ---
 
 ## 🧭 Drawer Menu Subsystem (`mobile/components/menu/`)
-1. `SideMenuModal.tsx`: Lightweight left-slide animated drawer overlay (`-DRAWER_WIDTH -> 0`) with backdrop fade, official MedRec logo branding (`assets/logo/logo.png`), user summary, and text-only routing for primary tabs and secondary vault tools.
-2. `SideMenuItem.tsx`: Text-only interactive row component with active route highlight (`#F0F9F7`), dynamic badge support (e.g. active shares count), and haptic selection feedback.
+1. `SideMenuModal.tsx`: Lightweight left-slide animated drawer overlay (`-DRAWER_WIDTH -> 0`) with backdrop fade, official MedRec logo branding (`assets/logo/logo.png`), unboxed patient identity stack, and streamlined dual-tier navigation ("Patient Vault" and "Clinical Tools").
+2. `SideMenuItem.tsx`: Unboxed single-line navigation row component with free-standing icon glyph (supporting paired `*-active.png` / `*-inactive.png` assets or vector glyphs), slim 2.5px leading active indicator bar, dynamic badge support (e.g. active shares count), and haptic selection feedback.
 
 ---
 
