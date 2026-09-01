@@ -21,17 +21,26 @@ async function createRecord({ userId, type, title, description, date, attachment
   return rows[0];
 }
 
-async function getAllForUser(userId, { type } = {}) {
+async function getAllForUser(userId, { type, limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
+
   if (type) {
     const { rows } = await pool.query(
-      `SELECT * FROM medical_records WHERE user_id = $1 AND type = $2 ORDER BY date DESC`,
-      [userId, type]
+      `SELECT * FROM medical_records
+       WHERE user_id = $1 AND type = $2
+       ORDER BY date DESC
+       LIMIT $3 OFFSET $4`,
+      [userId, type, safeLimit, safeOffset]
     );
     return rows;
   }
   const { rows } = await pool.query(
-    `SELECT * FROM medical_records WHERE user_id = $1 ORDER BY date DESC`,
-    [userId]
+    `SELECT * FROM medical_records
+     WHERE user_id = $1
+     ORDER BY date DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, safeLimit, safeOffset]
   );
   return rows;
 }
@@ -54,13 +63,17 @@ async function deleteForUser(userId, recordId) {
 
 // Used by the share-access flow.
 // Priority: specific record IDs > allowed types > all records
-async function getAllForShare(userId, allowedTypes, recordIds) {
+async function getAllForShare(userId, allowedTypes, recordIds, { limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
+
   // Specific records selected — highest priority
   if (recordIds && recordIds.length > 0) {
     const { rows } = await pool.query(
       `SELECT id, type, title, description, date, attachment_url FROM medical_records
-       WHERE user_id = $1 AND id = ANY($2) ORDER BY date DESC`,
-      [userId, recordIds]
+       WHERE user_id = $1 AND id = ANY($2) ORDER BY date DESC
+       LIMIT $3 OFFSET $4`,
+      [userId, recordIds, safeLimit, safeOffset]
     );
     return rows;
   }
@@ -69,8 +82,9 @@ async function getAllForShare(userId, allowedTypes, recordIds) {
   if (allowedTypes && allowedTypes.length > 0) {
     const { rows } = await pool.query(
       `SELECT id, type, title, description, date, attachment_url FROM medical_records
-       WHERE user_id = $1 AND type = ANY($2) ORDER BY date DESC`,
-      [userId, allowedTypes]
+       WHERE user_id = $1 AND type = ANY($2) ORDER BY date DESC
+       LIMIT $3 OFFSET $4`,
+      [userId, allowedTypes, safeLimit, safeOffset]
     );
     return rows;
   }
@@ -78,10 +92,26 @@ async function getAllForShare(userId, allowedTypes, recordIds) {
   // All records
   const { rows } = await pool.query(
     `SELECT id, type, title, description, date, attachment_url FROM medical_records
-     WHERE user_id = $1 ORDER BY date DESC`,
-    [userId]
+     WHERE user_id = $1 ORDER BY date DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, safeLimit, safeOffset]
   );
   return rows;
+}
+
+/**
+ * Validates whether all requested record IDs belong to the specified user via atomic SQL.
+ * Returns true if all IDs belong to the user, false otherwise.
+ */
+async function verifyOwnership(userId, recordIds) {
+  if (!Array.isArray(recordIds) || recordIds.length === 0) return true;
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS count
+     FROM medical_records
+     WHERE user_id = $1 AND id = ANY($2::uuid[])`,
+    [userId, recordIds]
+  );
+  return rows[0].count === recordIds.length;
 }
 
 module.exports = {
@@ -91,4 +121,5 @@ module.exports = {
   getOneForUser,
   deleteForUser,
   getAllForShare,
+  verifyOwnership,
 };

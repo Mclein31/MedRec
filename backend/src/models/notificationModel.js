@@ -10,13 +10,16 @@ async function createNotification({ userId, type, title, body, data = {} }) {
   return rows[0];
 }
 
-async function getAllForUser(userId) {
+async function getAllForUser(userId, { limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
   const { rows } = await pool.query(
     `SELECT id, user_id AS "userId", type, title, body, read, data, created_at AS "createdAt"
      FROM notifications
      WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [userId]
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, safeLimit, safeOffset]
   );
   return rows;
 }

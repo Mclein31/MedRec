@@ -213,7 +213,7 @@ describe('Profile API Endpoints', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/Password updated successfully/i);
 
-      // Verify login works with new password
+      // Verify login works with new password and provides new active session token
       const loginRes = await request(app)
         .post('/auth/login')
         .send({
@@ -221,6 +221,14 @@ describe('Profile API Endpoints', () => {
           password: updatedPassword,
         });
       expect(loginRes.status).toBe(200);
+
+      // Verify old session token was invalidated by token_version increment (SEC-04)
+      const oldTokenRes = await request(app)
+        .get('/profile')
+        .set('Authorization', `Bearer ${token}`);
+      expect(oldTokenRes.status).toBe(401);
+
+      token = loginRes.body.token;
     });
   });
 

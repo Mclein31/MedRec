@@ -140,7 +140,14 @@ async function upsertProfile(userId, data) {
 
 async function updateUserPassword(userId, passwordHash) {
   const { rows } = await pool.query(
-    `UPDATE users SET password = $1, updated_at = now() WHERE id = $2 RETURNING id, email`,
+    `UPDATE users
+     SET password = $1,
+         token_version = token_version + 1,
+         failed_login_attempts = 0,
+         locked_until = NULL,
+         updated_at = now()
+     WHERE id = $2
+     RETURNING id, email, token_version`,
     [passwordHash, userId]
   );
   return rows[0] || null;

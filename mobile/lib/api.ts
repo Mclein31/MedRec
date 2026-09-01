@@ -68,6 +68,12 @@ export const api = {
   login: (email: string, password: string) =>
     request('/auth/login', { method: 'POST', body: { email, password } }),
 
+  forgotPassword: (email: string) =>
+    request('/auth/forgot-password', { method: 'POST', body: { email } }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    request('/auth/reset-password', { method: 'POST', body: { token, newPassword } }),
+
   getRecords: () => request('/records'),
 
   getRecord: (id: string) => request(`/records/${id}`),

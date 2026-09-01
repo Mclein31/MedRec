@@ -34,11 +34,14 @@ async function revoke(userId, shareId) {
   return rowCount > 0;
 }
 
-async function listForUser(userId) {
+async function listForUser(userId, { limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
   const { rows } = await pool.query(
     `SELECT id, token, expires_at, allowed_types, record_ids, revoked_at, created_at
-     FROM shared_access WHERE user_id = $1 ORDER BY created_at DESC`,
-    [userId],
+     FROM shared_access WHERE user_id = $1 ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, safeLimit, safeOffset],
   );
   return rows;
 }

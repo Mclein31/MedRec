@@ -2,8 +2,9 @@ const notificationModel = require('../models/notificationModel');
 
 async function getNotifications(req, res, next) {
   try {
+    const { limit, offset } = req.query;
     const [notifications, unreadCount] = await Promise.all([
-      notificationModel.getAllForUser(req.user.id),
+      notificationModel.getAllForUser(req.user.id, { limit, offset }),
       notificationModel.getUnreadCount(req.user.id),
     ]);
     res.json({ notifications, unreadCount });

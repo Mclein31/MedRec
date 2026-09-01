@@ -73,15 +73,56 @@ export default function ScanScreen() {
   const handleScanned = async ({ data }: BarcodeScanningResult) => {
     if (scanned) return;
     setScanned(true);
-    setLoading(true);
     setError(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    const trimmed = (data || '').trim();
+
+    // 1. Check if payload is an offline Emergency Medical ID JSON placard
     try {
-      const result = await api.getSharedRecords(data);
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const parsed = JSON.parse(trimmed);
+        if (parsed.service === 'MedRec Emergency Medical ID') {
+          // Format offline emergency data as a synthetic consultation record for instant triage viewing
+          const emergencyRecord: SharedRecord = {
+            id: 'offline-emergency-id',
+            type: 'consultation',
+            title: `Emergency ID: ${parsed.name || 'Patient'}`,
+            description: [
+              `Age/DOB: ${parsed.age || 'Unknown'} (${parsed.dob || 'Unknown'})`,
+              `Blood Type: ${parsed.bloodType || 'Unknown'}`,
+              `Allergies: ${parsed.allergies || 'None reported'}`,
+              `Conditions: ${parsed.conditions || 'None reported'}`,
+              `Medications: ${parsed.medications || 'None reported'}`,
+              `Organ Donor: ${parsed.organDonor || 'No'}`,
+              `Emergency Contact: ${parsed.emergencyContact || 'None listed'}`,
+            ].join('\n\n'),
+            date: new Date().toISOString().split('T')[0],
+          };
+          setRecords([emergencyRecord]);
+          setSelectedRecord(emergencyRecord);
+          return;
+        }
+      }
+    } catch {
+      // Not JSON, continue to online token validation
+    }
+
+    // 2. Validate online share token format (must be URL-safe alphanumeric token)
+    const tokenRegex = /^[A-Za-z0-9_-]{20,128}$/;
+    if (!tokenRegex.test(trimmed)) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setError('Unrecognized QR code. Please align a valid MedRec Doctor Share QR or Emergency Medical ID.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await api.getSharedRecords(trimmed);
       setRecords(result.records);
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError(err.message);
+      setError(err.message || 'Could not load records from QR code');
     } finally {
       setLoading(false);
     }

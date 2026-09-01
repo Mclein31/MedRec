@@ -10,6 +10,27 @@ last_updated: 2026-09-01
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [1.2.0] — Full-Stack Production Security, Privacy & App Store Readiness Hardening
+- **SEC-R01: Account Lockout Denial-of-Service Defense**:
+  - Refactored `authController.js#login` to validate credentials first, ensuring legitimate users with valid passwords are not denied service by third-party unauthenticated failed attempts from other IPs.
+  - Coupled failed attempt auditing with strict IP rate limiting (`authLimiter`) and progressive response delays.
+- **SEC-R02: Password Reset Token Leakage Remediation**:
+  - Unconditionally purged `resetTokenPreview` from `authController.js#forgotPassword` across all environments (`production`, `development`, `test`), returning only generic confirmation messages to eliminate account takeover vulnerabilities.
+- **SEC-R03: iOS Camera Purpose String & App Store Compliance**:
+  - Added `expo-camera` plugin configuration with explicit `cameraPermission` (*"MedRec uses your camera to scan medical records and doctor sharing QR codes."*) to `mobile/app.json`, eliminating App Store Connect rejection ITMS-90683.
+- **SEC-R04: Atomic Record Ownership in Sharing (Pagination Invariant)**:
+  - Added `recordModel.verifyOwnership(userId, recordIds)` using atomic parameterized SQL (`WHERE user_id = $1 AND id = ANY($2::uuid[])`), replacing in-memory array filtering in `shareController.js#createShare` and fixing false IDOR sharing rejections for users with >50 records.
+- **SEC-R05: User-Keyed AI Rate Limiting**:
+  - Re-keyed AI rate limiting in `aiRoutes.js` using `req.user.id` (10 requests / 15-min window per authenticated user) following `requireAuth`, preventing cellular CGNAT IP collisions.
+- **SEC-R07: Strict Database TLS Configuration**:
+  - Updated `backend/src/config/db.js` to enforce strict certificate verification by default in production with configurable `PGSSL_REJECT_UNAUTHORIZED`.
+- **SEC-R08: App Store Privacy Policy Web URL Binding**:
+  - Wired `mobile/app/login.tsx` privacy policy triggers to open the hosted public URL `https://medrec.health/privacy` via `Linking.openURL()` with offline dialog fallback.
+- **SEC-R10: Database Row Level Security (RLS)**:
+  - Enabled Row Level Security on `medical_records`, `user_profiles`, `shared_access`, and `notifications` in `backend/src/migrations/schema.sql`.
+- **Comprehensive Automated Negative Security Test Suite**:
+  - Created `backend/tests/security.test.js` covering Lockout DoS immunity, reset token leak prevention, bulk share pagination (>50 records), user-keyed AI rate limiting, token_version session revocation, and cross-user IDOR access/mutation barriers (35/35 passing backend tests).
+
 ## [1.1.1] — Tablet Portrait Global Navigation Toolbar Parity & Inset Normalization
 - **Unified Global Top Toolbar Architecture**: Standardized Burger Navigation and Notification Bell positions across `(tabs)/profile.tsx` (Source of Truth), `(tabs)/index.tsx`, `(tabs)/share.tsx`, and `(tabs)/scan.tsx` on Tablet Portrait and Tablet Landscape, anchoring the controls as fixed direct children of the root view (`paddingTop: insets.top + 12`, `paddingLeft/Right: Math.max(insets, screenPadding)`).
 - **Tablet Landscape Nav Rail Icon-Only & Burger Integration**: Removed background highlight pills and text labels from the left navigation rail, adopting the phone UI's pure active/inactive icon asset switching paradigm and original `add-record.png` icon asset. Relocated the Burger menu button to the top of the Nav Rail with `SideMenuModal` integration.

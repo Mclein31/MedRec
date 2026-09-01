@@ -44,8 +44,8 @@ async function addRecord(req, res, next) {
 
 async function getRecords(req, res, next) {
   try {
-    const { type } = req.query;
-    const records = await recordModel.getAllForUser(req.user.id, { type });
+    const { type, limit, offset } = req.query;
+    const records = await recordModel.getAllForUser(req.user.id, { type, limit, offset });
     res.json({ records });
   } catch (err) {
     next(err);

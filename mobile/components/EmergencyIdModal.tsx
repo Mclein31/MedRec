@@ -393,7 +393,7 @@ export default function EmergencyIdModal({
         <QRCode value={qrPayload} size={qrSize} color="#12343B" backgroundColor="#FFFFFF" />
       </View>
       <Text style={styles.qrFooterNote} maxFontSizeMultiplier={1.35}>
-        Generated from verified patient vault data.
+        Notice: This offline placard displays critical emergency triage data without login or internet for first responders during an acute medical emergency.
       </Text>
     </View>
   );

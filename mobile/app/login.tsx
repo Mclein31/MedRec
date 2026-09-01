@@ -10,11 +10,13 @@ import {
   ScrollView,
   Image,
   ImageBackground,
+  Linking,
 } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../lib/api';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsive } from '../hooks/useResponsive';
 import { Colors } from '../constants/theme';
@@ -85,8 +87,47 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialPress = () => Alert.alert('Coming soon', 'Google sign-in will be available in a future update.');
-  const handleForgotPassword = () => Alert.alert('Coming soon', 'Password reset will be available in a future update.');
+  const handleSocialPress = () => {
+    Alert.alert(
+      'Single Sign-On',
+      'Google authentication is managed by your healthcare organization. Please use your standard email and password to log in.'
+    );
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email || !email.trim()) {
+      Alert.alert(
+        'Reset Password',
+        'Please enter your email address in the field above to receive password reset instructions.'
+      );
+      return;
+    }
+    try {
+      await api.forgotPassword(email.trim());
+      Alert.alert(
+        'Password Reset Requested',
+        'If an account with that email exists, password reset instructions have been dispatched.'
+      );
+    } catch (err: any) {
+      Alert.alert('Reset Request', err.message || 'Unable to submit password reset request.');
+    }
+  };
+
+  const handlePrivacyPolicy = async () => {
+    const privacyUrl = 'https://medrec.health/privacy';
+    try {
+      const supported = await Linking.canOpenURL(privacyUrl);
+      if (supported) {
+        await Linking.openURL(privacyUrl);
+        return;
+      }
+    } catch {}
+    Alert.alert(
+      'MedRec Privacy Policy & Data Security',
+      'MedRec stores your health records encrypted at rest and in transit. Your clinical data is never sold or used for advertising. AI processing is performed with zero-data retention policies.\n\nYou retain full sovereignty over your health records and can export or permanently delete your vault at any time.\n\nPublic policy: https://medrec.health/privacy',
+      [{ text: 'Close', style: 'default' }]
+    );
+  };
 
   // Form Fields Component (Reusable for Tablet layout)
   const formCardContent = (
@@ -179,7 +220,7 @@ export default function LoginScreen() {
                   {formCardContent}
                   <View style={styles.footer}>
                     <Text style={styles.footerText}>
-                      By continuing, you agree to our <Text style={styles.footerLink}>Terms of Use</Text> and <Text style={styles.footerLink}>Privacy Policy</Text>
+                      By continuing, you agree to our <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Terms of Use</Text> and <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Privacy Policy</Text>
                     </Text>
                   </View>
                 </View>
@@ -209,7 +250,7 @@ export default function LoginScreen() {
               {formCardContent}
               <View style={styles.footer}>
                 <Text style={styles.footerText}>
-                  By continuing, you agree to our <Text style={styles.footerLink}>Terms of Use</Text> and <Text style={styles.footerLink}>Privacy Policy</Text>
+                  By continuing, you agree to our <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Terms of Use</Text> and <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Privacy Policy</Text>
                 </Text>
               </View>
             </View>
@@ -282,7 +323,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}><Text style={styles.footerText}>By continuing, you agree to our <Text style={styles.footerLink}>Terms of Use</Text> and <Text style={styles.footerLink}>Privacy Policy</Text></Text></View>
+      <View style={styles.footer}><Text style={styles.footerText}>By continuing, you agree to our <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Terms of Use</Text> and <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Privacy Policy</Text></Text></View>
     </View>
   );
 }

@@ -17,12 +17,10 @@ async function createShare(req, res, next) {
       return res.status(400).json({ error: 'recordIds must be an array of UUIDs' });
     }
 
-    // Validate that the requested record IDs actually belong to this user
+    // Validate that the requested record IDs actually belong to this user via atomic SQL
     if (recordIds && recordIds.length > 0) {
-      const userRecords = await recordModel.getAllForUser(req.user.id);
-      const userRecordIds = userRecords.map(r => r.id);
-      const invalidIds = recordIds.filter(id => !userRecordIds.includes(id));
-      if (invalidIds.length > 0) {
+      const allOwned = await recordModel.verifyOwnership(req.user.id, recordIds);
+      if (!allOwned) {
         return res.status(400).json({ error: 'One or more record IDs do not belong to you' });
       }
     }
@@ -88,7 +86,8 @@ async function getByToken(req, res, next) {
 
 async function listShares(req, res, next) {
   try {
-    const shares = await shareModel.listForUser(req.user.id);
+    const { limit, offset } = req.query;
+    const shares = await shareModel.listForUser(req.user.id, { limit, offset });
     res.json({ shares });
   } catch (err) {
     next(err);

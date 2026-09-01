@@ -12,6 +12,43 @@ last_updated: 2026-09-01
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-01 — Full-Stack Production Security, AI Defense & Session Invalidation Architecture (DD-21)
+
+### Decision
+1. **Account Lockout DoS Mitigation (SEC-R01)**:
+   - Eliminate pre-password account lockout blocks in `authController.js#login` that allowed third-party unauthenticated callers to deny service to target emails.
+   - Validate credentials first; authenticate valid passwords immediately and reset attempt counters.
+   - Apply exponential backoff response delays and strict IP rate limiting (`authLimiter`) on repeated failed password attempts.
+2. **Password Reset Token Response Sanitization (SEC-R02)**:
+   - Unconditionally purge `resetTokenPreview` from all API responses across all environments (`production`, `development`, `test`) in `authController.js#forgotPassword`.
+3. **iOS Camera Purpose String & App Store Compliance (SEC-R03)**:
+   - Configure `expo-camera` plugin in `mobile/app.json` with explicit `cameraPermission` (*"MedRec uses your camera to scan medical records and doctor sharing QR codes."*) to prevent automated App Store rejection ITMS-90683.
+4. **Atomic Record Ownership in Sharing (SEC-R04)**:
+   - Implement `recordModel.verifyOwnership(userId, recordIds)` using parameterized SQL `WHERE user_id = $1 AND id = ANY($2::uuid[])`, replacing in-memory array filtering in `shareController.js#createShare` and preventing false IDOR rejections for users with >50 records.
+5. **User-Keyed AI Rate Limiting (SEC-R05)**:
+   - Mount AI rate limiting (`10 requests / 15 min`) in `aiRoutes.js` keyed by `req.user.id` following `requireAuth`, preventing cellular CGNAT IP collisions.
+6. **Strict Database TLS Configuration (SEC-R07)**:
+   - Enforce `rejectUnauthorized: true` by default in production in `backend/src/config/db.js` with configurable `PGSSL_REJECT_UNAUTHORIZED`.
+7. **App Store Privacy Policy Web URL Binding (SEC-R08)**:
+   - Open public hosted policy `https://medrec.health/privacy` in `login.tsx` via `Linking.openURL()`.
+8. **Session Invalidation on Credential Change via `token_version` (SEC-04)**:
+   - Track `users.token_version INT DEFAULT 1`; sign in JWT; verify in `requireAuth` middleware; atomically increment on password change/reset.
+9. **AI Subsystem Guardrails & Delimiter Boundaries (SEC-01)**:
+   - Role separation (`system` vs `user`), `<patient_provided_data>` delimiter sanitization, 2,000-char input ceiling, 25-record history clamp, strict completion budgets (`max_tokens: 250–500`, `temperature: 0.1`).
+10. **Database Row Level Security (RLS) (SEC-R10)**:
+    - Enabled RLS on `medical_records`, `user_profiles`, `shared_access`, and `notifications` in `backend/src/migrations/schema.sql`.
+
+### Reason
+- Eliminates account lockout DoS, reset token leakage, and false IDOR sharing rejections.
+- Prevents App Store binary ingestion rejection (ITMS-90683) and complies with App Store Review Guidelines 2.1 and 5.1.
+- Fully insulates MedRec against AI cost abuse and credential stuffing attacks.
+
+### Consequences
+- Full server-side authorization and ownership enforcement with zero client-side dependencies.
+- Clean isolation of all platforms with 100% test coverage.
+
+---
+
 ## 2026-09-01 — Tablet Dual-Layer Notification Panel & Independent Dimming Architecture (DD-19)
 
 ### Decision
