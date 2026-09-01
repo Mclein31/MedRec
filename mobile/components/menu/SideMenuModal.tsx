@@ -59,12 +59,33 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
 
   const [activeSharesCount, setActiveSharesCount] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [modalVisible, setModalVisible] = useState(visible);
 
   const slideAnim = useRef(new Animated.Value(-drawerWidth)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const isClosingRef = useRef(false);
+  const prevVisibleRef = useRef(visible);
+  const animTokenRef = useRef(0);
+
+  const stopAllAnimations = () => {
+    slideAnim.stopAnimation();
+    fadeAnim.stopAnimation();
+  };
+
   useEffect(() => {
-    if (visible) {
+    const wasVisible = prevVisibleRef.current;
+    prevVisibleRef.current = visible;
+
+    if (visible && !wasVisible) {
+      isClosingRef.current = false;
+      const currentToken = ++animTokenRef.current;
+      stopAllAnimations();
+
+      setModalVisible(true);
+      slideAnim.setValue(-drawerWidth);
+      fadeAnim.setValue(0);
+
       api.listShares().then((res: any) => {
         if (res && Array.isArray(res.shares)) {
           const now = new Date();
@@ -90,24 +111,17 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: -drawerWidth,
-          duration: 160,
-          easing: Easing.in(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 160,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    } else if (!visible && wasVisible && modalVisible) {
+      handleClose();
     }
   }, [visible, drawerWidth]);
 
   const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    const currentToken = ++animTokenRef.current;
+    stopAllAnimations();
+
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: -drawerWidth,
@@ -120,8 +134,11 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
         duration: 160,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      onClose();
+    ]).start(({ finished }) => {
+      if (finished && animTokenRef.current === currentToken) {
+        setModalVisible(false);
+        onClose();
+      }
     });
   };
 
@@ -195,13 +212,13 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
 
   return (
     <Modal
-      visible={visible}
+      visible={modalVisible}
       transparent
       animationType="none"
       onRequestClose={handleClose}
       accessibilityViewIsModal
     >
-      <StatusBar style={visible ? 'light' : 'dark'} />
+      <StatusBar style={modalVisible ? 'light' : 'dark'} />
       <View style={styles.modalRoot}>
         {/* Backdrop */}
         <Animated.View

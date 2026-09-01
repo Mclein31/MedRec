@@ -88,6 +88,24 @@ High clinical scanning efficiency, ergonomic touch targets on tablet landscape, 
 - **Biomechanical & Ergonomic Optimization**: Adapts to widescreen tablet lateral thumb zones, desk stands, and keyboard folios without stretching single-column forms into unwieldy full-width banners.
 - **Clinical Cognitive Co-Presence**: Allows clinicians and patients to review related clinical documents (list + details, photo + notes, QR + ledger) side by side without screen transitions.
 
+## 2026-09-01 — Orientation-Invariant Device Classification & Modal Animation Lifecycle Architecture (DD-20)
+
+### Decision
+1. **Physical Shorter-Dimension Device Classification (`useResponsive.ts`)**:
+   - `isTablet` must be strictly evaluated using `shorterDimension >= 600` (where `shorterDimension = Math.min(width, height)`).
+   - This ensures smartphones in landscape orientation (e.g. iPhone 14/15 width = 844–932pt, height = 390–430pt) are never misclassified as tablets.
+   - `isLargeTablet` is defined as `isTablet && (shorterDimension >= 768 || longerDimension >= 1024)`.
+2. **Decoupled Dual-Layer Modal Animation Pattern**:
+   - All overlay modals (`EmergencyIdModal.tsx`, `NotificationCenterModal.tsx`, `SideMenuModal.tsx`) must separate presentation into two independent animated sibling layers:
+     - **Layer 1**: Stationary full-screen backdrop (`backdropFadeAnim: 0 ↔ 1`).
+     - **Layer 2**: Independent modal container with dedicated translation/scale/opacity curves.
+   - Modals manage an internal `modalVisible` state to allow programmatic and prop-driven dismissals to play full reverse transitions before unmounting.
+   - In-flight animations are stopped via `.stopAnimation()`, and completion callbacks are guarded by `animTokenRef` sequence tokens to eliminate rapid-tap race conditions.
+
+### Reason
+- **Prevent Phone Landscape Regressions**: Eliminates false tablet rail and multi-column activations on rotated smartphones.
+- **Flawless Native Modal Experience**: Prevents backdrop motion attachment, sudden opacity snapping, or replaying opening animations on orientation change.
+
 ---
 
 ## 2026-09-01 — Single-Column Tablet Redesign for Share Records & Record Details

@@ -54,10 +54,26 @@ export default function EmergencyIdModal({
   const modalOpacityAnim = useRef(new Animated.Value(0)).current;
 
   const isClosingRef = useRef(false);
+  const prevVisibleRef = useRef(visible);
+  const animTokenRef = useRef(0);
+
+  const stopAllAnimations = () => {
+    backdropFadeAnim.stopAnimation();
+    slideAnim.stopAnimation();
+    scaleAnim.stopAnimation();
+    translateYAnim.stopAnimation();
+    modalOpacityAnim.stopAnimation();
+  };
 
   useEffect(() => {
-    if (visible) {
+    const wasVisible = prevVisibleRef.current;
+    prevVisibleRef.current = visible;
+
+    if (visible && !wasVisible) {
       isClosingRef.current = false;
+      const currentToken = ++animTokenRef.current;
+      stopAllAnimations();
+
       setModalVisible(true);
       backdropFadeAnim.setValue(0);
       slideAnim.setValue(height || 800);
@@ -108,14 +124,16 @@ export default function EmergencyIdModal({
           }),
         ]).start();
       }
-    } else if (modalVisible) {
+    } else if (!visible && wasVisible && modalVisible) {
       handleClose();
     }
-  }, [visible, isTablet, height]);
+  }, [visible, isTablet]);
 
   const handleClose = () => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
+    const currentToken = ++animTokenRef.current;
+    stopAllAnimations();
 
     // Independent Layer 1: Background Dimming Fade Out
     Animated.timing(backdropFadeAnim, {
@@ -142,9 +160,11 @@ export default function EmergencyIdModal({
           duration: 180,
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        setModalVisible(false);
-        onClose();
+      ]).start(({ finished }) => {
+        if (finished && animTokenRef.current === currentToken) {
+          setModalVisible(false);
+          onClose();
+        }
       });
     } else {
       Animated.parallel([
@@ -159,9 +179,11 @@ export default function EmergencyIdModal({
           easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        setModalVisible(false);
-        onClose();
+      ]).start(({ finished }) => {
+        if (finished && animTokenRef.current === currentToken) {
+          setModalVisible(false);
+          onClose();
+        }
       });
     }
   };
@@ -192,6 +214,7 @@ export default function EmergencyIdModal({
   const qrPayload = JSON.stringify({
     service: 'MedRec Emergency Medical ID',
     name: userName || 'Not provided',
+    email: userEmail || undefined,
     dob: profile.dateOfBirth || 'Unknown',
     age: age !== null ? age : 'Unknown',
     bloodType: profile.bloodType || 'Unknown',
@@ -228,7 +251,7 @@ export default function EmergencyIdModal({
       <View style={styles.card}>
         <View style={styles.patientRow}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
+            <Text style={styles.avatarText} maxFontSizeMultiplier={1.35}>
               {userName
                 ? userName
                     .split(' ')
@@ -256,8 +279,8 @@ export default function EmergencyIdModal({
           </View>
           {profile.bloodType && (
             <View style={styles.bloodBadge}>
-              <Text style={styles.bloodBadgeSub}>BLOOD</Text>
-              <Text style={styles.bloodBadgeText}>{profile.bloodType}</Text>
+              <Text style={styles.bloodBadgeSub} maxFontSizeMultiplier={1.35}>BLOOD</Text>
+              <Text style={styles.bloodBadgeText} maxFontSizeMultiplier={1.35}>{profile.bloodType}</Text>
             </View>
           )}
         </View>
@@ -268,40 +291,40 @@ export default function EmergencyIdModal({
         <View style={styles.allergySection}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="warning" size={16} color={RED} />
-            <Text style={styles.allergyTitle}>Allergies &amp; Contraindications</Text>
+            <Text style={styles.allergyTitle} maxFontSizeMultiplier={1.35}>Allergies &amp; Contraindications</Text>
           </View>
           {profile.allergies && profile.allergies.trim() ? (
             <View style={styles.allergyBox}>
-              <Text style={styles.allergyText}>{profile.allergies}</Text>
+              <Text style={styles.allergyText} maxFontSizeMultiplier={1.35}>{profile.allergies}</Text>
             </View>
           ) : (
             <View style={styles.safeBox}>
               <Ionicons name="checkmark-circle-outline" size={16} color={TEAL} />
-              <Text style={styles.safeText}>No known severe allergies reported</Text>
+              <Text style={styles.safeText} maxFontSizeMultiplier={1.35}>No known severe allergies reported</Text>
             </View>
           )}
         </View>
 
         {/* Medical Conditions */}
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Chronic Medical Conditions</Text>
-          <Text style={styles.infoValue}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>Chronic Medical Conditions</Text>
+          <Text style={styles.infoValue} maxFontSizeMultiplier={1.35}>
             {profile.medicalConditions || 'None reported'}
           </Text>
         </View>
 
         {/* Medications */}
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Maintenance Medications</Text>
-          <Text style={styles.infoValue}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>Maintenance Medications</Text>
+          <Text style={styles.infoValue} maxFontSizeMultiplier={1.35}>
             {profile.medicationsSummary || 'None reported'}
           </Text>
         </View>
 
         {/* Organ Donor */}
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Organ Donor</Text>
-          <Text style={styles.infoValue}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>Organ Donor</Text>
+          <Text style={styles.infoValue} maxFontSizeMultiplier={1.35}>
             {profile.organDonor ? 'Yes (Registered Donor)' : 'No / Not registered'}
           </Text>
         </View>
@@ -314,8 +337,8 @@ export default function EmergencyIdModal({
             <Ionicons name="call" size={18} color="#FFFFFF" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.contactCardTitle}>Primary Emergency Contact</Text>
-            <Text style={styles.contactCardSub}>
+            <Text style={styles.contactCardTitle} maxFontSizeMultiplier={1.35}>Primary Emergency Contact</Text>
+            <Text style={styles.contactCardSub} maxFontSizeMultiplier={1.35}>
               {profile.emergencyContactRelationship
                 ? profile.emergencyContactRelationship.toUpperCase()
                 : 'EMERGENCY ICE'}
@@ -325,22 +348,24 @@ export default function EmergencyIdModal({
 
         {profile.emergencyContactName ? (
           <View style={styles.contactDetails}>
-            <Text style={styles.contactName}>{profile.emergencyContactName}</Text>
-            <Text style={styles.contactPhone}>{profile.emergencyContactPhone || 'No phone number'}</Text>
+            <Text style={styles.contactName} maxFontSizeMultiplier={1.35}>{profile.emergencyContactName}</Text>
+            <Text style={styles.contactPhone} maxFontSizeMultiplier={1.35}>{profile.emergencyContactPhone || 'No phone number'}</Text>
 
             {profile.emergencyContactPhone && (
               <Pressable
                 onPress={handleCallEmergency}
                 style={({ pressed }) => [styles.callBtn, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Call emergency contact: ${profile.emergencyContactName} at ${profile.emergencyContactPhone}`}
               >
                 <Ionicons name="call" size={18} color="#FFFFFF" />
-                <Text style={styles.callBtnText}>Call Emergency Contact</Text>
+                <Text style={styles.callBtnText} maxFontSizeMultiplier={1.35}>Call Emergency Contact</Text>
               </Pressable>
             )}
           </View>
         ) : (
           <View style={styles.emptyContact}>
-            <Text style={styles.emptyContactText}>
+            <Text style={styles.emptyContactText} maxFontSizeMultiplier={1.35}>
               No emergency contact registered. Tap &ldquo;Edit Medical ID&rdquo; to add one.
             </Text>
           </View>
@@ -417,7 +442,13 @@ export default function EmergencyIdModal({
                 <DragHandle />
 
                 <View style={styles.headerContentRow}>
-                  <Pressable onPress={handleClose} hitSlop={8} style={styles.closeBtn}>
+                  <Pressable
+                    onPress={handleClose}
+                    hitSlop={8}
+                    style={styles.closeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close Emergency Medical ID"
+                  >
                     <Ionicons name="close" size={24} color={INK} />
                   </Pressable>
                   <View style={styles.headerTitleBox}>
@@ -478,7 +509,13 @@ export default function EmergencyIdModal({
                 <DragHandle />
 
                 <View style={styles.headerContentRow}>
-                  <Pressable onPress={handleClose} hitSlop={8} style={styles.closeBtn}>
+                  <Pressable
+                    onPress={handleClose}
+                    hitSlop={8}
+                    style={styles.closeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close Emergency Medical ID"
+                  >
                     <Ionicons name="close" size={24} color={INK} />
                   </Pressable>
                   <View style={styles.headerTitleBox}>

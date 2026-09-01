@@ -73,11 +73,11 @@ export function useResponsive(): ResponsiveLayoutState {
   const shorterDimension = Math.min(width, height);
   const longerDimension = Math.max(width, height);
 
-  // Device Classifications
-  const isTablet = shorterDimension >= 600 || width >= BREAKPOINTS.largePhone;
-  const isLargeTablet = width >= BREAKPOINTS.tablet;
-  const isCompactPhone = !isTablet && width < BREAKPOINTS.compact;
-  const isStandardPhone = !isTablet && width >= BREAKPOINTS.compact;
+  // Device Classifications (strictly orientation-invariant using physical shorter dimension)
+  const isTablet = shorterDimension >= 600;
+  const isLargeTablet = isTablet && (shorterDimension >= 768 || longerDimension >= BREAKPOINTS.desktop);
+  const isCompactPhone = !isTablet && shorterDimension < BREAKPOINTS.compact;
+  const isStandardPhone = !isTablet && shorterDimension >= BREAKPOINTS.compact;
   const isShortScreen = height < 700;
 
   // Spacing Tokens

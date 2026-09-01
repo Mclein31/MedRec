@@ -63,13 +63,29 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   const slideAnim = useRef(new Animated.Value(panelWidth)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const isClosingRef = useRef(false);
+  const prevVisibleRef = useRef(visible);
+  const animTokenRef = useRef(0);
+
+  const stopAllAnimations = () => {
+    fadeAnim.stopAnimation();
+    slideAnim.stopAnimation();
+  };
+
   useEffect(() => {
     if (!isTablet) {
       setModalVisible(visible);
       return;
     }
 
-    if (visible) {
+    const wasVisible = prevVisibleRef.current;
+    prevVisibleRef.current = visible;
+
+    if (visible && !wasVisible) {
+      isClosingRef.current = false;
+      const currentToken = ++animTokenRef.current;
+      stopAllAnimations();
+
       setModalVisible(true);
       slideAnim.setValue(panelWidth);
       fadeAnim.setValue(0);
@@ -86,22 +102,8 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           useNativeDriver: true,
         }),
       ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: panelWidth,
-          duration: 200,
-          easing: Easing.in(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setModalVisible(false);
-      });
+    } else if (!visible && wasVisible && modalVisible) {
+      handleClose();
     }
   }, [visible, isTablet, panelWidth]);
 
@@ -110,6 +112,11 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       onClose();
       return;
     }
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    const currentToken = ++animTokenRef.current;
+    stopAllAnimations();
+
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -122,9 +129,11 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      setModalVisible(false);
-      onClose();
+    ]).start(({ finished }) => {
+      if (finished && animTokenRef.current === currentToken) {
+        setModalVisible(false);
+        onClose();
+      }
     });
   };
 
