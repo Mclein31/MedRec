@@ -5,10 +5,17 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.2.1] — Tablet Portrait Add Health Record Modal Header Simplification & Asset Cleanup
+- **Tablet Portrait Add Health Record Duplicate Save Button Removal**:
+  - Removed duplicate `tabletHeaderSaveBtn` from the top-right corner of the Tablet Portrait Add Health Record modal header in `mobile/app/record/add.tsx`.
+  - Replaced with balanced `tabletHeaderSpacer` (`width: 32`) to maintain title centering and dismiss control alignment with zero regressions to phone or tablet landscape layouts, leaving the primary bottom Save CTA (`tabletSaveBtn`) fully functional.
+- **Repository Hygiene & Asset Cleanup**:
+  - Relocated unreferenced binary document `MINUTES-OF-THE-MEETING-2.0.docx` from `mobile/assets/icons/` into `MedRec/17 - Personal Notes/` to prevent unnecessary bundle weight during Expo asset compilation.
 
 ## [1.2.0] — Full-Stack Production Security, Privacy & App Store Readiness Hardening
 - **SEC-R01: Account Lockout Denial-of-Service Defense**:

@@ -481,23 +481,7 @@ export default function AddRecordScreen() {
                 Add Health Record
               </Text>
 
-              <Pressable
-                onPress={handleSave}
-                disabled={saving}
-                style={({ pressed }) => [
-                  styles.tabletHeaderSaveBtn,
-                  pressed && styles.pressed,
-                  saving && styles.disabledBtn,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Save medical record"
-              >
-                {saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.tabletHeaderSaveText}>Save</Text>
-                )}
-              </Pressable>
+              <View style={styles.tabletHeaderSpacer} />
             </View>
 
             {/* Scrollable Single-Column Content Flow */}
@@ -1420,19 +1404,8 @@ const styles = StyleSheet.create({
     color: INK,
     textAlign: 'center',
   },
-  tabletHeaderSaveBtn: {
-    backgroundColor: TEAL,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabletHeaderSaveText: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 12.5,
-    color: '#FFFFFF',
+  tabletHeaderSpacer: {
+    width: 32,
   },
   tabletScrollBody: {
     flexGrow: 0,
