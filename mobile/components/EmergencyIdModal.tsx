@@ -7,13 +7,17 @@ import {
   StyleSheet,
   Linking,
   Alert,
+  Animated,
+  Easing,
 } from 'react-native';
+import { useRef, useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { ProfileData } from './ProfileEditModal';
 import { DragHandle } from './ui/DragHandle';
 import { Colors, Radii, ResponsiveLimits } from '../constants/theme';
 import { useResponsive } from '../hooks/useResponsive';
+import { calculateAge } from '../utils/dateUtils';
 
 const TEAL = Colors.teal;
 const INK = Colors.ink;
@@ -33,8 +37,6 @@ type Props = {
   onClose: () => void;
 };
 
-import { calculateAge } from '../utils/dateUtils';
-
 export default function EmergencyIdModal({
   visible,
   profile,
@@ -42,7 +44,121 @@ export default function EmergencyIdModal({
   userEmail,
   onClose,
 }: Props) {
-  const { isTablet, isLandscape, insets, width, scaleFont } = useResponsive();
+  const { isTablet, isLandscape, insets, width, height, scaleFont } = useResponsive();
+
+  const [modalVisible, setModalVisible] = useState(visible);
+  const backdropFadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(height || 800)).current;
+  const scaleAnim = useRef(new Animated.Value(0.93)).current;
+  const translateYAnim = useRef(new Animated.Value(16)).current;
+  const modalOpacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      backdropFadeAnim.setValue(0);
+      slideAnim.setValue(height || 800);
+      scaleAnim.setValue(0.93);
+      translateYAnim.setValue(16);
+      modalOpacityAnim.setValue(0);
+
+      // Independent Layer 1: Background Dimming
+      Animated.timing(backdropFadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+
+      // Independent Layer 2: Modal Entrance
+      if (isTablet) {
+        Animated.parallel([
+          Animated.timing(modalOpacityAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 240,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateYAnim, {
+            toValue: 0,
+            duration: 240,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        Animated.parallel([
+          Animated.timing(modalOpacityAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 260,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    } else if (modalVisible) {
+      handleClose();
+    }
+  }, [visible, isTablet, height]);
+
+  const handleClose = () => {
+    // Independent Layer 1: Background Dimming Fade Out
+    Animated.timing(backdropFadeAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+
+    // Independent Layer 2: Modal Dismissal
+    if (isTablet) {
+      Animated.parallel([
+        Animated.timing(modalOpacityAnim, {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateYAnim, {
+          toValue: 14,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setModalVisible(false);
+        onClose();
+      });
+    } else {
+      Animated.parallel([
+        Animated.timing(modalOpacityAnim, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: height || 800,
+          duration: 200,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setModalVisible(false);
+        onClose();
+      });
+    }
+  };
 
   const handleCallEmergency = () => {
     const rawPhone = profile.emergencyContactPhone;
@@ -253,73 +369,141 @@ export default function EmergencyIdModal({
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle={isTablet ? 'overFullScreen' : 'pageSheet'}
-      transparent={isTablet}
-      onRequestClose={onClose}
+      visible={modalVisible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
+      accessibilityViewIsModal
     >
-      <View style={[styles.modalRoot, isTablet && styles.modalRootTablet]}>
-        {isTablet && (
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-        )}
-        <View
-          style={[
-            styles.container,
-            isTablet && [
-              styles.containerTablet,
-              isLandscape && { maxWidth: 680, maxHeight: '90%' },
-            ],
-          ]}
+      <View style={styles.modalRoot}>
+        {/* LAYER 1: Independent Stationary Background Dimming Overlay */}
+        <Animated.View
+          style={[styles.backdrop, { opacity: backdropFadeAnim }]}
+          pointerEvents={visible ? 'auto' : 'none'}
         >
-          {/* Header with integrated drag handle */}
-          <View style={styles.header}>
-            <DragHandle />
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            onPress={handleClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close Emergency Medical ID backdrop"
+          />
+        </Animated.View>
 
-            <View style={styles.headerContentRow}>
-              <Pressable onPress={onClose} hitSlop={8} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={INK} />
-              </Pressable>
-              <View style={styles.headerTitleBox}>
-                <Ionicons name="medical" size={18} color={RED} />
-                <Text
-                  style={[
-                    styles.headerTitle,
-                    { fontSize: scaleFont(17, 15, 19) },
-                  ]}
-                  maxFontSizeMultiplier={1.35}
-                >
-                  Emergency Medical ID
-                </Text>
+        {/* LAYER 2: Independent Emergency Medical ID Modal */}
+        {isTablet ? (
+          <View style={styles.tabletCenterWrapper} pointerEvents="box-none">
+            <Animated.View
+              style={[
+                styles.container,
+                styles.containerTablet,
+                isLandscape && { maxWidth: 680, maxHeight: '90%' },
+                {
+                  opacity: modalOpacityAnim,
+                  transform: [
+                    { scale: scaleAnim },
+                    { translateY: translateYAnim },
+                  ],
+                },
+              ]}
+            >
+              {/* Header with integrated drag handle */}
+              <View style={styles.header}>
+                <DragHandle />
+
+                <View style={styles.headerContentRow}>
+                  <Pressable onPress={handleClose} hitSlop={8} style={styles.closeBtn}>
+                    <Ionicons name="close" size={24} color={INK} />
+                  </Pressable>
+                  <View style={styles.headerTitleBox}>
+                    <Ionicons name="medical" size={18} color={RED} />
+                    <Text
+                      style={[
+                        styles.headerTitle,
+                        { fontSize: scaleFont(17, 15, 19) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      Emergency Medical ID
+                    </Text>
+                  </View>
+                  <View style={{ width: 32 }} />
+                </View>
               </View>
-              <View style={{ width: 32 }} />
-            </View>
+
+              <ScrollView
+                contentContainerStyle={[
+                  styles.content,
+                  { paddingBottom: Math.max(insets.bottom, 20) + 32 },
+                ]}
+                showsVerticalScrollIndicator={false}
+              >
+                {isLandscape ? (
+                  <View style={styles.landscapeRow}>
+                    <View style={styles.landscapeColLeft}>
+                      {medicalBaselinesBlock}
+                    </View>
+                    <View style={styles.landscapeColRight}>
+                      {paramedicQrBlock}
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    {medicalBaselinesBlock}
+                    {paramedicQrBlock}
+                  </>
+                )}
+              </ScrollView>
+            </Animated.View>
           </View>
+        ) : (
+          <View style={styles.phoneSheetWrapper} pointerEvents="box-none">
+            <Animated.View
+              style={[
+                styles.container,
+                styles.containerPhone,
+                {
+                  transform: [{ translateY: slideAnim }],
+                  opacity: modalOpacityAnim,
+                },
+              ]}
+            >
+              {/* Header with integrated drag handle */}
+              <View style={styles.header}>
+                <DragHandle />
 
-          <ScrollView
-            contentContainerStyle={[
-              styles.content,
-              { paddingBottom: Math.max(insets.bottom, 20) + 32 },
-            ]}
-            showsVerticalScrollIndicator={false}
-          >
-            {isTablet && isLandscape ? (
-              <View style={styles.landscapeRow}>
-                <View style={styles.landscapeColLeft}>
-                  {medicalBaselinesBlock}
-                </View>
-                <View style={styles.landscapeColRight}>
-                  {paramedicQrBlock}
+                <View style={styles.headerContentRow}>
+                  <Pressable onPress={handleClose} hitSlop={8} style={styles.closeBtn}>
+                    <Ionicons name="close" size={24} color={INK} />
+                  </Pressable>
+                  <View style={styles.headerTitleBox}>
+                    <Ionicons name="medical" size={18} color={RED} />
+                    <Text
+                      style={[
+                        styles.headerTitle,
+                        { fontSize: scaleFont(17, 15, 19) },
+                      ]}
+                      maxFontSizeMultiplier={1.35}
+                    >
+                      Emergency Medical ID
+                    </Text>
+                  </View>
+                  <View style={{ width: 32 }} />
                 </View>
               </View>
-            ) : (
-              <>
+
+              <ScrollView
+                contentContainerStyle={[
+                  styles.content,
+                  { paddingBottom: Math.max(insets.bottom, 20) + 32 },
+                ]}
+                showsVerticalScrollIndicator={false}
+              >
                 {medicalBaselinesBlock}
                 {paramedicQrBlock}
-              </>
-            )}
-          </ScrollView>
-        </View>
+              </ScrollView>
+            </Animated.View>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -328,17 +512,36 @@ export default function EmergencyIdModal({
 const styles = StyleSheet.create({
   modalRoot: {
     flex: 1,
-    backgroundColor: BG,
   },
-  modalRootTablet: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.backdrop,
+  },
+  tabletCenterWrapper: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
-  container: {
+  phoneSheetWrapper: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  container: {
     backgroundColor: BG,
+  },
+  containerPhone: {
+    flex: 0,
+    height: '92%',
+    maxHeight: '92%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   containerTablet: {
     flex: 0,
