@@ -23,6 +23,7 @@ export interface AttachedDocumentCardProps {
   onPressInspect: () => void;
   onPressRetake: () => void;
   onPressRemove: () => void;
+  accentColor?: string;
 }
 
 export const AttachedDocumentCard: React.FC<AttachedDocumentCardProps> = ({
@@ -30,6 +31,7 @@ export const AttachedDocumentCard: React.FC<AttachedDocumentCardProps> = ({
   onPressInspect,
   onPressRetake,
   onPressRemove,
+  accentColor = TEAL,
 }) => {
   const handleRemove = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -80,7 +82,7 @@ export const AttachedDocumentCard: React.FC<AttachedDocumentCardProps> = ({
         {/* Text & Status Info */}
         <View style={styles.infoBox}>
           <View style={styles.statusBadge}>
-            <Ionicons name="checkmark-circle" size={13} color={TEAL} />
+            <Ionicons name="checkmark-circle" size={13} color={accentColor} />
             <Text style={styles.statusBadgeText}>Document Attached</Text>
           </View>
           <Text style={styles.cardTitle}>Scanned Document Photo</Text>
@@ -100,8 +102,8 @@ export const AttachedDocumentCard: React.FC<AttachedDocumentCardProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Replace or retake document photo"
         >
-          <Ionicons name="camera-reverse-outline" size={15} color={TEAL} />
-          <Text style={styles.actionBtnText}>Replace</Text>
+          <Ionicons name="camera-reverse-outline" size={15} color={accentColor} />
+          <Text style={[styles.actionBtnText, { color: accentColor }]}>Replace</Text>
         </Pressable>
 
         <View style={styles.divider} />

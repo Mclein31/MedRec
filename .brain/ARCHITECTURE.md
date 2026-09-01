@@ -94,7 +94,9 @@ last_updated: 2026-08-28
 2. **Automated Event Triggers**: Server controllers automatically generate notifications on record uploads (`record_added`), QR sharing access (`share_created`, `share_revoked`), Emergency ID modifications (`emergency_updated`), security changes (`security_alert`), and AI synthesis (`ai_summary_ready`).
 3. **State Management (`mobile/context/NotificationContext.tsx`)**: Centralized React Context managing `notifications`, `unreadCount`, and optimistic mark-as-read state.
 4. **UI Components (`mobile/components/notifications/`)**:
-   - `NotificationCenterModal.tsx`: Slide-up sheet (`pageSheet`) with centered grey drag handle (`40×4px`, `#D1D5DB`), unread filter tabs, pull-to-refresh, and one-tap deep linking.
+   - `NotificationCenterModal.tsx`: Dual-architecture notification presentation:
+     - **Tablet (Portrait & Landscape)**: Two-layer architecture with an independent stationary fading backdrop (`backdropFadeAnim` opacity) and a right-anchored floating sheet (`panelSlideAnim` translating from `+panelWidth` to `0`), cleanly anchored near the top-right toolbar notification trigger.
+     - **Phone UI (`!isTablet`)**: Native bottom `pageSheet` modal with integrated drag handle.
    - `NotificationCard.tsx`: Category icon badges, 4px teal unread indicator bar, relative timestamps, and action hints.
 
 ---
@@ -102,14 +104,14 @@ last_updated: 2026-08-28
 ## 📱 Tablet & iPad Adaptive Architecture Subsystem
 1. **Phone & Portrait Quarantine Invariant**: All tablet landscape adaptive behavior is guarded by `isTablet && isLandscape` (or `isTabletLandscape`), guaranteeing zero layout shifts, visual regressions, or performance overhead on mobile phones (`!isTablet`) and tablet portrait (`isTablet && !isLandscape`).
 2. **Navigation Adaptive Partitioning**:
-   - **Tablet Landscape (`isTablet && isLandscape`, 88pt)**: Left Navigation Rail (`TabletLandscapeNavRail.tsx`) with 36×36 MedRec logo brand glyph routing to `/(tabs)`, 4 primary vertical tabs (Records, Share with badge, Scan, Profile) with 3.5px active teal pill indicator, centered `+ Record` 44×44 circular CTA, and bottom utility cluster (AI Health Summary trigger, Notification Bell with red unread badge dot, Emergency Medical ID paramedic trigger, Patient Avatar/Monogram).
-   - **Tablet Portrait (`isTablet && !isLandscape`)**: Centered floating pill navbar (`maxWidth: 480pt`, `height: 68pt`, `borderRadius: 24`).
+   - **Tablet Landscape (`isTablet && isLandscape`, 88pt)**: Left Navigation Rail (`TabletLandscapeNavRail.tsx`) with Burger Menu button anchored at top, 38×38 MedRec brand glyph, 5 primary vertical tabs (Records, Share with badge, Add Record `add-record.png`, Scan, Profile) with pure active/inactive icon swapping, and bottom utility cluster (AI Health Summary trigger, Emergency Medical ID trigger, Patient Avatar/Monogram). Header features a single right-aligned Notification Bell.
+   - **Tablet Portrait (`isTablet && !isLandscape`)**: Fixed global top toolbar at screen root (`paddingTop: insets.top + 12`, `paddingLeft/Right: Math.max(insets, screenPadding)`) hosting Burger button on left and Notification Bell on right with `space-between`, and floating bottom tab bar (`maxWidth: 480pt`, `height: 68pt`, `borderRadius: 24`).
    - **Phone (`!isTablet`)**: Standard bottom tab bar (`height: 85pt`, `tabBarClearance: 110pt`).
 3. **Master-Detail Workspace Archetype**:
-   - **Records Dashboard (`index.tsx`)**: 360pt master list with search, category filters with live distribution badges, and multi-select banner on left; Live clinical detail canvas on right (when attachment exists: balanced 2-column split with document photo inspect/zoom on left and clinical notes + AI insights on right; when no attachment: full-width bounded clinical notes + AI insights).
-   - **Doctor Scanner (`scan.tsx`)**: Pre-scan centered 280pt 1:1 camera viewfinder; Post-scan Master-Detail workspace (Left 340pt: authorized records list; Right Flex 1: complete read-only clinical notes, metadata, read-only notice, and floating "Scan Another Patient QR" CTA).
+   - **Records Dashboard (`index.tsx`)**: 360pt master list with search, category filters with live distribution badges, and multi-select banner on left; Live clinical detail canvas on right starting at `paddingTop: 0` (when attachment exists: balanced 2-column split with document photo inspect/zoom with `Colors.blue` accent on left and clinical notes + AI insights on right; when no attachment: full-width bounded clinical notes + AI insights).
+   - **Doctor Scanner (`scan.tsx`)**: Pre-scan centered 280pt 1:1 camera viewfinder (with right-aligned notification bell and burger in sidebar); Post-scan Master-Detail workspace (Left 340pt: authorized records list; Right Flex 1: complete read-only clinical notes, metadata, read-only notice, and floating "Scan Another Patient QR" CTA).
 4. **2-Column Clinical & Intake Studios Archetype**:
-   - **Record Intake (`add.tsx`)**: Centered 960pt 2-column intake studio (`transparentModal`, dimmed backdrop `rgba(0,0,0,0.45)`) pairing Left 48% (classification chips, title, date, multiline clinical notes with KeyboardAvoidingView) and Right 52% (camera capture hero / AttachedDocumentCard, AI analysis badge, sovereign vault notice).
+   - **Record Intake (`add.tsx`)**: Centered 960pt 2-column intake studio (`transparentModal`, dimmed backdrop `rgba(0,0,0,0.45)`) pairing Left 48% (classification chips, title, date, multiline clinical notes with KeyboardAvoidingView) and Right 52% (camera capture hero / AttachedDocumentCard with `Colors.blue` accent, AI analysis badge, sovereign vault notice).
    - **Sharing Center (`share.tsx`)**: Centered 1040pt 2-column sharing studio pairing Left 44% (high-contrast living QR code with 15s countdown ticker and instant revoke) and Right 56% (active doctor access sessions ledger + past history timeline).
    - **Record Details (`record/[id].tsx`)**: Centered 1040–1100pt 2-column clinical split pairing Left 44% (overview + document photo preview with tap-to-inspect zoom modal + delete action) and Right 56% (clinical notes & observations + AI medical insights).
    - **Patient Profile (`profile.tsx`)**: Centered 1040pt dual-column studio pairing Left 48% (Emergency Medical ID, clinical baseline, 1-tap ICE call button) and Right 52% (unboxed identity hero, personal demographics, security & preferences with JSON export, account & legal actions).
@@ -117,4 +119,4 @@ last_updated: 2026-08-28
    - **Emergency Medical ID (`EmergencyIdModal.tsx`)**: 680pt max width 2-column triage placard with auto-height sizing (`flexGrow: 0, flexShrink: 1`).
    - **Profile Edit (`ProfileEditModal.tsx`)**: 640pt max width 2-column paired form dialog with content-driven height.
    - **Change Password (`ChangePasswordModal.tsx`)**: 480pt max width centered card with `flexGrow: 0` auto-sizing.
-   - **Notification Center (`NotificationCenterModal.tsx`)**: 420pt right slide-over panel preserving workspace context.
+   - **Notification Center (`NotificationCenterModal.tsx`)**: 420pt right slide-over panel with independent stationary backdrop.

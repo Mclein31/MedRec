@@ -670,7 +670,7 @@ export default function ProfileScreen() {
       <View style={[styles.root, { paddingLeft: LandscapeTokens.navRailWidth, backgroundColor: Colors.bg }]}>
         <StatusBar style="dark" />
 
-        {/* Global Navigation Toolbar */}
+        {/* Global Navigation Toolbar (Landscape: Single Notification on right, Burger in sidebar rail) */}
         <View
           style={[
             styles.topToolbar,
@@ -678,25 +678,10 @@ export default function ProfileScreen() {
               paddingTop: insets.top + 12,
               paddingLeft: Math.max(insets.left, screenPadding),
               paddingRight: Math.max(insets.right, screenPadding),
+              justifyContent: 'flex-end',
             },
           ]}
         >
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setMenuVisible(true);
-            }}
-            hitSlop={10}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open navigation menu"
-          >
-            <Image
-              source={require('../../assets/icons/burger-menu.png')}
-              style={styles.toolbarIcon}
-            />
-          </Pressable>
-
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();

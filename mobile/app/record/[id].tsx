@@ -233,7 +233,11 @@ export default function RecordDetailScreen() {
     <View style={styles.card}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderIconBox}>
-          <Ionicons name="document-attach-outline" size={18} color={TEAL} />
+          <Ionicons
+            name="document-attach-outline"
+            size={18}
+            color={isTablet && isLandscape ? BLUE : TEAL}
+          />
         </View>
         <Text style={styles.sectionHeaderTitle} maxFontSizeMultiplier={1.35}>
           Attached Document / Photo

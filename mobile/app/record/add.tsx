@@ -351,6 +351,7 @@ export default function AddRecordScreen() {
                   {photoUri ? (
                     <AttachedDocumentCard
                       photoUri={photoUri}
+                      accentColor={BLUE}
                       onPressInspect={() => {
                         setTempPhotoUri(photoUri);
                         setViewMode('preview');
@@ -1851,7 +1852,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   landscapeScanHeroCard: {
-    backgroundColor: '#12343B',
+    backgroundColor: BLUE,
     borderRadius: 16,
     padding: 20,
     gap: 16,
@@ -1865,7 +1866,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },

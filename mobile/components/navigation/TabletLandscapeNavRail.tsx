@@ -14,12 +14,11 @@ import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../context/NotificationContext';
 import { api } from '../../lib/api';
 import { Colors, Radii, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import EmergencyIdModal from '../EmergencyIdModal';
-import NotificationCenterModal from '../notifications/NotificationCenterModal';
+import { SideMenuModal } from '../menu/SideMenuModal';
 
 const TEAL = Colors.teal;
 const INK = Colors.ink;
@@ -46,12 +45,11 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const { unreadCount, refreshNotifications } = useNotifications();
   const { insets } = useResponsive();
 
   const [activeSharesCount, setActiveSharesCount] = useState<number | null>(null);
   const [emergencyModalVisible, setEmergencyModalVisible] = useState(false);
-  const [notificationsVisible, setNotificationsVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [profileData, setProfileData] = useState<any>({});
   const [aiSummaryVisible, setAiSummaryVisible] = useState(false);
   const [aiSummaryText, setAiSummaryText] = useState<string | null>(null);
@@ -115,22 +113,40 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
         },
       ]}
     >
-      {/* 1. Top Brand Glyph */}
-      <Pressable
-        onPress={() => {
-          Haptics.selectionAsync();
-          router.push('/(tabs)');
-        }}
-        style={styles.brandBox}
-        accessibilityRole="button"
-        accessibilityLabel="MedRec Home"
-      >
-        <Image
-          source={require('../../assets/logo/logo.png')}
-          style={styles.brandLogo}
-          resizeMode="contain"
-        />
-      </Pressable>
+      {/* 1. Top Section: Burger Menu & Brand Logo */}
+      <View style={styles.topSection}>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setMenuVisible(true);
+          }}
+          hitSlop={8}
+          style={({ pressed }) => [styles.burgerBtn, pressed && styles.btnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Open navigation menu"
+        >
+          <Image
+            source={require('../../assets/icons/burger-menu.png')}
+            style={styles.burgerIcon}
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push('/(tabs)');
+          }}
+          style={styles.brandBox}
+          accessibilityRole="button"
+          accessibilityLabel="MedRec Home"
+        >
+          <Image
+            source={require('../../assets/logo/logo.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </View>
 
       {/* 2. Primary Navigation Route Items */}
       <View style={styles.navGroup}>
@@ -142,15 +158,13 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
           }}
           style={({ pressed }) => [
             styles.navItem,
-            isRecordsActive && styles.navItemActive,
             pressed && styles.navItemPressed,
           ]}
           accessibilityRole="tab"
           accessibilityState={{ selected: isRecordsActive }}
           accessibilityLabel="Records tab"
         >
-          {isRecordsActive && <View style={styles.activeIndicatorBar} />}
-          <View style={[styles.iconBox, isRecordsActive && styles.iconBoxActive]}>
+          <View style={styles.iconBox}>
             <Image
               source={
                 isRecordsActive
@@ -160,13 +174,6 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
               style={styles.navIcon}
             />
           </View>
-          <Text
-            style={[styles.navLabel, isRecordsActive && styles.navLabelActive]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
-          >
-            Records
-          </Text>
         </Pressable>
 
         {/* Share Route */}
@@ -177,15 +184,13 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
           }}
           style={({ pressed }) => [
             styles.navItem,
-            isShareActive && styles.navItemActive,
             pressed && styles.navItemPressed,
           ]}
           accessibilityRole="tab"
           accessibilityState={{ selected: isShareActive }}
           accessibilityLabel="Share tab"
         >
-          {isShareActive && <View style={styles.activeIndicatorBar} />}
-          <View style={[styles.iconBox, isShareActive && styles.iconBoxActive]}>
+          <View style={styles.iconBox}>
             <Image
               source={
                 isShareActive
@@ -200,13 +205,27 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
               </View>
             )}
           </View>
-          <Text
-            style={[styles.navLabel, isShareActive && styles.navLabelActive]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
-          >
-            Share
-          </Text>
+        </Pressable>
+
+        {/* Add Record Route */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push('/record/add');
+          }}
+          style={({ pressed }) => [
+            styles.navItem,
+            pressed && styles.navItemPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Add New Health Record"
+        >
+          <View style={styles.iconBox}>
+            <Image
+              source={require('../../assets/icons/add-record.png')}
+              style={styles.addIcon}
+            />
+          </View>
         </Pressable>
 
         {/* Scan Route */}
@@ -217,15 +236,13 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
           }}
           style={({ pressed }) => [
             styles.navItem,
-            isScanActive && styles.navItemActive,
             pressed && styles.navItemPressed,
           ]}
           accessibilityRole="tab"
           accessibilityState={{ selected: isScanActive }}
           accessibilityLabel="Scan tab"
         >
-          {isScanActive && <View style={styles.activeIndicatorBar} />}
-          <View style={[styles.iconBox, isScanActive && styles.iconBoxActive]}>
+          <View style={styles.iconBox}>
             <Image
               source={
                 isScanActive
@@ -235,13 +252,6 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
               style={styles.navIcon}
             />
           </View>
-          <Text
-            style={[styles.navLabel, isScanActive && styles.navLabelActive]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
-          >
-            Scan
-          </Text>
         </Pressable>
 
         {/* Profile Route */}
@@ -252,15 +262,13 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
           }}
           style={({ pressed }) => [
             styles.navItem,
-            isProfileActive && styles.navItemActive,
             pressed && styles.navItemPressed,
           ]}
           accessibilityRole="tab"
           accessibilityState={{ selected: isProfileActive }}
           accessibilityLabel="Profile tab"
         >
-          {isProfileActive && <View style={styles.activeIndicatorBar} />}
-          <View style={[styles.iconBox, isProfileActive && styles.iconBoxActive]}>
+          <View style={styles.iconBox}>
             <Image
               source={
                 isProfileActive
@@ -270,35 +278,12 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
               style={styles.navIcon}
             />
           </View>
-          <Text
-            style={[styles.navLabel, isProfileActive && styles.navLabelActive]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
-          >
-            Profile
-          </Text>
         </Pressable>
-      </View>
-
-      {/* 3. Quick Action Button: Add Record CTA */}
-      <View style={styles.quickActionBox}>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push('/record/add');
-          }}
-          style={({ pressed }) => [styles.quickAddBtn, pressed && styles.btnPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Add New Health Record"
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </Pressable>
-        <Text style={styles.quickAddLabel} numberOfLines={1}>+ Record</Text>
       </View>
 
       <View style={styles.flexibleSpacer} />
 
-      {/* 4. Bottom Utility Anchors */}
+      {/* 3. Bottom Utility Anchors */}
       <View style={styles.bottomUtilitiesGroup}>
         {/* AI Health Summary */}
         <Pressable
@@ -311,35 +296,11 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
           {summarizing ? (
             <ActivityIndicator size="small" color={Colors.blue} />
           ) : (
-            <View style={[styles.utilityIconBox, { backgroundColor: Colors.blueLight }]}>
-              <Image
-                source={require('../../assets/icons/AI.png')}
-                style={[styles.utilityIcon, { tintColor: Colors.blue }]}
-              />
-            </View>
-          )}
-        </Pressable>
-
-        {/* Notifications Center */}
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            refreshNotifications();
-            setNotificationsVisible(true);
-          }}
-          style={({ pressed }) => [styles.utilityBtn, pressed && styles.navItemPressed]}
-          accessibilityRole="button"
-          accessibilityLabel={`Notifications, ${unreadCount} unread`}
-        >
-          <View style={styles.utilityIconBox}>
             <Image
-              source={require('../../assets/icons/notification-bell.png')}
-              style={styles.utilityIcon}
+              source={require('../../assets/icons/AI.png')}
+              style={[styles.utilityIcon, { tintColor: Colors.blue }]}
             />
-            {unreadCount > 0 && (
-              <View style={styles.notificationDot} />
-            )}
-          </View>
+          )}
         </Pressable>
 
         {/* Paramedic Emergency ID Instant Trigger */}
@@ -352,9 +313,7 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Emergency Medical ID"
         >
-          <View style={[styles.utilityIconBox, { backgroundColor: Colors.redLight }]}>
-            <Ionicons name="medical" size={17} color={Colors.red} />
-          </View>
+          <Ionicons name="medical" size={26} color={Colors.red} />
         </Pressable>
 
         {/* User Monogram / Avatar */}
@@ -386,10 +345,10 @@ export const TabletLandscapeNavRail: React.FC<TabletLandscapeNavRailProps> = ({
         onClose={() => setEmergencyModalVisible(false)}
       />
 
-      {/* Notifications Slide-Over Panel */}
-      <NotificationCenterModal
-        visible={notificationsVisible}
-        onClose={() => setNotificationsVisible(false)}
+      {/* Side Menu Drawer Modal */}
+      <SideMenuModal
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
         onOpenAiSummary={handleSummarize}
       />
 
@@ -471,69 +430,61 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 2, height: 0 },
     elevation: 8,
   },
+  topSection: {
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  burgerBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  burgerIcon: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
+  },
   brandBox: {
     width: 44,
     height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
   brandLogo: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
   },
   navGroup: {
     width: '100%',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
   navItem: {
-    width: 68,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    gap: 3,
-  },
-  navItemActive: {
-    backgroundColor: '#EDFAF7',
   },
   navItemPressed: {
     opacity: 0.75,
   },
-  activeIndicatorBar: {
-    position: 'absolute',
-    left: -10,
-    top: 12,
-    bottom: 12,
-    width: 3.5,
-    borderRadius: 2,
-    backgroundColor: TEAL,
-  },
   iconBox: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  iconBoxActive: {},
   navIcon: {
-    width: 22,
-    height: 22,
+    width: 28,
+    height: 28,
     resizeMode: 'contain',
-  },
-  navLabel: {
-    fontFamily: 'LexendDeca-Regular',
-    fontSize: 10.5,
-    color: MUTED,
-    textAlign: 'center',
-  },
-  navLabelActive: {
-    fontFamily: 'LexendDeca-SemiBold',
-    color: TEAL,
   },
   badgeIndicator: {
     position: 'absolute',
@@ -554,28 +505,10 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#FFFFFF',
   },
-  quickActionBox: {
-    alignItems: 'center',
-    marginTop: 14,
-    gap: 3,
-  },
-  quickAddBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: TEAL,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: TEAL,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  quickAddLabel: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 10,
-    color: TEAL,
+  addIcon: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
   },
   btnPressed: {
     opacity: 0.8,
@@ -586,56 +519,38 @@ const styles = StyleSheet.create({
   },
   bottomUtilitiesGroup: {
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     width: '100%',
   },
   utilityBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  utilityIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#F1F7F6',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   utilityIcon: {
-    width: 20,
-    height: 20,
+    width: 28,
+    height: 28,
     resizeMode: 'contain',
   },
-  notificationDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.danger,
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
   avatarAnchor: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     overflow: 'hidden',
     marginTop: 2,
   },
   avatarImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
   },
   avatarMonogram: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: Colors.tealLight,
     alignItems: 'center',
     justifyContent: 'center',

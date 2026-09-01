@@ -12,6 +12,24 @@ last_updated: 2026-09-01
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-01 — Tablet Dual-Layer Notification Panel & Independent Dimming Architecture (DD-19)
+
+### Decision
+1. **Dual-Layer Architecture for Tablets (`NotificationCenterModal.tsx`)**: Refactor the notification presentation on all tablet viewports (both Tablet Portrait and Tablet Landscape) into two completely decoupled visual and animation layers:
+   - **Layer 1 (Independent Stationary Dimming Backdrop)**: Full-screen `StyleSheet.absoluteFillObject` stationary dimming overlay (`Colors.backdrop`) controlled exclusively via `fadeAnim` opacity (`0 -> 1` on open, `1 -> 0` on close). It remains fixed to the screen geometry and never physically translates with the panel.
+   - **Layer 2 (Right-Anchored Sliding Notification Panel)**: Clamped side drawer (`width: Math.min(width * 0.44, 420)` in landscape, `Math.min(width * 0.60, 420)` in portrait) that translates horizontally from the right screen edge (`panelSlideAnim` from `+panelWidth` to `0`), originating beside the top-right Notification Bell trigger.
+2. **Reverse Animated Unmount Lifecycle**: Dismissing the modal (via backdrop tap, close button, or notification press) runs both exit transitions in parallel before setting `modalVisible` to `false` and invoking `onClose()`.
+3. **Strict Phone UI Isolation**: Phone presentations (`!isTablet`) retain the native bottom `pageSheet` modal presentation and drag handle with zero modification.
+
+### Reason
+- Resolves the issue where React Native's `<Modal animationType="slide">` moved the entire root window including the dimming backdrop from the bottom of the screen.
+- Creates a clean floating notification panel anchored near the top-right toolbar button on all tablet form factors.
+
+### Consequences
+Backdrop dimming remains perfectly stationary and independent; notification panel slides cleanly into and out of view from the right edge; phone UI is completely unaffected.
+
+---
+
 ## 2026-09-01 — Global Top Toolbar Canonical Positioning Pattern (DD-18)
 
 ### Decision

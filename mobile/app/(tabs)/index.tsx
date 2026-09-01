@@ -256,7 +256,7 @@ export default function RecordsScreen() {
       <View style={[styles.root, { paddingLeft: LandscapeTokens.navRailWidth, backgroundColor: Colors.bg }]}>
         <StatusBar style="dark" />
 
-        {/* Global Navigation Toolbar */}
+        {/* Global Navigation Toolbar (Landscape: Single Notification on right, Burger in sidebar rail) */}
         <View
           style={[
             styles.topToolbar,
@@ -264,25 +264,10 @@ export default function RecordsScreen() {
               paddingTop: insets.top + 12,
               paddingLeft: Math.max(insets.left, screenPadding),
               paddingRight: Math.max(insets.right, screenPadding),
+              justifyContent: 'flex-end',
             },
           ]}
         >
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setMenuVisible(true);
-            }}
-            hitSlop={10}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open navigation menu"
-          >
-            <Image
-              source={require('../../assets/icons/burger-menu.png')}
-              style={styles.toolbarIcon}
-            />
-          </Pressable>
-
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
@@ -519,7 +504,7 @@ export default function RecordsScreen() {
                 contentContainerStyle={[
                   styles.detailScrollContent,
                   {
-                    paddingTop: insets.top + 16,
+                    paddingTop: 0,
                     paddingBottom: Math.max(insets.bottom, 24) + 20,
                   },
                 ]}
@@ -569,7 +554,7 @@ export default function RecordsScreen() {
                     <View style={styles.detailSplitLeft}>
                       <View style={styles.detailAttachmentCard}>
                         <View style={styles.detailCardHeader}>
-                          <Ionicons name="document-attach-outline" size={17} color={Colors.teal} />
+                          <Ionicons name="document-attach-outline" size={17} color={Colors.blue} />
                           <Text style={styles.detailCardTitle}>Scanned Document</Text>
                         </View>
 

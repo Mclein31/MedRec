@@ -105,12 +105,17 @@ export default function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.root}>
+      <View
+        style={[
+          styles.root,
+          isTablet && isLandscape && { paddingLeft: LandscapeTokens.navRailWidth },
+        ]}
+      >
         <StatusBar style="dark" />
         <ScreenHeader
           title="Scan Doctor QR"
           subtitle="Scan temporary patient records"
-          onPressMenu={() => setMenuVisible(true)}
+          onPressMenu={!(isTablet && isLandscape) ? () => setMenuVisible(true) : undefined}
           onPressNotifications={() => {
             refreshNotifications();
             setNotificationsVisible(true);
@@ -165,23 +170,26 @@ export default function ScanScreen() {
                 paddingLeft: Math.max(insets.left, screenPadding),
                 paddingRight: Math.max(insets.right, screenPadding),
               },
+              isLandscape && { justifyContent: 'flex-end' },
             ]}
           >
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setMenuVisible(true);
-              }}
-              hitSlop={10}
-              style={styles.iconBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Open navigation menu"
-            >
-              <Image
-                source={require('../../assets/icons/burger-menu.png')}
-                style={styles.toolbarIcon}
-              />
-            </Pressable>
+            {!isLandscape && (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setMenuVisible(true);
+                }}
+                hitSlop={10}
+                style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Open navigation menu"
+              >
+                <Image
+                  source={require('../../assets/icons/burger-menu.png')}
+                  style={styles.toolbarIcon}
+                />
+              </Pressable>
+            )}
 
             <Pressable
               onPress={() => {
@@ -654,23 +662,26 @@ export default function ScanScreen() {
             paddingLeft: Math.max(insets.left, screenPadding),
             paddingRight: Math.max(insets.right, screenPadding),
           },
+          isTablet && isLandscape && { justifyContent: 'flex-end' },
         ]}
       >
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            setMenuVisible(true);
-          }}
-          hitSlop={10}
-          style={styles.cameraIconBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Open navigation menu"
-        >
-          <Image
-            source={require('../../assets/icons/burger-menu.png')}
-            style={styles.cameraToolbarIcon}
-          />
-        </Pressable>
+        {!(isTablet && isLandscape) && (
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMenuVisible(true);
+            }}
+            hitSlop={10}
+            style={styles.cameraIconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open navigation menu"
+          >
+            <Image
+              source={require('../../assets/icons/burger-menu.png')}
+              style={styles.cameraToolbarIcon}
+            />
+          </Pressable>
+        )}
 
         <Pressable
           onPress={() => {

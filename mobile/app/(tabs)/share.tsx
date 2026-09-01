@@ -553,23 +553,26 @@ export default function ShareScreen() {
               paddingLeft: Math.max(insets.left, screenPadding),
               paddingRight: Math.max(insets.right, screenPadding),
             },
+            isLandscape && { justifyContent: 'flex-end' },
           ]}
         >
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setMenuVisible(true);
-            }}
-            hitSlop={10}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open navigation menu"
-          >
-            <Image
-              source={require('../../assets/icons/burger-menu.png')}
-              style={styles.toolbarIcon}
-            />
-          </Pressable>
+          {!isLandscape && (
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setMenuVisible(true);
+              }}
+              hitSlop={10}
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Open navigation menu"
+            >
+              <Image
+                source={require('../../assets/icons/burger-menu.png')}
+                style={styles.toolbarIcon}
+              />
+            </Pressable>
+          )}
 
           <Pressable
             onPress={() => {
