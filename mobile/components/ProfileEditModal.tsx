@@ -11,8 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  Animated,
+  Easing,
 } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../lib/api';
 import { DragHandle } from './ui/DragHandle';
@@ -84,8 +86,19 @@ export default function ProfileEditModal({
   onSuccess,
   onSaved,
 }: Props) {
-  const { isTablet, insets, screenPadding, scaleFont } = useResponsive();
+  const { isTablet, insets, height: windowHeight, scaleFont } = useResponsive();
   const [saving, setSaving] = useState(false);
+
+  const [modalVisible, setModalVisible] = useState(visible);
+  const backdropFadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(windowHeight || 800)).current;
+  const scaleAnim = useRef(new Animated.Value(0.93)).current;
+  const translateYAnim = useRef(new Animated.Value(16)).current;
+  const modalOpacityAnim = useRef(new Animated.Value(0)).current;
+
+  const isClosingRef = useRef(false);
+  const prevVisibleRef = useRef(visible);
+  const animTokenRef = useRef(0);
 
   // Demographics state
   const [name, setName] = useState(userName || '');
@@ -112,26 +125,72 @@ export default function ProfileEditModal({
   );
   const [organDonor, setOrganDonor] = useState(Boolean(initialData.organDonor));
 
-  useEffect(() => {
-    if (visible) {
-      setName(userName || '');
-      setDateOfBirth(initialData.dateOfBirth || '');
-      setBiologicalSex(initialData.biologicalSex || 'undisclosed');
-      setHeight(initialData.height || '');
-      setWeight(initialData.weight || '');
-      setPhone(initialData.phone || '');
-      setAddress(initialData.address || '');
+  const stopAllAnimations = () => {
+    backdropFadeAnim.stopAnimation();
+    slideAnim.stopAnimation();
+    scaleAnim.stopAnimation();
+    translateYAnim.stopAnimation();
+    modalOpacityAnim.stopAnimation();
+  };
 
-      setBloodType(initialData.bloodType || 'unknown');
-      setAllergies(initialData.allergies || '');
-      setMedicalConditions(initialData.medicalConditions || '');
-      setMedicationsSummary(initialData.medicationsSummary || '');
-      setEmergencyContactName(initialData.emergencyContactName || '');
-      setEmergencyContactRelationship(initialData.emergencyContactRelationship || '');
-      setEmergencyContactPhone(initialData.emergencyContactPhone || '');
-      setOrganDonor(Boolean(initialData.organDonor));
+  const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    const currentToken = ++animTokenRef.current;
+    stopAllAnimations();
+
+    // Independent Layer 1: Background Dimming Fade Out
+    Animated.timing(backdropFadeAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+
+    // Independent Layer 2: Modal Dismissal
+    if (isTablet) {
+      Animated.parallel([
+        Animated.timing(modalOpacityAnim, {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateYAnim, {
+          toValue: 14,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished && animTokenRef.current === currentToken) {
+          setModalVisible(false);
+          onClose();
+        }
+      });
+    } else {
+      Animated.parallel([
+        Animated.timing(modalOpacityAnim, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: windowHeight || 800,
+          duration: 200,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished && animTokenRef.current === currentToken) {
+          setModalVisible(false);
+          onClose();
+        }
+      });
     }
-  }, [visible, initialData, userName]);
+  };
 
   const handleSave = async () => {
     if (mode === 'demographics' && !name.trim()) {
@@ -185,7 +244,7 @@ export default function ProfileEditModal({
       const updated = await api.updateProfile(payload);
       onSuccess?.(updated);
       onSaved?.(updated);
-      onClose();
+      handleClose();
     } catch (err: any) {
       Alert.alert('Save Failed', err.message || 'Could not update profile details.');
     } finally {
@@ -193,350 +252,492 @@ export default function ProfileEditModal({
     }
   };
 
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle={isTablet ? 'overFullScreen' : 'pageSheet'}
-      transparent={isTablet}
-      onRequestClose={onClose}
-    >
-      <View style={[styles.modalRoot, isTablet && styles.modalRootTablet]}>
-        {isTablet && (
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-        )}
-        <KeyboardAvoidingView
-          style={[styles.container, isTablet && styles.containerTablet]}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          {/* Header with integrated drag handle */}
-          <View style={styles.header}>
-            <DragHandle />
+  useEffect(() => {
+    const wasVisible = prevVisibleRef.current;
+    prevVisibleRef.current = visible;
 
-            <View style={styles.headerContentRow}>
-              <Pressable onPress={onClose} hitSlop={8} style={styles.cancelBtn}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </Pressable>
-              <Text
+    if (visible && !wasVisible) {
+      isClosingRef.current = false;
+      const currentToken = ++animTokenRef.current;
+      stopAllAnimations();
+
+      setModalVisible(true);
+      backdropFadeAnim.setValue(0);
+      slideAnim.setValue(windowHeight || 800);
+      scaleAnim.setValue(0.93);
+      translateYAnim.setValue(16);
+      modalOpacityAnim.setValue(0);
+
+      // Independent Layer 1: Background Dimming
+      Animated.timing(backdropFadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+
+      // Independent Layer 2: Modal Entrance
+      if (isTablet) {
+        Animated.parallel([
+          Animated.timing(modalOpacityAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 240,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateYAnim, {
+            toValue: 0,
+            duration: 240,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        Animated.parallel([
+          Animated.timing(modalOpacityAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 260,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    } else if (!visible && wasVisible && modalVisible) {
+      handleClose();
+    }
+  }, [visible, isTablet]);
+
+  useEffect(() => {
+    if (visible) {
+      setName(userName || '');
+      setDateOfBirth(initialData.dateOfBirth || '');
+      setBiologicalSex(initialData.biologicalSex || 'undisclosed');
+      setHeight(initialData.height || '');
+      setWeight(initialData.weight || '');
+      setPhone(initialData.phone || '');
+      setAddress(initialData.address || '');
+
+      setBloodType(initialData.bloodType || 'unknown');
+      setAllergies(initialData.allergies || '');
+      setMedicalConditions(initialData.medicalConditions || '');
+      setMedicationsSummary(initialData.medicationsSummary || '');
+      setEmergencyContactName(initialData.emergencyContactName || '');
+      setEmergencyContactRelationship(initialData.emergencyContactRelationship || '');
+      setEmergencyContactPhone(initialData.emergencyContactPhone || '');
+      setOrganDonor(Boolean(initialData.organDonor));
+    }
+  }, [visible, initialData, userName]);
+
+  const formContent = (
+    <>
+      {/* Header with integrated drag handle */}
+      <View style={styles.header}>
+        <DragHandle />
+
+        <View style={styles.headerContentRow}>
+          <Pressable onPress={handleClose} hitSlop={8} style={styles.cancelBtn}>
+            <Text style={styles.cancelBtnText}>Cancel</Text>
+          </Pressable>
+          <Text
+            style={[
+              styles.headerTitle,
+              { fontSize: scaleFont(16, 14.5, 18) },
+            ]}
+            maxFontSizeMultiplier={1.35}
+          >
+            {mode === 'demographics' ? 'Edit Demographics' : 'Edit Medical ID'}
+          </Text>
+          <Pressable
+            onPress={handleSave}
+            disabled={saving}
+            hitSlop={8}
+            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={TEAL} />
+            ) : (
+              <Text style={styles.saveBtnText}>Save</Text>
+            )}
+          </Pressable>
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 20) + 32 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {mode === 'demographics' ? (
+          /* DEMOGRAPHICS FORM */
+          <View style={styles.formGroup}>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Full Legal Name *</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g. McLein Onz"
+                placeholderTextColor={MUTED}
                 style={[
-                  styles.headerTitle,
-                  { fontSize: scaleFont(16, 14.5, 18) },
+                  styles.input,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !name && styles.placeholderInput,
                 ]}
+                autoCapitalize="words"
+                autoCorrect={false}
                 maxFontSizeMultiplier={1.35}
-              >
-                {mode === 'demographics' ? 'Edit Demographics' : 'Edit Medical ID'}
-              </Text>
-              <Pressable
-                onPress={handleSave}
-                disabled={saving}
-                hitSlop={8}
-                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-              >
-                {saving ? (
-                  <ActivityIndicator size="small" color={TEAL} />
-                ) : (
-                  <Text style={styles.saveBtnText}>Save</Text>
-                )}
-              </Pressable>
+              />
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Date of Birth (YYYY-MM-DD)</Text>
+              <TextInput
+                value={dateOfBirth}
+                onChangeText={setDateOfBirth}
+                placeholder="e.g. 1996-10-14"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !dateOfBirth && styles.placeholderInput,
+                ]}
+                keyboardType="numbers-and-punctuation"
+                autoCapitalize="none"
+                maxFontSizeMultiplier={1.35}
+              />
+              <Text style={styles.hint}>Format: YYYY-MM-DD. Age is automatically calculated.</Text>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Biological Sex</Text>
+              <View style={styles.chipGrid}>
+                {SEX_OPTIONS.map((opt) => {
+                  const isSelected = biologicalSex === opt.value;
+                  return (
+                    <Pressable
+                      key={opt.value}
+                      onPress={() => setBiologicalSex(opt.value)}
+                      style={[styles.chip, isSelected && styles.chipActive]}
+                    >
+                      <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.rowTwoCols}>
+              <View style={[styles.fieldBlock, { flex: 1 }]}>
+                <Text style={styles.label}>Height (cm)</Text>
+                <TextInput
+                  value={height}
+                  onChangeText={setHeight}
+                  placeholder="e.g. 178"
+                  placeholderTextColor={MUTED}
+                  style={[
+                    styles.input,
+                    { fontSize: scaleFont(14, 13, 15) },
+                    !height && styles.placeholderInput,
+                  ]}
+                  keyboardType="numeric"
+                  maxFontSizeMultiplier={1.35}
+                />
+              </View>
+
+              <View style={[styles.fieldBlock, { flex: 1 }]}>
+                <Text style={styles.label}>Weight (kg)</Text>
+                <TextInput
+                  value={weight}
+                  onChangeText={setWeight}
+                  placeholder="e.g. 72"
+                  placeholderTextColor={MUTED}
+                  style={[
+                    styles.input,
+                    { fontSize: scaleFont(14, 13, 15) },
+                    !weight && styles.placeholderInput,
+                  ]}
+                  keyboardType="numeric"
+                  maxFontSizeMultiplier={1.35}
+                />
+              </View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Phone Number</Text>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="e.g. +1 (555) 012-3456"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !phone && styles.placeholderInput,
+                ]}
+                keyboardType="phone-pad"
+                maxFontSizeMultiplier={1.35}
+              />
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Residential Address</Text>
+              <TextInput
+                value={address}
+                onChangeText={setAddress}
+                placeholder="e.g. 123 Health Ave, San Francisco, CA"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  styles.multilineInput,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !address && styles.placeholderInput,
+                ]}
+                multiline
+                numberOfLines={3}
+                maxFontSizeMultiplier={1.35}
+              />
             </View>
           </View>
-
-          <ScrollView
-            contentContainerStyle={[
-              styles.content,
-              { paddingBottom: Math.max(insets.bottom, 20) + 32 },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {mode === 'demographics' ? (
-              /* DEMOGRAPHICS FORM */
-              <View style={styles.formGroup}>
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Full Legal Name *</Text>
-                  <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="e.g. McLein Onz"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !name && styles.placeholderInput,
-                    ]}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
-
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Date of Birth (YYYY-MM-DD)</Text>
-                  <TextInput
-                    value={dateOfBirth}
-                    onChangeText={setDateOfBirth}
-                    placeholder="e.g. 1996-10-14"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !dateOfBirth && styles.placeholderInput,
-                    ]}
-                    keyboardType="numbers-and-punctuation"
-                    autoCapitalize="none"
-                    maxFontSizeMultiplier={1.35}
-                  />
-                  <Text style={styles.hint}>Format: YYYY-MM-DD. Age is automatically calculated.</Text>
-                </View>
-
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Biological Sex</Text>
-                  <View style={styles.chipGrid}>
-                    {SEX_OPTIONS.map((opt) => {
-                      const isSelected = biologicalSex === opt.value;
-                      return (
-                        <Pressable
-                          key={opt.value}
-                          onPress={() => setBiologicalSex(opt.value)}
-                          style={[styles.chip, isSelected && styles.chipActive]}
-                        >
-                          <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-                            {opt.label}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                <View style={styles.rowTwoCols}>
-                  <View style={[styles.fieldBlock, { flex: 1 }]}>
-                    <Text style={styles.label}>Height (cm)</Text>
-                    <TextInput
-                      value={height}
-                      onChangeText={setHeight}
-                      placeholder="e.g. 178"
-                      placeholderTextColor={MUTED}
-                      style={[
-                        styles.input,
-                        { fontSize: scaleFont(14, 13, 15) },
-                        !height && styles.placeholderInput,
-                      ]}
-                      keyboardType="numeric"
-                      maxFontSizeMultiplier={1.35}
-                    />
-                  </View>
-
-                  <View style={[styles.fieldBlock, { flex: 1 }]}>
-                    <Text style={styles.label}>Weight (kg)</Text>
-                    <TextInput
-                      value={weight}
-                      onChangeText={setWeight}
-                      placeholder="e.g. 72"
-                      placeholderTextColor={MUTED}
-                      style={[
-                        styles.input,
-                        { fontSize: scaleFont(14, 13, 15) },
-                        !weight && styles.placeholderInput,
-                      ]}
-                      keyboardType="numeric"
-                      maxFontSizeMultiplier={1.35}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Phone Number</Text>
-                  <TextInput
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="e.g. +1 (555) 012-3456"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !phone && styles.placeholderInput,
-                    ]}
-                    keyboardType="phone-pad"
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
-
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Residential Address</Text>
-                  <TextInput
-                    value={address}
-                    onChangeText={setAddress}
-                    placeholder="e.g. 123 Health Ave, San Francisco, CA"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      styles.multilineInput,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !address && styles.placeholderInput,
-                    ]}
-                    multiline
-                    numberOfLines={3}
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
+        ) : (
+          /* MEDICAL ID FORM */
+          <View style={styles.formGroup}>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Blood Type</Text>
+              <View style={styles.chipGrid}>
+                {BLOOD_TYPES.map((bt) => {
+                  const isSelected = bloodType === bt;
+                  return (
+                    <Pressable
+                      key={bt}
+                      onPress={() => setBloodType(bt)}
+                      style={[styles.bloodChip, isSelected && styles.bloodChipActive]}
+                    >
+                      <Text style={[styles.bloodChipText, isSelected && styles.bloodChipTextActive]}>
+                        {bt === 'unknown' ? 'Unknown' : bt}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            ) : (
-              /* MEDICAL ID FORM */
-              <View style={styles.formGroup}>
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Blood Type</Text>
-                  <View style={styles.chipGrid}>
-                    {BLOOD_TYPES.map((bt) => {
-                      const isSelected = bloodType === bt;
-                      return (
-                        <Pressable
-                          key={bt}
-                          onPress={() => setBloodType(bt)}
-                          style={[styles.bloodChip, isSelected && styles.bloodChipActive]}
-                        >
-                          <Text style={[styles.bloodChipText, isSelected && styles.bloodChipTextActive]}>
-                            {bt === 'unknown' ? 'Unknown' : bt}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
+            </View>
 
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Severe Allergies & Intolerances</Text>
-                  <TextInput
-                    value={allergies}
-                    onChangeText={setAllergies}
-                    placeholder="e.g. Penicillin (Anaphylaxis), Peanuts, NSAIDs"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      styles.multilineInput,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !allergies && styles.placeholderInput,
-                    ]}
-                    multiline
-                    numberOfLines={2}
-                    maxFontSizeMultiplier={1.35}
-                  />
-                  <Text style={styles.hint}>Life-critical for emergency care and prescriptions.</Text>
-                </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Severe Allergies & Intolerances</Text>
+              <TextInput
+                value={allergies}
+                onChangeText={setAllergies}
+                placeholder="e.g. Penicillin (Anaphylaxis), Peanuts, NSAIDs"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  styles.multilineInput,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !allergies && styles.placeholderInput,
+                ]}
+                multiline
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.35}
+              />
+              <Text style={styles.hint}>Life-critical for emergency care and prescriptions.</Text>
+            </View>
 
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Chronic Medical Conditions</Text>
-                  <TextInput
-                    value={medicalConditions}
-                    onChangeText={setMedicalConditions}
-                    placeholder="e.g. Mild Asthma, Type 1 Diabetes, Hypertension"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      styles.multilineInput,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !medicalConditions && styles.placeholderInput,
-                    ]}
-                    multiline
-                    numberOfLines={2}
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Chronic Medical Conditions</Text>
+              <TextInput
+                value={medicalConditions}
+                onChangeText={setMedicalConditions}
+                placeholder="e.g. Mild Asthma, Type 1 Diabetes, Hypertension"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  styles.multilineInput,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !medicalConditions && styles.placeholderInput,
+                ]}
+                multiline
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.35}
+              />
+            </View>
 
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Emergency Maintenance Medications</Text>
-                  <TextInput
-                    value={medicationsSummary}
-                    onChangeText={setMedicationsSummary}
-                    placeholder="e.g. Albuterol Inhaler (PRN), Insulin Glargine"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      styles.multilineInput,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !medicationsSummary && styles.placeholderInput,
-                    ]}
-                    multiline
-                    numberOfLines={2}
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Emergency Maintenance Medications</Text>
+              <TextInput
+                value={medicationsSummary}
+                onChangeText={setMedicationsSummary}
+                placeholder="e.g. Albuterol Inhaler (PRN), Insulin Glargine"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  styles.multilineInput,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !medicationsSummary && styles.placeholderInput,
+                ]}
+                multiline
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.35}
+              />
+            </View>
 
-                <View style={styles.sectionDivider} />
-                <Text style={styles.sectionSubhead}>Primary Emergency Contact</Text>
+            <View style={styles.sectionDivider} />
+            <Text style={styles.sectionSubhead}>Primary Emergency Contact</Text>
 
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Contact Full Name</Text>
-                  <TextInput
-                    value={emergencyContactName}
-                    onChangeText={setEmergencyContactName}
-                    placeholder="e.g. Jane Doe"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !emergencyContactName && styles.placeholderInput,
-                    ]}
-                    autoCapitalize="words"
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Contact Full Name</Text>
+              <TextInput
+                value={emergencyContactName}
+                onChangeText={setEmergencyContactName}
+                placeholder="e.g. Jane Doe"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !emergencyContactName && styles.placeholderInput,
+                ]}
+                autoCapitalize="words"
+                maxFontSizeMultiplier={1.35}
+              />
+            </View>
 
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Relationship</Text>
-                  <View style={styles.chipGrid}>
-                    {RELATIONSHIP_OPTIONS.map((rel) => {
-                      const isSelected = emergencyContactRelationship === rel;
-                      return (
-                        <Pressable
-                          key={rel}
-                          onPress={() => setEmergencyContactRelationship(rel)}
-                          style={[styles.chip, isSelected && styles.chipActive]}
-                        >
-                          <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-                            {rel}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                <View style={styles.fieldBlock}>
-                  <Text style={styles.label}>Contact Phone Number</Text>
-                  <TextInput
-                    value={emergencyContactPhone}
-                    onChangeText={setEmergencyContactPhone}
-                    placeholder="e.g. +1 (555) 019-2834"
-                    placeholderTextColor={MUTED}
-                    style={[
-                      styles.input,
-                      { fontSize: scaleFont(14, 13, 15) },
-                      !emergencyContactPhone && styles.placeholderInput,
-                    ]}
-                    keyboardType="phone-pad"
-                    maxFontSizeMultiplier={1.35}
-                  />
-                </View>
-
-                <View style={styles.sectionDivider} />
-
-                <View style={styles.switchRow}>
-                  <View style={styles.switchInfo}>
-                    <Text style={styles.switchLabel}>Organ Donor</Text>
-                    <Text style={styles.switchSub}>Registered organ donor preference</Text>
-                  </View>
-                  <Switch
-                    value={organDonor}
-                    onValueChange={setOrganDonor}
-                    trackColor={{ false: '#D9E7E4', true: TEAL }}
-                    thumbColor="#FFFFFF"
-                  />
-                </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Relationship</Text>
+              <View style={styles.chipGrid}>
+                {RELATIONSHIP_OPTIONS.map((rel) => {
+                  const isSelected = emergencyContactRelationship === rel;
+                  return (
+                    <Pressable
+                      key={rel}
+                      onPress={() => setEmergencyContactRelationship(rel)}
+                      style={[styles.chip, isSelected && styles.chipActive]}
+                    >
+                      <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                        {rel}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            )}
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.label}>Contact Phone Number</Text>
+              <TextInput
+                value={emergencyContactPhone}
+                onChangeText={setEmergencyContactPhone}
+                placeholder="e.g. +1 (555) 019-2834"
+                placeholderTextColor={MUTED}
+                style={[
+                  styles.input,
+                  { fontSize: scaleFont(14, 13, 15) },
+                  !emergencyContactPhone && styles.placeholderInput,
+                ]}
+                keyboardType="phone-pad"
+                maxFontSizeMultiplier={1.35}
+              />
+            </View>
+
+            <View style={styles.sectionDivider} />
+
+            <View style={styles.switchRow}>
+              <View style={styles.switchInfo}>
+                <Text style={styles.switchLabel}>Organ Donor</Text>
+                <Text style={styles.switchSub}>Registered organ donor preference</Text>
+              </View>
+              <Switch
+                value={organDonor}
+                onValueChange={setOrganDonor}
+                trackColor={{ false: '#D9E7E4', true: TEAL }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </>
+  );
+
+  return (
+    <Modal
+      visible={modalVisible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
+      accessibilityViewIsModal
+    >
+      <View style={styles.modalRoot}>
+        {/* LAYER 1: Independent Stationary Background Dimming Overlay */}
+        <Animated.View
+          style={[styles.backdrop, { opacity: backdropFadeAnim }]}
+          pointerEvents={visible ? 'auto' : 'none'}
+        >
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            onPress={handleClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close edit profile backdrop"
+          />
+        </Animated.View>
+
+        {/* LAYER 2: Independent Edit Profile Modal */}
+        {isTablet ? (
+          <View style={styles.tabletCenterWrapper} pointerEvents="box-none">
+            <KeyboardAvoidingView
+              style={styles.tabletKeyboardAvoider}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              pointerEvents="box-none"
+            >
+              <Animated.View
+                style={[
+                  styles.container,
+                  styles.containerTablet,
+                  {
+                    opacity: modalOpacityAnim,
+                    transform: [
+                      { scale: scaleAnim },
+                      { translateY: translateYAnim },
+                    ],
+                  },
+                ]}
+              >
+                {formContent}
+              </Animated.View>
+            </KeyboardAvoidingView>
+          </View>
+        ) : (
+          <View style={styles.phoneSheetWrapper} pointerEvents="box-none">
+            <KeyboardAvoidingView
+              style={styles.phoneKeyboardAvoider}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              pointerEvents="box-none"
+            >
+              <Animated.View
+                style={[
+                  styles.container,
+                  styles.containerPhone,
+                  {
+                    transform: [{ translateY: slideAnim }],
+                    opacity: modalOpacityAnim,
+                  },
+                ]}
+              >
+                {formContent}
+              </Animated.View>
+            </KeyboardAvoidingView>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -545,17 +746,47 @@ export default function ProfileEditModal({
 const styles = StyleSheet.create({
   modalRoot: {
     flex: 1,
-    backgroundColor: BG,
   },
-  modalRootTablet: {
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  tabletCenterWrapper: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
-  container: {
+  tabletKeyboardAvoider: {
+    width: '100%',
+    maxWidth: ResponsiveLimits.maxModalWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phoneSheetWrapper: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  phoneKeyboardAvoider: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  container: {
     backgroundColor: BG,
+  },
+  containerPhone: {
+    flex: 0,
+    height: '92%',
+    maxHeight: '92%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   containerTablet: {
     flex: 0,

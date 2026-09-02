@@ -12,6 +12,33 @@ last_updated: 2026-09-01
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-02 — Tablet Authentication UI Refinement & Landscape Brand Showcase Expansion (DD-22)
+
+### Decision
+1. **Tablet Landscape Split-Screen Visual Panel with 3:4 Native Graphic**:
+   - Balance both columns to equal 50/50 widths (`flex: 1` on left and right columns), giving equal architectural presence to the visual brand panel and the authentication form card.
+   - Implement the new 3:4 (`1792 × 2400px`) `graphic-2.png` asset as the full-bleed background of the entire left column (`StyleSheet.absoluteFillObject`, `resizeMode: 'cover'`), occupying 100% width and 100% height with zero borders, gaps, or distortion.
+   - Overlay the prominent MedRec branding (80×80pt logo, 36pt bold title, 16pt tagline) comfortably in the upper sky region (`position: 'absolute'`, `top: 128`, `zIndex: 2`) with clean left-alignment between title and tagline.
+   - Completely remove bottom trust badge rows ("End-to-End Encrypted", "Sovereign Vault" / "Patient-Sovereign Data", "Doctor QR Access" / "Biometric Security") across Login and Register screens.
+2. **Phone-Harmonized Centered Branding Architecture (Tablet Portrait)**:
+   - Align Tablet Portrait branding directly with the Phone authentication UI hierarchy: centered MedRec logo mark (52×52pt for Login, 50×50pt for Register), centered app title ("MedRec", 24pt/22pt `LexendDeca-Bold`), and centered supporting tagline ("Your Health Records in Your Pockets", 12pt/11.5pt `LexendDeca-Regular`).
+3. **Compact Floating Tablet Card Architecture (Tablet Portrait)**:
+   - Center a compact, mobile-proportioned white authentication card (`maxWidth: 420pt`) on the `#F4FAF9` canvas with 24pt rounded corners, subtle `#E5F0EE` border, and soft elevation shadow.
+   - Retain the exact phone component structure, vertical flow, button hierarchy, and input layout without creating an oversized desktop panel.
+4. **Strict Platform & Orientation Quarantine**:
+   - Scope all changes strictly to tablet breakpoints (`isTablet && isLandscape` and `isTablet && !isLandscape`), leaving Phone UI (`!isTablet`) 100% untouched.
+
+### Reason
+- Eliminates awkward gaps, detached logos, and mismatched independent text centering in previous tablet portrait layouts.
+- Delivers a unified, professional medical-grade brand presence with identical typography, dimensions, and alignment across Login and Register screens.
+- Optimizes tablet vertical space utilization so the longer 4-field Create Account form fits comfortably within standard tablet portrait viewports without clipping.
+
+### Consequences
+- Shared brand consistency across authentication entry points.
+- Zero regression risk to phone and tablet landscape workflows.
+
+---
+
 ## 2026-09-01 — Full-Stack Production Security, AI Defense & Session Invalidation Architecture (DD-21)
 
 ### Decision

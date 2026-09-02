@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { StatusBar } from 'expo-status-bar';
@@ -174,37 +173,21 @@ export default function LoginScreen() {
         <StatusBar style="dark" />
         <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.tabletLandscapeContainer}>
-            {/* Left Column: Brand Showcase */}
+            {/* Left Column: Full-Bleed Graphic Panel with Overlaid Branding */}
             <View style={styles.tabletLandscapeLeft}>
-              <View style={styles.tabletBrandRow}>
-                <Image source={require('../assets/logo/logo.png')} style={styles.tabletBrandLogo} />
-                <View>
-                  <Text style={styles.tabletBrandTitle}>MedRec</Text>
-                  <Text style={styles.tabletBrandTagline}>Your Health Records in Your Pockets</Text>
-                </View>
-              </View>
+              <Image
+                source={require('../assets/graphics/graphic-2.png')}
+                style={styles.tabletLandscapeGraphic}
+                resizeMode="cover"
+              />
 
-              <View style={styles.tabletGraphicWrapper}>
-                <Image
-                  source={require('../assets/graphics/login-graphic.png')}
-                  style={styles.tabletHeroImage}
-                  resizeMode="contain"
-                />
-              </View>
-
-              {/* Trust Guarantees */}
-              <View style={styles.trustRow}>
-                <View style={styles.trustBadge}>
-                  <Ionicons name="shield-checkmark" size={14} color={TEAL} />
-                  <Text style={styles.trustBadgeText}>End-to-End Encrypted</Text>
-                </View>
-                <View style={styles.trustBadge}>
-                  <Ionicons name="lock-closed" size={14} color={TEAL} />
-                  <Text style={styles.trustBadgeText}>Sovereign Vault</Text>
-                </View>
-                <View style={styles.trustBadge}>
-                  <Ionicons name="qr-code" size={14} color={TEAL} />
-                  <Text style={styles.trustBadgeText}>Doctor QR Access</Text>
+              <View style={styles.tabletLandscapeBrandWrapper}>
+                <View style={styles.tabletBrandRow}>
+                  <Image source={require('../assets/logo/logo.png')} style={styles.tabletBrandLogo} />
+                  <View>
+                    <Text style={styles.tabletBrandTitle}>MedRec</Text>
+                    <Text style={styles.tabletBrandTagline}>Your Health Records in Your Pockets</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -232,26 +215,106 @@ export default function LoginScreen() {
     );
   }
 
-  // ─── TABLET PORTRAIT VIEW (Centered Bounded Card) ────────────────────────
+  // ─── TABLET PORTRAIT VIEW (Centered Bounded Card - Phone UI Adaptation) ──
   if (isTablet) {
     return (
       <View style={[styles.root, styles.tabletPortraitRoot]}>
         <StatusBar style="dark" />
         <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <ScrollView contentContainerStyle={styles.tabletPortraitScroll} keyboardShouldPersistTaps="handled">
-            <View style={styles.tabletCardWrapper}>
-              <View style={styles.tabletPortraitBrandHeader}>
-                <Image source={require('../assets/logo/logo.png')} style={styles.tabletBrandLogo} />
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={styles.tabletBrandTitle}>MedRec</Text>
-                  <Text style={styles.tabletBrandTagline}>Your Health Records in Your Pockets</Text>
+          <ScrollView
+            contentContainerStyle={styles.tabletPortraitScroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.tabletPortraitContainer}>
+              <View style={styles.tabletPortraitCard}>
+                {/* Centered Brand Header matching Phone UI hierarchy */}
+                <View style={styles.tabletBrandBlock}>
+                  <Image source={require('../assets/logo/logo.png')} style={styles.tabletPortraitBrandLogo} />
+                  <Text style={styles.tabletPortraitBrandTitle}>MedRec</Text>
+                  <Text style={styles.tabletPortraitBrandTagline}>Your Health Records in Your Pockets</Text>
                 </View>
-              </View>
-              {formCardContent}
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                  By continuing, you agree to our <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Terms of Use</Text> and <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Privacy Policy</Text>
-                </Text>
+
+                <Text style={styles.tabletPortraitTitle}>Welcome Back!</Text>
+                <Text style={styles.tabletPortraitSubtitle}>Sign in to access your health records</Text>
+
+                {lockedOut && <Text style={styles.error}>Too many attempts. Try again in {countdown}s.</Text>}
+                {attempts > 0 && !lockedOut && <Text style={styles.warning}>{MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts === 1 ? '' : 's'} remaining</Text>}
+
+                <View style={styles.tabletPortraitFields}>
+                  <View style={[styles.inputRow, lockedOut && styles.disabled]}>
+                    <Image source={require('../assets/icons/mail.png')} style={styles.fieldIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email or Phone"
+                      placeholderTextColor={MUTED}
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      autoCorrect={false}
+                      editable={!lockedOut}
+                    />
+                  </View>
+                  <View style={[styles.inputRow, lockedOut && styles.disabled]}>
+                    <Image source={require('../assets/icons/padlock.png')} style={styles.fieldIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      placeholderTextColor={MUTED}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      autoCorrect={false}
+                      editable={!lockedOut}
+                    />
+                    <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                      <Image
+                        source={showPassword ? require('../assets/icons/open-eye.png') : require('../assets/icons/closed-eye.png')}
+                        style={styles.eyeIcon}
+                      />
+                    </Pressable>
+                  </View>
+                  <Pressable onPress={handleForgotPassword} style={styles.forgot}>
+                    <Text style={styles.forgotText}>Forgot Password?</Text>
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  onPress={handleLogin}
+                  disabled={loading || lockedOut}
+                  style={({ pressed }) => [styles.tabletPrimaryButton, (pressed || lockedOut) && styles.pressed]}
+                >
+                  <Text style={styles.tabletPrimaryText}>
+                    {loading ? 'Signing in...' : lockedOut ? `Locked (${countdown}s)` : 'Sign In'}
+                  </Text>
+                  {!loading && !lockedOut && <Image source={require('../assets/icons/arrow.png')} style={styles.tabletArrow} />}
+                </Pressable>
+
+                <View style={styles.tabletDivider}>
+                  <View style={styles.line} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.line} />
+                </View>
+
+                <Pressable onPress={handleSocialPress} style={({ pressed }) => [styles.tabletGoogleButton, pressed && styles.pressed]}>
+                  <Image source={require('../assets/icons/google.png')} style={styles.google} />
+                  <Text style={styles.googleText}>Sign in with Google</Text>
+                </Pressable>
+
+                <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.tabletCreateButton, pressed && styles.pressed]}>
+                  <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} />
+                  <Text style={styles.createText}>Create an Account</Text>
+                </Pressable>
+
+                <View style={styles.tabletPortraitFooter}>
+                  <Text style={styles.footerText}>
+                    By continuing, you agree to our{' '}
+                    <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Terms of Use</Text>
+                    {' '}and{' '}
+                    <Text style={styles.footerLink} onPress={handlePrivacyPolicy}>Privacy Policy</Text>
+                  </Text>
+                </View>
               </View>
             </View>
           </ScrollView>
@@ -604,14 +667,127 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 32,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
-  tabletPortraitBrandHeader: {
+  tabletPortraitContainer: {
+    width: '100%',
+    maxWidth: 420,
+    alignItems: 'center',
+  },
+  tabletBrandBlock: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  tabletPortraitBrandLogo: {
+    width: 52,
+    height: 52,
+    resizeMode: 'contain',
+    marginBottom: 4,
+  },
+  tabletPortraitBrandTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 24,
+    color: INK,
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  tabletPortraitBrandTagline: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: MUTED,
+    lineHeight: 15,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  tabletPortraitCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E5F0EE',
+    paddingHorizontal: 32,
+    paddingTop: 28,
+    paddingBottom: 24,
+    shadowColor: '#12343B',
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  tabletPortraitTitle: {
+    color: BLUE,
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 24,
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  tabletPortraitSubtitle: {
+    color: MUTED,
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11.5,
+    textAlign: 'center',
+    marginTop: 2,
+    marginBottom: 18,
+    lineHeight: 15,
+  },
+  tabletPortraitFields: {
+    gap: 12,
+  },
+  tabletPrimaryButton: {
+    height: 52,
+    backgroundColor: TEAL,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  tabletPrimaryText: {
+    color: '#FFFFFF',
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 17,
+  },
+  tabletArrow: {
+    position: 'absolute',
+    right: 20,
+    width: 24,
+    height: 24,
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+  tabletDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
+  },
+  tabletGoogleButton: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    marginBottom: 20,
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#D9E7E4',
+    backgroundColor: '#FFFFFF',
+  },
+  tabletCreateButton: {
+    height: 48,
+    marginTop: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: TEAL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tabletPortraitFooter: {
+    marginTop: 18,
+    paddingHorizontal: 4,
   },
   tabletCardWrapper: {
     width: '100%',
@@ -641,71 +817,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   tabletLandscapeLeft: {
-    flex: 0.9,
+    flex: 1,
     backgroundColor: '#F4FAF9',
-    paddingHorizontal: 36,
-    paddingVertical: 32,
-    justifyContent: 'space-between',
+    position: 'relative',
+    overflow: 'hidden',
     borderRightWidth: 1,
     borderRightColor: '#E5F0EE',
+  },
+  tabletLandscapeGraphic: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  tabletLandscapeBrandWrapper: {
+    position: 'absolute',
+    top: 128,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    zIndex: 2,
   },
   tabletBrandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 20,
   },
   tabletBrandLogo: {
-    width: 48,
-    height: 48,
+    width: 80,
+    height: 80,
     resizeMode: 'contain',
   },
   tabletBrandTitle: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 22,
+    fontSize: 36,
     color: INK,
-    lineHeight: 26,
+    lineHeight: 42,
   },
   tabletBrandTagline: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
+    fontSize: 16,
     color: MUTED,
-  },
-  tabletGraphicWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  tabletHeroImage: {
-    width: '100%',
-    height: 260,
-  },
-  trustRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5F0EE',
-  },
-  trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-  },
-  trustBadgeText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 11,
-    color: INK,
+    lineHeight: 22,
+    marginTop: 4,
   },
   tabletLandscapeRight: {
-    flex: 1.1,
+    flex: 1,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
   },

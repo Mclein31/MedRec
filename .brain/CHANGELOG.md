@@ -10,6 +10,35 @@ last_updated: 2026-09-02
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [1.2.3] — Tablet Authentication UI Refinement & Landscape Brand Showcase Expansion
+- **Tablet Landscape Split-Screen Visual Panel with 3:4 Native Graphic (`mobile/app/login.tsx` & `register.tsx`)**:
+  - Balanced both columns to equal 50/50 widths (`tabletLandscapeLeft: { flex: 1 }` and `tabletLandscapeRight: { flex: 1 }`), giving equal architectural weight to the visual panel and authentication card.
+  - Implemented the new 3:4 (`1792 × 2400px`) `graphic-2.png` asset as the full-bleed background of the entire left column (`StyleSheet.absoluteFillObject`, `resizeMode: 'cover'`), occupying 100% width and 100% height with zero borders, gaps, or distortion.
+  - Overlaid the prominent MedRec branding (80×80pt logo, 36pt bold title, 16pt tagline) comfortably in the upper sky region (`position: 'absolute'`, `top: 128`, `zIndex: 2`) with clean left-alignment between title and tagline.
+  - Removed all bottom security trust badges ("End-to-End Encrypted", "Sovereign Vault" / "Patient-Sovereign Data", "Doctor QR Access" / "Biometric Security") across Login and Create Account screens.
+- **Phone-Harmonized Centered Branding Architecture (`mobile/app/login.tsx` & `register.tsx`)**:
+  - Restructured Tablet Portrait branding across Login and Create Account screens to strictly follow the phone authentication UI's centered visual hierarchy: centered MedRec logo mark (52×52pt for Login, 50×50pt for Register), centered app title ("MedRec", 24pt/22pt `LexendDeca-Bold`), and centered supporting tagline ("Your Health Records in Your Pockets", 12pt/11.5pt `LexendDeca-Regular`).
+- **Compact Floating Tablet Card Architecture (`maxWidth: 420pt`)**:
+  - Centered a compact, mobile-proportioned white authentication card (`maxWidth: 420pt`) with 24pt rounded corners, subtle `#E5F0EE` border, and soft elevation shadow on the `#F4FAF9` tablet portrait canvas.
+  - Retained the exact phone component structure and vertical flow (Branding -> Blue Heading -> Subtitle -> Inputs with icons -> Primary CTA -> Divider -> Google SSO -> Switch CTA -> Footer Terms & Privacy).
+  - Scaled horizontal and vertical spacing modestly (32pt horizontal padding, 28pt top padding for Login, 26pt for Register) to eliminate dead space while guaranteeing zero scrolling on standard tablet portrait viewports.
+- **Strict Responsive Layout Quarantine**:
+  - Guarded all changes within `isTablet && isLandscape` and `isTablet && !isLandscape` branches, guaranteeing 100% preservation of Phone UI (`!isTablet`).
+
+- **Decoupled 2-Layer Modal Animation Architecture for Profile Tab Edit Modals**:
+  - Re-architected both Edit modals launched from the Profile tab (`ProfileEditModal.tsx` for Demographics & Medical ID, and `ChangePasswordModal.tsx` for Password Updates) to separate the background dimming animation from the modal sheet/card popup animation on both Phone and Tablet layouts.
+  - **Layer 1 (Independent Stationary Dimming Backdrop)**: An absolute-fill backdrop (`rgba(0, 0, 0, 0.5)`) that animates strictly via opacity fade-in (220ms) and fade-out (180ms) without sliding or translating with the modal.
+  - **Layer 2 (Independent Modal Entrance/Exit Transitions)**:
+    - **Tablet (`isTablet`)**: Enters with a subtle scale (`0.93 -> 1.0`) and vertical translation (`14pt -> 0pt`) alongside opacity (`0 -> 1`) in 240ms cubic easing; exits smoothly on dismiss before unmounting.
+    - **Phone (`!isTablet`)**: Enters with bottom sheet translation (`windowHeight -> 0`) alongside opacity in 260ms cubic easing; exits cleanly downwards in 200ms cubic easing.
+  - **Lifecycle & Dismissal Guarding**: Integrated `modalVisible` state, `prevVisibleRef`, and `animTokenRef` sequence tokens to prevent race conditions during rapid dismissals and save events, ensuring dismissal animations run smoothly to completion before calling `onClose()`.
+  - Preserved 100% of all form fields, input validations, Save/Update API mutations, cancel actions, accessibility roles, and styling across compact phones, standard phones, tablet portrait, and tablet landscape layouts.
+- **Code Review Security & Asset Cleanup (`mobile/components/ChangePasswordModal.tsx`, `login.tsx`, `register.tsx`)**:
+  - Fixed independent visibility state in `ChangePasswordModal.tsx` by introducing dedicated `showConfirm` / `setShowConfirm` state, resolving input coupling where toggling the confirm password eye icon inadvertently unmasked the new password field.
+  - Removed dead `AuthBrandingHeader` imports from `login.tsx` and `register.tsx` and pruned orphaned component files.
+  - Purged unreferenced binary assets (`mobile/assets/logo/logo`) and OS metadata files from mobile asset directories.
+  - Synchronized `PROJECT_CONTEXT.md` component catalog with active codebase architecture.
+
 ## [1.2.1] — Tablet Portrait Add Health Record Modal Header Simplification & Asset Cleanup
 - **Tablet Portrait Add Health Record Duplicate Save Button Removal**:
   - Removed duplicate `tabletHeaderSaveBtn` from the top-right corner of the Tablet Portrait Add Health Record modal header in `mobile/app/record/add.tsx`.
