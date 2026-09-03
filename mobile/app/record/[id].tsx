@@ -7,15 +7,23 @@ import {
   ScrollView,
   StyleSheet,
   Image,
+  Modal,
+  Platform,
+  Animated,
+  Easing,
 } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { api } from '../../lib/api';
 
 import { Colors, Radii, Typography, ResponsiveLimits } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
+import { RecordEditModal } from '../../components/records/RecordEditModal';
 
 // Design Tokens matching MedRec standard palette
 const TEAL = Colors.teal;
@@ -54,6 +62,10 @@ export default function RecordDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
+  const [lightboxVisible, setLightboxVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [imgLoading, setImgLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -165,6 +177,20 @@ export default function RecordDetailScreen() {
             {typeLabel}
           </Text>
         </View>
+
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setEditModalVisible(true);
+          }}
+          style={({ pressed }) => [styles.editMetadataBtn, pressed && styles.pressed]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Edit record metadata"
+        >
+          <Ionicons name="pencil-outline" size={13} color={TEAL} />
+          <Text style={styles.editMetadataText}>Edit</Text>
+        </Pressable>
       </View>
 
       <Text
@@ -232,24 +258,62 @@ export default function RecordDetailScreen() {
   const attachmentCard = attachmentUri ? (
     <View style={styles.card}>
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionHeaderIconBox}>
-          <Ionicons
-            name="document-attach-outline"
-            size={18}
-            color={isTablet && isLandscape ? BLUE : TEAL}
-          />
+        <View style={styles.sectionHeaderLeft}>
+          <View style={styles.sectionHeaderIconBox}>
+            <Ionicons
+              name="document-attach-outline"
+              size={18}
+              color={isTablet && isLandscape ? BLUE : TEAL}
+            />
+          </View>
+          <Text style={styles.sectionHeaderTitle} maxFontSizeMultiplier={1.35}>
+            Attached Document / Scan
+          </Text>
         </View>
-        <Text style={styles.sectionHeaderTitle} maxFontSizeMultiplier={1.35}>
-          Attached Document / Photo
-        </Text>
+        <Pressable
+          onPress={() => {
+            setLightboxVisible(true);
+          }}
+          style={({ pressed }) => [styles.expandBadge, pressed && styles.pressed]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="View full screen document"
+        >
+          <Ionicons name="expand-outline" size={13} color={TEAL} />
+          <Text style={styles.expandBadgeText}>Expand</Text>
+        </Pressable>
       </View>
-      <View style={styles.attachmentBox}>
-        <Image
-          source={{ uri: attachmentUri }}
-          style={styles.attachmentImage}
-          resizeMode="cover"
-        />
-      </View>
+      <Pressable
+        onPress={() => setLightboxVisible(true)}
+        style={styles.attachmentBox}
+        accessibilityRole="imagebutton"
+        accessibilityLabel="Attached medical document. Tap to view full screen."
+      >
+        {imgLoading && !imgError && (
+          <View style={styles.imgLoadingBox}>
+            <ActivityIndicator size="small" color={TEAL} />
+            <Text style={styles.imgLoadingText}>Loading scan...</Text>
+          </View>
+        )}
+        {imgError ? (
+          <View style={styles.imgErrorBox}>
+            <Ionicons name="alert-circle-outline" size={28} color={RED} />
+            <Text style={styles.imgErrorText}>Unable to load preview</Text>
+          </View>
+        ) : (
+          <Image
+            source={{ uri: attachmentUri }}
+            style={styles.attachmentImage}
+            resizeMode="contain"
+            onLoadStart={() => setImgLoading(true)}
+            onLoadEnd={() => setImgLoading(false)}
+            onError={() => {
+              setImgLoading(false);
+              setImgError(true);
+            }}
+          />
+        )}
+      </Pressable>
     </View>
   ) : null;
 
@@ -505,6 +569,160 @@ export default function RecordDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Fullscreen Lightbox Overlay with Separated Animations */}
+      <ImageLightboxOverlay
+        visible={lightboxVisible}
+        uri={attachmentUri || null}
+        title={record.title}
+        type={typeLabel}
+        onClose={() => setLightboxVisible(false)}
+      />
+
+      {/* Record Metadata Edit Modal */}
+      <RecordEditModal
+        visible={editModalVisible}
+        record={record}
+        onClose={() => setEditModalVisible(false)}
+        onSaved={(updated) => setRecord(updated)}
+      />
+    </View>
+  );
+}
+
+function ImageLightboxOverlay({
+  visible,
+  uri,
+  title,
+  type,
+  onClose,
+}: {
+  visible: boolean;
+  uri: string | null;
+  title: string;
+  type: string;
+  onClose: () => void;
+}) {
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const contentScale = useRef(new Animated.Value(0.82)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const [mounted, setMounted] = useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      backdropOpacity.setValue(0);
+      contentScale.setValue(0.96);
+      contentOpacity.setValue(0);
+
+      // Instant high-speed pop-up transitions
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 90,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentScale, {
+          toValue: 1,
+          duration: 90,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 70,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (mounted) {
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentScale, {
+          toValue: 0.96,
+          duration: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 0,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setMounted(false);
+      });
+    }
+  }, [visible]);
+
+  if (!mounted || !uri) return null;
+
+  return (
+    <View style={styles.lightboxOverlayRoot} pointerEvents="box-none">
+      <Animated.View
+        style={[
+          styles.lightboxBackdrop,
+          { opacity: backdropOpacity },
+        ]}
+      >
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss fullscreen view"
+        />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          styles.lightboxHeader,
+          { opacity: contentOpacity },
+        ]}
+      >
+        <View style={styles.lightboxHeaderLeft}>
+          <Text style={styles.lightboxTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          <Text style={styles.lightboxSubtitle}>{type}</Text>
+        </View>
+
+        <Pressable
+          onPress={onClose}
+          style={({ pressed }) => [styles.lightboxCloseBtn, pressed && styles.pressed]}
+          hitSlop={14}
+          accessibilityRole="button"
+          accessibilityLabel="Close full screen view"
+        >
+          <Ionicons name="close" size={24} color="#FFFFFF" />
+        </Pressable>
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          styles.lightboxBody,
+          {
+            opacity: contentOpacity,
+            transform: [{ scale: contentScale }],
+          },
+        ]}
+      >
+        <Image
+          source={{ uri }}
+          style={styles.lightboxImage}
+          resizeMode="contain"
+        />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          styles.lightboxFooter,
+          { opacity: contentOpacity },
+        ]}
+      >
+        <Text style={styles.lightboxFooterText}>Tap anywhere outside to close</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -670,6 +888,20 @@ const styles = StyleSheet.create({
     tintColor: TEAL,
   },
   typeBadgeText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: TEAL,
+  },
+  editMetadataBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: '#E8F5F2',
+  },
+  editMetadataText: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 12,
     color: TEAL,
@@ -904,11 +1136,123 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     backgroundColor: '#F8FCFB',
+    height: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   attachmentImage: {
     width: '100%',
-    height: 220,
+    height: '100%',
     borderRadius: Radii.md,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  expandBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: GREEN_LIGHT,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  expandBadgeText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 11,
+    color: TEAL,
+  },
+  imgLoadingBox: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  imgLoadingText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: MUTED,
+  },
+  imgErrorBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: 16,
+  },
+  imgErrorText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12.5,
+    color: RED,
+  },
+
+  /* Lightbox Overlay (Separated Animations) */
+  lightboxOverlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 99999,
+    elevation: 99999,
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+  },
+  lightboxBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(5, 15, 18, 0.94)',
+  },
+  lightboxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 24 : 16,
+    paddingBottom: 12,
+    zIndex: 100,
+  },
+  lightboxHeaderLeft: {
+    flex: 1,
+    gap: 2,
+    marginRight: 16,
+  },
+  lightboxTitle: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  lightboxSubtitle: {
+    fontFamily: 'LexendDeca-Medium',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  lightboxCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxBody: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    zIndex: 50,
+  },
+  lightboxImage: {
+    width: '100%',
+    height: '100%',
+  },
+  lightboxFooter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    zIndex: 10,
+  },
+  lightboxFooterText: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
 
   /* Tablet Landscape Clinical Split Workspace */

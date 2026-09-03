@@ -23,6 +23,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { RecordSearchBar } from '../../components/records/RecordSearchBar';
+import { RecordEditModal } from '../../components/records/RecordEditModal';
 import { Colors, Radii, Typography, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { MedicalRecord } from '../../types/record';
@@ -52,9 +53,10 @@ export default function RecordsScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
 
-  // Navigation Modals
+  // Navigation & Edit Modals
   const [menuVisible, setMenuVisible] = useState(false);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
 
   // Landscape Tablet Master-Detail Selection & Explain State
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
@@ -517,15 +519,30 @@ export default function RecordsScreen() {
                       <Text style={styles.detailBadgeText}>{activeTypeLabel}</Text>
                     </View>
 
-                    <Pressable
-                      onPress={() => router.push(`/record/${activeDetailRecord.id}`)}
-                      style={styles.detailOpenFullBtn}
-                      accessibilityRole="button"
-                      accessibilityLabel="Open record in full detail page"
-                    >
-                      <Text style={styles.detailOpenFullText}>Full Page</Text>
-                      <Ionicons name="open-outline" size={14} color={Colors.teal} />
-                    </Pressable>
+                    <View style={styles.detailHeaderActionsGroup}>
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setEditingRecord(activeDetailRecord);
+                        }}
+                        style={styles.detailEditBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit record metadata"
+                      >
+                        <Ionicons name="pencil-outline" size={13} color={Colors.teal} />
+                        <Text style={styles.detailEditText}>Edit</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => router.push(`/record/${activeDetailRecord.id}`)}
+                        style={styles.detailOpenFullBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel="Open record in full detail page"
+                      >
+                        <Text style={styles.detailOpenFullText}>Full Page</Text>
+                        <Ionicons name="open-outline" size={14} color={Colors.teal} />
+                      </Pressable>
+                    </View>
                   </View>
 
                   <Text style={styles.detailMainTitle}>{activeDetailRecord.title}</Text>
@@ -770,6 +787,16 @@ export default function RecordsScreen() {
         <NotificationCenterModal
           visible={notificationsVisible}
           onClose={() => setNotificationsVisible(false)}
+        />
+
+        {/* Record Metadata Edit Modal */}
+        <RecordEditModal
+          visible={!!editingRecord}
+          record={editingRecord}
+          onClose={() => setEditingRecord(null)}
+          onSaved={(updated) => {
+            setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+          }}
         />
       </View>
     );
@@ -1123,11 +1150,30 @@ export default function RecordsScreen() {
                 </View>
               )}
 
-              {/* Record Type Badge */}
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText} maxFontSizeMultiplier={1.35}>
-                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                </Text>
+              {/* Top Row: Record Type Badge & Metadata Edit Action */}
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.typeBadge}>
+                  <Text style={styles.typeBadgeText} maxFontSizeMultiplier={1.35}>
+                    {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                  </Text>
+                </View>
+
+                {!selectionMode && (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      Haptics.selectionAsync();
+                      setEditingRecord(item);
+                    }}
+                    style={({ pressed }) => [styles.cardEditBtn, pressed && styles.btnPressed]}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit metadata for ${item.title}`}
+                  >
+                    <Ionicons name="pencil-outline" size={13} color={Colors.teal} />
+                    <Text style={styles.cardEditText}>Edit</Text>
+                  </Pressable>
+                )}
               </View>
 
               <View style={styles.recordBody}>
@@ -1259,6 +1305,16 @@ export default function RecordsScreen() {
         visible={notificationsVisible}
         onClose={() => setNotificationsVisible(false)}
         onOpenAiSummary={handleSummarize}
+      />
+
+      {/* Record Metadata Edit Modal */}
+      <RecordEditModal
+        visible={!!editingRecord}
+        record={editingRecord}
+        onClose={() => setEditingRecord(null)}
+        onSaved={(updated) => {
+          setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        }}
       />
     </View>
   );
@@ -1522,15 +1578,34 @@ const styles = StyleSheet.create({
     borderColor: Colors.teal,
   },
 
-  /* Record Type Badge */
+  /* Record Type Badge & Edit Button Header Row */
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    marginHorizontal: 14,
+    marginBottom: 2,
+  },
   typeBadge: {
     alignSelf: 'flex-start',
-    marginTop: 12,
-    marginLeft: 14,
-    marginBottom: 2,
   },
   typeBadgeText: {
     fontFamily: 'LexendDeca-Bold',
+    fontSize: 11,
+    color: Colors.teal,
+  },
+  cardEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 6,
+    backgroundColor: '#E8F5F2',
+  },
+  cardEditText: {
+    fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11,
     color: Colors.teal,
   },
@@ -1938,6 +2013,25 @@ const styles = StyleSheet.create({
   detailBadgeText: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11.5,
+    color: Colors.teal,
+  },
+  detailHeaderActionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  detailEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: '#E8F5F2',
+  },
+  detailEditText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
     color: Colors.teal,
   },
   detailOpenFullBtn: {

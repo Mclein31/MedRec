@@ -71,12 +71,38 @@ export default function AddRecordScreen() {
     }
     setSaving(true);
     try {
+      let finalAttachmentUrl = photoUri || undefined;
+
+      if (photoUri && (photoUri.startsWith('file://') || photoUri.startsWith('content://'))) {
+        try {
+          const uploadInfo = await api.getStorageUploadUrl({
+            bucket: 'medical-records',
+            fileName: 'document_scan.jpg',
+            fileType: 'image/jpeg',
+          });
+          if (uploadInfo?.uploadUrl) {
+            await api.uploadFileToSignedUrl(uploadInfo.uploadUrl, photoUri, 'image/jpeg');
+            finalAttachmentUrl = uploadInfo.path;
+          } else {
+            throw new Error('Could not get a secure upload URL from the server.');
+          }
+        } catch (uploadErr: any) {
+          Alert.alert(
+            'Upload Failed',
+            'Could not securely upload the document to cloud storage. Please try again.\n\n' +
+              (uploadErr?.message || 'Unknown error'),
+          );
+          setSaving(false);
+          return;
+        }
+      }
+
       await api.addRecord({
         type,
         title: title.trim(),
         description: description.trim(),
         date,
-        attachmentUrl: photoUri || undefined,
+        attachmentUrl: finalAttachmentUrl,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
