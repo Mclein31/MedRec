@@ -56,11 +56,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [refreshNotifications]);
 
   const markAsRead = async (id: string) => {
-    // Optimistically update local state
+    // Optimistically update local state — only decrement if this specific notification was unread
+    const target = notifications.find((n) => n.id === id);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    if (target && !target.read) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
 
     try {
       await api.markNotificationAsRead(id);

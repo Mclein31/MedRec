@@ -3,15 +3,13 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { MedRecNotification } from '../../context/NotificationContext';
-import { Colors, Spacing, Radii, Typography } from '../../constants/theme';
+import { Colors, Radii } from '../../constants/theme';
 
 const TEAL = Colors.teal;
-const TEAL_LIGHT = Colors.tealLight;
 const INK = Colors.ink;
 const MUTED = Colors.muted;
 const BORDER = Colors.border;
 const CARD_BG = Colors.cardBg;
-const UNREAD_BG = Colors.bg;
 
 interface NotificationCardProps {
   notification: MedRecNotification;
@@ -25,45 +23,39 @@ function getCategoryConfig(type: string) {
       return {
         icon: 'folder-outline' as const,
         color: TEAL,
-        bg: TEAL_LIGHT,
-        actionHint: 'Tap to view record',
+        actionHint: 'View record',
       };
     case 'share_created':
     case 'share_expired':
     case 'share_revoked':
       return {
-        icon: 'share-social-outline' as const,
+        icon: 'qr-code-outline' as const,
         color: '#0284C7',
-        bg: '#E0F2FE',
-        actionHint: 'Tap to review sharing',
+        actionHint: 'Review doctor share',
       };
     case 'ai_summary_ready':
       return {
         icon: 'sparkles-outline' as const,
         color: '#7C3AED',
-        bg: '#EDE9FE',
-        actionHint: 'Tap to open AI insights',
+        actionHint: 'Open AI summary',
       };
     case 'emergency_updated':
       return {
         icon: 'medical-outline' as const,
         color: '#D92D20',
-        bg: '#FEE2E2',
-        actionHint: 'Tap to view Medical ID',
+        actionHint: 'View Medical ID',
       };
     case 'security_alert':
       return {
         icon: 'shield-checkmark-outline' as const,
         color: '#D92D20',
-        bg: '#FEE2E2',
-        actionHint: 'Tap to review profile',
+        actionHint: 'Review profile',
       };
     default:
       return {
         icon: 'notifications-outline' as const,
         color: MUTED,
-        bg: '#F1F5F9',
-        actionHint: 'Tap to view',
+        actionHint: 'View details',
       };
   }
 }
@@ -99,6 +91,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 }) => {
   const config = getCategoryConfig(notification.type);
   const timeString = formatRelativeTime(notification.createdAt);
+  const isUnread = !notification.read;
 
   const handlePress = () => {
     Haptics.selectionAsync();
@@ -110,37 +103,48 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       onPress={handlePress}
       style={({ pressed }) => [
         styles.card,
-        !notification.read && styles.cardUnread,
+        isUnread ? styles.cardUnread : styles.cardRead,
         pressed && styles.cardPressed,
       ]}
       accessibilityRole="button"
       accessibilityLabel={`${notification.title}, ${notification.body}`}
     >
-      {!notification.read && <View style={styles.unreadBar} />}
-
       <View style={styles.contentRow}>
-        <View style={[styles.iconBox, { backgroundColor: config.bg }]}>
-          <Ionicons name={config.icon} size={20} color={config.color} />
+        {/* Clean Standalone Centered Icon without background box/highlight */}
+        <View style={styles.standaloneIconWrapper}>
+          <Ionicons name={config.icon} size={26} color={config.color} />
         </View>
 
         <View style={styles.textColumn}>
           <View style={styles.headerRow}>
             <Text
-              style={[styles.title, !notification.read && styles.titleUnread]}
+              style={[styles.title, isUnread && styles.titleUnread]}
               numberOfLines={1}
+              maxFontSizeMultiplier={1.3}
             >
               {notification.title}
             </Text>
-            {!notification.read && <View style={styles.unreadDot} />}
+            {isUnread && <View style={styles.unreadDot} />}
           </View>
 
-          <Text style={styles.body} numberOfLines={2}>
+          <Text
+            style={[styles.body, !isUnread && styles.bodyRead]}
+            numberOfLines={2}
+            maxFontSizeMultiplier={1.3}
+          >
             {notification.body}
           </Text>
 
           <View style={styles.footerRow}>
-            <Text style={styles.timestamp}>{timeString}</Text>
-            <Text style={styles.actionHint}>• {config.actionHint}</Text>
+            <Text style={styles.timestamp} maxFontSizeMultiplier={1.2}>
+              {timeString}
+            </Text>
+            <Text style={styles.footerBullet} maxFontSizeMultiplier={1.2}>
+              •
+            </Text>
+            <Text style={styles.actionHint} maxFontSizeMultiplier={1.2}>
+              {config.actionHint}
+            </Text>
           </View>
         </View>
       </View>
@@ -150,61 +154,61 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: CARD_BG,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: BORDER,
-    marginBottom: 10,
+    marginBottom: 8,
     overflow: 'hidden',
+  },
+  // Unread = true/original white surface color, naturally emphasized
+  cardUnread: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D0E6E1',
     shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1.5 },
+    elevation: 2,
+  },
+  // Read = slightly darker surface color, subtle but distinct, not disabled
+  cardRead: {
+    backgroundColor: '#F2F7F5',
+    borderColor: '#E2ECE8',
+    shadowColor: '#000',
+    shadowOpacity: 0.01,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
-  cardUnread: {
-    backgroundColor: UNREAD_BG,
-    borderColor: '#CDEAE4',
-  },
   cardPressed: {
-    opacity: 0.85,
-    backgroundColor: '#EDF5F3',
-  },
-  unreadBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: TEAL,
+    opacity: 0.72,
   },
   contentRow: {
     flexDirection: 'row',
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     gap: 12,
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+  standaloneIconWrapper: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textColumn: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 6,
   },
   title: {
     flex: 1,
     fontFamily: 'LexendDeca-Medium',
-    fontSize: 14,
+    fontSize: 13.5,
     color: INK,
     letterSpacing: -0.2,
   },
@@ -213,31 +217,38 @@ const styles = StyleSheet.create({
     color: INK,
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: TEAL,
   },
   body: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
+    fontSize: 12,
+    color: '#324E48',
+    lineHeight: 16.5,
+  },
+  bodyRead: {
     color: MUTED,
-    lineHeight: 18,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
+    gap: 5,
+    marginTop: 3,
   },
   timestamp: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 11,
+    fontSize: 10.5,
     color: MUTED,
+  },
+  footerBullet: {
+    fontSize: 10,
+    color: Colors.textMuted,
   },
   actionHint: {
     fontFamily: 'LexendDeca-Medium',
-    fontSize: 11,
+    fontSize: 10.5,
     color: TEAL,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Animated,
-  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -40,7 +38,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   onClose,
   onOpenAiSummary,
 }) => {
-  const { isTablet, isLandscape, width, insets, scaleFont } = useResponsive();
+  const { isTablet, insets, scaleFont } = useResponsive();
   const router = useRouter();
   const {
     notifications,
@@ -51,91 +49,8 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     markAllAsRead,
   } = useNotifications();
 
-  const panelWidth = isLandscape
-    ? Math.min(width * 0.44, 420)
-    : Math.min(width * 0.60, 420);
-
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [refreshing, setRefreshing] = useState(false);
-
-  // Tablet (Portrait & Landscape) animated state for independent backdrop & panel slide
-  const [modalVisible, setModalVisible] = useState(visible);
-  const slideAnim = useRef(new Animated.Value(panelWidth)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  const isClosingRef = useRef(false);
-  const prevVisibleRef = useRef(visible);
-  const animTokenRef = useRef(0);
-
-  const stopAllAnimations = () => {
-    fadeAnim.stopAnimation();
-    slideAnim.stopAnimation();
-  };
-
-  useEffect(() => {
-    if (!isTablet) {
-      setModalVisible(visible);
-      return;
-    }
-
-    const wasVisible = prevVisibleRef.current;
-    prevVisibleRef.current = visible;
-
-    if (visible && !wasVisible) {
-      isClosingRef.current = false;
-      const currentToken = ++animTokenRef.current;
-      stopAllAnimations();
-
-      setModalVisible(true);
-      slideAnim.setValue(panelWidth);
-      fadeAnim.setValue(0);
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 240,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else if (!visible && wasVisible && modalVisible) {
-      handleClose();
-    }
-  }, [visible, isTablet, panelWidth]);
-
-  const handleClose = () => {
-    if (!isTablet) {
-      onClose();
-      return;
-    }
-    if (isClosingRef.current) return;
-    isClosingRef.current = true;
-    const currentToken = ++animTokenRef.current;
-    stopAllAnimations();
-
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: panelWidth,
-        duration: 200,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
-      if (finished && animTokenRef.current === currentToken) {
-        setModalVisible(false);
-        onClose();
-      }
-    });
-  };
 
   const filteredNotifications =
     activeTab === 'unread'
@@ -158,7 +73,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     if (!notification.read) {
       await markAsRead(notification.id);
     }
-    handleClose();
+    onClose();
 
     setTimeout(() => {
       if (notification.type === 'record_added' && notification.data?.recordId) {
@@ -181,180 +96,9 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           router.push('/(tabs)' as any);
         }
       }
-    }, isTablet ? 220 : 150);
+    }, 150);
   };
 
-  // ─── 1. TABLET (PORTRAIT & LANDSCAPE) FLOATING SIDE PANEL ───────────────
-  if (isTablet) {
-    return (
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="none"
-        onRequestClose={handleClose}
-      >
-        <View style={styles.modalRootTabletSide}>
-          {/* Layer 1: Independent Full-Screen Stationary Dimming Backdrop */}
-          <Animated.View
-            style={[
-              styles.backdropTablet,
-              { opacity: fadeAnim },
-            ]}
-          >
-            <Pressable
-              style={StyleSheet.absoluteFillObject}
-              onPress={handleClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close notifications backdrop"
-            />
-          </Animated.View>
-
-          {/* Layer 2: Right-Side Anchored Notification Panel with Side Slide Transition */}
-          <Animated.View
-            style={[
-              styles.containerTabletSide,
-              {
-                width: panelWidth,
-                transform: [{ translateX: slideAnim }],
-              },
-            ]}
-          >
-            {/* Header */}
-            <View style={[styles.headerTabletSide, { paddingTop: Math.max(insets.top + 6, 18) }]}>
-              <View style={styles.headerContentRow}>
-                <View style={styles.headerTitleGroup}>
-                  <Text
-                    style={[
-                      styles.headerTitle,
-                      { fontSize: scaleFont(20, 18, 22) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    Notifications
-                  </Text>
-                  <Text style={styles.headerSubtitle} maxFontSizeMultiplier={1.35}>
-                    {unreadCount > 0
-                      ? `${unreadCount} unread update${unreadCount > 1 ? 's' : ''}`
-                      : 'All caught up'}
-                  </Text>
-                </View>
-
-                <View style={styles.headerActions}>
-                  {unreadCount > 0 && (
-                    <Pressable
-                      onPress={handleMarkAllRead}
-                      style={({ pressed }) => [styles.markAllBtn, pressed && styles.pressed]}
-                      hitSlop={8}
-                      accessibilityRole="button"
-                      accessibilityLabel="Mark all notifications as read"
-                    >
-                      <Text style={styles.markAllText}>Mark all as read</Text>
-                    </Pressable>
-                  )}
-
-                  <Pressable
-                    onPress={handleClose}
-                    style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close notifications"
-                  >
-                    <Ionicons name="close" size={20} color={INK} />
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-
-            {/* Filter Segmented Control */}
-            <View style={styles.filterBar}>
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setActiveTab('all');
-                }}
-                style={[styles.filterTab, activeTab === 'all' && styles.filterTabActive]}
-              >
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    activeTab === 'all' && styles.filterTabTextActive,
-                  ]}
-                  maxFontSizeMultiplier={1.35}
-                >
-                  All ({notifications.length})
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setActiveTab('unread');
-                }}
-                style={[styles.filterTab, activeTab === 'unread' && styles.filterTabActive]}
-              >
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    activeTab === 'unread' && styles.filterTabTextActive,
-                  ]}
-                  maxFontSizeMultiplier={1.35}
-                >
-                  Unread ({unreadCount})
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Notification List / Empty State */}
-            {loading && notifications.length === 0 ? (
-              <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={TEAL} />
-                <Text style={styles.loadingText}>Loading notifications...</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={filteredNotifications}
-                keyExtractor={notificationKeyExtractor}
-                renderItem={({ item }) => (
-                  <NotificationCard
-                    notification={item}
-                    onPress={handleNotificationPress}
-                  />
-                )}
-                contentContainerStyle={[
-                  styles.listContent,
-                  { paddingBottom: Math.max(insets.bottom, 20) + 16 },
-                ]}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    tintColor={TEAL}
-                  />
-                }
-                ListEmptyComponent={
-                  <View style={styles.emptyContainer}>
-                    <View style={styles.emptyIconBox}>
-                      <Ionicons name="notifications-off-outline" size={32} color={TEAL} />
-                    </View>
-                    <Text style={styles.emptyTitle}>
-                      {activeTab === 'unread' ? 'No unread notifications' : 'All caught up'}
-                    </Text>
-                    <Text style={styles.emptySubtitle}>
-                      {activeTab === 'unread'
-                        ? 'You have reviewed all your health alerts and updates.'
-                        : 'Important updates about your shared records, AI summaries, and security will appear here.'}
-                    </Text>
-                  </View>
-                }
-              />
-            )}
-          </Animated.View>
-        </View>
-      </Modal>
-    );
-  }
-
-  // ─── 2. PHONE & TABLET PORTRAIT MODAL (100% UNTOUCHED 🔒) ───────────────
   return (
     <Modal
       visible={visible}
@@ -380,14 +124,14 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         >
           {/* Header with integrated drag handle */}
           <View style={styles.header}>
-            <DragHandle />
+            {!isTablet && <DragHandle />}
 
             <View style={styles.headerContentRow}>
               <View style={styles.headerTitleGroup}>
                 <Text
                   style={[
                     styles.headerTitle,
-                    { fontSize: scaleFont(20, 18, 22) },
+                    { fontSize: scaleFont(19, 17, 21) },
                   ]}
                   maxFontSizeMultiplier={1.35}
                 >
@@ -420,13 +164,13 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                   accessibilityRole="button"
                   accessibilityLabel="Close notifications"
                 >
-                  <Ionicons name="close" size={20} color={INK} />
+                  <Ionicons name="close" size={18} color={INK} />
                 </Pressable>
               </View>
             </View>
           </View>
 
-          {/* Filter Segmented Control */}
+          {/* Filter Segmented Control Bar */}
           <View style={styles.filterBar}>
             <Pressable
               onPress={() => {
@@ -468,7 +212,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           {/* Notification List / Empty State */}
           {loading && notifications.length === 0 ? (
             <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color={TEAL} />
+              <ActivityIndicator size="small" color={TEAL} />
               <Text style={styles.loadingText}>Loading notifications...</Text>
             </View>
           ) : (
@@ -485,6 +229,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 styles.listContent,
                 { paddingBottom: Math.max(insets.bottom, 20) + 16 },
               ]}
+              showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -494,9 +239,8 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               }
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <View style={styles.emptyIconBox}>
-                    <Ionicons name="notifications-off-outline" size={32} color={TEAL} />
-                  </View>
+                  {/* Clean Standalone Icon without background circle */}
+                  <Ionicons name="notifications-off-outline" size={36} color={TEAL} />
                   <Text style={styles.emptyTitle}>
                     {activeTab === 'unread' ? 'No unread notifications' : 'All caught up'}
                   </Text>
@@ -521,21 +265,10 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
   },
   modalRootTablet: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: Colors.backdrop,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-  },
-  modalRootTabletSide: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'stretch',
-    backgroundColor: 'transparent',
-  },
-  backdropTablet: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.backdrop,
   },
   container: {
     flex: 1,
@@ -546,49 +279,29 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: ResponsiveLimits.maxModalWidth,
     maxHeight: '85%',
-    borderRadius: 24,
+    borderRadius: Radii.sheet,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: BORDER,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.18,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
-  containerTabletSide: {
-    height: '100%',
-    backgroundColor: BG,
-    borderTopLeftRadius: 24,
-    borderBottomLeftRadius: 24,
-    borderLeftWidth: 1,
-    borderLeftColor: BORDER,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    shadowOffset: { width: -6, height: 0 },
-    elevation: 16,
-    overflow: 'hidden',
-  },
-  headerTabletSide: {
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    paddingBottom: 14,
-    paddingHorizontal: 20,
-  },
   header: {
     backgroundColor: CARD_BG,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    paddingTop: 10,
-    paddingBottom: 14,
-    paddingHorizontal: 20,
+    borderBottomColor: '#F0F5F4',
+    paddingTop: 8,
+    paddingBottom: 12,
+    paddingHorizontal: 18,
   },
   headerContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
   headerTitleGroup: {
     gap: 2,
@@ -599,25 +312,25 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 12,
+    fontSize: 11.5,
     color: MUTED,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   markAllBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
     borderRadius: 8,
     backgroundColor: '#F0F9F7',
-    minHeight: 32,
+    minHeight: 28,
     justifyContent: 'center',
   },
   markAllText: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
     color: TEAL,
   },
   closeBtn: {
@@ -632,19 +345,19 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    gap: 8,
     backgroundColor: CARD_BG,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    borderBottomColor: '#F0F5F4',
   },
   filterTab: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    minHeight: 32,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: '#F0F5F4',
+    minHeight: 28,
     justifyContent: 'center',
   },
   filterTabActive: {
@@ -652,7 +365,7 @@ const styles = StyleSheet.create({
   },
   filterTabText: {
     fontFamily: 'LexendDeca-Medium',
-    fontSize: 13,
+    fontSize: 12,
     color: MUTED,
   },
   filterTabTextActive: {
@@ -660,47 +373,40 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-SemiBold',
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
   },
   loadingText: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 14,
+    fontSize: 13,
     color: MUTED,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 30,
-    gap: 10,
-  },
-  emptyIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#DDF5EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
+    paddingVertical: 50,
+    paddingHorizontal: 24,
+    gap: 8,
   },
   emptyTitle: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 17,
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 15,
     color: INK,
     textAlign: 'center',
+    marginTop: 4,
   },
   emptySubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    fontSize: 13,
+    fontSize: 12,
     color: MUTED,
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 17,
   },
   pressed: {
     opacity: 0.7,
