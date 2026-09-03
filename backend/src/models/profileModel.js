@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const userModel = require('./userModel');
 
 async function getProfileByUserId(userId) {
   const query = `
@@ -24,10 +25,10 @@ async function getProfileByUserId(userId) {
       p.avatar_url,
       p.organ_donor,
       p.updated_at AS profile_updated_at,
-      (SELECT COUNT(*)::int FROM medical_records mr WHERE mr.user_id = u.id) AS records_count,
-      (SELECT COUNT(*)::int FROM shared_access sa WHERE sa.user_id = u.id AND sa.revoked_at IS NULL AND sa.expires_at > now()) AS active_shares_count
-    FROM users u
-    LEFT JOIN user_profiles p ON p.user_id = u.id
+      (SELECT COUNT(*)::int FROM public.medical_records mr WHERE mr.user_id = u.id) AS records_count,
+      (SELECT COUNT(*)::int FROM public.shared_access sa WHERE sa.user_id = u.id AND sa.revoked_at IS NULL AND sa.expires_at > now()) AS active_shares_count
+    FROM public.users u
+    LEFT JOIN public.user_profiles p ON p.user_id = u.id
     WHERE u.id = $1
   `;
 
@@ -36,6 +37,7 @@ async function getProfileByUserId(userId) {
 }
 
 const ALLOWED_PROFILE_COLUMNS = [
+  'full_name',
   'date_of_birth',
   'biological_sex',
   'height',
@@ -58,28 +60,34 @@ async function upsertProfile(userId, data) {
   try {
     await client.query('BEGIN');
 
-    // 1. Update user name if explicitly provided
-    if (data.name !== undefined && data.name !== null && String(data.name).trim() !== '') {
-      await client.query(
-        `UPDATE users SET name = $1, updated_at = now() WHERE id = $2`,
-        [String(data.name).trim(), userId]
-      );
-    }
-
     // Normalize avatar_url alias if passed as avatarUrl
     const payload = { ...data };
     if (payload.avatarUrl !== undefined && payload.avatar_url === undefined) {
       payload.avatar_url = payload.avatarUrl;
     }
+    if (payload.name !== undefined && payload.full_name === undefined) {
+      payload.full_name = payload.name;
+    }
+
+    // 1. Update user name if explicitly provided
+    if (payload.full_name !== undefined && payload.full_name !== null && String(payload.full_name).trim() !== '') {
+      await client.query(
+        `UPDATE public.users
+         SET name = $1,
+             updated_at = now()
+         WHERE id = $2`,
+        [String(payload.full_name).trim(), userId]
+      );
+    }
 
     // 2. Check if a profile record already exists for this user
     const existing = await client.query(
-      `SELECT id FROM user_profiles WHERE user_id = $1`,
+      `SELECT id FROM public.user_profiles WHERE user_id = $1`,
       [userId]
     );
 
     if (existing.rows.length === 0) {
-      // Create new profile record with only the provided columns
+      // Create new profile record with provided columns
       const insertCols = ['user_id'];
       const insertPlaceholders = ['$1'];
       const insertValues = [userId];
@@ -97,7 +105,7 @@ async function upsertProfile(userId, data) {
       insertPlaceholders.push('now()');
 
       const insertQuery = `
-        INSERT INTO user_profiles (${insertCols.join(', ')})
+        INSERT INTO public.user_profiles (${insertCols.join(', ')})
         VALUES (${insertPlaceholders.join(', ')})
         RETURNING *
       `;
@@ -119,7 +127,7 @@ async function upsertProfile(userId, data) {
         setClauses.push('updated_at = now()');
         updateValues.push(userId);
         const updateQuery = `
-          UPDATE user_profiles
+          UPDATE public.user_profiles
           SET ${setClauses.join(', ')}
           WHERE user_id = $${colIdx}
           RETURNING *
@@ -138,24 +146,12 @@ async function upsertProfile(userId, data) {
   }
 }
 
-async function updateUserPassword(userId, passwordHash) {
-  const { rows } = await pool.query(
-    `UPDATE users
-     SET password = $1,
-         token_version = token_version + 1,
-         failed_login_attempts = 0,
-         locked_until = NULL,
-         updated_at = now()
-     WHERE id = $2
-     RETURNING id, email, token_version`,
-    [passwordHash, userId]
-  );
-  return rows[0] || null;
+async function updateUserPassword(userId, newPassword) {
+  return await userModel.updatePassword(userId, newPassword);
 }
 
 async function deleteUserAccount(userId) {
-  const { rowCount } = await pool.query(`DELETE FROM users WHERE id = $1`, [userId]);
-  return rowCount > 0;
+  return await userModel.deleteUser(userId);
 }
 
 module.exports = {

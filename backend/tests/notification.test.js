@@ -1,6 +1,8 @@
 const request = require('supertest');
 const app = require('../src/app');
 const pool = require('../src/config/db');
+const fs = require('fs');
+const path = require('path');
 
 describe('Notifications API Endpoints', () => {
   let token;
@@ -8,8 +10,6 @@ describe('Notifications API Endpoints', () => {
   let createdNotificationId;
 
   beforeAll(async () => {
-    const fs = require('fs');
-    const path = require('path');
     const schemaSql = fs.readFileSync(path.join(__dirname, '../src/migrations/schema.sql'), 'utf8');
     await pool.query(schemaSql);
 
@@ -27,7 +27,7 @@ describe('Notifications API Endpoints', () => {
 
   afterAll(async () => {
     try {
-      await pool.query('DELETE FROM users WHERE email = $1', [testEmail]);
+      await pool.query('DELETE FROM public.users WHERE email = $1', [testEmail]);
     } catch {}
     await pool.end();
   });

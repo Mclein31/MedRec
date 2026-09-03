@@ -1,143 +1,87 @@
 const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
 
-async function createUser({ name, email, passwordHash }) {
+async function createUser({ name, email, password }) {
+  const passwordHash = await bcrypt.hash(password, 10);
   const { rows } = await pool.query(
-    `INSERT INTO users (name, email, password)
+    `INSERT INTO public.users (name, email, password_hash)
      VALUES ($1, $2, $3)
-     RETURNING id, name, email, token_version, created_at`,
-    [name, email, passwordHash]
+     RETURNING id, name, email, created_at`,
+    [name.trim(), email.toLowerCase().trim(), passwordHash]
   );
   return rows[0];
 }
 
 async function findByEmail(email) {
   const { rows } = await pool.query(
-    `SELECT u.id, u.name, u.email, u.password, u.token_version, u.failed_login_attempts, u.locked_until, u.created_at, p.avatar_url
-     FROM users u
-     LEFT JOIN user_profiles p ON p.user_id = u.id
+    `SELECT u.id,
+            u.name,
+            u.email,
+            COALESCE(u.password_hash, u.password) AS password_hash,
+            COALESCE(u.token_version, 1) AS token_version,
+            u.created_at,
+            p.avatar_url
+     FROM public.users u
+     LEFT JOIN public.user_profiles p ON p.user_id = u.id
      WHERE u.email = $1`,
-    [email]
+    [email.toLowerCase().trim()]
   );
   return rows[0] || null;
 }
 
 async function findById(id) {
   const { rows } = await pool.query(
-    `SELECT u.id, u.name, u.email, u.token_version, u.created_at, p.avatar_url
-     FROM users u
-     LEFT JOIN user_profiles p ON p.user_id = u.id
+    `SELECT u.id,
+            u.name,
+            u.email,
+            COALESCE(u.password_hash, u.password) AS password_hash,
+            COALESCE(u.token_version, 1) AS token_version,
+            u.created_at,
+            p.avatar_url
+     FROM public.users u
+     LEFT JOIN public.user_profiles p ON p.user_id = u.id
      WHERE u.id = $1`,
     [id]
   );
   return rows[0] || null;
 }
 
-async function recordFailedLogin(userId, currentAttempts) {
-  const newAttempts = currentAttempts + 1;
-  const isLocked = newAttempts >= 5;
+async function updatePassword(id, newPassword) {
+  const passwordHash = await bcrypt.hash(newPassword, 10);
   const { rows } = await pool.query(
-    `UPDATE users
-     SET failed_login_attempts = $1,
-         locked_until = CASE WHEN $2 = TRUE THEN now() + interval '15 minutes' ELSE locked_until END,
+    `UPDATE public.users
+     SET password_hash = $1,
+         token_version = token_version + 1,
          updated_at = now()
-     WHERE id = $3
-     RETURNING failed_login_attempts, locked_until`,
-    [newAttempts, isLocked, userId]
-  );
-  return rows[0];
-}
-
-async function resetFailedLogin(userId) {
-  await pool.query(
-    `UPDATE users
-     SET failed_login_attempts = 0,
-         locked_until = NULL,
-         updated_at = now()
-     WHERE id = $1`,
-    [userId]
-  );
-}
-
-async function incrementTokenVersion(userId) {
-  const { rows } = await pool.query(
-    `UPDATE users
-     SET token_version = token_version + 1,
-         updated_at = now()
-     WHERE id = $1
-     RETURNING token_version`,
-    [userId]
-  );
-  return rows[0] ? rows[0].token_version : 1;
-}
-
-async function createPasswordResetToken({ userId, tokenHash, expiresAt }) {
-  // Invalidate any existing unused reset tokens for this user first
-  await pool.query(
-    `UPDATE password_reset_tokens SET used = TRUE WHERE user_id = $1 AND used = FALSE`,
-    [userId]
-  );
-
-  const { rows } = await pool.query(
-    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-     VALUES ($1, $2, $3)
-     RETURNING id, user_id, expires_at`,
-    [userId, tokenHash, expiresAt]
-  );
-  return rows[0];
-}
-
-async function findValidResetToken(tokenHash) {
-  const { rows } = await pool.query(
-    `SELECT id, user_id, expires_at, used
-     FROM password_reset_tokens
-     WHERE token_hash = $1 AND used = FALSE AND expires_at > now()`,
-    [tokenHash]
+     WHERE id = $2
+     RETURNING id`,
+    [passwordHash, id]
   );
   return rows[0] || null;
 }
 
-async function resetPasswordWithToken(userId, passwordHash, tokenId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+async function deleteUser(id) {
+  const { rowCount } = await pool.query(`DELETE FROM public.users WHERE id = $1`, [id]);
+  return rowCount > 0;
+}
 
-    // Update password, increment token_version to invalidate all existing sessions, and reset failed logins
-    await client.query(
-      `UPDATE users
-       SET password = $1,
-           token_version = token_version + 1,
-           failed_login_attempts = 0,
-           locked_until = NULL,
-           updated_at = now()
-       WHERE id = $2`,
-      [passwordHash, userId]
-    );
-
-    // Mark reset token as used
-    await client.query(
-      `UPDATE password_reset_tokens
-       SET used = TRUE
-       WHERE id = $1`,
-      [tokenId]
-    );
-
-    await client.query('COMMIT');
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
+async function incrementTokenVersion(id) {
+  const { rows } = await pool.query(
+    `UPDATE public.users
+     SET token_version = COALESCE(token_version, 1) + 1,
+         updated_at = now()
+     WHERE id = $1
+     RETURNING id, token_version`,
+    [id]
+  );
+  return rows[0] || null;
 }
 
 module.exports = {
   createUser,
   findByEmail,
   findById,
-  recordFailedLogin,
-  resetFailedLogin,
+  updatePassword,
+  deleteUser,
   incrementTokenVersion,
-  createPasswordResetToken,
-  findValidResetToken,
-  resetPasswordWithToken,
 };

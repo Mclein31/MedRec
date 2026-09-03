@@ -1,6 +1,7 @@
 const OpenAI = require('openai');
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const apiKey = process.env.OPENAI_API_KEY || 'mock-openai-key-for-quarantine';
+const client = new OpenAI({ apiKey });
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 const MAX_INPUT_CHARS = 2000;

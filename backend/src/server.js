@@ -9,8 +9,8 @@ async function startServer() {
     await runMigrations();
     console.log('[Server] Database schema is up to date.');
 
-    app.listen(PORT, () => {
-      console.log(`[Server] Listening on port ${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[Server] Listening on http://localhost:${PORT} and http://0.0.0.0:${PORT}`);
     });
   } catch (err) {
     console.error('[Server] Fatal error initializing database migrations:', err);

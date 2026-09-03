@@ -2,15 +2,43 @@ const bcrypt = require('bcryptjs');
 const profileModel = require('../models/profileModel');
 const userModel = require('../models/userModel');
 const notificationModel = require('../models/notificationModel');
-const pool = require('../config/db');
-
-const SALT_ROUNDS = 12;
+const {
+  R2_BUCKET_NAME,
+  generatePresignedDownloadUrl,
+} = require('../config/r2');
 
 const VALID_SEX = ['male', 'female', 'other', 'undisclosed'];
 const VALID_BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'];
 
-function formatProfileResponse(row) {
+async function attachSignedAvatarUrl(avatarUrl) {
+  if (!avatarUrl) return null;
+  const trimmed = String(avatarUrl).trim();
+  if (!trimmed) return null;
+
+  // If it is already a full remote URL or data URI, return as-is
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('file://')
+  ) {
+    return trimmed;
+  }
+
+  // Generate a signed download URL from Cloudflare R2 (24-hour TTL)
+  try {
+    const targetBucket = R2_BUCKET_NAME || 'medrec-vault';
+    const signedUrl = await generatePresignedDownloadUrl(targetBucket, trimmed, 86400);
+    return signedUrl;
+  } catch (err) {
+    console.error('[R2] Error generating signed download URL for avatar:', err);
+    return trimmed;
+  }
+}
+
+async function formatProfileResponse(row) {
   if (!row) return null;
+  const avatarUrl = await attachSignedAvatarUrl(row.avatar_url);
   return {
     user: {
       id: row.user_id,
@@ -32,7 +60,7 @@ function formatProfileResponse(row) {
       emergencyContactPhone: row.emergency_contact_phone || null,
       phone: row.phone || null,
       address: row.address || null,
-      avatarUrl: row.avatar_url || null,
+      avatarUrl: avatarUrl || null,
       organDonor: Boolean(row.organ_donor),
       updatedAt: row.profile_updated_at || null,
     },
@@ -47,7 +75,8 @@ async function getProfile(req, res, next) {
     if (!data) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json(formatProfileResponse(data));
+    const formatted = await formatProfileResponse(data);
+    res.json(formatted);
   } catch (err) {
     next(err);
   }
@@ -57,6 +86,8 @@ async function updateProfile(req, res, next) {
   try {
     const {
       name,
+      full_name,
+      fullName,
       date_of_birth,
       dateOfBirth,
       biological_sex,
@@ -86,8 +117,9 @@ async function updateProfile(req, res, next) {
 
     const sanitizedData = {};
 
-    if (name !== undefined) {
-      sanitizedData.name = String(name).trim();
+    const rawName = name !== undefined ? name : (full_name !== undefined ? full_name : fullName);
+    if (rawName !== undefined) {
+      sanitizedData.full_name = String(rawName).trim();
     }
 
     const rawDob = date_of_birth !== undefined ? date_of_birth : dateOfBirth;
@@ -187,7 +219,7 @@ async function updateProfile(req, res, next) {
       }
     }
 
-    res.json(formatProfileResponse(updated));
+    res.json(await formatProfileResponse(updated));
   } catch (err) {
     next(err);
   }
@@ -197,11 +229,11 @@ async function changePassword(req, res, next) {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current password and new password are required' });
+    if (!currentPassword) {
+      return res.status(400).json({ error: 'Current password is required' });
     }
 
-    if (newPassword.length < 8) {
+    if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({ error: 'New password must be at least 8 characters' });
     }
     if (!/[0-9]/.test(newPassword)) {
@@ -211,18 +243,17 @@ async function changePassword(req, res, next) {
       return res.status(400).json({ error: 'New password must include at least one uppercase letter' });
     }
 
-    const { rows } = await pool.query(`SELECT password FROM users WHERE id = $1`, [req.user.id]);
-    if (!rows[0]) {
+    // Verify the current password before allowing the change
+    const user = await userModel.findById(req.user.id);
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    const matches = await bcrypt.compare(currentPassword, rows[0].password);
-    if (!matches) {
+    const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isValid) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    await profileModel.updateUserPassword(req.user.id, passwordHash);
+    await profileModel.updateUserPassword(req.user.id, newPassword);
 
     try {
       await notificationModel.createNotification({
