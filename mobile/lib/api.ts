@@ -1,11 +1,23 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  (Platform.OS === 'android'
-    ? 'http://10.0.2.2:4000'
-    : 'http://localhost:4000');
+function getApiBaseUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any).manifest?.debuggerHost || (Constants as any).manifest2?.extra?.expoClient?.hostUri;
+  if (debuggerHost) {
+    const ip = debuggerHost.split(':')[0];
+    if (ip) return `http://${ip}:4000/api`;
+  }
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:4000/api';
+  }
+  return 'http://localhost:4000/api';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 const TOKEN_KEY = 'authToken';
 
@@ -41,7 +53,8 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const response = await fetch(url, {
     method: options.method || 'GET',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
@@ -74,7 +87,18 @@ export const api = {
   resetPassword: (token: string, newPassword: string) =>
     request('/auth/reset-password', { method: 'POST', body: { token, newPassword } }),
 
-  getRecords: () => request('/records'),
+  getRecords: (params?: { type?: string; limit?: number; offset?: number }) => {
+    let query = '';
+    if (params) {
+      const qs = new URLSearchParams();
+      if (params.type) qs.append('type', params.type);
+      if (params.limit) qs.append('limit', String(params.limit));
+      if (params.offset) qs.append('offset', String(params.offset));
+      const str = qs.toString();
+      if (str) query = `?${str}`;
+    }
+    return request(`/records${query}`);
+  },
 
   getRecord: (id: string) => request(`/records/${id}`),
 
@@ -87,20 +111,111 @@ export const api = {
     attachment_url?: string;
   }) => request('/records', { method: 'POST', body: record }),
 
+  updateRecord: (
+    id: string,
+    record: Partial<{
+      type: string;
+      title: string;
+      description?: string | null;
+      date: string;
+      attachmentUrl?: string | null;
+      attachment_url?: string | null;
+    }>
+  ) => request<{ record: any }>(`/records/${id}`, { method: 'PUT', body: record }),
+
   deleteRecord: (id: string) => request(`/records/${id}`, { method: 'DELETE' }),
 
-  createShare: (ttlMinutes: number, recordIds?: string[]) =>
-    request('/share', { method: 'POST', body: { ttlMinutes, recordIds } }),
+  createShare: (params: { ttlMinutes?: number; allowedTypes?: string[]; recordIds?: string[] } | number, recordIds?: string[]) => {
+    let payload = {};
+    if (typeof params === 'number') {
+      payload = { ttlMinutes: params, recordIds };
+    } else {
+      payload = params;
+    }
+    return request('/share', { method: 'POST', body: payload });
+  },
 
   listShares: () => request('/share'),
 
   revokeShare: (id: string) => request(`/share/${id}`, { method: 'DELETE' }),
 
-  getSharedRecords: (shareToken: string) => request(`/share/${shareToken}`),
+  getSharedRecords: (shareToken: string) =>
+    request<{
+      token: string;
+      expiresAt: string;
+      createdAt?: string;
+      patient?: { name?: string };
+      records: any[];
+    }>(`/share/${shareToken}`),
+
+  summarizeShared: (shareToken: string) =>
+    request<{
+      summary: string;
+      currentMedications: string[];
+      diagnoses: string[];
+      keyNotes: string[];
+    }>(`/share/${shareToken}/summarize`, { method: 'POST' }),
+
+  terminateShared: (shareToken: string) =>
+    request<{ message: string }>(`/share/${shareToken}/terminate`, { method: 'POST' }),
+
+  downloadSharedRecord: (shareToken: string, recordId: string) =>
+    request<{
+      recordId: string;
+      title: string;
+      type: string;
+      downloadUrl: string;
+    }>(`/share/${shareToken}/download/${recordId}`),
+
+  exportShared: (shareToken: string) =>
+    request<{
+      exportType: string;
+      patientName: string;
+      sharedOn: string;
+      expiresAt: string;
+      exportedAt: string;
+      totalRecords: number;
+      records: Array<{
+        id: string;
+        title: string;
+        type: string;
+        date: string;
+        description: string | null;
+        downloadUrl: string | null;
+      }>;
+    }>(`/share/${shareToken}/export`),
+
+  getSharedZipUrl: (shareToken: string) => `${API_BASE_URL}/share/${shareToken}/zip`,
+
+  getStorageUploadUrl: (data: { bucket?: string; fileName: string; fileType: string }) =>
+    request<{ uploadUrl: string; path: string; key?: string }>('/storage/upload-url', { method: 'POST', body: data }),
+
+  uploadFileToSignedUrl: async (uploadUrl: string, fileUri: string, mimeType: string = 'image/jpeg') => {
+    if (uploadUrl.includes('mock.r2.cloudflarestorage.com') || uploadUrl.includes('mock.supabase.co')) {
+      // Mock upload for local/testing without real storage
+      return;
+    }
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': mimeType,
+      },
+      body: blob,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error(`Upload failed with status ${uploadRes.status}`);
+    }
+  },
 
   summarize: () => request('/ai/summarize', { method: 'POST', body: {} }),
 
   explain: (text: string) => request('/ai/explain', { method: 'POST', body: { text } }),
+
+  organize: (text: string) => request('/ai/organize', { method: 'POST', body: { text } }),
 
   logout: () => request('/auth/logout', { method: 'POST' }),
 
@@ -111,7 +226,7 @@ export const api = {
   updateProfile: (data: Record<string, any>) =>
     request('/profile', { method: 'PUT', body: data }),
 
-  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+  changePassword: (data: { currentPassword?: string; newPassword: string }) =>
     request('/profile/password', { method: 'PUT', body: data }),
 
   deleteAccount: () => request('/profile', { method: 'DELETE' }),

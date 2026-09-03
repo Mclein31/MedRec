@@ -36,7 +36,7 @@ export default function LoginScreen() {
   const [lockedOut, setLockedOut] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const { isTablet, isLandscape, insets, scaleFont } = useResponsive();
 
@@ -86,11 +86,18 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialPress = () => {
-    Alert.alert(
-      'Single Sign-On',
-      'Google authentication is managed by your healthcare organization. Please use your standard email and password to log in.'
-    );
+  const handleSocialPress = async () => {
+    try {
+      setLoading(true);
+      await loginWithGoogle();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      if (err?.message && !err.message.includes('cancel')) {
+        Alert.alert('Google Sign-In', err.message || 'Could not complete Google authentication.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = async () => {

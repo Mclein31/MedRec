@@ -72,6 +72,7 @@ export default function ProfileScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const { unreadCount, refreshNotifications } = useNotifications();
 
@@ -92,18 +93,47 @@ export default function ProfileScreen() {
       }
 
       const asset = result.assets[0];
-      const photoPayload = asset.base64
-        ? `data:image/jpeg;base64,${asset.base64}`
-        : asset.uri;
+      const localPreview = asset.uri || (asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : '');
 
       setUploadingPhoto(true);
-      setProfile((prev) => ({ ...prev, avatarUrl: photoPayload }));
-      setUser((prev) => (prev ? { ...prev, avatarUrl: photoPayload } : null));
+      setAvatarError(false);
+      setProfile((prev) => ({ ...prev, avatarUrl: localPreview }));
+      setUser((prev) => (prev ? { ...prev, avatarUrl: localPreview } : null));
 
-      const res = await api.updateProfile({ avatarUrl: photoPayload });
+      let finalAvatarPayload = localPreview;
+      if (asset.uri) {
+        try {
+          const uploadInfo = await api.getStorageUploadUrl({
+            bucket: 'avatars',
+            fileName: 'avatar.jpg',
+            fileType: 'image/jpeg',
+          });
+          if (uploadInfo?.uploadUrl) {
+            await api.uploadFileToSignedUrl(uploadInfo.uploadUrl, asset.uri, 'image/jpeg');
+            finalAvatarPayload = uploadInfo.path;
+          } else {
+            throw new Error('Could not get a secure upload URL from the server.');
+          }
+        } catch (uploadErr: any) {
+          // Revert the optimistic local preview
+          setProfile((prev) => ({ ...prev, avatarUrl: profile.avatarUrl ?? null }));
+          setUser((prev) => (prev ? { ...prev, avatarUrl: profile.avatarUrl ?? undefined } : null));
+          Alert.alert(
+            'Upload Failed',
+            'Could not securely upload your profile picture. Please try again.\n\n' +
+              (uploadErr?.message || 'Unknown error'),
+          );
+          return;
+        }
+      }
+
+      const res = await api.updateProfile({ avatarUrl: finalAvatarPayload });
       if (res && res.profile) {
-        setProfile(res.profile);
-        setUser((prev) => (prev ? { ...prev, avatarUrl: res.profile.avatarUrl } : null));
+        const resolvedAvatar = (res.profile.avatarUrl && (res.profile.avatarUrl.startsWith('http') || res.profile.avatarUrl.startsWith('data:')))
+          ? res.profile.avatarUrl
+          : localPreview;
+        setProfile((prev) => ({ ...prev, ...res.profile, avatarUrl: resolvedAvatar }));
+        setUser((prev) => (prev ? { ...prev, avatarUrl: resolvedAvatar } : null));
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
@@ -778,10 +808,11 @@ export default function ProfileScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Change profile photo"
                     >
-                      {(profile.avatarUrl || user?.avatarUrl) ? (
+                      {((profile.avatarUrl || user?.avatarUrl) && !avatarError) ? (
                         <Image
                           source={{ uri: profile.avatarUrl || user?.avatarUrl || '' }}
                           style={styles.landscapeAvatarImg}
+                          onError={() => setAvatarError(true)}
                         />
                       ) : (
                         <View style={styles.landscapeAvatarMonogram}>
@@ -987,10 +1018,11 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Change profile photo"
             >
-              {(profile.avatarUrl || user?.avatarUrl) ? (
+              {((profile.avatarUrl || user?.avatarUrl) && !avatarError) ? (
                 <Image
                   source={{ uri: profile.avatarUrl || user?.avatarUrl || '' }}
                   style={styles.avatarImage}
+                  onError={() => setAvatarError(true)}
                 />
               ) : (
                 <View style={styles.avatarCircle}>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import { api, saveToken, getToken, clearToken } from '../lib/api';
 
 type AuthUser = {
@@ -14,6 +15,7 @@ type AuthContextType = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
@@ -88,13 +90,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async () => {
+    Alert.alert(
+      'Google Single Sign-On',
+      'Google SSO is configured via your organization identity provider. Please use your email and password to log in.'
+    );
+  };
+
   const logout = async () => {
     try {
       await api.logout();
     } catch {
-      // Fail open — if the network call fails, still log the user out of this
-      // device. Worst case the token stays valid server-side until natural
-      // expiry.
+      // Fail open
     }
     await clearToken();
     setToken(null);
@@ -109,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        loginWithGoogle,
         logout,
         refreshUser,
         setUser,
@@ -126,4 +134,3 @@ export function useAuth() {
   }
   return context;
 }
-

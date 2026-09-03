@@ -347,12 +347,17 @@ export default function ShareScreen() {
       </View>
     );
 
-    // Tier 2: Active Sessions Block
+    // Tier 2: Active Sessions Block (Max 5 active sessions)
     const activeSessionsBlock = activeShares.length > 0 ? (
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
-          Active Access Sessions ({activeShares.length})
-        </Text>
+        <View style={styles.sectionHeaderBetween}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
+            Active Access Sessions ({activeShares.length}/5)
+          </Text>
+          {activeShares.length >= 5 && (
+            <Text style={styles.maxCapBadge}>MAX 5 ACTIVE</Text>
+          )}
+        </View>
 
         <View style={styles.cardsStack}>
           {activeShares.map((s) => {
@@ -841,13 +846,18 @@ export default function ShareScreen() {
             )}
 
             {/* ────────────────────────────────────────────────────────
-                TIER 2: ACTIVE SHARING SESSIONS
+                TIER 2: ACTIVE SHARING SESSIONS (Max 5 active sessions)
             ──────────────────────────────────────────────────────── */}
             {activeShares.length > 0 && (
               <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
-                  Active Access Sessions ({activeShares.length})
-                </Text>
+                <View style={styles.sectionHeaderBetween}>
+                  <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.35}>
+                    Active Access Sessions ({activeShares.length}/5)
+                  </Text>
+                  {activeShares.length >= 5 && (
+                    <Text style={styles.maxCapBadge}>MAX 5 ACTIVE</Text>
+                  )}
+                </View>
 
                 <View style={styles.cardsStack}>
                   {activeShares.map((s) => {
@@ -1236,10 +1246,25 @@ const styles = StyleSheet.create({
   sectionContainer: {
     gap: 10,
   },
+  sectionHeaderBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sectionTitle: {
     fontFamily: 'LexendDeca-Bold',
     fontSize: 15,
     color: INK,
+  },
+  maxCapBadge: {
+    fontFamily: 'LexendDeca-Bold',
+    fontSize: 10,
+    color: '#B45309',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
   cardsStack: {
     gap: 10,
