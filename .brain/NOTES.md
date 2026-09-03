@@ -19,10 +19,17 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - `10 - Security & Privacy/` (Threat models, token revocation, encryption)
 
 ## 🔑 Environment Variables Required (`backend/.env`)
-- `PORT`: Server port (default `5000`)
+- `PORT`: Server port (default `4000`)
 - `DATABASE_URL`: PostgreSQL connection URI (`postgresql://user:pass@localhost:5432/medrec`)
-- `JWT_SECRET`: High-entropy string for signing user session tokens
-- `OPENAI_API_KEY`: API key for medical summarization and explanations
+- `PGSSL`: PostgreSQL SSL mode (`true` for managed cloud, `false` for local)
+- `JWT_SECRET`: High-entropy string (32+ chars) for signing user session tokens
+- `JWT_EXPIRES_IN`: JWT expiration (default `7d`)
+- `R2_ACCOUNT_ID`: Cloudflare Account ID
+- `R2_ACCESS_KEY_ID`: Cloudflare R2 API Token Access Key ID
+- `R2_SECRET_ACCESS_KEY`: Cloudflare R2 API Token Secret Access Key
+- `R2_BUCKET_NAME`: Target R2 bucket name (`medrec-vault`)
+- `R2_ENDPOINT`: `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`
+- `OPENAI_API_KEY`: API key for medical summarization and explanations (quarantined / future milestone)
 
 ## 📷 Document Camera & Gallery Ingestion
 - `expo-camera` (`CameraView`) is configured with `facing="back"`, `enableTorch`, and unmounts cleanly on view transitions.
@@ -91,3 +98,36 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Single Scroll Hierarchy (`mobile/app/(tabs)/profile.tsx`)**: The Profile title (28px `LexendDeca-Bold`) and subtitle are located inside the top-level `<ScrollView>`, scrolling away naturally as the user scrolls through their health profile.
 - **Fixed Global Navigation Header**: Keeps a compact top toolbar (`insets.top + 12`) outside the scroll area for persistent access to the Burger Menu drawer and Notification Bell unread indicator dot, avoiding unnecessary viewport occupation while ensuring global navigation remains accessible at all times.
 
+## 📝 Record Edit Modal Architecture
+- **`RecordEditModal.tsx`**: Sliding modal presenting title input, horizontal category carousel (pill chips, `borderRadius: 20`, TEAL active, MUTED inactive), event date input with "Set Today" shortcut, and clinical notes textarea.
+- **Attachment Isolation**: Modal does not include `attachment_url` in its update payload — the R2 storage key is never touched during metadata edits.
+- **API**: `PUT /records/:id` and `PATCH /records/:id` both accepted. Dynamic SQL updates only the fields present in the payload.
+- **Presigned URL Guard**: Both `recordController.js` and `recordModel.js` guard against persisting `http(s)://` values as `attachment_url`. If a presigned URL is echoed back by the client, it is silently dropped and the existing DB key preserved.
+
+## 🤝 Shared Records — Doctor Scanner Architecture (`scan.tsx`)
+- **QR Scan → Token Validation**: `CameraView` with `barcodeScanningEnabled` → hits `GET /share/:token` → returns patient name, expiry, scoped records with pre-signed attachment URLs.
+- **AI Clinical Summary**: `POST /share/:token/summarize` → structured JSON (`summary`, `currentMedications`, `diagnoses`, `keyNotes`). Falls back to deterministic extraction when OpenAI unavailable.
+- **Per-Record Download**: `GET /share/:token/download/:recordId` → returns 15-min presigned R2 URL → `downloadFileDirectly` → native `Sharing.shareAsync` save sheet.
+- **ZIP Bundle Download**: `GET /share/:token/zip` → streams ZIP archive → saved to `FileSystem.documentDirectory` → `Sharing.shareAsync`. ZIP contains `README_CLINICAL_SUMMARY.txt`, `records_metadata.json`, `attachments/` folder.
+- **Terminate Session**: `POST /share/:token/terminate` → sets `revoked_at` → creates `share_revoked` notification for patient.
+- **`downloadFileDirectly`**: Module-level function supporting `forcedExt` / `forcedMime` parameters. On web: blob download via anchor click. On native: `FileSystem.downloadAsync` + `Sharing.shareAsync`.
+
+## ☁️ R2 Upload Error Handling
+- **Record Add (`add.tsx`)**: Upload failure aborts record creation. Shows `Alert("Upload Failed", …)` and calls `setSaving(false)` before returning. Never falls back to `file://` URI.
+- **Profile Avatar (`profile.tsx`)**: Upload failure reverts the optimistic avatar preview (restores `profile.avatarUrl`), shows `Alert("Upload Failed", …)`, and returns without calling `api.updateProfile`. Never falls back to base64 data URI.
+
+## 🔐 Security Implementation Notes
+- **Password Change**: `PUT /profile/password` requires `currentPassword` in body. Backend calls `userModel.findById` then `bcrypt.compare(currentPassword, user.password_hash)`. Returns `400` if missing, `401` if wrong.
+- **Logout Invalidation**: `POST /auth/logout` calls `userModel.incrementTokenVersion(req.user.id)`. The `requireAuth` middleware compares JWT's `tokenVersion` claim against `users.token_version` from DB, immediately rejecting all previously-issued tokens for that user.
+- **`tokenModel.js`**: Deleted. The `revoked_tokens` table never existed; the file was dead code. Token invalidation is handled entirely via `token_version`.
+- **Google SSO**: `loginWithGoogle()` in `AuthContext.tsx` is a UI stub. No backend OAuth endpoint exists yet. Documented as future work.
+- **Share Session Cap**: Max 5 active sessions per patient. `pruneExcessActiveShares(userId, 4)` auto-revokes oldest before inserting new token.
+
+## 🔔 Notification Card Icons
+- `record_added` → `document-text-outline`
+- `share_created`, `qr_generated` → `qr-code-outline`
+- `share_revoked`, `qr_terminated` → `qr-code-outline`
+- `security_alert` → `shield-checkmark-outline`
+- `emergency_updated` → `pulse-outline`
+- `ai_summary_ready` → `sparkles-outline`
+- Default → `notifications-outline`

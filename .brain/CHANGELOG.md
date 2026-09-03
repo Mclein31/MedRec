@@ -10,6 +10,153 @@ last_updated: 2026-09-02
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [1.4.9] — Security & Data Integrity Audit Fixes (Code Review P0–P2)
+
+### P0 — Security Fix
+- **`profileController.js` — Password Change Verification**:
+  - `changePassword` now calls `bcrypt.compare(currentPassword, user.password_hash)` before updating.
+  - Returns `400` if `currentPassword` is missing; `401` if it does not match the stored hash.
+  - Requires `userModel` and `bcryptjs` imports added to `profileController.js`.
+  - Test updated in `profile.test.js` to supply `currentPassword` on the successful change case.
+
+### P0 — Data Integrity Fix
+- **`recordController.js` + `recordModel.js` — Presigned URL Never Stored in DB**:
+  - `updateRecord` now strips any incoming `attachment_url`/`attachmentUrl` that begins with `http://` or `https://` (i.e. short-lived presigned URLs echoed back by the mobile client).
+  - `updateRecordForUser` in `recordModel.js` has a matching guard so the DB layer also rejects presigned URLs if called directly.
+  - Existing attachment R2 key is preserved when the client sends a signed URL back.
+
+### P1 — Orphaned R2 Object Cleanup on Record Update
+- **`recordController.js`**: `updateRecord` now fetches the existing record before writing and calls `deleteR2Object` if a new, different R2 key is provided (replaces or removes previous attachment).
+
+### P1 — R2 Upload Silent Fallback Removed
+- **`mobile/app/record/add.tsx`**: Upload failure now shows an `Alert` and aborts the save (with `setSaving(false)`) instead of silently falling back to a local `file://` URI that would never be accessible from the server.
+- **`mobile/app/(tabs)/profile.tsx`**: Avatar upload failure now reverts the optimistic preview, shows an `Alert`, and aborts the profile update instead of sending a base64 data URI payload to the server.
+
+### P1 — Dead Code Removed
+- **`backend/src/models/tokenModel.js`** deleted — queried non-existent `revoked_tokens` table, was never imported anywhere.
+
+### P1 — Server-Side JWT Invalidation on Logout
+- **`authController.js` `logout`**: Now calls `userModel.incrementTokenVersion(req.user.id)` so existing JWTs are immediately rejected by the auth middleware after logout.
+- **`userModel.js`**: Added `incrementTokenVersion(id)` function.
+
+### P2 — Notification Unread Count Guard
+- **`NotificationContext.tsx` `markAsRead`**: Now checks `target.read === false` before decrementing `unreadCount`. Prevents the count going negative when the same notification is marked read more than once.
+
+### P2 — Idempotent CHECK Constraint in Schema
+- **`schema.sql`**: Added a `DO $$ … END $$` block that idempotently adds the `medical_records_type_check` constraint for existing databases that were created before the `CHECK` was defined inline in `CREATE TABLE`.
+
+---
+
+## [1.4.8] — Shared Records ZIP Export Bundle: Streaming Archive & One-Tap Direct Download
+- **Backend ZIP Export Endpoint (`GET /share/:token/zip` & `GET /share/:token/download-all`)**:
+  - Implemented high-performance ZIP archive packaging using `jszip` in `shareController.js`.
+  - Automatically bundles a structured, human-readable clinical summary index (`README_CLINICAL_SUMMARY.txt`), machine-readable `records_metadata.json`, and all scanned document attachments into an `attachments/` folder.
+  - Supports direct streaming from Cloudflare R2 bucket (`getR2ObjectStream`), base64 data payloads, and presigned/HTTP URLs.
+  - Added automated Jest integration tests verifying ZIP archive structure and response headers (63/63 passing).
+- **Mobile Shared Records ZIP Downloader (`scan.tsx` & `api.ts`)**:
+  - Added `getSharedZipUrl` helper in `api.ts`.
+  - Upgraded `downloadFileDirectly` with native `.zip` MIME type mapping (`application/zip`) and iOS/Android UTI support (`public.zip-archive`).
+  - Added prominent primary **"Download All as ZIP Archive"** banner card at the top of the Download Records Modal on both phone and tablet layouts.
+  - Added loading indicator and direct device download/save sheet integration.
+
+## [1.4.7] — Record Metadata Editing: Backend API & Mobile Edit Modal
+- **Record Metadata Editing Endpoint (`PUT /records/:id` & `PATCH /records/:id`)**:
+  - Implemented `updateRecordForUser` in `recordModel.js` and `updateRecord` in `recordController.js` supporting title, category type, event date, and description updates.
+  - Enforced strict user ownership isolation and input validations.
+  - Added automated Jest integration tests verifying metadata updates and error rejection.
+- **Mobile Edit Modal Component (`RecordEditModal.tsx`)**:
+  - Built interactive sliding modal for editing record title, horizontal scrolling category carousel with pill chips matching the Add Record tab (`record/add.tsx`), event date with quick "Set Today" shortcut, and multi-line clinical notes.
+  - Integrated into **Records Tab** (`(tabs)/index.tsx`) cards, **Tablet Landscape Workspace Detail Pane**, and **Record Details Screen** (`record/[id].tsx`).
+  - Added instant optimistic state synchronization on save with haptic feedback.
+
+## [1.4.6] — Instant Image Lightbox Pop-Up: High-Velocity Presentation & Dismiss Transitions
+- **Instant Expand & Dismiss Velocity**:
+  - Re-tuned `ImageLightboxOverlay` in `scan.tsx` and `record/[id].tsx` from 250ms spring settling down to snappy 70–90ms quad-eased parallel tracks.
+  - Adjusted initial content scale to `0.96`, eliminating visual lag and creating an instant, crisp document pop-up feel.
+
+## [1.4.5] — Notification Redesign: Fullscreen Sliding Modal, Standalone Icons & Subtle Contrast
+- **Fullscreen Sliding Modal Presentation**:
+  - Maintained smooth fullscreen sliding pageSheet modal with top drag handle on phones and responsive floating modal on tablets.
+  - Harmonized typography (`LexendDeca` weights), spacing, segmented filter controls (`All` / `Unread`), and clean header layout.
+- **Standalone Thematic Icons (Zero Background Highlights)**:
+  - Removed all background highlight boxes, colored circles, and pills behind notification icons in `NotificationCard`.
+  - Configured `qr-code-outline` icon specifically for doctor QR code generation, expiration, and revocation notifications (`share_created`, `share_expired`, `share_revoked`).
+- **Clean Read vs. Unread Surface Distinction**:
+  - Removed vertical green/teal sidebar stripe on unread notifications.
+  - Unread notifications utilize clean true white `#FFFFFF` surface background, subtle teal border, and teal dot indicator.
+  - Read notifications utilize slightly darker `#F2F7F5` surface tone, maintaining clear visibility without disabled appearance.
+
+## [1.4.4] — Profile Picture Cloudflare R2 Presigned Download URL Resolution & Resilient Fallback
+- **Presigned Avatar Download URLs**:
+  - Implemented `attachSignedAvatarUrl` across `profileController.js` (`getProfile`, `updateProfile`) and `authController.js` (`login`, `register`, `me`).
+  - Automatically resolves relative Cloudflare R2 object storage keys (e.g. `userId/fileUuid.jpg`) into valid 24-hour signed download URLs so React Native `<Image>` renders uploaded profile photos correctly.
+  - Added resilient local image preview fallback in `mobile/app/(tabs)/profile.tsx` with error recovery to high-contrast monogram initials.
+  - Added automated Jest integration tests verifying that profile updates with storage keys resolve to signed URLs.
+
+## [1.4.3] — Session Security & Capacity Control: Strict 5 Active Sessions Cap
+- **Active Share Session Limit**:
+  - Enforced `MAX_ACTIVE_SHARE_SESSIONS = 5` per patient across all doctor access tokens.
+  - Implemented `shareModel.pruneExcessActiveShares` in PostgreSQL to automatically recycle/revoke the oldest active sessions when new QR codes are generated.
+  - Updated mobile UI in `mobile/app/(tabs)/share.tsx` to display live active session counts (`Active Access Sessions (X/5)`) and `MAX 5 ACTIVE` badge indicators.
+  - Added automated Jest integration tests verifying that creating 7+ sessions automatically restricts active database count to 5 and revokes excess tokens with immediate 404 responses.
+
+## [1.4.2] — Shared Records Clinical Actions: AI Session Summarization, R2 Document Downloads & Recipient Termination
+- **Summarize Shared Records**:
+  - Implemented `POST /api/share/:token/summarize` reusing `aiService.summarizeRecords` to synthesize a clinical overview across all active shared records with medications, diagnoses, and follow-ups.
+  - Added deterministic structured clinical synthesis fallback for 100% offline/mock resilience with 0 hallucinations.
+  - Integrated modal UI with loading states, formatted cards, and clear non-diagnostic medical disclaimer.
+- **Download Shared Records**:
+  - Implemented single-record document downloads and session bundle export modal with Cloudflare R2 short-lived signed URLs.
+  - Preserved strict tenant isolation with no credential exposure.
+- **Recipient Session Termination (Done — Terminate Access)**:
+  - Implemented recipient-initiated revocation via `POST /api/share/:token/terminate` and `shareModel.terminateByToken`.
+  - Added confirmation dialog clearly warning that access is being ended without altering the patient's underlying PostgreSQL records.
+  - Successfully tested immediate 404 response on any subsequent access attempt.
+
+## [1.4.1] — Shared Records Document Viewer Redesign & Fullscreen Lightbox
+- **First-Class Document Preview Container**:
+  - Redesigned `mobile/app/(tabs)/scan.tsx` and `mobile/app/record/[id].tsx` with prominent dedicated document containers preserving exact aspect ratios (`resizeMode="contain"`).
+  - Supported portrait medical scans and landscape diagnostic reports without stretching, clipping, or distortion.
+  - Implemented asynchronous loading states (`ActivityIndicator`) and network error recovery fallbacks.
+  - Added clean empty-state cards for medical records with no attached images.
+- **Interactive Fullscreen Lightbox**:
+  - Implemented high-contrast dark overlay modal allowing doctors and patients to inspect medical scans at maximum viewport resolution with tap-to-dismiss and dedicated close button.
+- **Doctor Context & Sovereign Session Badges**:
+  - Added sovereign patient-shared badges and temporary read-only indicators in both Phone modal and Tablet master-detail workspaces.
+
+## [1.4.0] — Direct PostgreSQL Database, Cloudflare R2 Object Storage & Backend-Owned Authentication
+- **Direct PostgreSQL Architecture**:
+  - Engineered direct PostgreSQL schema in `backend/src/migrations/schema.sql` with `public.users` storing bcrypt-hashed passwords and `token_version` for instant session revocation.
+  - Implemented automatic profile provisioning via trigger `on_user_created` executing `public.handle_new_user()`.
+  - Maintained full foreign key integrity with `ON DELETE CASCADE` across `user_profiles`, `medical_records`, `shared_access`, and `notifications`.
+- **Cloudflare R2 Object Storage Integration**:
+  - Implemented AWS SDK v3 S3 client (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) in `backend/src/config/r2.js` targeted at Cloudflare R2.
+  - Issued single-use presigned upload URLs (`POST /storage/upload-url`) and 15-minute signed download URLs (`GET /storage/download-url`) with strict user prefix containment (`<userId>/<uuid>.<ext>`).
+  - Integrated storage cleanup on medical record deletion and cascade account deletion.
+- **Dependency Optimization & Decoupling**:
+  - Completely purged all `@supabase/supabase-js`, `jwks-rsa`, and `jose` packages from both `backend/` and `mobile/`.
+  - Preserved 100% of mobile UI screens, responsive layouts, forms, and client methods via native Express REST API.
+- **Comprehensive Test Suite**:
+  - 55 automated test suites passing with 100% success rate across integration, authentication, profile, records, sharing, storage, notifications, and security threat hardening.
+
+## [1.3.0] — Initial Cloud Architecture Research & Foundation
+- **Supabase Cloud PostgreSQL & Auth Schema**:
+  - Re-architected PostgreSQL schema with foreign keys referencing `auth.users(id) ON DELETE CASCADE`.
+  - Added trigger `on_auth_user_created` to automatically populate `public.user_profiles` upon signup.
+  - Implemented Row Level Security (RLS) policies across `user_profiles`, `medical_records`, `shared_access`, and `notifications`.
+- **Asymmetric JWKS Token Verification Middleware**:
+  - Implemented pure Node.js native JWKS key resolver in `backend/src/utils/jwks.js` with remote key caching from `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`.
+  - Integrated multiple fallback mechanisms (symmetric secrets, Supabase Admin `getUser`, local test runners).
+- **Presigned Supabase Storage Pipeline**:
+  - Created `POST /api/storage/upload-url` and `GET /api/storage/download-url` for single-use presigned upload/download URLs.
+  - Enforced private bucket isolation for `medical-records` with short-lived (15-minute) signed URLs for clinical scans.
+  - Integrated direct mobile uploads in `record/add.tsx` and `(tabs)/profile.tsx`.
+- **Google OAuth 2.0 PKCE Handshake**:
+  - Configured `loginWithGoogle()` in `mobile/context/AuthContext.tsx` using `expo-web-browser` and `medrec://auth/callback`.
+  - Connected "Sign in with Google" button in `mobile/app/login.tsx`.
+- **Automated Test Suite Expansion**:
+  - Implemented 48 automated test suites spanning auth, profile, records, sharing, storage, notifications, and security hardening with 100% pass rate.
+
 ## [1.2.3] — Tablet Authentication UI Refinement & Landscape Brand Showcase Expansion
 - **Tablet Landscape Split-Screen Visual Panel with 3:4 Native Graphic (`mobile/app/login.tsx` & `register.tsx`)**:
   - Balanced both columns to equal 50/50 widths (`tabletLandscapeLeft: { flex: 1 }` and `tabletLandscapeRight: { flex: 1 }`), giving equal architectural weight to the visual panel and authentication card.

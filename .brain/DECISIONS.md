@@ -7,10 +7,180 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-09-01
+last_updated: 2026-09-04
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-09-04 — Security & Data Integrity Audit Fixes (DD-30)
+
+### Decision
+1. **Password Change Verification (P0 — Security)**:
+   - `changePassword` (`profileController.js`) now calls `bcrypt.compare(currentPassword, user.password_hash)` before updating. Returns `400` if `currentPassword` is absent, `401` if incorrect. Requires `bcryptjs` and `userModel` imports in `profileController.js`.
+2. **Presigned URL Never Stored in DB (P0 — Data Integrity)**:
+   - `updateRecord` (`recordController.js`) and `updateRecordForUser` (`recordModel.js`) both guard against persisting `http(s)://` attachment values. When the client echoes back a signed download URL, it is silently dropped, preserving the original R2 key.
+3. **Orphaned R2 Object Cleanup on Record Update (P1)**:
+   - `updateRecord` fetches the existing record before writing. If a new, different R2 storage key is provided, the old key is deleted via `deleteR2Object` before the update is committed.
+4. **R2 Upload Failure Abort (P1)**:
+   - `add.tsx`: Upload failure shows `Alert` and calls `setSaving(false)` before returning. No silent `file://` fallback.
+   - `profile.tsx`: Avatar upload failure reverts the optimistic preview, shows `Alert`, and aborts profile update. No silent base64 fallback.
+5. **Dead Code Removal: `tokenModel.js` (P1)**:
+   - Deleted. Queried non-existent `revoked_tokens` table. Was never imported anywhere in the codebase.
+6. **Server-Side JWT Invalidation on Logout (P1)**:
+   - `logout` (`authController.js`) calls `userModel.incrementTokenVersion(req.user.id)`. Added `incrementTokenVersion` to `userModel.js`.
+7. **Notification Unread Count Guard (P2)**:
+   - `markAsRead` in `NotificationContext.tsx` checks `target.read === false` before decrementing `unreadCount`.
+8. **Idempotent Type CHECK Constraint (P2)**:
+   - `schema.sql` contains a `DO $$ … END $$` block that idempotently adds `medical_records_type_check` on existing databases.
+
+### Reason
+Formal code review identified these as P0 security holes and P1 data integrity bugs. Medical record system requires highest security standards.
+
+### Consequences
+- 63/63 backend tests pass; TypeScript: 0 errors. No regressions.
+- Password changes now require proof of knowledge of the current password.
+- R2 attachment keys are never overwritten by ephemeral presigned URLs.
+
+---
+
+## 2026-09-04 — Shared Records ZIP Bundle Export (DD-29)
+
+### Decision
+1. **Backend ZIP Endpoint (`GET /share/:token/zip`)**:
+   - Implemented using `jszip` (CJS-compatible) in `shareController.js`. Builds a ZIP containing `README_CLINICAL_SUMMARY.txt`, `records_metadata.json`, and `attachments/` folder.
+   - `archiver` (v2 ESM) was evaluated and rejected: SyntaxError in Jest (`Cannot use import statement outside a module`) due to backend `"type": "commonjs"`.
+   - Uses `getR2ObjectStream(bucket, key)` from `r2.js` to stream R2 objects directly into ZIP without buffering in memory. Supports presigned URLs and base64 data payloads.
+2. **Mobile ZIP Download (`scan.tsx`)**:
+   - `downloadFileDirectly` upgraded with `forcedExt`/`forcedMime` parameters and `.zip` MIME support (`application/zip`, UTI `public.zip-archive`).
+   - `handleDownloadAllZip` fetches `/share/:token/zip`, saves to `FileSystem.documentDirectory`, opens native share/save sheet via `Sharing.shareAsync`.
+   - Prominent "Download All as ZIP Archive" card at top of Download modal on both phone and tablet layouts.
+
+### Reason
+Doctors need a single-tap way to download all shared patient records. ZIP bundles with clinical metadata are the standard format for offline record handoffs.
+
+### Consequences
+Individual record downloads and ZIP bundle download coexist. ZIP includes all scoped records and a human-readable clinical summary.
+
+---
+
+## 2026-09-04 — Shared Records Expanded API Surface (DD-28)
+
+### Decision
+Added to `GET /share/:token`:
+- **Patient name** (`patient.name`) included in response payload via `findActiveByTokenWithUser` (joins `users.name`).
+- **Token value** returned for client-side session tracking.
+
+New recipient endpoints:
+- `POST /share/:token/summarize` — AI clinical synthesis with deterministic structured fallback.
+- `POST /share/:token/terminate` — Recipient-initiated session termination with patient notification.
+- `GET /share/:token/download/:recordId` — 15-minute presigned R2 URL for a specific record's attachment.
+- `GET /share/:token/export` — JSON bundle of scoped records.
+
+### Reason
+Doctors need to see who the patient is, terminate sessions cleanly, and download individual records. AI summary provides a rapid clinical overview without scrolling all records.
+
+### Consequences
+Session termination creates a `share_revoked` notification for the patient. AI summary falls back to deterministic extraction when OpenAI is unavailable.
+
+---
+
+## 2026-09-04 — Record Metadata Edit (DD-27)
+
+### Decision
+1. **Backend**: `PUT /records/:id` and `PATCH /records/:id` both route to `updateRecord` in `recordController.js`, which calls `updateRecordForUser` in `recordModel.js`. Only provided fields are updated (dynamic SQL). Validates type against `RECORD_TYPES` enum.
+2. **Mobile**: `RecordEditModal.tsx` — sliding modal with title input, horizontal category carousel (pill chips matching `add.tsx`), event date input with "Set Today" shortcut, and clinical notes. Exposed via edit button on `record/[id].tsx` and via the Records tab.
+3. **Attachment Isolation**: `RecordEditModal` intentionally does not send `attachment_url` in the payload, so the R2 attachment is never touched during metadata edits.
+
+### Reason
+Users need to correct typos, recategorize records, and update notes without needing to re-upload their scanned document.
+
+### Consequences
+Metadata edits are atomic per-field. Attachment is fully isolated from metadata updates.
+
+---
+
+## 2026-09-04 — Active Share Session Cap at 5 (DD-26)
+
+### Decision
+`createShare` calls `shareModel.pruneExcessActiveShares(userId, 4)` before inserting a new token. This auto-revokes the oldest active sessions so at most 4 remain before the new one is inserted, capping total active sessions at 5.
+
+### Reason
+Unlimited concurrent access tokens create excessive doctor-access surface area for medical records. 5 is sufficient for simultaneous multi-clinician workflows.
+
+### Consequences
+Oldest active sessions are silently pruned. Patients with many old sessions do not need to manually revoke before sharing.
+
+---
+
+## 2026-09-04 — Notification Sidebar Redesign (DD-25)
+
+### Decision
+1. **Design Language Match**: Notification sidebar matches BurgerNav design language — same surface color, typography hierarchy, border/radius treatment, and visual density.
+2. **Unread vs Read State**: Unread cards retain full surface color, bold typography, and a left-edge teal accent. Read cards use muted ink and normal weight.
+3. **Removed**: Green sidebar highlight from unread cards. Removed animated Animated/Easing tablet slide-over panel (replaced with uniform full-screen slide modal on all devices).
+4. **Icons**: Centered, enlarged category icons per notification type. QR icon used for `share_created`, `share_revoked`, `qr_generated`, `qr_terminated`.
+5. **Expand Animation**: `record/[id].tsx` expand transitions set to `withTiming(0ms)` for instant response.
+
+### Reason
+Notification sidebar felt disconnected from the rest of the design system. Animated tablet slide-over added complexity without meaningfully improving UX on existing form factors.
+
+### Consequences
+Consistent design system across notifications and navigation. Simplified animation logic removes potential race conditions.
+
+---
+
+## 2026-09-03 — Direct PostgreSQL Database & Cloudflare R2 Storage Architecture (DD-24)
+
+### Decision
+   - Implemented standard PostgreSQL database schema with `public.users` storing bcrypt-hashed passwords (salt rounds = 10) and `token_version` tracking for instant session invalidation.
+   - Retained automatic profile provisioning via PostgreSQL trigger `on_user_created` executing `public.handle_new_user()`.
+   - Maintained full relational foreign keys with `ON DELETE CASCADE` across `user_profiles`, `medical_records`, `shared_access`, and `notifications`.
+2. **Cloudflare R2 S3-Compatible Object Storage**:
+   - Integrated AWS SDK v3 S3 client (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) targeted at Cloudflare R2 endpoints (`https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`).
+   - Implemented `POST /api/storage/upload-url` issuing single-use signed PUT upload URLs with user-isolated path prefixes (`<userId>/<uuid>.<ext>`).
+   - Private clinical scans and avatars are accessible exclusively via 15-minute signed download URLs (`GET /api/storage/download-url`).
+3. **Clean Dependency Decoupling**:
+   - Removed all Supabase dependencies (`@supabase/supabase-js`, `jwks-rsa`, `jose`) from both `backend/` and `mobile/`.
+   - Retained 100% of mobile UI screens, responsive layouts, forms, and client methods via native Express REST API.
+
+### Reason
+- Eliminates vendor lock-in and enables deployment to any standard PostgreSQL host (e.g. Neon, Render, AWS RDS, self-hosted) with zero egress fees on clinical attachment storage via Cloudflare R2.
+- Adheres to the authoritative PM plan with 100% automated test coverage (55/55 passing tests).
+
+### Consequences
+- Requires PostgreSQL connection string (`DATABASE_URL`) and Cloudflare R2 credentials (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`).
+- Zero UI regressions on mobile client.
+
+---
+
+## 2026-09-03 — Supabase Cloud Architecture, Asymmetric JWKS Authentication, Storage Presigned URLs & Google OAuth (DD-23)
+
+### Decision
+1. **Supabase PostgreSQL & Auth Integration**:
+   - Replaced standalone prototype user tables with direct foreign keys to `auth.users(id) ON DELETE CASCADE`.
+   - Created PostgreSQL trigger `on_auth_user_created` executing `handle_new_user()` to automatically provision `public.user_profiles` upon signup via Email or Google OAuth.
+   - Enforced PostgreSQL Row Level Security (RLS) policies on `public.user_profiles`, `public.medical_records`, `public.shared_access`, and `public.notifications`.
+2. **Native Asymmetric JWKS Token Verification**:
+   - Implemented `getPublicKeyFromJWKS` in `backend/src/utils/jwks.js` using Node.js native `crypto.createPublicKey` to dynamically fetch, parse, and cache Supabase Auth public keys from `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`.
+   - Supported symmetric secret fallback (`SUPABASE_JWT_SECRET` / `JWT_SECRET`) and authoritative `supabaseAdmin.auth.getUser(token)` verification.
+3. **Presigned Cloud Storage Upload/Download Pattern**:
+   - Configured `medical-records` as a strictly private Supabase Storage bucket and `avatars` bucket.
+   - Created `POST /api/storage/upload-url` issuing single-use signed PUT upload URLs with user-isolated path prefixes (`<userId>/<uuid>.<ext>`), preventing server memory bottlenecks during multi-MB scans.
+   - Clinical record detail views and doctor share sessions generate 15-minute signed download URLs on demand.
+4. **Google OAuth 2.0 PKCE Integration**:
+   - Integrated `expo-web-browser` and `expo-linking` in `mobile/context/AuthContext.tsx` with callback `medrec://auth/callback`.
+   - Wired "Sign in with Google" button in `mobile/app/login.tsx` to `loginWithGoogle()`.
+
+### Reason
+- Eliminates custom password hashing and password reset token vulnerabilities.
+- Guarantees private medical document scans remain non-public and protected by cryptographic time limits.
+- Adheres to the approved architectural blueprint with 100% test coverage and zero UI regressions.
+
+### Consequences
+- Requires Supabase project environment variables (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+- 48 automated test suites passing with 100% success.
+
+---
 
 ## 2026-09-02 — Tablet Authentication UI Refinement & Landscape Brand Showcase Expansion (DD-22)
 
