@@ -1150,30 +1150,13 @@ export default function RecordsScreen() {
                 </View>
               )}
 
-              {/* Top Row: Record Type Badge & Metadata Edit Action */}
+              {/* Top Row: Record Type Badge */}
               <View style={styles.cardHeaderRow}>
                 <View style={styles.typeBadge}>
                   <Text style={styles.typeBadgeText} maxFontSizeMultiplier={1.35}>
                     {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                   </Text>
                 </View>
-
-                {!selectionMode && (
-                  <Pressable
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      Haptics.selectionAsync();
-                      setEditingRecord(item);
-                    }}
-                    style={({ pressed }) => [styles.cardEditBtn, pressed && styles.btnPressed]}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Edit metadata for ${item.title}`}
-                  >
-                    <Ionicons name="pencil-outline" size={13} color={Colors.teal} />
-                    <Text style={styles.cardEditText}>Edit</Text>
-                  </Pressable>
-                )}
               </View>
 
               <View style={styles.recordBody}>
@@ -1592,20 +1575,6 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     fontFamily: 'LexendDeca-Bold',
-    fontSize: 11,
-    color: Colors.teal,
-  },
-  cardEditBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    borderRadius: 6,
-    backgroundColor: '#E8F5F2',
-  },
-  cardEditText: {
-    fontFamily: 'LexendDeca-SemiBold',
     fontSize: 11,
     color: Colors.teal,
   },
