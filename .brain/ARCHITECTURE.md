@@ -100,7 +100,8 @@ Schema is idempotent: all column additions use `ADD COLUMN IF NOT EXISTS`. Migra
 - **CRUD**: `POST /records` (create), `GET /records` (list with type filter + pagination), `GET /records/:id` (single), `PUT /records/:id` / `PATCH /records/:id` (metadata update), `DELETE /records/:id` (with R2 cleanup).
 - **Attachment Flow**: Mobile client requests presigned upload URL → uploads binary directly to R2 → sends the R2 key (path) as `attachmentUrl` to the create/update endpoint → stored in `medical_records.attachment_url`.
 - **Presigned URL Guard**: On edit, if the client sends back the previously-received `https://` signed download URL, the backend ignores it (both controller and model layer guards), preserving the original R2 key in the DB.
-- **Edit Metadata Modal (`RecordEditModal.tsx`)**: Edits title, category type (horizontal carousel), event date, and clinical notes. Does not expose or modify `attachment_url` — sent payload intentionally omits it.
+- **Edit Record Modal (`RecordEditModal.tsx`)**: Edits document attachment (camera/gallery capture, thumbnail preview, inspect, retake, remove), title, category type (horizontal carousel), event date, and clinical notes. Uploads new attachment to Cloudflare R2 on save or passes `null` to detach.
+- **Edit Trigger Scoping**: Edit action is scoped to the metadata level (Tablet Master-Detail Overview header card and Record Details view [`record/[id].tsx`]), avoiding card-level clutter in the main dashboard list.
 - **Lightbox**: `record/[id].tsx` displays the attachment with a tap-to-expand fullscreen lightbox with instant `withTiming(0ms)` spring animation.
 
 ---

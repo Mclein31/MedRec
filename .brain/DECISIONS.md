@@ -12,6 +12,30 @@ last_updated: 2026-09-04
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-04 — Record Card Edit Trigger Scoping & Edit Modal Image Capture (DD-31)
+
+### Decision
+1. **Scoped Edit Trigger to Metadata Level Only**:
+   - Removed the inline Edit button from individual record list cards in `mobile/app/(tabs)/index.tsx`.
+   - Maintained the Edit trigger exclusively on the record metadata level (Tablet Master-Detail Overview card header and Record Details overview card in `mobile/app/record/[id].tsx`).
+2. **Document Image Capture & Attachment in RecordEditModal (`RecordEditModal.tsx`)**:
+   - Integrated full image attachment functionality into `RecordEditModal` matching `record/add.tsx` visual design.
+   - When an attachment exists: displays `AttachedDocumentCard` with thumbnail, inspect/zoom, retake, and remove buttons.
+   - When no attachment exists: displays `scanHeroCard` with "SCAN WITH CAMERA" and "Or choose from Photo Library" actions.
+   - Integrates `DocumentCamera` and `DocumentPreview` viewports.
+   - Explicitly excludes AI summary banners and delete options.
+   - On save: uploads newly selected image binaries to Cloudflare R2 via presigned URLs and updates/retains or clears the record attachment key.
+
+### Reason
+- Eliminates visual clutter on primary dashboard list cards where full navigation to record details is the primary gesture.
+- Gives patients complete control to attach, replace, or remove document scans during record editing without creating a new record.
+
+### Consequences
+- Clean, uncluttered dashboard list view.
+- Complete parity between creation (`add.tsx`) and editing (`RecordEditModal.tsx`) document attachment capabilities.
+
+---
+
 ## 2026-09-04 — Security & Data Integrity Audit Fixes (DD-30)
 
 ### Decision

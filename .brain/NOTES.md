@@ -99,8 +99,8 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Fixed Global Navigation Header**: Keeps a compact top toolbar (`insets.top + 12`) outside the scroll area for persistent access to the Burger Menu drawer and Notification Bell unread indicator dot, avoiding unnecessary viewport occupation while ensuring global navigation remains accessible at all times.
 
 ## 📝 Record Edit Modal Architecture
-- **`RecordEditModal.tsx`**: Sliding modal presenting title input, horizontal category carousel (pill chips, `borderRadius: 20`, TEAL active, MUTED inactive), event date input with "Set Today" shortcut, and clinical notes textarea.
-- **Attachment Isolation**: Modal does not include `attachment_url` in its update payload — the R2 storage key is never touched during metadata edits.
+- **`RecordEditModal.tsx`**: Sliding modal presenting document capture / attachment (`AttachedDocumentCard` or `scanHeroCard` with `DocumentCamera` and `DocumentPreview`), title input, horizontal category carousel (pill chips, `borderRadius: 20`, TEAL active, MUTED inactive), event date input with "Set Today" shortcut, and clinical notes textarea.
+- **Attachment Handling**: Supports viewing, inspecting, retaking, replacing, and removing document scan attachments matching `add.tsx` UI without AI summary banners or delete options. When a new image is selected, it uploads to Cloudflare R2 on save; when detached, passes `null` to clear the DB field and clean up the old R2 object.
 - **API**: `PUT /records/:id` and `PATCH /records/:id` both accepted. Dynamic SQL updates only the fields present in the payload.
 - **Presigned URL Guard**: Both `recordController.js` and `recordModel.js` guard against persisting `http(s)://` values as `attachment_url`. If a presigned URL is echoed back by the client, it is silently dropped and the existing DB key preserved.
 

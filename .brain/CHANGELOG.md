@@ -10,6 +10,19 @@ last_updated: 2026-09-02
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [1.4.10] — Record Card Edit Trigger Scoping & Edit Modal Image Capture
+
+- **Records Tab Edit Button Scoping (`(tabs)/index.tsx`)**:
+  - Removed the inline Edit button from individual record list cards in the dashboard FlatList.
+  - Kept the Edit trigger exclusively on the record metadata level (Tablet Master-Detail Overview header card and Record Details view [`record/[id].tsx`]).
+- **Record Edit Modal Image Capture & Preview (`RecordEditModal.tsx`)**:
+  - Added full document capture, gallery selection, and legibility preview matching `record/add.tsx`.
+  - Integrates `DocumentCamera`, `DocumentPreview`, and `AttachedDocumentCard` with thumbnail inspection, retake, and removal flows.
+  - Excludes AI summary banners and delete buttons as requested.
+  - Handles Cloudflare R2 upload on save if a new document is attached or detached.
+
+---
+
 ## [1.4.9] — Security & Data Integrity Audit Fixes (Code Review P0–P2)
 
 ### P0 — Security Fix
