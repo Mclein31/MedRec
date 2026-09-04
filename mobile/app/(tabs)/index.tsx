@@ -74,7 +74,6 @@ export default function RecordsScreen() {
     tabBarClearance,
     insets,
     scaleFont,
-    isCompactPhone,
   } = useResponsive();
 
   const loadRecords = async () => {
@@ -737,7 +736,7 @@ export default function RecordsScreen() {
                 <Ionicons name="medical-outline" size={54} color={Colors.teal} style={{ opacity: 0.6 }} />
                 <Text style={styles.detailNoSelectionTitle}>No Health Record Selected</Text>
                 <Text style={styles.detailNoSelectionSub}>
-                  Choose a record from the browser on the left or tap '+ Record' to scan a new clinical document.
+                  Choose a record from the browser on the left or tap &apos;+ Record&apos; to scan a new clinical document.
                 </Text>
               </View>
             )}
@@ -957,7 +956,7 @@ export default function RecordsScreen() {
                 ]}
                 maxFontSizeMultiplier={1.35}
               >
-                Here's your health overview
+                Here&apos;s your health overview
               </Text>
             </View>
 
