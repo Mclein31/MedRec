@@ -21,9 +21,22 @@ async function createRecord({ userId, type, title, description, date, attachment
   return rows[0];
 }
 
-async function getAllForUser(userId, { type, limit = 50, offset = 0 } = {}) {
+async function getAllForUser(userId, { type, recordIds, limit = 50, offset = 0 } = {}) {
   const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
   const safeOffset = Math.max(Number(offset) || 0, 0);
+
+  // If specific recordIds are provided, query only those IDs belonging to this user
+  if (recordIds && recordIds.length > 0) {
+    const { rows } = await pool.query(
+      `SELECT id, user_id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at, updated_at
+       FROM public.medical_records
+       WHERE user_id = $1 AND id = ANY($2::uuid[])
+       ORDER BY date DESC
+       LIMIT $3 OFFSET $4`,
+      [userId, recordIds, safeLimit, safeOffset]
+    );
+    return rows;
+  }
 
   if (type) {
     const { rows } = await pool.query(

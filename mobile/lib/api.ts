@@ -211,7 +211,8 @@ export const api = {
     }
   },
 
-  summarize: () => request('/ai/summarize', { method: 'POST', body: {} }),
+  summarize: (params?: { type?: string; recordIds?: string[] }) =>
+    request('/ai/summarize', { method: 'POST', body: params || {} }),
 
   explain: (text: string) => request('/ai/explain', { method: 'POST', body: { text } }),
 

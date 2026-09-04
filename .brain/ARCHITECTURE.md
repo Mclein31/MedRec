@@ -41,7 +41,7 @@ last_updated: 2026-09-04
 │ - Logout (invalidate)│ - Edit Metadata│ - AI Summary   │               │
 ├───────────────────┴───────────────────┴────────────────┴───────────────┤
 │ /api/profile                                           │ /api/ai       │
-│ - Demographics, Medical ID, Password (bcrypt verify),  │ - Summarize   │
+│ - Demographics, Medical ID, Password (bcrypt verify),  │ - Summarize (all / scoped recordIds) │
 │   Avatar (R2), Account Deletion                        │ - Explain     │
 │ /api/notifications                                     │               │
 │ - In-App Audit Logs, Event Triggers, Read/Unread Status│               │
@@ -174,7 +174,22 @@ Three strictly isolated runtime UI states:
 
 ---
 
+## 🤖 Clinical AI Architecture & Multi-Record Scoping
+
+1. **Full & Scoped Record Summarization (`/api/ai/summarize`)**:
+   - Accepts optional `{ type }` or `{ recordIds: string[] }`.
+   - Validates that `recordIds` contains valid UUID strings; rejects malformed inputs with `400 Bad Request`.
+   - Queries PostgreSQL using `user_id = $1 AND id = ANY($2::uuid[])` ensuring strict patient tenancy and scoped summarization.
+   - Falls back gracefully to deterministic clinical extraction if OpenAI API is unavailable.
+2. **Records Selection Mode (`(tabs)/index.tsx`)**:
+   - Single layout foundation matching normal Records screen flow.
+   - Patient greeting skipped during selection mode.
+   - Filter-bound `selectAllRecords` operates only on visible records (`sortedRecords`), preserving clinical privacy when filters are active.
+   - Selection state cleaned up on tab blur and reconciled on record reload.
+
+---
+
 ## 🧪 Testing
 
-- **Backend**: Jest + Supertest. 63 tests across 8 suites: `auth.test.js`, `profile.test.js`, `record.test.js`, `share.test.js`, `storage.test.js`, `notification.test.js`, `security.test.js`, `integration.test.js`. All 63/63 passing.
+- **Backend**: Jest + Supertest. 64 tests across 8 suites: `auth.test.js`, `profile.test.js`, `record.test.js`, `share.test.js`, `storage.test.js`, `notification.test.js`, `security.test.js`, `integration.test.js`. All 64/64 passing.
 - **Mobile**: TypeScript compilation (`npx tsc --noEmit`) — 0 errors.

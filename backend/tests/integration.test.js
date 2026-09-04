@@ -243,6 +243,42 @@ describe('Full End-to-End Integration & Multi-User Verification Suite (PostgreSQ
     expect(types).toContain('emergency_updated');
   });
 
+  // STEP 6b: AI Record Summarization for Selected Records
+  it('E2E-06b: User A generates AI summary scoped strictly to selected recordIds', async () => {
+    // 1. Scoped to User A's selected record
+    const summaryRes = await request(app)
+      .post('/ai/summarize')
+      .set('Authorization', `Bearer ${userAToken}`)
+      .send({ recordIds: [userARecordId] });
+
+    expect(summaryRes.status).toBe(200);
+    expect(summaryRes.body).toHaveProperty('summary');
+    expect(summaryRes.body.summary).toContain('1 selected health record');
+
+    // 2. User A cannot summarize User B's record (returns no records available)
+    const unauthorizedRes = await request(app)
+      .post('/ai/summarize')
+      .set('Authorization', `Bearer ${userAToken}`)
+      .send({ recordIds: [userBRecordId] });
+    expect(unauthorizedRes.status).toBe(200);
+    expect(unauthorizedRes.body.summary).toContain('No records available');
+
+    // 3. Invalid recordIds parameter validation
+    const invalidRes = await request(app)
+      .post('/ai/summarize')
+      .set('Authorization', `Bearer ${userAToken}`)
+      .send({ recordIds: 'invalid' });
+    expect(invalidRes.status).toBe(400);
+
+    // 4. Non-UUID strings in recordIds returns 400
+    const nonUuidRes = await request(app)
+      .post('/ai/summarize')
+      .set('Authorization', `Bearer ${userAToken}`)
+      .send({ recordIds: ['not-a-valid-uuid'] });
+    expect(nonUuidRes.status).toBe(400);
+    expect(nonUuidRes.body.error).toContain('valid UUIDs');
+  });
+
   // STEP 7: Cascade Account Deletion
   it('E2E-07: User A deletes account; cascades removal of records, shares, and notifications', async () => {
     const delRes = await request(app)

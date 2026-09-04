@@ -12,6 +12,38 @@ last_updated: 2026-09-04
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-04 — Records Selection Mode Normal-Layout Alignment & Scoped AI Architecture (DD-32)
+
+### Decision
+1. **Selection Mode Layout Unification (`mobile/app/(tabs)/index.tsx`)**:
+   - Replaced the bottom floating action bar with an integrated top action stack that directly follows the normal Records screen layout.
+   - Flow: (Top Toolbar: `[Menu]` / `[Done] [Bell]`) → `Generate AI Health Summary` (Position 1) → `Share Selected Records` (Position 2) → `Selection count / Select All` (Position 3) → `RecordSearchBar` → Category Chips → Section Header → Record Cards.
+   - Omitted the patient greeting (`"Hello, [User]" / "Here's your health overview"`) during selection mode to prioritize task actions.
+   - Single compact green Done action pill (`height: 30`, `paddingHorizontal: 14`, `backgroundColor: Colors.teal` `#159A83`, `hitSlop={8}`) toggles in place of `[Select]`.
+   - Record cards scroll naturally down to the tab bar with standard clearance without bottom padding compensation.
+2. **Clinical Privacy & Filter-Bound Selection State**:
+   - `selectAllRecords` operates strictly on visible records (`sortedRecords`), preserving active category filters and search queries to prevent accidental mass-selection or leakage of sensitive filtered records. Toggles selection state on/off.
+   - Reconciled `selectedIds` on data reload to discard stale/deleted IDs.
+   - Cleans up selection mode (`setSelectionMode(false)`, `setSelectedIds(new Set())`) on screen/tab blur via `useFocusEffect` cleanup.
+3. **Scoped AI Summarization Protocol (`backend/src/controllers/aiController.js`, `backend/src/models/recordModel.js`)**:
+   - Extended `/api/ai/summarize` to accept an optional `recordIds` array of valid UUIDs.
+   - Enforces user tenancy and ID scoping via `id = ANY($2::uuid[])` in `recordModel.getAllForUser`.
+   - Validates UUID syntax with regex, returning 400 Bad Request if malformed IDs are provided.
+4. **Clean Secondary Share Action**:
+   - "Share Selected Records" formatted as clean plain text without icons, emojis, or record count strings.
+
+### Reason
+- Resolves cramped bottom viewport and eliminates duplicate Done buttons.
+- Prevents accidental sharing or summarization of filtered-out medical records (least privilege / HIPAA compliance).
+- Provides a consistent, predictable multi-record management experience across mobile and tablet form factors.
+
+### Consequences
+- Clean single-layout Records dashboard.
+- Zero layout jitter or tab bar overlap.
+- High patient privacy assurance when using filters prior to sharing.
+
+---
+
 ## 2026-09-04 — Record Card Edit Trigger Scoping & Edit Modal Image Capture (DD-31)
 
 ### Decision

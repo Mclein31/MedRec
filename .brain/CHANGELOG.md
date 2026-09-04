@@ -5,10 +5,47 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-02
+last_updated: 2026-09-04
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.4.11] — Records Selection Mode Normal-Layout Alignment & Top Actions
+
+- **Single Layout Foundation (`(tabs)/index.tsx`)**:
+  - Rebuilt selection mode to strictly follow the normal Records screen layout instead of rendering a separate bottom floating action bar or alternate modal panel.
+  - Record cards scroll naturally down to the bottom navigation bar with standard list clearance (`Math.max(insets.bottom, 20) + tabBarClearance`).
+  - Completely removed the floating bottom action container, restoring full viewport visibility and eliminating bottom crowding.
+- **Top Greeting Scoping (`(tabs)/index.tsx`)**:
+  - Greeting (`"Hello, [User] / Here's your health overview"`) is now rendered exclusively in normal mode (`!selectionMode`).
+  - When entering selection mode, the greeting is hidden, moving directly to the top action area.
+- **Single Compact Header Done Pill (`(tabs)/index.tsx`)**:
+  - Consolidated all Done triggers into exactly ONE button located at the top-right header, toggling in place of `[Select]` (`[Select] [Bell]` -> `[Done] [Bell]`).
+  - Styled as a compact action pill (`backgroundColor: Colors.teal` `#159A83`, `height: 30`, `paddingHorizontal: 14`, `borderRadius: Radii.pill`, white text, comfortable touch target with `hitSlop={8}`).
+  - Completely eliminated duplicate Done buttons across the UI.
+- **Top Actions Flow (`(tabs)/index.tsx`)**:
+  - **Position 1 (Generate AI Health Summary)**: Positioned near the top of the header. In selection mode, summarizes selected records only (`handleSummarizeSelected`), shows loading state (`summarizingSelected`), and disables when 0 records are selected.
+  - **Position 2 (Share Selected Records)**: Positioned directly underneath the AI summary banner. Visible exclusively in selection mode, styled cleanly as a secondary action button with plain text only (`"Share Selected Records"`, no icons, no emoji, no dynamic record count).
+  - **Position 3 (Selection Count & Select All)**: Positioned directly under the Share button, displaying current selection status and a toggle to select all records.
+  - **Position 4 (Search & Filters)**: Followed naturally by `RecordSearchBar`, category filter chips carousel, section counter header, and the record cards.
+- **Selection Privacy & State Lifecycle (`(tabs)/index.tsx`)**:
+  - Filter-Bound `selectAllRecords`: Updated selection logic to operate strictly on visible records (`sortedRecords`), preventing sensitive filtered-out medical records from being unintentionally selected or shared. Added toggle support (`"Select all"` / `"Deselect all"`).
+  - Tab Blur Cleanup & Reconciliation: Added cleanup handler to `useFocusEffect` to exit selection mode and reset selected IDs on tab blur. Reconciled `selectedIds` in `loadRecords` to purge stale or deleted record IDs.
+  - Virtualization & Accessibility: Added `extraData={[selectedIds, selectionMode]}` to FlatLists and `accessibilityState={{ selected: isSelected }}` to record cards.
+  - Tablet Landscape Workspace Parity: Added AI Health Summary trigger to tablet landscape master selection pane, kept Share button mounted consistently, and wired `onOpenAiSummary` to navigation modals.
+  - Dead Code Elimination: Removed orphaned component `mobile/components/records/RecordRow.tsx`.
+- **Backend & API Architecture (`aiController.js`, `recordModel.js`, `api.ts`)**:
+  - Extended `/api/ai/summarize` to accept `recordIds` string array.
+  - Added UUID regex validation in `aiController.js`, returning `400 Bad Request` if malformed non-UUID strings are passed.
+  - Filtered in PostgreSQL via `id = ANY($2::uuid[])` ensuring user tenancy and ID bounding.
+  - Maintained fallback clinical synthesis and informational disclaimer.
+- **Testing & Code Quality**:
+  - Integration test `E2E-06b` added in `backend/tests/integration.test.js` (including non-UUID 400 validation).
+  - 64/64 backend tests pass (`npm test`).
+  - 0 TypeScript compilation errors (`npx tsc --noEmit`).
+  - 0 ESLint warnings or errors (`npx eslint app/(tabs)/index.tsx`).
+
+---
 
 ## [1.4.10] — Record Card Edit Trigger Scoping & Edit Modal Image Capture
 

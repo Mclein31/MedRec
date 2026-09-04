@@ -48,10 +48,11 @@ export default function RecordsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Selection Mode State for QR Sharing
+  // Selection Mode State for QR Sharing & AI Summarization
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sharing, setSharing] = useState(false);
+  const [summarizingSelected, setSummarizingSelected] = useState(false);
 
   // Navigation & Edit Modals
   const [menuVisible, setMenuVisible] = useState(false);
@@ -79,7 +80,15 @@ export default function RecordsScreen() {
   const loadRecords = async () => {
     try {
       const data = await api.getRecords();
-      setRecords(data.records || []);
+      const fetchedRecords = data.records || [];
+      setRecords(fetchedRecords);
+      // Reconcile selection with fresh records (purge deleted or stale records)
+      setSelectedIds((prev) => {
+        if (prev.size === 0) return prev;
+        const validIds = new Set(fetchedRecords.map((r: MedicalRecord) => r.id));
+        const filtered = new Set([...prev].filter((id) => validIds.has(id)));
+        return filtered.size === prev.size ? prev : filtered;
+      });
     } catch (err: any) {
       Alert.alert('Error loading records', err.message);
     }
@@ -90,6 +99,12 @@ export default function RecordsScreen() {
       setLoading(true);
       loadRecords().finally(() => setLoading(false));
       refreshNotifications();
+
+      return () => {
+        // Automatically exit selection mode on tab blur
+        setSelectionMode(false);
+        setSelectedIds(new Set());
+      };
     }, [refreshNotifications])
   );
 
@@ -148,6 +163,36 @@ export default function RecordsScreen() {
     );
   };
 
+  // ─── Category Counts Calculation ──────────────────────────────────────────
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: records.length };
+    records.forEach((r) => {
+      const typeKey = (r.type || 'other').toLowerCase();
+      counts[typeKey] = (counts[typeKey] || 0) + 1;
+    });
+    return counts;
+  }, [records]);
+
+  // ─── Filtered & Sorted Records List (Newest first) ────────────────────────
+  const sortedRecords = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const filtered = records.filter((r) => {
+      const matchesCategory =
+        selectedCategory === 'all' || (r.type || 'other').toLowerCase() === selectedCategory;
+      if (!matchesCategory) return false;
+
+      if (!query) return true;
+      const titleMatch = (r.title || '').toLowerCase().includes(query);
+      const descMatch = (r.description || '').toLowerCase().includes(query);
+      const typeMatch = (r.type || '').toLowerCase().includes(query);
+      return titleMatch || descMatch || typeMatch;
+    });
+
+    return filtered.sort((a, b) => {
+      return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
+    });
+  }, [records, selectedCategory, searchQuery]);
+
   // ─── Selection Mode Handlers ──────────────────────────────────────────────
   const toggleSelectMode = () => {
     Haptics.selectionAsync();
@@ -178,7 +223,18 @@ export default function RecordsScreen() {
 
   const selectAllRecords = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedIds(new Set(records.map((r) => r.id)));
+    setSelectedIds((prev) => {
+      const visibleIds = sortedRecords.map((r) => r.id);
+      const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.has(id));
+      if (allVisibleSelected) {
+        // Toggle off: deselect all currently visible records
+        const next = new Set(prev);
+        visibleIds.forEach((id) => next.delete(id));
+        return next;
+      }
+      // Add visible records to selection
+      return new Set([...prev, ...visibleIds]);
+    });
   };
 
   const handleShareSelected = async () => {
@@ -202,35 +258,28 @@ export default function RecordsScreen() {
     }
   };
 
-  // ─── Category Counts Calculation ──────────────────────────────────────────
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: records.length };
-    records.forEach((r) => {
-      const typeKey = (r.type || 'other').toLowerCase();
-      counts[typeKey] = (counts[typeKey] || 0) + 1;
-    });
-    return counts;
-  }, [records]);
-
-  // ─── Filtered & Sorted Records List (Newest first) ────────────────────────
-  const sortedRecords = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    const filtered = records.filter((r) => {
-      const matchesCategory =
-        selectedCategory === 'all' || (r.type || 'other').toLowerCase() === selectedCategory;
-      if (!matchesCategory) return false;
-
-      if (!query) return true;
-      const titleMatch = (r.title || '').toLowerCase().includes(query);
-      const descMatch = (r.description || '').toLowerCase().includes(query);
-      const typeMatch = (r.type || '').toLowerCase().includes(query);
-      return titleMatch || descMatch || typeMatch;
-    });
-
-    return filtered.sort((a, b) => {
-      return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
-    });
-  }, [records, selectedCategory, searchQuery]);
+  const handleSummarizeSelected = async () => {
+    if (selectedIds.size === 0) {
+      Alert.alert('No records selected', 'Please select at least one record to generate an AI summary.');
+      return;
+    }
+    setSummarizingSelected(true);
+    try {
+      const selectedArray = Array.from(selectedIds);
+      const data = await api.summarize({ recordIds: selectedArray });
+      const recordCount = selectedArray.length;
+      const countLabel = `${recordCount} Selected Record${recordCount === 1 ? '' : 's'}`;
+      Alert.alert(
+        `AI Health Summary (${countLabel})`,
+        `${data.summary}\n\nNotice: This is an informational summary of your selected medical records only. It does not provide medical advice or a clinical diagnosis.`,
+        [{ text: 'OK', style: 'default' }]
+      );
+    } catch (err: any) {
+      Alert.alert('AI summary failed', err.message || 'Unable to generate summary for selected records.');
+    } finally {
+      setSummarizingSelected(false);
+    }
+  };
 
   const activeDetailRecord = useMemo(() => {
     return sortedRecords.find((r) => r.id === selectedRecordId) || sortedRecords[0] || null;
@@ -304,11 +353,11 @@ export default function RecordsScreen() {
                   <Pressable
                     onPress={toggleSelectMode}
                     hitSlop={8}
-                    style={styles.cancelBtn}
+                    style={({ pressed }) => [styles.doneHeaderBtn, pressed && styles.doneHeaderBtnPressed]}
                     accessibilityRole="button"
-                    accessibilityLabel="Cancel selection mode"
+                    accessibilityLabel="Exit selection mode"
                   >
-                    <Text style={styles.cancelBtnText}>Done</Text>
+                    <Text style={styles.doneHeaderText}>Done</Text>
                   </Pressable>
                 ) : (
                   <Pressable
@@ -385,33 +434,87 @@ export default function RecordsScreen() {
 
             {/* Selection Mode Banner in Master Column */}
             {selectionMode && (
-              <View style={styles.masterSelectionBanner}>
-                <Text style={styles.masterSelectionText}>
-                  {selectedIds.size} record{selectedIds.size === 1 ? '' : 's'} selected
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                  <Pressable onPress={selectAllRecords} hitSlop={6}>
-                    <Text style={styles.selectAllLink}>All</Text>
-                  </Pressable>
+              <View style={styles.masterSelectionContainer}>
+                <View style={styles.masterSelectionBanner}>
+                  <Text style={styles.masterSelectionText}>
+                    {selectedIds.size === 0
+                      ? 'Select records below'
+                      : `${selectedIds.size} record${selectedIds.size !== 1 ? 's' : ''} selected`}
+                  </Text>
                   <Pressable
-                    onPress={handleShareSelected}
-                    disabled={sharing || selectedIds.size === 0}
-                    style={[
-                      styles.sharePillBtn,
-                      (sharing || selectedIds.size === 0) && { opacity: 0.5 },
-                    ]}
+                    onPress={selectAllRecords}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      sortedRecords.length > 0 && sortedRecords.every((r) => selectedIds.has(r.id))
+                        ? 'Deselect all visible records'
+                        : 'Select all visible records'
+                    }
                   >
-                    <Text style={styles.sharePillText}>
-                      {sharing ? 'Generating...' : 'Share QR'}
+                    <Text style={styles.selectAllLink}>
+                      {sortedRecords.length > 0 && sortedRecords.every((r) => selectedIds.has(r.id))
+                        ? 'Deselect'
+                        : 'All'}
                     </Text>
                   </Pressable>
                 </View>
+
+                {/* Generate AI Health Summary for Tablet Landscape */}
+                <Pressable
+                  onPress={handleSummarizeSelected}
+                  disabled={summarizingSelected || selectedIds.size === 0}
+                  style={({ pressed }) => [
+                    styles.tabletMasterAiBtn,
+                    pressed && styles.aiBannerPressed,
+                    (summarizingSelected || selectedIds.size === 0) && styles.aiBannerDisabled,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Generate AI Health Summary"
+                >
+                  {summarizingSelected ? (
+                    <View style={styles.tabletBtnContentRow}>
+                      <ActivityIndicator size="small" color={Colors.white} />
+                      <Text style={styles.tabletMasterAiText}>Generating summary...</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.tabletMasterAiText}>Generate AI Health Summary</Text>
+                  )}
+                </Pressable>
+
+                {/* Share Selected Records for Tablet Landscape (Always mounted in selection mode) */}
+                <Pressable
+                  onPress={handleShareSelected}
+                  disabled={sharing || selectedIds.size === 0}
+                  style={({ pressed }) => [
+                    styles.shareSecondaryBtn,
+                    { marginHorizontal: 0, marginTop: 0, height: 36, marginBottom: 0 },
+                    pressed && styles.shareSecondaryBtnPressed,
+                    (sharing || selectedIds.size === 0) && styles.shareSecondaryBtnDisabled,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share Selected Records"
+                >
+                  {sharing ? (
+                    <ActivityIndicator size="small" color={Colors.teal} />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.shareSecondaryBtnText,
+                        { fontSize: 12 },
+                        selectedIds.size === 0 && styles.shareSecondaryBtnTextDisabled,
+                      ]}
+                    >
+                      Share Selected Records
+                    </Text>
+                  )}
+                </Pressable>
               </View>
             )}
 
             {/* Master Records FlatList */}
             <FlatList
               data={sortedRecords}
+              extraData={[selectedIds, selectionMode, selectedRecordId]}
               keyExtractor={recordKeyExtractor}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={[
@@ -463,6 +566,9 @@ export default function RecordsScreen() {
                       isSelectedForDetail && !selectionMode && styles.masterRowCardActive,
                       isChecked && styles.masterRowCardChecked,
                     ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isChecked }}
+                    accessibilityLabel={`${item.type}: ${item.title}, ${formattedDate}${selectionMode ? (isChecked ? ', selected' : ', not selected') : ''}`}
                   >
                     {selectionMode && (
                       <View
@@ -780,6 +886,7 @@ export default function RecordsScreen() {
         <SideMenuModal
           visible={menuVisible}
           onClose={() => setMenuVisible(false)}
+          onOpenAiSummary={handleSummarize}
         />
 
         {/* Notifications Modal */}
@@ -819,45 +926,45 @@ export default function RecordsScreen() {
           },
         ]}
       >
-        {selectionMode ? (
-          <Pressable
-            onPress={toggleSelectMode}
-            hitSlop={8}
-            style={styles.cancelBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel selection mode"
-          >
-            <Text style={styles.cancelBtnText}>Done</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setMenuVisible(true);
-            }}
-            hitSlop={10}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open navigation menu"
-          >
-            <Image
-              source={require('../../assets/icons/burger-menu.png')}
-              style={styles.toolbarIcon}
-            />
-          </Pressable>
-        )}
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setMenuVisible(true);
+          }}
+          hitSlop={10}
+          style={styles.iconBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Open navigation menu"
+        >
+          <Image
+            source={require('../../assets/icons/burger-menu.png')}
+            style={styles.toolbarIcon}
+          />
+        </Pressable>
 
         <View style={styles.toolbarRight}>
-          {records.length > 0 && !selectionMode && (
-            <Pressable
-              onPress={toggleSelectMode}
-              hitSlop={8}
-              style={styles.selectHeaderBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Enter multi-record selection mode"
-            >
-              <Text style={styles.selectHeaderText}>Select</Text>
-            </Pressable>
+          {records.length > 0 && (
+            selectionMode ? (
+              <Pressable
+                onPress={toggleSelectMode}
+                hitSlop={8}
+                style={({ pressed }) => [styles.doneHeaderBtn, pressed && styles.doneHeaderBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Exit selection mode"
+              >
+                <Text style={styles.doneHeaderText}>Done</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={toggleSelectMode}
+                hitSlop={8}
+                style={styles.selectHeaderBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Enter multi-record selection mode"
+              >
+                <Text style={styles.selectHeaderText}>Select</Text>
+              </Pressable>
+            )
           )}
 
           <Pressable
@@ -886,6 +993,7 @@ export default function RecordsScreen() {
       <FlatList
         key={isTablet ? 'tablet-grid-2' : 'phone-list-1'}
         data={sortedRecords}
+        extraData={[selectedIds, selectionMode]}
         numColumns={isTablet ? 2 : 1}
         columnWrapperStyle={
           isTablet
@@ -906,7 +1014,9 @@ export default function RecordsScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingBottom: Math.max(insets.bottom, 20) + tabBarClearance,
+            paddingBottom:
+              Math.max(insets.bottom, 20) +
+              tabBarClearance,
           },
         ]}
         refreshControl={
@@ -928,39 +1038,117 @@ export default function RecordsScreen() {
             ]}
           >
 
-            {/* Screen Greeting */}
-            <View
-              style={[
-                styles.greetingBox,
-                {
-                  paddingLeft: Math.max(insets.left, screenPadding),
-                  paddingRight: Math.max(insets.right, screenPadding),
-                },
-              ]}
-            >
-              <Text
+            {/* Screen Greeting (Normal Mode only - hidden in Selection Mode) */}
+            {!selectionMode && (
+              <View
                 style={[
-                  styles.greetingTitle,
-                  { fontSize: scaleFont(28, 24, 32), lineHeight: scaleFont(34, 30, 38) },
+                  styles.greetingBox,
+                  {
+                    paddingLeft: Math.max(insets.left, screenPadding),
+                    paddingRight: Math.max(insets.right, screenPadding),
+                  },
                 ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                maxFontSizeMultiplier={1.35}
               >
-                Hello, {firstName} 👋🏼
-              </Text>
-              <Text
-                style={[
-                  styles.greetingSub,
-                  { fontSize: scaleFont(12, 11, 13.5) },
-                ]}
-                maxFontSizeMultiplier={1.35}
-              >
-                Here&apos;s your health overview
-              </Text>
-            </View>
+                <Text
+                  style={[
+                    styles.greetingTitle,
+                    { fontSize: scaleFont(28, 24, 32), lineHeight: scaleFont(34, 30, 38) },
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.35}
+                >
+                  Hello, {firstName} 👋🏼
+                </Text>
+                <Text
+                  style={[
+                    styles.greetingSub,
+                    { fontSize: scaleFont(12, 11, 13.5) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  Here&apos;s your health overview
+                </Text>
+              </View>
+            )}
 
-            {/* Multi-Selection Info Banner */}
+            {/* Position 1: AI Health Summary Banner */}
+            <Pressable
+              onPress={selectionMode ? handleSummarizeSelected : handleSummarize}
+              disabled={selectionMode ? (summarizingSelected || selectedIds.size === 0) : summarizing}
+              style={({ pressed }) => [
+                styles.aiBanner,
+                { marginHorizontal: screenPadding },
+                selectionMode && selectedIds.size === 0 && styles.aiBannerDisabled,
+                pressed && styles.aiBannerPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Generate AI Health Summary"
+            >
+              <View style={styles.aiIconBox}>
+                <Image source={require('../../assets/icons/AI.png')} style={styles.aiAsset} />
+              </View>
+              <View style={styles.aiTextBox}>
+                <Text
+                  style={[
+                    styles.aiTitle,
+                    { fontSize: scaleFont(14.5, 13.5, 16) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  {(selectionMode ? summarizingSelected : summarizing)
+                    ? 'Generating summary...'
+                    : 'Generate AI Health Summary'}
+                </Text>
+                <Text
+                  style={[
+                    styles.aiSubtitle,
+                    { fontSize: scaleFont(11, 10.5, 12) },
+                  ]}
+                  maxFontSizeMultiplier={1.35}
+                >
+                  {selectionMode
+                    ? 'Get clinical insights for selected records'
+                    : 'Get clinical insights and a summary of your records'}
+                </Text>
+              </View>
+              {(selectionMode ? summarizingSelected : summarizing) ? (
+                <ActivityIndicator size="small" color={Colors.white} />
+              ) : (
+                <Ionicons name="chevron-forward" size={18} color="rgba(255, 255, 255, 0.75)" />
+              )}
+            </Pressable>
+
+            {/* Position 2: Share Selected Records (Selection Mode only) */}
+            {selectionMode && (
+              <Pressable
+                onPress={handleShareSelected}
+                disabled={sharing || selectedIds.size === 0}
+                style={({ pressed }) => [
+                  styles.shareSecondaryBtn,
+                  { marginHorizontal: screenPadding },
+                  pressed && styles.shareSecondaryBtnPressed,
+                  (sharing || selectedIds.size === 0) && styles.shareSecondaryBtnDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Share Selected Records"
+              >
+                {sharing ? (
+                  <ActivityIndicator size="small" color={Colors.teal} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.shareSecondaryBtnText,
+                      selectedIds.size === 0 && styles.shareSecondaryBtnTextDisabled,
+                    ]}
+                  >
+                    Share Selected Records
+                  </Text>
+                )}
+              </Pressable>
+            )}
+
+            {/* Position 3: Multi-Selection Info Banner (Selection Mode only) */}
             {selectionMode && (
               <View
                 style={[
@@ -978,56 +1166,23 @@ export default function RecordsScreen() {
                       : `${selectedIds.size} record${selectedIds.size !== 1 ? 's' : ''} selected`}
                   </Text>
                 </View>
-                <Pressable onPress={selectAllRecords} hitSlop={6}>
+                <Pressable
+                  onPress={selectAllRecords}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    sortedRecords.length > 0 && sortedRecords.every((r) => selectedIds.has(r.id))
+                      ? 'Deselect all visible records'
+                      : 'Select all visible records'
+                  }
+                >
                   <Text style={styles.selectAllText} maxFontSizeMultiplier={1.35}>
-                    Select all
+                    {sortedRecords.length > 0 && sortedRecords.every((r) => selectedIds.has(r.id))
+                      ? 'Deselect all'
+                      : 'Select all'}
                   </Text>
                 </Pressable>
               </View>
-            )}
-
-            {/* AI Health Summary Banner (Hidden during Selection Mode) */}
-            {!selectionMode && (
-              <Pressable
-                onPress={handleSummarize}
-                disabled={summarizing}
-                style={({ pressed }) => [
-                  styles.aiBanner,
-                  { marginHorizontal: screenPadding },
-                  pressed && styles.aiBannerPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Generate AI Health Summary"
-              >
-                <View style={styles.aiIconBox}>
-                  <Image source={require('../../assets/icons/AI.png')} style={styles.aiAsset} />
-                </View>
-                <View style={styles.aiTextBox}>
-                  <Text
-                    style={[
-                      styles.aiTitle,
-                      { fontSize: scaleFont(14.5, 13.5, 16) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    {summarizing ? 'Generating summary...' : 'Generate AI Health Summary'}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.aiSubtitle,
-                      { fontSize: scaleFont(11, 10.5, 12) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    Get clinical insights and a summary of your records
-                  </Text>
-                </View>
-                {summarizing ? (
-                  <ActivityIndicator size="small" color={Colors.white} />
-                ) : (
-                  <Ionicons name="chevron-forward" size={18} color="rgba(255, 255, 255, 0.75)" />
-                )}
-              </Pressable>
             )}
 
             {/* Clean Full-Width Search Bar */}
@@ -1138,7 +1293,8 @@ export default function RecordsScreen() {
                 isSelected && styles.cardSelected,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={`${item.type}: ${item.title}, ${formatDate(item.date)}`}
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`${item.type}: ${item.title}, ${formatDate(item.date)}${selectionMode ? (isSelected ? ', selected' : ', not selected') : ''}`}
             >
               {/* Selection Checkbox */}
               {selectionMode && (
@@ -1242,39 +1398,6 @@ export default function RecordsScreen() {
         }
       />
 
-      {/* ────────────────────────────────────────────────────────
-          FLOATING SHARE SELECTED CTA BUTTON (Selection Mode)
-      ──────────────────────────────────────────────────────── */}
-      {selectionMode && selectedIds.size > 0 && (
-        <View
-          style={[
-            styles.floatingBar,
-            {
-              paddingBottom: Math.max(insets.bottom, 12) + (isTablet ? 90 : 70),
-            },
-          ]}
-        >
-          <Pressable
-            onPress={handleShareSelected}
-            disabled={sharing}
-            style={({ pressed }) => [styles.shareFloatingBtn, pressed && styles.btnPressed]}
-            accessibilityRole="button"
-            accessibilityLabel={`Share ${selectedIds.size} selected records with Doctor`}
-          >
-            {sharing ? (
-              <ActivityIndicator size="small" color={Colors.white} />
-            ) : (
-              <>
-                <Ionicons name="qr-code-outline" size={18} color={Colors.white} />
-                <Text style={styles.shareFloatingText}>
-                  Share {selectedIds.size} Record{selectedIds.size !== 1 ? 's' : ''} via QR
-                </Text>
-              </>
-            )}
-          </Pressable>
-        </View>
-      )}
-
       {/* Side Menu Drawer */}
       <SideMenuModal
         visible={menuVisible}
@@ -1369,18 +1492,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.teal,
   },
-  cancelBtn: {
+  doneHeaderBtn: {
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    height: 30,
     borderRadius: Radii.pill,
-    backgroundColor: Colors.tealLight,
-    minHeight: 32,
+    backgroundColor: Colors.teal,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  cancelBtnText: {
+  doneHeaderBtnPressed: {
+    opacity: 0.85,
+    backgroundColor: Colors.tealDark,
+  },
+  doneHeaderText: {
     fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 12.5,
-    color: Colors.teal,
+    fontSize: 12,
+    color: Colors.white,
   },
   greetingBox: {
     marginBottom: 14,
@@ -1467,6 +1594,59 @@ const styles = StyleSheet.create({
   aiSubtitle: {
     fontFamily: 'LexendDeca-Regular',
     color: 'rgba(255, 255, 255, 0.88)',
+  },
+  aiBannerDisabled: {
+    opacity: 0.55,
+  },
+
+  /* Share Selected Records Secondary Button */
+  shareSecondaryBtn: {
+    height: 44,
+    borderRadius: Radii.card,
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1.5,
+    borderColor: Colors.teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  shareSecondaryBtnPressed: {
+    backgroundColor: Colors.tealLight,
+    opacity: 0.85,
+  },
+  shareSecondaryBtnDisabled: {
+    borderColor: Colors.border,
+    backgroundColor: Colors.cardBg,
+    opacity: 0.5,
+  },
+  shareSecondaryBtnText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 14,
+    color: Colors.teal,
+    textAlign: 'center',
+  },
+  shareSecondaryBtnTextDisabled: {
+    color: Colors.muted,
+  },
+  tabletMasterAiBtn: {
+    height: 36,
+    borderRadius: Radii.card,
+    backgroundColor: Colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  tabletMasterAiText: {
+    fontFamily: 'LexendDeca-SemiBold',
+    fontSize: 12,
+    color: Colors.white,
+    textAlign: 'center',
+  },
+  tabletBtnContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 
   /* Quick Category Chips */
@@ -1673,39 +1853,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  /* Floating Share Button */
-  floatingBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  shareFloatingBtn: {
-    width: '100%',
-    maxWidth: 340,
-    height: 50,
-    borderRadius: Radii.button,
-    backgroundColor: Colors.teal,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: Colors.teal,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  shareFloatingText: {
-    ...Typography.button,
-    color: Colors.white,
-  },
-  btnPressed: {
-    opacity: 0.8,
-  },
-
   /* ────────────────────────────────────────────────────────
      TABLET LANDSCAPE MASTER-DETAIL WORKSPACE STYLES
   ──────────────────────────────────────────────────────── */
@@ -1803,6 +1950,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.teal,
     borderColor: Colors.teal,
   },
+  masterSelectionContainer: {
+    marginHorizontal: 14,
+    marginBottom: 8,
+    gap: 6,
+  },
   masterSelectionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1810,9 +1962,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.tealLight,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    marginHorizontal: 14,
     borderRadius: 10,
-    marginBottom: 6,
   },
   masterSelectionText: {
     fontFamily: 'LexendDeca-SemiBold',
@@ -1826,17 +1976,6 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     paddingVertical: 4,
     paddingHorizontal: 6,
-  },
-  sharePillBtn: {
-    backgroundColor: Colors.teal,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  sharePillText: {
-    fontFamily: 'LexendDeca-Bold',
-    fontSize: 11,
-    color: '#FFFFFF',
   },
   masterListContent: {
     paddingHorizontal: 12,
