@@ -82,13 +82,18 @@ export default function RecordsScreen() {
       const data = await api.getRecords();
       const fetchedRecords = data.records || [];
       setRecords(fetchedRecords);
-      // Reconcile selection with fresh records (purge deleted or stale records)
-      setSelectedIds((prev) => {
-        if (prev.size === 0) return prev;
-        const validIds = new Set(fetchedRecords.map((r: MedicalRecord) => r.id));
-        const filtered = new Set([...prev].filter((id) => validIds.has(id)));
-        return filtered.size === prev.size ? prev : filtered;
-      });
+      if (fetchedRecords.length === 0) {
+        setSelectionMode(false);
+        setSelectedIds(new Set());
+      } else {
+        // Reconcile selection with fresh records (purge deleted or stale records)
+        setSelectedIds((prev) => {
+          if (prev.size === 0) return prev;
+          const validIds = new Set(fetchedRecords.map((r: MedicalRecord) => r.id));
+          const filtered = new Set([...prev].filter((id) => validIds.has(id)));
+          return filtered.size === prev.size ? prev : filtered;
+        });
+      }
     } catch (err: any) {
       Alert.alert('Error loading records', err.message);
     }
@@ -200,6 +205,7 @@ export default function RecordsScreen() {
       setSelectionMode(false);
       setSelectedIds(new Set());
     } else {
+      if (records.length === 0) return;
       setSelectionMode(true);
     }
   };
@@ -349,25 +355,15 @@ export default function RecordsScreen() {
               </View>
 
               <View style={styles.masterHeaderActions}>
-                {selectionMode ? (
+                {(records.length > 0 || selectionMode) && (
                   <Pressable
                     onPress={toggleSelectMode}
                     hitSlop={8}
-                    style={({ pressed }) => [styles.doneHeaderBtn, pressed && styles.doneHeaderBtnPressed]}
+                    style={({ pressed }) => [styles.selectBtn, pressed && styles.selectBtnPressed]}
                     accessibilityRole="button"
-                    accessibilityLabel="Exit selection mode"
+                    accessibilityLabel={selectionMode ? 'Exit selection mode' : 'Enter selection mode'}
                   >
-                    <Text style={styles.doneHeaderText}>Done</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={toggleSelectMode}
-                    hitSlop={8}
-                    style={styles.selectBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel="Enter selection mode"
-                  >
-                    <Text style={styles.selectBtnText}>Select</Text>
+                    <Text style={styles.selectBtnText}>{selectionMode ? 'Done' : 'Select'}</Text>
                   </Pressable>
                 )}
 
@@ -943,28 +939,16 @@ export default function RecordsScreen() {
         </Pressable>
 
         <View style={styles.toolbarRight}>
-          {records.length > 0 && (
-            selectionMode ? (
-              <Pressable
-                onPress={toggleSelectMode}
-                hitSlop={8}
-                style={({ pressed }) => [styles.doneHeaderBtn, pressed && styles.doneHeaderBtnPressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Exit selection mode"
-              >
-                <Text style={styles.doneHeaderText}>Done</Text>
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={toggleSelectMode}
-                hitSlop={8}
-                style={styles.selectHeaderBtn}
-                accessibilityRole="button"
-                accessibilityLabel="Enter multi-record selection mode"
-              >
-                <Text style={styles.selectHeaderText}>Select</Text>
-              </Pressable>
-            )
+          {(records.length > 0 || selectionMode) && (
+            <Pressable
+              onPress={toggleSelectMode}
+              hitSlop={8}
+              style={({ pressed }) => [styles.selectHeaderBtn, pressed && styles.selectHeaderBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel={selectionMode ? 'Exit selection mode' : 'Enter multi-record selection mode'}
+            >
+              <Text style={styles.selectHeaderText}>{selectionMode ? 'Done' : 'Select'}</Text>
+            </Pressable>
           )}
 
           <Pressable
@@ -1487,27 +1471,14 @@ const styles = StyleSheet.create({
     minHeight: 32,
     justifyContent: 'center',
   },
+  selectHeaderBtnPressed: {
+    opacity: 0.75,
+    backgroundColor: Colors.divider,
+  },
   selectHeaderText: {
     fontFamily: 'LexendDeca-SemiBold',
     fontSize: 12,
     color: Colors.teal,
-  },
-  doneHeaderBtn: {
-    paddingHorizontal: 14,
-    height: 30,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.teal,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  doneHeaderBtnPressed: {
-    opacity: 0.85,
-    backgroundColor: Colors.tealDark,
-  },
-  doneHeaderText: {
-    fontFamily: 'LexendDeca-SemiBold',
-    fontSize: 12,
-    color: Colors.white,
   },
   greetingBox: {
     marginBottom: 14,
@@ -1903,7 +1874,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#F1F7F6',
+    backgroundColor: Colors.divider,
+  },
+  selectBtnPressed: {
+    opacity: 0.75,
   },
   selectBtnText: {
     fontFamily: 'LexendDeca-SemiBold',

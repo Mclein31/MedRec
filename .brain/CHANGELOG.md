@@ -5,10 +5,25 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-04
+last_updated: 2026-09-05
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.4.12] — Records Selection Mode Done Button Parity With Default Select Button
+
+- **Header Done Button Parity (`(tabs)/index.tsx`)**:
+  - Aligned the "Done" button in selection mode with the existing "Select" button styling on the default Records tab.
+  - **Mobile View**: Both `Select` and `Done` now share `styles.selectHeaderBtn` and `styles.selectHeaderText`, rendering a cohesive bordered pill button with teal text on white background (`backgroundColor: Colors.cardBg`, `borderColor: Colors.border`, `color: Colors.teal`).
+  - **Tablet Landscape Workspace**: Master actions header now consistently uses `styles.selectBtn` and `styles.selectBtnText` across both selection and normal states.
+  - **Visual Pressed Feedback & Design Tokens**: Added `selectHeaderBtnPressed` and `selectBtnPressed` active press opacity feedback; replaced raw hardcoded `#F1F7F6` with theme design token `Colors.divider`.
+  - **Code Cleanliness**: Removed obsolete `doneHeaderBtn`, `doneHeaderBtnPressed`, and `doneHeaderText` styles.
+- **Empty-State Resilience & Lifecycle Guards (`(tabs)/index.tsx`)**:
+  - **P2 Fix**: Preserved header button mounting when `selectionMode` is active (`(records.length > 0 || selectionMode)`), preventing users from getting trapped in selection mode if records become 0 while selecting.
+  - **Auto-Reset on Empty**: Added explicit reset in `loadRecords` to clear `selectionMode` and `selectedIds` if fresh records query returns 0.
+  - **P3 Fix**: Added early return guard in `toggleSelectMode` and tablet master header to block entering selection mode on an empty records list.
+- **Durable Knowledge Documentation**:
+  - Recorded technical decision `DD-33` in `.brain/DECISIONS.md`.
 
 ## [1.4.11] — Records Selection Mode Normal-Layout Alignment & Top Actions
 

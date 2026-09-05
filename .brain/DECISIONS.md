@@ -7,10 +7,36 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-09-04
+last_updated: 2026-09-05
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-09-05 — Selection Mode Done Button Visual Parity & Resilience Hardening (DD-33)
+
+### Decision
+1. **Visual & Design Parity (`mobile/app/(tabs)/index.tsx`)**:
+   - Aligned the "Done" button in multi-record selection mode with the existing "Select" button styling on the default Records tab.
+   - Mobile: Both `Select` and `Done` states utilize `styles.selectHeaderBtn` and `styles.selectHeaderText` (bordered pill button with `backgroundColor: Colors.cardBg`, `borderColor: Colors.border`, `color: Colors.teal`).
+   - Tablet Landscape Workspace: Master column header button consistently uses `styles.selectBtn` and `styles.selectBtnText` across both states.
+   - Added pressed feedback styling (`selectHeaderBtnPressed` and `selectBtnPressed`) with active touch opacity and subtle background highlights.
+   - Replaced hardcoded `#F1F7F6` with theme design token `Colors.divider`.
+   - Purged obsolete `doneHeaderBtn`, `doneHeaderBtnPressed`, and `doneHeaderText` styles.
+2. **Empty-State Resilience & Lifecycle Guards**:
+   - Preserved header button mounting when `selectionMode` is active even if records become 0 (`(records.length > 0 || selectionMode)`), ensuring users are never locked in selection mode.
+   - Automatically reset selection mode and cleared `selectedIds` in `loadRecords` if records become empty.
+   - Added guard in `toggleSelectMode` and tablet master header to prevent entering selection mode when record count is 0.
+
+### Reason
+- Eliminates visual jump and jarring contrast between solid teal "Done" and bordered white "Select".
+- Ensures users can always exit selection mode even if record deletion or remote sync clears records.
+- Enforces cross-platform behavioral parity between mobile and tablet landscape master-detail headers.
+
+### Consequences
+- Seamless visual toggle between "Select" and "Done".
+- Robust empty-state resilience and design token consistency across platforms.
+
+---
 
 ## 2026-09-04 — Records Selection Mode Normal-Layout Alignment & Scoped AI Architecture (DD-32)
 
