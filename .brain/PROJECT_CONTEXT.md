@@ -13,7 +13,7 @@ tags:
   - postgresql
   - cloudflare-r2
   - ai
-last_updated: 2026-09-04
+last_updated: 2026-09-05
 ---
 
 # 🏥 MedRecord_App (MedRec) — Project Context
@@ -25,9 +25,9 @@ last_updated: 2026-09-04
 
 ## 🎯 Current Status
 - **Status**: `Production-Ready (Awaiting Cloud Deployment)`
-- **Completed**: Full backend implementation, multi-platform responsive UI (Phone, Tablet Portrait, iPad Landscape), Cloudflare R2 cloud storage, comprehensive record management (CRUD + edit metadata + lightbox), sharing system (QR, scoped access, AI summary, ZIP download, session termination), notification sidebar, and security audit remediation.
-- **Security**: All P0/P1/P2 security and data integrity findings from formal code review resolved and verified (bcrypt password verification, presigned URL guard, R2 orphan cleanup, logout JWT invalidation, silent upload fallback removal).
-- **Testing**: 64/64 backend tests passing. TypeScript: 0 errors.
+- **Completed**: Full backend implementation, multi-platform responsive UI (Phone, Tablet Portrait, iPad Landscape), Cloudflare R2 cloud storage, comprehensive record management (CRUD + edit metadata + lightbox), sharing system (QR, scoped access, AI summary, ZIP download, session termination), notification sidebar, native Google Sign-In with backend ID token verification, and security audit remediation.
+- **Security**: All P0/P1/P2 security and data integrity findings from formal code review resolved and verified (bcrypt password verification, presigned URL guard, R2 orphan cleanup, logout JWT invalidation, pre-account takeover protection on Google SSO, silent upload fallback removal).
+- **Testing**: 71/71 backend tests passing (8 suites). TypeScript: 0 errors.
 - **Next Phase**: Production PostgreSQL & Cloudflare R2 Credentials Deployment & Real Device QA.
 
 ---
@@ -38,7 +38,7 @@ last_updated: 2026-09-04
 - **Framework**: React Native (Expo SDK 54, Expo Router v6 file-based routing)
 - **Language**: TypeScript
 - **Navigation**: Expo Router Tabs (`(tabs)`), Stack Navigation (`_layout.tsx`)
-- **Authentication & Secure Storage**: SecureStore (`expo-secure-store`), custom `AuthContext.tsx`
+- **Authentication & Secure Storage**: SecureStore (`expo-secure-store`), `@react-native-google-signin/google-signin`, custom `AuthContext.tsx`
 - **File I/O**: `expo-file-system/legacy` (download), `expo-sharing` (native share sheet)
 - **Icons & UI**: Expo Vector Icons (`@expo/vector-icons`), custom themed components, `useResponsive.ts`
 - **Typography**: Google Fonts (Lexend Deca)
@@ -46,13 +46,13 @@ last_updated: 2026-09-04
 
 ### Backend API (`backend/`)
 - **Runtime & Framework**: Node.js, Express.js v5.x
-- **Database**: Direct PostgreSQL (`pg` connection pool) — `public.users`, `public.user_profiles`, `public.medical_records`, `public.shared_access`, `public.notifications`
-- **Authentication**: Backend-Owned JWT (`jsonwebtoken`), bcrypt password hashing (`bcryptjs`, salt 10), `token_version` session invalidation on password change AND logout
+- **Database**: Direct PostgreSQL (`pg` connection pool) — `public.users` (with `google_id` & `auth_provider`), `public.user_profiles`, `public.medical_records`, `public.shared_access`, `public.notifications`
+- **Authentication**: Backend-Owned JWT (`jsonwebtoken`), bcrypt password hashing (`bcryptjs`, salt 10), Google ID token verification (`google-auth-library`), `token_version` session invalidation on password change, logout, AND Google account link
 - **Security**: `helmet`, CORS whitelisting, `express-rate-limit` (user-keyed + IP-keyed)
 - **Cloud Storage**: Cloudflare R2 (AWS SDK v3 S3-compatible) — private bucket, presigned PUT upload, 15-min signed GET download, streaming for ZIP export
 - **ZIP Export**: `jszip` (CJS-compatible) for shared record bundle archives
 - **AI**: OpenAI Node SDK (`gpt-4o`) for clinical summarization (with deterministic fallback)
-- **Testing**: Jest + Supertest — 63 tests / 8 suites / 100% pass rate
+- **Testing**: Jest + Supertest — 71 tests / 8 suites / 100% pass rate
 
 ---
 
@@ -95,5 +95,5 @@ last_updated: 2026-09-04
 
 ## ⚠️ Known Limitations
 - Backend operates on local PostgreSQL; production cloud database hosting (Neon/Render) not yet configured.
-- Google SSO (`loginWithGoogle`) is a UI stub in `AuthContext.tsx` — backend OAuth endpoint not yet implemented.
+- Native Google SSO requires actual Google Cloud Client IDs configured in environment variables and runs in native development builds (`npx expo run:ios` / `npx expo run:android`), not standard Expo Go.
 - OpenAI API key required for live AI summaries; deterministic fallback active when key is absent.

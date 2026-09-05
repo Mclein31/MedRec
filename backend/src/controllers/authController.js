@@ -1,11 +1,16 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const { OAuth2Client } = require('google-auth-library');
 const userModel = require('../models/userModel');
+const profileModel = require('../models/profileModel');
+const notificationModel = require('../models/notificationModel');
 const {
   R2_BUCKET_NAME,
   generatePresignedDownloadUrl,
 } = require('../config/r2');
+
+const googleClient = new OAuth2Client();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'medrec-production-jwt-secret-at-least-32-chars-long';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -113,6 +118,12 @@ async function login(req, res, next) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    if (!user.password_hash) {
+      return res.status(401).json({
+        error: 'This account is registered using Google Sign-In. Please sign in with Google.',
+      });
+    }
+
     const matches = await bcrypt.compare(password, user.password_hash);
     if (!matches) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -191,6 +202,108 @@ async function me(req, res, next) {
   }
 }
 
+async function verifyGoogleIdToken(idToken) {
+  const audiences = [
+    process.env.GOOGLE_WEB_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_ID_WEB,
+    process.env.GOOGLE_CLIENT_ID_IOS,
+    process.env.GOOGLE_CLIENT_ID_ANDROID,
+  ].filter(Boolean);
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: audiences.length > 0 ? audiences : undefined,
+  });
+  return ticket.getPayload();
+}
+
+async function googleAuth(req, res, next) {
+  try {
+    const { idToken } = req.body;
+    if (!idToken || typeof idToken !== 'string') {
+      return res.status(400).json({ error: 'idToken is required' });
+    }
+
+    let payload;
+    try {
+      payload = await verifyGoogleIdToken(idToken);
+    } catch (verifyErr) {
+      return res.status(401).json({ error: 'Invalid Google identity token' });
+    }
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Google token payload missing email' });
+    }
+
+    if (payload.email_verified !== true) {
+      return res.status(400).json({ error: 'Google email address is not verified' });
+    }
+
+    const normalizedEmail = payload.email.toLowerCase().trim();
+    const googleSub = payload.sub;
+    const displayName = payload.name?.trim() || normalizedEmail.split('@')[0];
+    const pictureUrl = payload.picture || null;
+
+    let user = await userModel.findByGoogleId(googleSub);
+
+    if (!user) {
+      const existingByEmail = await userModel.findByEmail(normalizedEmail);
+      if (existingByEmail) {
+        // Link existing email/password account
+        user = await userModel.linkGoogleAccount(existingByEmail.id, googleSub);
+        // Invalidate prior sessions on link (Pre-ATO defense)
+        await userModel.incrementTokenVersion(existingByEmail.id);
+        user.token_version = (user.token_version || 1) + 1;
+
+        // If existing user has no avatar and Google provided one, save it
+        if (!existingByEmail.avatar_url && pictureUrl) {
+          try {
+            await profileModel.upsertProfile(user.id, { avatar_url: pictureUrl });
+            user.avatar_url = pictureUrl;
+          } catch (profileErr) {
+            console.error('Failed to update avatar from Google:', profileErr);
+          }
+        }
+
+        try {
+          await notificationModel.createNotification({
+            userId: user.id,
+            type: 'security_alert',
+            title: 'Google Account Linked',
+            body: 'Your Google account was successfully connected to your MedRec health vault.',
+            data: { timestamp: new Date().toISOString() },
+          });
+        } catch (notifErr) {
+          console.error('Failed to create Google account link notification:', notifErr);
+        }
+      } else {
+        // Create brand new user
+        user = await userModel.createGoogleUser({
+          name: displayName,
+          email: normalizedEmail,
+          googleId: googleSub,
+          avatarUrl: pictureUrl,
+        });
+      }
+    }
+
+    const token = signToken(user);
+    const avatarUrl = await attachSignedAvatarUrl(user.avatar_url);
+
+    res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: avatarUrl || null,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -198,4 +311,7 @@ module.exports = {
   resetPassword,
   me,
   logout,
+  googleAuth,
+  verifyGoogleIdToken,
+  googleClient,
 };

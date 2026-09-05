@@ -81,6 +81,12 @@ export const api = {
   login: (email: string, password: string) =>
     request('/auth/login', { method: 'POST', body: { email, password } }),
 
+  loginWithGoogle: (idToken: string) =>
+    request<{ token: string; user: { id: string; name: string; email: string; avatarUrl?: string | null } }>('/auth/google', {
+      method: 'POST',
+      body: { idToken },
+    }),
+
   forgotPassword: (email: string) =>
     request('/auth/forgot-password', { method: 'POST', body: { email } }),
 
@@ -175,14 +181,14 @@ export const api = {
       expiresAt: string;
       exportedAt: string;
       totalRecords: number;
-      records: Array<{
+      records: {
         id: string;
         title: string;
         type: string;
         date: string;
         description: string | null;
         downloadUrl: string | null;
-      }>;
+      }[];
     }>(`/share/${shareToken}/export`),
 
   getSharedZipUrl: (shareToken: string) => `${API_BASE_URL}/share/${shareToken}/zip`,

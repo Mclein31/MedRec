@@ -32,7 +32,7 @@ export default function RegisterScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const router = useRouter();
   const { isTablet, isLandscape, insets, scaleFont } = useResponsive();
 
@@ -54,12 +54,13 @@ export default function RegisterScreen() {
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Passwords do not match', 'Please make sure both passwords are the same.');
+      Alert.alert('Mismatch', 'Passwords do not match.');
       return;
     }
-    setLoading(true);
+
     try {
-      await register(name, email, password);
+      setLoading(true);
+      await register(name.trim(), email.trim(), password);
       router.replace('/(tabs)');
     } catch (err: any) {
       Alert.alert('Registration failed', err.message);
@@ -68,8 +69,22 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleSocialPress = (provider: string) => {
-    Alert.alert('Coming soon', `${provider} sign-up will be available in a future update.`);
+  const handleSocialPress = async (provider: string) => {
+    if (provider === 'Google') {
+      try {
+        setLoading(true);
+        await loginWithGoogle();
+        router.replace('/(tabs)');
+      } catch (err: any) {
+        if (err?.message && !err.message.includes('cancel')) {
+          Alert.alert('Google Sign-In', err.message || 'Could not complete Google authentication.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      Alert.alert('Coming soon', `${provider} sign-up will be available in a future update.`);
+    }
   };
 
   // Reusable Form Card Content

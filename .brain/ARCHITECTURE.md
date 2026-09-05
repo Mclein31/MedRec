@@ -10,7 +10,7 @@ tags:
   - express
   - postgresql
   - cloudflare-r2
-last_updated: 2026-09-04
+last_updated: 2026-09-05
 ---
 
 # 🏛️ MedRecord_App (MedRec) — Architecture
@@ -63,7 +63,7 @@ last_updated: 2026-09-04
 
 ## 🗄️ Database Schema (`backend/src/migrations/schema.sql`)
 
-1. **`public.users`**: Backend-owned user credentials, bcrypt-hashed passwords (`bcryptjs`, salt 10), `token_version INT` for instant session invalidation, and primary identity. `token_version` is atomically incremented on password change **and** on logout (`incrementTokenVersion`).
+1. **`public.users`**: Backend-owned user credentials, bcrypt-hashed passwords (`bcryptjs`, salt 10), Google SSO identity (`google_id VARCHAR(255)`, `auth_provider VARCHAR(50) DEFAULT 'local'`, indexed via partial unique `idx_users_google_id`), `token_version INT` for instant session invalidation, and primary identity. `token_version` is atomically incremented on password change, logout (`incrementTokenVersion`), **and** when linking an existing local account to Google.
 2. **`public.user_profiles`**: 1:1 linked demographic and clinical baseline (DOB, sex, height, weight, blood type, allergies, conditions, maintenance medications, emergency contact name/relation/phone, phone, address, `avatar_url`, organ donor status). Auto-provisioned by `on_user_created` PostgreSQL trigger.
 3. **`public.medical_records`**: Individual clinical records (title, category type, date, `attachment_url` R2 storage key, notes). `type` CHECK constraint enforced both inline and via idempotent `DO $$` block for pre-existing databases (`medical_records_type_check`).
 4. **`public.shared_access`**: Cryptographic access tokens, `user_id`, expiration timestamps, optional `allowed_types` and specific `record_ids`, revocation flag (`revoked_at`). Maximum 5 active sessions enforced by `pruneExcessActiveShares` before every new token creation.
@@ -76,11 +76,12 @@ Schema is idempotent: all column additions use `ADD COLUMN IF NOT EXISTS`. Migra
 ## 🔐 Security & Access Control
 
 1. **JWT Authentication**: Bcrypt (salt 10) + `jsonwebtoken`. JWT embeds `userId` and `tokenVersion`. `requireAuth` middleware (`authMiddleware.js`) validates signature, expiry, and `token_version` against the DB on every protected request.
-2. **Password Change Verification**: `changePassword` in `profileController.js` calls `bcrypt.compare(currentPassword, user.password_hash)` and returns `401` if incorrect, before updating.
+2. **Password Change Verification**: `changePassword` in `profileController.js` calls `bcrypt.compare(currentPassword, user.password_hash)` and returns `401` if incorrect, before updating. Returns `400` if the user is a Google-only account without a password hash.
 3. **Server-Side Logout Invalidation**: `logout` calls `userModel.incrementTokenVersion(req.user.id)`, immediately invalidating the issued JWT for the rest of its 7-day natural window.
 4. **Patient Sharing**: Patient selects records → Backend validates ownership via atomic SQL `verifyOwnership` → Generates high-entropy crypto token with custom TTL → QR rendered in `share.tsx`. Active sessions capped at 5.
 5. **Doctor Record Access**: Doctor scans QR → `getByToken` validates token expiry and revocation → Returns scoped records with short-lived (15 min) signed R2 download URLs via `attachSignedUrlIfNeeded`.
 6. **Storage Security**: R2 bucket is strictly private. Upload uses user-prefix-isolated presigned PUT (`{userId}/{uuid}.{ext}`). Download uses 15-minute presigned GET. **Presigned `https://` URLs are never stored back in PostgreSQL** — `updateRecord` and `updateRecordForUser` guard against this explicitly.
+7. **Google SSO & Takeover Defense**: Mobile client obtains native ID token via `@react-native-google-signin/google-signin` and sends it to `POST /auth/google`. Server verifies token signature and claims via `google-auth-library` (`verifyIdToken`) strictly bound to `GOOGLE_WEB_CLIENT_ID`. Validates `payload.email_verified === true`. If the user registered earlier with local email/password, the account is linked, `users.token_version` is incremented to sanitize existing sessions, and a `security_alert` notification is created. Local password login and password modifications are guarded against NULL passwords for Google-only users.
 
 ---
 

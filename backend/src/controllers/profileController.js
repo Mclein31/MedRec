@@ -248,6 +248,11 @@ async function changePassword(req, res, next) {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+    if (!user.password_hash) {
+      return res.status(400).json({
+        error: 'Accounts authenticated via Google SSO do not have a password set.',
+      });
+    }
     const isValid = await bcrypt.compare(currentPassword, user.password_hash);
     if (!isValid) {
       return res.status(401).json({ error: 'Current password is incorrect' });

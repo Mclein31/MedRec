@@ -19,6 +19,8 @@ async function findByEmail(email) {
             u.email,
             COALESCE(u.password_hash, u.password) AS password_hash,
             COALESCE(u.token_version, 1) AS token_version,
+            u.google_id,
+            u.auth_provider,
             u.created_at,
             p.avatar_url
      FROM public.users u
@@ -36,12 +38,77 @@ async function findById(id) {
             u.email,
             COALESCE(u.password_hash, u.password) AS password_hash,
             COALESCE(u.token_version, 1) AS token_version,
+            u.google_id,
+            u.auth_provider,
             u.created_at,
             p.avatar_url
      FROM public.users u
      LEFT JOIN public.user_profiles p ON p.user_id = u.id
      WHERE u.id = $1`,
     [id]
+  );
+  return rows[0] || null;
+}
+
+async function findByGoogleId(googleId) {
+  const { rows } = await pool.query(
+    `SELECT u.id,
+            u.name,
+            u.email,
+            COALESCE(u.password_hash, u.password) AS password_hash,
+            COALESCE(u.token_version, 1) AS token_version,
+            u.google_id,
+            u.auth_provider,
+            u.created_at,
+            p.avatar_url
+     FROM public.users u
+     LEFT JOIN public.user_profiles p ON p.user_id = u.id
+     WHERE u.google_id = $1`,
+    [googleId]
+  );
+  return rows[0] || null;
+}
+
+async function createGoogleUser({ name, email, googleId, avatarUrl }) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const userRes = await client.query(
+      `INSERT INTO public.users (name, email, password_hash, google_id, auth_provider)
+       VALUES ($1, $2, NULL, $3, 'google')
+       RETURNING id, name, email, google_id, token_version, created_at`,
+      [name.trim(), email.toLowerCase().trim(), googleId]
+    );
+    const user = userRes.rows[0];
+
+    // If Google provided an avatar, update the auto-provisioned profile
+    if (avatarUrl) {
+      await client.query(
+        `UPDATE public.user_profiles
+         SET avatar_url = $1, updated_at = now()
+         WHERE user_id = $2`,
+        [avatarUrl, user.id]
+      );
+    }
+    await client.query('COMMIT');
+    return { ...user, avatar_url: avatarUrl || null };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function linkGoogleAccount(userId, googleId) {
+  const { rows } = await pool.query(
+    `UPDATE public.users
+     SET google_id = $1,
+         auth_provider = 'google',
+         updated_at = now()
+     WHERE id = $2
+     RETURNING id, name, email, google_id, token_version, created_at`,
+    [googleId, userId]
   );
   return rows[0] || null;
 }
@@ -81,6 +148,9 @@ module.exports = {
   createUser,
   findByEmail,
   findById,
+  findByGoogleId,
+  createGoogleUser,
+  linkGoogleAccount,
   updatePassword,
   deleteUser,
   incrementTokenVersion,

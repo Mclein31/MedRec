@@ -5,10 +5,10 @@ project: MedRecord_App
 tags:
   - notes
   - reference
-last_updated: 2026-08-28
+last_updated: 2026-09-05
 ---
 
-# 📝 MedRecord_App (MedRec) — Technical Notes
+# 📋 MedRecord_App (MedRec) — Technical Notes
 
 ## 📂 MedRec Obsidian Vault Integration
 The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed notes across:
@@ -24,12 +24,18 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - `PGSSL`: PostgreSQL SSL mode (`true` for managed cloud, `false` for local)
 - `JWT_SECRET`: High-entropy string (32+ chars) for signing user session tokens
 - `JWT_EXPIRES_IN`: JWT expiration (default `7d`)
+- `GOOGLE_WEB_CLIENT_ID`: Google OAuth 2.0 Web Client ID for verifying mobile ID tokens
 - `R2_ACCOUNT_ID`: Cloudflare Account ID
 - `R2_ACCESS_KEY_ID`: Cloudflare R2 API Token Access Key ID
 - `R2_SECRET_ACCESS_KEY`: Cloudflare R2 API Token Secret Access Key
 - `R2_BUCKET_NAME`: Target R2 bucket name (`medrec-vault`)
 - `R2_ENDPOINT`: `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`
 - `OPENAI_API_KEY`: API key for medical summarization and explanations (quarantined / future milestone)
+
+## 🔑 Mobile Environment Variables Required (`mobile/.env`)
+- `EXPO_PUBLIC_API_URL`: Base URL for Express backend (e.g. `http://localhost:4000` or local LAN IP for physical device testing)
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`: Web Client ID matching backend `GOOGLE_WEB_CLIENT_ID` for ID token audience
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`: iOS Client ID from Google Cloud Console for native iOS sign-in dialog
 
 ## 📷 Document Camera & Gallery Ingestion
 - `expo-camera` (`CameraView`) is configured with `facing="back"`, `enableTorch`, and unmounts cleanly on view transitions.
@@ -120,7 +126,7 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Password Change**: `PUT /profile/password` requires `currentPassword` in body. Backend calls `userModel.findById` then `bcrypt.compare(currentPassword, user.password_hash)`. Returns `400` if missing, `401` if wrong.
 - **Logout Invalidation**: `POST /auth/logout` calls `userModel.incrementTokenVersion(req.user.id)`. The `requireAuth` middleware compares JWT's `tokenVersion` claim against `users.token_version` from DB, immediately rejecting all previously-issued tokens for that user.
 - **`tokenModel.js`**: Deleted. The `revoked_tokens` table never existed; the file was dead code. Token invalidation is handled entirely via `token_version`.
-- **Google SSO**: `loginWithGoogle()` in `AuthContext.tsx` is a UI stub. No backend OAuth endpoint exists yet. Documented as future work.
+- **Google SSO & Takeover Defense**: `POST /auth/google` accepts client `idToken` from `@react-native-google-signin/google-signin` and verifies it cryptographically via `google-auth-library`. Requires `email_verified === true`. If the user already exists under `auth_provider = 'local'`, the Google account is atomically linked (`linkGoogleAccount`), `users.token_version` is incremented to sanitize rogue sessions, and a `security_alert` notification is created. If `password_hash` is NULL (Google-only user), local password login and password changes are cleanly rejected with clear 401/400 responses.
 - **Share Session Cap**: Max 5 active sessions per patient. `pruneExcessActiveShares(userId, 4)` auto-revokes oldest before inserting new token.
 
 ## 🔔 Notification Card Icons

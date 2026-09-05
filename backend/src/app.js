@@ -75,10 +75,12 @@ const shareAccessLimiter = rateLimit({
 if (process.env.NODE_ENV !== 'test') {
   app.use('/auth/login', authLimiter);
   app.use('/auth/register', authLimiter);
+  app.use('/auth/google', authLimiter);
   app.use('/auth/forgot-password', passwordResetLimiter);
   app.use('/auth/reset-password', passwordResetLimiter);
   app.use('/api/auth/login', authLimiter);
   app.use('/api/auth/register', authLimiter);
+  app.use('/api/auth/google', authLimiter);
   app.use('/share', shareCreateLimiter);
   app.use('/share/:token', shareAccessLimiter);
   app.use('/api/share', shareCreateLimiter);
