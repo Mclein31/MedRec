@@ -12,6 +12,76 @@ last_updated: 2026-09-05
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
 
+## 2026-09-05 — Tablet Notification Modal Dual-Layer Animation Decoupling (DD-35)
+
+### Decision
+1. **Decoupled Two-Layer Presentation on Tablet (`NotificationCenterModal.tsx`)**:
+   - Set React Native's `<Modal>` presentation to `animationType="none"` and `transparent={true}` on all tablet viewports (`isTablet`), preventing native window translation of the backdrop.
+   - **Layer 1 (Independent Stationary Dimming Backdrop)**: Full-screen `StyleSheet.absoluteFillObject` stationary dimming overlay (`backgroundColor: Colors.backdrop`) controlled exclusively by `backdropFadeAnim` opacity (`0 -> 1` over 250ms on entrance, `1 -> 0` over 200ms on dismissal). Fixed to viewport with zero translation.
+   - **Layer 2 (Independent Sliding Centered Modal Card)**: Sibling container (`styles.tabletCenterWrapper`, `StyleSheet.absoluteFillObject`, `pointerEvents="box-none"`) containing the centered modal dialog card (`styles.containerTablet`, clamped with `minHeight: 320` and `maxWidth: ResponsiveLimits.maxModalWidth`), whose vertical translation is driven strictly by `slideAnim` (`heightRef.current -> 0` over 280ms with `Easing.out(Easing.cubic)` on entrance, `0 -> heightRef.current` over 220ms with `Easing.in(Easing.cubic)` on exit).
+2. **Decoupled Dual-Layer Modal Lifecycle Contract**:
+   - **Immediate Parent State Synchronization**: Notify the parent via `onClose()` immediately upon dismissal trigger rather than waiting 220ms, preventing re-open taps from being swallowed while internal `modalVisible` drives the reverse exit transition.
+   - **Touch Quarantine**: Enforce pointer quarantine during dismissal on both the backdrop (`pointerEvents={modalVisible ? 'auto' : 'none'}`) and the sliding card (`pointerEvents={isClosingRef.current ? 'none' : 'auto'}`), eliminating tap fall-through and ghost collisions.
+   - **Smooth Reversal**: On rapid re-opening, preserve in-flight animated values rather than forcing hard `setValue(0)` resets, ensuring continuous and glitch-free reversal.
+   - **Optimistic Dismissal**: Never `await` network mutations (`markAsRead`) in card tap handlers prior to closing; fire mutations asynchronously (`void markAsRead(...)`) so dismissal and route navigation begin instantaneously.
+   - **Orientation-Invariant Geometry**: Read viewport dimensions via `heightRef.current` rather than effect dependencies, avoiding redundant animation re-evaluations during device rotation.
+3. **Strict Phone UI Isolation & A11y Hardening**:
+   - Phone viewports (`!isTablet`) retain native iOS `pageSheet` presentation (`presentationStyle="pageSheet"`, `animationType="slide"`, `onDismiss={onClose}`), `<DragHandle />`, and native swipe gestures.
+   - Full WCAG 2.2 accessibility semantics: `accessibilityRole="tablist"` with `accessibilityRole="tab"`, `accessibilityState={{ selected }}`, `hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}`, and `accessibilityViewIsModal`.
+
+### Reason
+- Eliminates the visual defect where React Native's `<Modal animationType="slide">` moved the entire root window including the dimming backdrop upward across the screen on tablet viewports instead of fading in over the viewport.
+- Eliminates touch drop-through, dialog dimensional collapse during loading, and network-induced navigation freezes.
+
+### Alternatives
+- **Modal Wrapper Translate**: Keeping backdrop inside the translated container caused the background darkness to slide up across the screen.
+- **Pure Fade on Tablet**: Rejected because the modal card should slide up into view to provide spatial entrance vector from the bottom.
+
+### Consequences
+- Stationary backdrop dims smoothly via opacity fade-in while modal card slides up independently; exit is smooth with zero snapping or flickering; phone and desktop layouts maintain 100% presentation integrity.
+
+---
+
+## 2026-09-05 — Google Sign-In & Backend ID Token Verification Architecture (DD-34)
+
+### Decision
+1. **Native Mobile SDK Integration (`mobile/context/AuthContext.tsx`, `mobile/app.json`)**:
+   - Integrated `@react-native-google-signin/google-signin` native SDK into Expo SDK 54 using config plugins (`@react-native-google-signin/google-signin` with `iosUrlScheme: "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID_PREFIX"`).
+   - Configured `GoogleSignin.configure({ webClientId, iosClientId })` on app mount with environment variables `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` and `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`.
+   - Safely loaded the module inside a `try/catch` dynamic require to prevent TurboModule synchronous load crashes (`RNGoogleSignin could not be found`) in Expo Go or stale native binaries.
+   - Implemented `loginWithGoogle` with silent user cancellation handling (`statusCodes.SIGN_IN_CANCELLED`), Play Services availability checks (`statusCodes.PLAY_SERVICES_NOT_AVAILABLE`), unlinked binary alerts, and fallback error alerts.
+   - Persisted session JWT in `SecureStore` and synced user profile into state. Wired into both `login.tsx` and `register.tsx` social sign-in buttons.
+2. **Backend Cryptographic ID Token Verification (`backend/src/controllers/authController.js`)**:
+   - Adopted official `google-auth-library` (`OAuth2Client.verifyIdToken`) rather than custom HTTP calls or web redirect popups.
+   - Strictly validates `audience: GOOGLE_WEB_CLIENT_ID` and enforces `payload.email_verified === true` before granting account access.
+3. **Account Linking & Pre-Takeover Invalidation Defense**:
+   - If an existing user registered via local email/password matches the verified Google email, `linkGoogleAccount` atomically associates `google_id` and sets `auth_provider = 'google'`.
+   - Increments `users.token_version` on account link to immediately invalidate any rogue active sessions.
+   - Emits a high-priority `security_alert` notification notifying the patient that a Google account was linked to their profile.
+4. **Passwordless Account Protection**:
+   - Guarded `authController.login` to reject password login with `401` if `user.password_hash` is NULL (Google-only user).
+   - Guarded `profileController.changePassword` to return `400` with clear messaging if a Google-only user attempts password modification.
+5. **Database Schema Additions (`backend/src/migrations/schema.sql`)**:
+   - Added `google_id VARCHAR(255)` and `auth_provider VARCHAR(50) DEFAULT 'local'` to `public.users`.
+   - Added partial unique index `idx_users_google_id` (`WHERE google_id IS NOT NULL`).
+
+### Reason
+- Web-based OAuth redirects (`expo-auth-session`) suffer from high friction, modal flickering, and external browser popups on mobile devices; native Google Sign-In provides instant biometric/system dialog authentication.
+- Verifying the OpenID Connect `idToken` on the backend guarantees that the mobile client cannot forge user identities or emails.
+- Requiring `payload.email_verified === true` prevents pre-account takeover attacks where an attacker creates an unverified Google account using a victim's email address.
+- Invalidation of active JWT sessions via `token_version` ensures existing sessions are sanitized if an account identity provider changes.
+
+### Alternatives
+- **Web OAuth Popup / Redirect (`expo-auth-session`)**: Higher drop-off rate, requires managing custom redirect schemes, clunky web views.
+- **Client-Only Auth (Sending Email Directly to Backend)**: Severe security vulnerability allowing complete authentication bypass.
+- **Separate Google Users Table**: Unnecessary database fragmentation; adding `google_id` and `auth_provider` to `public.users` maintains referential integrity across `user_profiles`, `medical_records`, and `shared_access`.
+
+### Consequences
+- Requires native development build (`npx expo run:ios` / `npx expo run:android` or EAS build) for live device verification; cannot run in standard Expo Go sandbox.
+- Local email/password authentication remains 100% operational with zero regressions.
+
+---
+
 ## 2026-09-05 — Selection Mode Done Button Visual Parity & Resilience Hardening (DD-33)
 
 ### Decision

@@ -889,6 +889,7 @@ export default function RecordsScreen() {
         <NotificationCenterModal
           visible={notificationsVisible}
           onClose={() => setNotificationsVisible(false)}
+          onOpenAiSummary={handleSummarize}
         />
 
         {/* Record Metadata Edit Modal */}

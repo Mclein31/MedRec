@@ -10,6 +10,43 @@ last_updated: 2026-09-05
 
 # 📜 MedRecord_App (MedRec) — Changelog
 
+## [1.4.14] — Tablet Notification Popup Modal Dual-Layer Animation Decoupling
+
+- **Dual-Layer Tablet Architecture (`NotificationCenterModal.tsx`)**:
+  - **Decoupled Scrim & Modal Animation**: Replaced unified `<Modal animationType="slide">` on tablet viewports with a two-layer architecture:
+    - **Layer 1 (Independent Stationary Backdrop)**: Full-screen `StyleSheet.absoluteFillObject` stationary dimming overlay (`backgroundColor: Colors.backdrop`) that fades in from `0 -> 1` over 250ms on entrance and fades out from `1 -> 0` over 200ms on exit, with zero vertical translation.
+    - **Layer 2 (Independent Sliding Dialog Card)**: Sibling container (`tabletCenterWrapper`) housing the centered modal dialog card (`containerTablet`, clamped with `minHeight: 320` to prevent loading collapse), which slides up from `heightRef.current -> 0` over 280ms with `Easing.out(Easing.cubic)` and exits smoothly to bottom over 220ms with `Easing.in(Easing.cubic)`.
+  - **Root Transparency**: Switched `modalRootTablet` to `backgroundColor: 'transparent'` and `animationType="none"`, resolving the visual defect where the entire backdrop was translated upward across the screen from below the viewport.
+  - **Decoupled Lifecycle & Immediate State Sync**: `onClose()` notifies parent state immediately upon close initiation to prevent blocked re-open taps, while internal `modalVisible` and `isClosingRef` coordinate the 220ms parallel reverse exit animation before unmounting.
+  - **Touch Quarantine & Smooth Reversal**: Wrapped backdrop in `pointerEvents={modalVisible ? 'auto' : 'none'}` and dialog in `pointerEvents={isClosingRef.current ? 'none' : 'auto'}` to prevent touch passthrough; preserved in-flight animation values on rapid re-open to eliminate visual snapping.
+  - **Optimistic Non-Blocking Dismissal**: Un-awaited `markAsRead(notification.id)` as an asynchronous background task so modal dismissal and route navigation begin instantaneously on tap without network latency delays.
+  - **Phone UI Isolation & A11y**: Mobile viewports (`!isTablet`) retain 100% untouched native iOS `pageSheet` presentation, `<DragHandle />`, `onDismiss={onClose}`, and native swipe-to-dismiss behavior. Added `accessibilityRole="tablist"` / `"tab"`, `hitSlop`, and `accessibilityViewIsModal`.
+- **Integration Fix (`(tabs)/index.tsx`)**:
+  - Connected `onOpenAiSummary={handleSummarize}` to `<NotificationCenterModal>` in the Tablet Landscape Workspace caller.
+- **Durable Knowledge Documentation**:
+  - Recorded technical decision `DD-35` in `.brain/DECISIONS.md`.
+
+## [1.4.13] — Native Google Sign-In & Backend ID Token Verification Architecture
+
+- **Native Mobile Integration (`mobile/`)**:
+  - **Native Google SDK**: Installed `@react-native-google-signin/google-signin` and configured config plugin in `app.json` with iOS URL scheme support.
+  - **AuthContext Integration (`AuthContext.tsx`)**: Configured `GoogleSignin` on app mount with `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` and `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. Added safe dynamic module loading (`try/catch`) to prevent TurboModule crashes (`RNGoogleSignin could not be found`) in Expo Go or unlinked binaries. Implemented `loginWithGoogle` with silent user cancellation handling (`SIGN_IN_CANCELLED`), Play Services checks, SecureStore session persistence, and profile sync.
+  - **Screen Wiring (`login.tsx`, `register.tsx`)**: Connected native `loginWithGoogle` into social login buttons on both login and registration screens.
+  - **API Client (`api.ts`)**: Added `loginWithGoogle(idToken)` endpoint method and refined TypeScript array typing.
+- **Backend Verification & Takeover Defense (`backend/`)**:
+  - **Cryptographic Token Verification (`authController.js`)**: Integrated `google-auth-library` (`OAuth2Client.verifyIdToken`) strictly targeting `GOOGLE_WEB_CLIENT_ID` and validating `payload.email_verified === true`.
+  - **Pre-Account Takeover Defense**: For existing local email/password accounts, atomically links Google identity (`linkGoogleAccount`), bumps `users.token_version` to sanitize rogue active JWT sessions, and emits a high-priority `security_alert` notification.
+  - **Passwordless Safety**: Added null-safe guards to `authController.login` and `profileController.changePassword` preventing runtime errors when passwordless Google users interact with password flows.
+  - **Route & Rate Limiting (`authRoutes.js`, `app.js`)**: Mounted `POST /auth/google` and `POST /api/auth/google` guarded by strict IP/user rate limiting (`authLimiter`).
+  - **PostgreSQL Schema (`schema.sql`, `userModel.js`)**: Added `google_id VARCHAR(255)` and `auth_provider VARCHAR(50) DEFAULT 'local'` with partial unique index `idx_users_google_id`.
+- **Automated Testing & Quality Verification**:
+  - **Backend Tests (`auth.test.js`)**: Added 7 comprehensive tests covering token validation, invalid token rejection, unverified email rejection, new user creation, local account linking, session invalidation, and passwordless login rejection.
+  - **Test Suite Results**: 71/71 tests passing across all 8 suites (`npm test`).
+  - **Static Analysis**: 0 TypeScript compilation errors (`npx tsc --noEmit`), 0 ESLint errors.
+- **Durable Knowledge Documentation**:
+  - Recorded technical decision `DD-34` in `.brain/DECISIONS.md`.
+  - Updated `.brain/TODO.md`, `.brain/NOTES.md`, `.brain/PROJECT_CONTEXT.md`, and `.brain/ARCHITECTURE.md`.
+
 ## [1.4.12] — Records Selection Mode Done Button Parity With Default Select Button
 
 - **Header Done Button Parity (`(tabs)/index.tsx`)**:
