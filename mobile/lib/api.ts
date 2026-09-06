@@ -33,22 +33,35 @@ const TOKEN_KEY = 'authToken';
 
 const tokenStorage = {
   async get(key: string) {
-    if (Platform.OS === 'web') return localStorage.getItem(key);
-    return SecureStore.getItemAsync(key);
+    try {
+      if (Platform.OS === 'web') return localStorage.getItem(key);
+      return await SecureStore.getItemAsync(key);
+    } catch (e) {
+      console.warn(`[tokenStorage] Failed to get key "${key}":`, e);
+      return null;
+    }
   },
   async set(key: string, value: string) {
-    if (Platform.OS === 'web') {
-      localStorage.setItem(key, value);
-      return;
+    try {
+      if (Platform.OS === 'web') {
+        localStorage.setItem(key, value);
+        return;
+      }
+      await SecureStore.setItemAsync(key, value);
+    } catch (e) {
+      console.warn(`[tokenStorage] Failed to set key "${key}":`, e);
     }
-    await SecureStore.setItemAsync(key, value);
   },
   async delete(key: string) {
-    if (Platform.OS === 'web') {
-      localStorage.removeItem(key);
-      return;
+    try {
+      if (Platform.OS === 'web') {
+        localStorage.removeItem(key);
+        return;
+      }
+      await SecureStore.deleteItemAsync(key);
+    } catch (e) {
+      console.warn(`[tokenStorage] Failed to delete key "${key}":`, e);
     }
-    await SecureStore.deleteItemAsync(key);
   },
 };
 
@@ -270,4 +283,32 @@ export async function getToken() {
 
 export async function clearToken() {
   await tokenStorage.delete(TOKEN_KEY);
+}
+
+export const ONBOARDING_STORAGE_KEY = 'medrec_onboarding_completed_v1';
+
+export async function getHasCompletedOnboarding(): Promise<boolean> {
+  try {
+    const val = await tokenStorage.get(ONBOARDING_STORAGE_KEY);
+    return val === 'true';
+  } catch (err) {
+    console.warn('Failed to read onboarding state:', err);
+    return false;
+  }
+}
+
+export async function setHasCompletedOnboarding(completed: boolean = true): Promise<void> {
+  try {
+    await tokenStorage.set(ONBOARDING_STORAGE_KEY, completed ? 'true' : 'false');
+  } catch (err) {
+    console.warn('Failed to save onboarding state:', err);
+  }
+}
+
+export async function resetHasCompletedOnboarding(): Promise<void> {
+  try {
+    await tokenStorage.delete(ONBOARDING_STORAGE_KEY);
+  } catch (err) {
+    console.warn('Failed to delete onboarding state:', err);
+  }
 }

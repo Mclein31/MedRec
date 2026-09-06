@@ -810,7 +810,7 @@ export default function ScanScreen() {
           />
           <Text style={styles.permissionTitle}>Camera Access Needed</Text>
           <Text style={styles.permissionSub}>
-            To scan a patient's QR code, MedRec needs permission to use your camera.
+            To scan a patient&apos;s QR code, MedRec needs permission to use your camera.
           </Text>
           <Button
             label="Grant Camera Access"

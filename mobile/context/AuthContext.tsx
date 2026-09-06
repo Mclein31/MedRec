@@ -1,5 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { api, saveToken, getToken, clearToken } from '../lib/api';
+import {
+  api,
+  saveToken,
+  getToken,
+  clearToken,
+  getHasCompletedOnboarding,
+  setHasCompletedOnboarding,
+  resetHasCompletedOnboarding,
+} from '../lib/api';
 
 type AuthUser = {
   id: string;
@@ -12,6 +20,9 @@ type AuthContextType = {
   token: string | null;
   user: AuthUser | null;
   isLoading: boolean;
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: () => Promise<void>;
+  resetOnboarding: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -24,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [hasCompletedOnboarding, setHasCompletedOnboardingState] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {
@@ -47,14 +59,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    getToken().then(async (stored) => {
-      setToken(stored);
-      if (stored) {
-        await refreshUser();
+    let isMounted = true;
+    async function bootstrap() {
+      try {
+        const [storedToken, onboarded] = await Promise.all([
+          getToken().catch(() => null),
+          getHasCompletedOnboarding().catch(() => false),
+        ]);
+        if (!isMounted) return;
+        setToken(storedToken);
+        setHasCompletedOnboardingState(onboarded);
+        if (storedToken) {
+          await refreshUser();
+        }
+      } catch (err) {
+        console.warn('Auth bootstrap error:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-      setIsLoading(false);
-    });
+    }
+    bootstrap();
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  const completeOnboarding = async () => {
+    await setHasCompletedOnboarding(true);
+    setHasCompletedOnboardingState(true);
+  };
+
+  const resetOnboarding = async () => {
+    await resetHasCompletedOnboarding();
+    setHasCompletedOnboardingState(false);
+  };
 
   const login = async (email: string, password: string) => {
     const data = await api.login(email, password);
@@ -105,6 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         user,
         isLoading,
+        hasCompletedOnboarding,
+        completeOnboarding,
+        resetOnboarding,
         login,
         register,
         logout,

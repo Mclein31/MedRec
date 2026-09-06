@@ -36,7 +36,7 @@ export default function LoginScreen() {
   const [lockedOut, setLockedOut] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { login } = useAuth();
+  const { login, resetOnboarding } = useAuth();
   const router = useRouter();
   const { isTablet, isLandscape, insets, scaleFont } = useResponsive();
 
@@ -167,6 +167,38 @@ export default function LoginScreen() {
       <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or</Text><View style={styles.line} /></View>
       <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
         <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} /><Text style={styles.createText}>Create an Account</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.push('/onboarding')}
+        onLongPress={
+          __DEV__
+            ? () => {
+                Alert.alert(
+                  'Reset Onboarding (First-Launch QA)',
+                  'Would you like to reset the first-launch flag to simulate a brand new install?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Reset & Launch Onboarding',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await resetOnboarding();
+                        router.replace('/onboarding');
+                      },
+                    },
+                  ]
+                );
+              }
+            : undefined
+        }
+        hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+        style={({ pressed }) => [styles.tourLink, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="View app tour and features"
+        accessibilityHint="Opens the four-part interactive feature guide"
+      >
+        <Text style={styles.tourLinkText}>✨ New to MedRec? Explore app features →</Text>
       </Pressable>
     </View>
   );
@@ -307,6 +339,38 @@ export default function LoginScreen() {
                   <Text style={styles.createText}>Create an Account</Text>
                 </Pressable>
 
+                <Pressable
+                  onPress={() => router.push('/onboarding')}
+                  onLongPress={
+                    __DEV__
+                      ? () => {
+                          Alert.alert(
+                            'Reset Onboarding (First-Launch QA)',
+                            'Would you like to reset the first-launch flag to simulate a brand new install?',
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              {
+                                text: 'Reset & Launch Onboarding',
+                                style: 'destructive',
+                                onPress: async () => {
+                                  await resetOnboarding();
+                                  router.replace('/onboarding');
+                                },
+                              },
+                            ]
+                          );
+                        }
+                      : undefined
+                  }
+                  hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                  style={({ pressed }) => [styles.tourLink, pressed && styles.pressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel="View app tour and features"
+                  accessibilityHint="Opens the four-part interactive feature guide"
+                >
+                  <Text style={styles.tourLinkText}>✨ New to MedRec? Explore app features →</Text>
+                </Pressable>
+
                 <View style={styles.tabletPortraitFooter}>
                   <Text style={styles.footerText}>
                     By continuing, you agree to our{' '}
@@ -379,6 +443,38 @@ export default function LoginScreen() {
             <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or</Text><View style={styles.line} /></View>
             <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
               <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} /><Text style={styles.createText}>Create an Account</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/onboarding')}
+              onLongPress={
+                __DEV__
+                  ? () => {
+                      Alert.alert(
+                        'Reset Onboarding (First-Launch QA)',
+                        'Would you like to reset the first-launch flag to simulate a brand new install?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Reset & Launch Onboarding',
+                            style: 'destructive',
+                            onPress: async () => {
+                              await resetOnboarding();
+                              router.replace('/onboarding');
+                            },
+                          },
+                        ]
+                      );
+                    }
+                  : undefined
+              }
+              hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+              style={({ pressed }) => [styles.tourLink, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="View app tour and features"
+              accessibilityHint="Opens the four-part interactive feature guide"
+            >
+              <Text style={styles.tourLinkText}>✨ New to MedRec? Explore app features →</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -612,6 +708,19 @@ const styles = StyleSheet.create({
     color: TEAL,
     fontSize: 18,
     fontWeight: '600',
+  },
+
+  tourLink: {
+    marginTop: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+
+  tourLinkText: {
+    color: TEAL,
+    fontSize: 13.5,
+    fontFamily: 'LexendDeca-SemiBold',
   },
 
   footer: {

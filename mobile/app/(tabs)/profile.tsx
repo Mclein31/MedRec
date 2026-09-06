@@ -44,7 +44,7 @@ const formatDate = (dateStr?: string | null) => formatDateShort(dateStr, 'Not se
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, setUser, logout } = useAuth();
+  const { user, setUser, logout, resetOnboarding } = useAuth();
   const {
     isTablet,
     isLandscape,
@@ -631,6 +631,53 @@ export default function ProfileScreen() {
             <Ionicons name="download-outline" size={16} color={INK} />
           </View>
           <Text style={styles.actionTitle}>Export Health Vault (JSON)</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
+
+        <View style={styles.rowDivider} />
+
+        {/* Replay Onboarding Guide */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/onboarding');
+          }}
+          onLongPress={
+            __DEV__
+              ? () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                  Alert.alert(
+                    'Reset Onboarding (First-Launch QA)',
+                    'Would you like to clear your onboarding history and sign out to test the full first-time patient launch flow from scratch?',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Reset & Sign Out',
+                        style: 'destructive',
+                        onPress: async () => {
+                          await resetOnboarding();
+                          await logout();
+                          router.replace('/onboarding');
+                        },
+                      },
+                    ]
+                  );
+                }
+              : undefined
+          }
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Replay App Tour and Feature Guide"
+          accessibilityHint={
+            __DEV__
+              ? 'Long press to reset onboarding state for fresh install testing'
+              : 'Opens the onboarding tour and feature guide'
+          }
+        >
+          <View style={styles.actionIconBox}>
+            <Ionicons name="sparkles-outline" size={16} color={INK} />
+          </View>
+          <Text style={styles.actionTitle}>App Tour &amp; Feature Guide</Text>
           <Ionicons name="chevron-forward" size={15} color={MUTED} />
         </Pressable>
       </View>

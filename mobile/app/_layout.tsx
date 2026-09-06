@@ -1,5 +1,4 @@
-import { Stack } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { NotificationProvider } from '../context/NotificationContext';
 import { useFonts } from 'expo-font';
@@ -9,26 +8,53 @@ import { useResponsive } from '../hooks/useResponsive';
 
 SplashScreen.preventAutoHideAsync();
 
-function RootLayoutNav() {
-  const { token, isLoading } = useAuth();
+function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { token, isLoading, hasCompletedOnboarding } = useAuth();
   const { isTablet } = useResponsive();
+  const segments = useSegments();
+  const router = useRouter();
 
-  if (isLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  // Automatic first-launch routing: show onboarding to brand new users
+  useEffect(() => {
+    if (!fontsLoaded || isLoading) return;
+
+    const inOnboarding = segments[0] === 'onboarding';
+
+    // If the user has no auth token and has never completed onboarding, route to onboarding
+    if (!token && !hasCompletedOnboarding && !inOnboarding) {
+      router.replace('/onboarding');
+    }
+  }, [fontsLoaded, isLoading, token, hasCompletedOnboarding, segments, router]);
+
+  useEffect(() => {
+    if (fontsLoaded && !isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, isLoading]);
+
+  // Safety fallback: ensure splash screen is never permanently stuck
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!fontsLoaded || isLoading) {
+    return null;
   }
 
+  const initialRoute = token
+    ? '(tabs)'
+    : hasCompletedOnboarding
+    ? 'login'
+    : 'onboarding';
+
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      initialRouteName={initialRoute}
+      screenOptions={{ headerShown: false }}
+    >
       <Stack.Protected guard={!!token}>
         <Stack.Screen
           name="(tabs)"
@@ -57,31 +83,32 @@ function RootLayoutNav() {
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
       </Stack.Protected>
+
+      <Stack.Screen
+        name="onboarding"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+          animation: 'fade',
+        }}
+      />
     </Stack>
   );
 }
 
 export default function RootLayout() {
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     'LexendDeca-Bold': require('../assets/fonts/Lexend_Deca/static/LexendDeca-Bold.ttf'),
     'LexendDeca-Regular': require('../assets/fonts/Lexend_Deca/static/LexendDeca-Regular.ttf'),
     'LexendDeca-SemiBold': require('../assets/fonts/Lexend_Deca/static/LexendDeca-SemiBold.ttf'),
   });
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
+  const fontsReady = loaded || !!error;
 
   return (
     <AuthProvider>
       <NotificationProvider>
-        <RootLayoutNav />
+        <RootLayoutNav fontsLoaded={fontsReady} />
       </NotificationProvider>
     </AuthProvider>
   );
