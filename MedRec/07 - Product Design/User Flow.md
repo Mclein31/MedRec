@@ -3,7 +3,7 @@ project: MedRec
 type: design
 status: proposed
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-09-07
 tags:
   - medrec
   - design
@@ -14,6 +14,7 @@ related:
   - "[[Information Architecture]]"
   - "[[Navigation]]"
   - "[[Product Design MOC]]"
+  - "[[Patient Onboarding]]"
   - "[[Record Upload]]"
   - "[[Record Sharing]]"
   - "[[Record Viewing]]"
@@ -30,14 +31,21 @@ This document outlines the step-by-step user interaction flows for the primary t
 ## 🚀 Key Flows (Specification Template)
 
 ### 1. Patient Onboarding & Authentication Flow
-- **Entry Point**: App initial launch
+- **Entry Point**: First app launch after installation (or "App Tour & Feature Guide" in Profile)
+- **First-Launch Guard**:
+  - App bootstrap checks `tokenStorage.getHasCompletedOnboarding()` (`medrec_onboarding_completed_v1`).
+  - Brand-new installs automatically launch into `/onboarding` at root index 0 before sign-in.
+  - Returning or authenticated users completely bypass onboarding and route straight to `/login` or `/(tabs)`.
 - **Steps**:
-  1. Splash screen & value proposition carousel
-  2. Sign Up / Sign In option ([[Authentication]])
-  3. Enter email & password (or biometric enrollment)
-  4. Minimal profile setup: Name, Date of Birth, Emergency Contact baseline
-  5. Land on Home Dashboard
-- **Exit Point**: Authenticated session on Home Dashboard
+  1. **Slide 1 — Unified Health Vault**: Authentic mini-UI previewing categorized lab tests (Complete Blood Count with Normal badge), cardiology consultation, and Gemini AI clinical summaries.
+  2. **Slide 2 — Frictionless QR Sharing**: Live doctor consultation pass preview with stylized QR code, 14:59 expiring countdown, and 1-tap instant revocation callout.
+  3. **Slide 3 — Critical Safety & Emergency ID**: Emergency Medical ID pass preview with O+ blood type, high-contrast critical allergy warnings (Penicillin anaphylaxis), chronic conditions, and paramedic emergency access note.
+  4. **Slide 4 — Patient-First Privacy**: Padlock vault emblem and three core guarantees (zero ads/data selling, private Cloudflare R2 AES-256 storage, and time-expiring doctor access tokens).
+  5. **Actions & Transitions**:
+     - *Pre-SignIn Navigation*: Users can tap "Skip" at any point or complete Slide 4 with "Get Started" (routes to `/register`) or "Sign In" (routes to `/login`). Either action calls `completeOnboarding()` to persist state.
+     - *In-App Replay Mode*: Authenticated patients can replay the guide via Profile > Security & Preferences. The Skip button adapts to an accessible "Close" button (`router.back()`), and Slide 4 displays "Finish Tutorial" returning to Profile.
+  6. **Authentication & Home**: Enter credentials or biometric unlock via [[Authentication]] -> land on Home Records dashboard.
+- **Exit Point**: Authenticated session on Home Dashboard (or `/login` / `/register`)
 
 ### 2. Document Capture & Record Upload Flow
 - **Entry Point**: Floating Action Button (+) or "Add Record" button on Home / Category screen

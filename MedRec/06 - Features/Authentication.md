@@ -3,7 +3,7 @@ project: MedRec
 type: feature
 status: proposed
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-09-07
 tags:
   - medrec
   - feature
@@ -11,6 +11,7 @@ tags:
   - security
   - identity
 related:
+  - "[[Patient Onboarding]]"
   - "[[Authorization]]"
   - "[[Security Requirements]]"
   - "[[Security & Privacy MOC]]"
@@ -48,6 +49,7 @@ Health records are among the most sensitive personal data assets. Robust authent
 - [[Authorization]]: Downstream permissions and role checks reliant on verified authentication tokens.
 
 ## UX Considerations
+- Pre-signin value education and platform transparency via [[Patient Onboarding]] carousel prior to reaching registration or login.
 - One-tap biometric prompt on app startup once initial login is completed.
 - Clear password strength meter during registration (encouraging passphrases rather than arbitrary symbol requirements).
 - Seamless token refresh in background so active users are not abruptly kicked out while reviewing records.

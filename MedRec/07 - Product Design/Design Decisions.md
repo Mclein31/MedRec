@@ -3,7 +3,7 @@ project: MedRec
 type: decision
 status: active
 created: 2026-08-24
-updated: 2026-08-29
+updated: 2026-09-07
 tags:
   - medrec
   - decision
@@ -48,10 +48,20 @@ This document serves as the master index of all core product and UX design decis
 | **DD-16** | **Burger Navigation Drawer Architecture & Dual-Coded Scannability** | `Active` | Introduces 32x32 squircle leading icons, interactive patient demographic card with avatar/monogram, cognitive section chunking, 3.5px active left pill, and pinned version footer. | [[07 - Product Design/Design Decisions#DD-16|DD-16]] |
 | **DD-17** | **Tablet Landscape UI Redesign & Content-Driven Layout Archetypes** | `Active` | Replaces universal 3-column compression with an 88pt Left Navigation Rail, Master-Detail clinical workspaces, 2-Column Intake Studio, and Thematic Dual-Column Profile while strictly locking Phone and Tablet Portrait UI. | [[07 - Product Design/Design Decisions#DD-17|DD-17]] |
 | **DD-18** | **Global Top Toolbar Canonical Positioning Pattern** | `Active` | Enforces unified root-level top toolbar positioning across all top-level tab screens (Profile, Records, Share, Scan) on tablet portrait and landscape, eliminating visual jumps. | [[07 - Product Design/Design Decisions#DD-18|DD-18]] |
+| **DD-19** | **Pre-SignIn Patient Onboarding Flow & First-Launch Guard** | `Active` | Establishes clinical trust and value comprehension before registration with a 4-step native component carousel, zero-dependency persistent storage guard, profile replay mode, and WCAG/HIG touch-target hardening. | [[07 - Product Design/Design Decisions#DD-19|DD-19]] |
 
 ---
 
 ## 📝 Detailed Decision Records
+
+### DD-19: Pre-SignIn Patient Onboarding Flow & First-Launch Guard
+- **Context**: Prior to this implementation, new patients downloading MedRec were dropped directly into the unauthenticated login screen with no context regarding core platform capabilities (unified AI records, doctor QR sharing, emergency medical ID, zero-knowledge encryption). This created onboarding friction and lower conversion.
+- **Alternatives Considered**: 
+  - (A) *In-app modal tour after registration*: Delayed patient education until after account creation; failed to address pre-registration drop-off.
+  - (B) *External web landing page redirect*: Disconnected the native app experience and required web browser context switching.
+  - (C) *4-Step Pre-SignIn Native Carousel with First-Launch Persistent Guard & Replay Mode*: Showcase authentic mini-UI replicas of actual application features on initial install, persist completion in SecureStore/localStorage, allow effortless Skip or Get Started CTA navigation, and provide an on-demand replay guide from the Profile tab.
+- **Decision**: Option C — Implement pre-signin onboarding carousel (`mobile/app/onboarding.tsx`, `constants/onboarding.ts`) backed by `medrec_onboarding_completed_v1` in `tokenStorage` and `AuthContext`. Gate developer QA reset triggers behind `__DEV__`, enforce WCAG 2.5.5 / Apple HIG $\ge 44\text{pt}$ hit targets, annotate controls with screen reader hints, and synchronize Android scroll gestures.
+- **Rationale**: Immediate clinical trust and value clarity before sign-up, zero-flicker splash screen barrier coordination, resilient one-time onboarding guard for returning users, and on-demand replay for existing users.
 
 ### DD-18: Global Top Toolbar Canonical Positioning Pattern
 - **Context**: On Tablet Portrait, the Burger Navigation and Notification Bell buttons on Records and Share Records screens were previously nested inside scroll containers or centered sub-containers, causing coordinate drift and visual jumps compared to the Profile screen.

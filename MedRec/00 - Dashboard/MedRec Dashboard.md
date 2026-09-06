@@ -3,7 +3,7 @@ project: MedRec
 type: concept
 status: active
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-09-07
 tags:
   - dashboard
   - hub
@@ -59,6 +59,7 @@ The central jumping-off point for everything in the **MedRec** knowledge base. O
 ---
 
 ### ✨ Features
+- [[Patient Onboarding]] — Pre-signin clinical value carousel, first-launch persistent storage guard, and replay tour.
 - [[Digital Medical Records]] — Structured digitization of lab tests, prescriptions, doctor notes, and immunizations.
 - [[Record Sharing]] — Time-limited, revocable links and QR-code mediated record sharing.
 - [[Record Transfer]] — Direct peer-to-peer or standardized export (PDF, JSON/FHIR) to receiving providers.
