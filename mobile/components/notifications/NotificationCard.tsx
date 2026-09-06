@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { MedRecNotification } from '../../context/NotificationContext';
@@ -17,43 +17,51 @@ interface NotificationCardProps {
   onDelete?: (id: string) => void;
 }
 
-function getCategoryConfig(type: string) {
+type CategoryConfig = {
+  icon?: keyof typeof Ionicons.glyphMap;
+  imageSource?: any;
+  color?: string;
+  actionHint: string;
+};
+
+function getCategoryConfig(type: string): CategoryConfig {
   switch (type) {
     case 'record_added':
       return {
-        icon: 'folder-outline' as const,
+        icon: 'folder-outline',
         color: TEAL,
         actionHint: 'View record',
       };
     case 'share_created':
     case 'share_expired':
     case 'share_revoked':
+    case 'qr_generated':
+    case 'qr_terminated':
       return {
-        icon: 'qr-code-outline' as const,
-        color: '#0284C7',
+        imageSource: require('../../assets/icons/share-inactive.png'),
         actionHint: 'Review doctor share',
       };
     case 'ai_summary_ready':
       return {
-        icon: 'sparkles-outline' as const,
+        icon: 'sparkles-outline',
         color: '#7C3AED',
         actionHint: 'Open AI summary',
       };
     case 'emergency_updated':
       return {
-        icon: 'medical-outline' as const,
+        icon: 'medical-outline',
         color: '#D92D20',
         actionHint: 'View Medical ID',
       };
     case 'security_alert':
       return {
-        icon: 'shield-checkmark-outline' as const,
+        icon: 'shield-checkmark-outline',
         color: '#D92D20',
         actionHint: 'Review profile',
       };
     default:
       return {
-        icon: 'notifications-outline' as const,
+        icon: 'notifications-outline',
         color: MUTED,
         actionHint: 'View details',
       };
@@ -110,9 +118,16 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       accessibilityLabel={`${notification.title}, ${notification.body}`}
     >
       <View style={styles.contentRow}>
-        {/* Clean Standalone Centered Icon without background box/highlight */}
+        {/* Clean Standalone Centered Icon */}
         <View style={styles.standaloneIconWrapper}>
-          <Ionicons name={config.icon} size={26} color={config.color} />
+          {config.imageSource ? (
+            <Image
+              source={config.imageSource}
+              style={styles.standaloneNavIcon}
+            />
+          ) : config.icon ? (
+            <Ionicons name={config.icon} size={26} color={config.color} />
+          ) : null}
         </View>
 
         <View style={styles.textColumn}>
@@ -194,6 +209,11 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  standaloneNavIcon: {
+    width: 26,
+    height: 26,
+    resizeMode: 'contain',
   },
   textColumn: {
     flex: 1,
