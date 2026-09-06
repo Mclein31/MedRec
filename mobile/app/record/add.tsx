@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
@@ -22,8 +22,9 @@ import { DocumentCamera } from '../../components/camera/DocumentCamera';
 import { DocumentPreview } from '../../components/camera/DocumentPreview';
 import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCard';
 import { DragHandle } from '../../components/ui/DragHandle';
-import { Colors, Radii, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
+import { Colors, Radii, ResponsiveLimits } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
+import { RECORD_TYPE_ASSETS, RECORD_TYPE_OPTIONS } from '../../constants/records';
 
 // Design Tokens matching MedRec standard palette
 const TEAL = Colors.teal;
@@ -35,15 +36,15 @@ const BORDER = Colors.border;
 const MUTED = Colors.muted;
 const CARD_BG = Colors.cardBg;
 
-import { RECORD_TYPE_ASSETS, RECORD_TYPE_OPTIONS } from '../../constants/records';
-
 const TYPE_ASSETS = RECORD_TYPE_ASSETS;
 const RECORD_TYPES = RECORD_TYPE_OPTIONS;
 
 type ViewMode = 'form' | 'camera' | 'preview';
 
 export default function AddRecordScreen() {
-  const [viewMode, setViewMode] = useState<ViewMode>('form');
+  const params = useLocalSearchParams<{ initialMode?: string; mode?: string }>();
+  const isInitialCamera = params.initialMode === 'camera' || params.mode === 'camera';
+  const [viewMode, setViewMode] = useState<ViewMode>(isInitialCamera ? 'camera' : 'form');
   const [tempPhotoUri, setTempPhotoUri] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
@@ -768,30 +769,20 @@ export default function AddRecordScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
 
-      {/* Drag Handle Affordance */}
-      <DragHandle />
-
-      {/* Modal Header */}
+      {/* Modal Header with integrated drag handle affordance */}
       <View
         style={[
           styles.header,
           {
-            paddingTop: insets.top > 20 ? insets.top + 4 : 8,
+            paddingTop: Platform.OS === 'android' ? insets.top + 8 : 8,
             paddingLeft: Math.max(insets.left, screenPadding),
             paddingRight: Math.max(insets.right, screenPadding),
           },
         ]}
       >
-        <View
-          style={[
-            styles.headerInner,
-            isTablet && {
-              maxWidth: ResponsiveLimits.maxModalWidth,
-              alignSelf: 'center',
-              width: '100%',
-            },
-          ]}
-        >
+        <DragHandle />
+
+        <View style={styles.headerInner}>
           <Pressable
             onPress={() => router.back()}
             style={({ pressed }) => [
@@ -828,16 +819,7 @@ export default function AddRecordScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View
-            style={[
-              styles.formWrapper,
-              isTablet && {
-                maxWidth: ResponsiveLimits.maxModalWidth,
-                alignSelf: 'center',
-                width: '100%',
-              },
-            ]}
-          >
+          <View style={styles.formWrapper}>
             {/* Document Attachment State vs Scan Trigger Card */}
             {photoUri ? (
               <AttachedDocumentCard
@@ -1093,6 +1075,7 @@ const styles = StyleSheet.create({
   /* Header */
   header: {
     backgroundColor: BG,
+    paddingTop: 8,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
