@@ -1,12 +1,23 @@
+import React from 'react';
 import { View, Pressable, StyleSheet, Image } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { TabletLandscapeNavRail } from '../../components/navigation/TabletLandscapeNavRail';
 
 const GREEN = Colors.teal;
+
+const TAB_A11Y_LABELS: Record<string, string> = {
+  index: 'Records tab',
+  share: 'Share tab',
+  add: 'Add health record',
+  scan: 'Scan tab',
+  profile: 'Profile tab',
+};
 
 function CustomTabBar(_props?: BottomTabBarProps) {
   const pathname = usePathname();
@@ -35,7 +46,6 @@ function CustomTabBar(_props?: BottomTabBarProps) {
     {
       name: 'add',
       route: '/record/add',
-      icon: require('../../assets/icons/add-record.png'),
     },
     {
       name: 'scan',
@@ -66,6 +76,7 @@ function CustomTabBar(_props?: BottomTabBarProps) {
               paddingBottom: insets.bottom,
             },
       ]}
+      hitSlop={!isTablet ? { top: 35 } : undefined}
     >
       {tabs.map((tab) => {
         const isAdd = tab.name === 'add';
@@ -79,15 +90,42 @@ function CustomTabBar(_props?: BottomTabBarProps) {
         return (
           <Pressable
             key={tab.name}
-            onPress={() => router.push(tab.route as any)}
-            style={styles.navItem}
-            hitSlop={8}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-            accessibilityLabel={`${tab.name.charAt(0).toUpperCase() + tab.name.slice(1)} tab`}
+            onPress={() => {
+              if (isAdd) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push(tab.route as any);
+              } else {
+                Haptics.selectionAsync();
+                if (_props?.navigation) {
+                  _props.navigation.navigate(tab.name);
+                } else {
+                  router.push(tab.route as any);
+                }
+              }
+            }}
+            style={({ pressed }) => [
+              styles.navItem,
+              isAdd && !isTablet && styles.addNavItem,
+              pressed && styles.navItemPressed,
+            ]}
+            hitSlop={isAdd && !isTablet ? { top: 42, bottom: 8, left: 8, right: 8 } : 8}
+            accessibilityRole={isAdd ? 'button' : 'tab'}
+            accessibilityState={isAdd ? undefined : { selected: isActive }}
+            accessibilityLabel={TAB_A11Y_LABELS[tab.name] || `${tab.name} tab`}
           >
             {isAdd ? (
-              <Image source={tab.icon} style={styles.addIcon} />
+              isTablet ? (
+                <View style={styles.tabletAddButton}>
+                  <Ionicons name="add" size={28} color="#FFFFFF" />
+                </View>
+              ) : (
+                <View style={styles.protrusionContainer} pointerEvents="none">
+                  <View style={styles.domeCircle} />
+                  <View style={styles.newAddButton}>
+                    <Ionicons name="add" size={30} color="#FFFFFF" />
+                  </View>
+                </View>
+              )
             ) : isProfile && user?.avatarUrl ? (
               <Image
                 source={{ uri: user.avatarUrl }}
@@ -157,8 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#EEF3F2',
+    overflow: 'visible',
     elevation: 10,
     shadowColor: '#000',
     shadowOffset: {
@@ -177,8 +214,6 @@ const styles = StyleSheet.create({
     height: 68,
     paddingTop: 0,
     borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E5F0EE',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -190,6 +225,46 @@ const styles = StyleSheet.create({
   navItem: {
     flex: 1,
     height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addNavItem: {
+    overflow: 'visible',
+    position: 'relative',
+  },
+  navItemPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.96 }],
+  },
+  protrusionContainer: {
+    position: 'absolute',
+    top: -35,
+    width: 74,
+    height: 74,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  domeCircle: {
+    position: 'absolute',
+    top: 0,
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    backgroundColor: '#FFFFFF',
+  },
+  newAddButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabletAddButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: GREEN,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -207,10 +282,5 @@ const styles = StyleSheet.create({
   profileAvatarIconActive: {
     borderWidth: 1.5,
     borderColor: GREEN,
-  },
-  addIcon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
   },
 });
