@@ -669,10 +669,57 @@ export default function ShareScreen() {
     );
   }
 
-  // ─── PHONE VIEW (100% LOCKED & UNTOUCHED) ─────────────────────────────────
+  // ─── PHONE VIEW ───────────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
+
+      {/* Global Navigation Toolbar (Fixed/Static) */}
+      <View
+        style={[
+          styles.topToolbar,
+          {
+            paddingTop: insets.top + 12,
+            paddingLeft: Math.max(insets.left, screenPadding),
+            paddingRight: Math.max(insets.right, screenPadding),
+          },
+        ]}
+      >
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setMenuVisible(true);
+          }}
+          hitSlop={10}
+          style={styles.iconBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Open navigation menu"
+        >
+          <Image
+            source={require('../../assets/icons/burger-menu.png')}
+            style={styles.toolbarIcon}
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            refreshNotifications();
+            setNotificationsVisible(true);
+          }}
+          hitSlop={10}
+          style={styles.iconBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Notifications, ${unreadCount} unread`}
+        >
+          <Image
+            source={require('../../assets/icons/notification-bell.png')}
+            style={styles.toolbarIcon}
+          />
+          {unreadCount > 0 && <View style={styles.notificationDot} />}
+        </Pressable>
+      </View>
+
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -697,16 +744,11 @@ export default function ShareScreen() {
             },
           ]}
         >
-          {/* Screen Header Toolbar */}
+          {/* Header Title & Subtitle (toolbar hidden because global topToolbar is rendered above) */}
           <ScreenHeader
             title="Share Records"
             subtitle="Share your health records in a limited time access"
-            onPressMenu={() => setMenuVisible(true)}
-            onPressNotifications={() => {
-              refreshNotifications();
-              setNotificationsVisible(true);
-            }}
-            unreadCount={unreadCount}
+            hideToolbar={true}
           />
 
           {/* ────────────────────────────────────────────────────────
