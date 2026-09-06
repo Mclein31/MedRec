@@ -36,7 +36,7 @@ export default function LoginScreen() {
   const [lockedOut, setLockedOut] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const { isTablet, isLandscape, insets, scaleFont } = useResponsive();
 
@@ -71,29 +71,30 @@ export default function LoginScreen() {
       await login(email, password);
       setAttempts(0);
       router.replace('/(tabs)');
-    } catch {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      if (newAttempts >= MAX_ATTEMPTS) {
-        startLockout();
-        Alert.alert('Too many attempts', `Account temporarily locked. Try again in ${LOCKOUT_SECONDS} seconds.`);
-      } else {
-        const remaining = MAX_ATTEMPTS - newAttempts;
-        Alert.alert('Wrong password', remaining === 1 ? '1 attempt remaining before lockout.' : `${remaining} attempts remaining.`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSocialPress = async () => {
-    try {
-      setLoading(true);
-      await loginWithGoogle();
-      router.replace('/(tabs)');
     } catch (err: any) {
-      if (err?.message && !err.message.includes('cancel')) {
-        Alert.alert('Google Sign-In', err.message || 'Could not complete Google authentication.');
+      const errorMessage = err?.message || 'Login failed';
+      const isNetworkError =
+        errorMessage.includes('Network') ||
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('timeout') ||
+        errorMessage.includes('connect') ||
+        errorMessage.includes('Aborted');
+
+      if (isNetworkError) {
+        Alert.alert(
+          'Connection Error',
+          'Could not connect to the server. Please check that your device and computer are on the same Wi-Fi and that the backend server is running.'
+        );
+      } else {
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+        if (newAttempts >= MAX_ATTEMPTS) {
+          startLockout();
+          Alert.alert('Too many attempts', `Account temporarily locked. Try again in ${LOCKOUT_SECONDS} seconds.`);
+        } else {
+          const remaining = MAX_ATTEMPTS - newAttempts;
+          Alert.alert('Login Failed', `${errorMessage} (${remaining} attempt${remaining === 1 ? '' : 's'} remaining)`);
+        }
       }
     } finally {
       setLoading(false);
@@ -164,9 +165,6 @@ export default function LoginScreen() {
       </Pressable>
 
       <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or</Text><View style={styles.line} /></View>
-      <Pressable onPress={handleSocialPress} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}>
-        <Image source={require('../assets/icons/google.png')} style={styles.google} /><Text style={styles.googleText}>Sign in with Google</Text>
-      </Pressable>
       <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
         <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} /><Text style={styles.createText}>Create an Account</Text>
       </Pressable>
@@ -304,11 +302,6 @@ export default function LoginScreen() {
                   <View style={styles.line} />
                 </View>
 
-                <Pressable onPress={handleSocialPress} style={({ pressed }) => [styles.tabletGoogleButton, pressed && styles.pressed]}>
-                  <Image source={require('../assets/icons/google.png')} style={styles.google} />
-                  <Text style={styles.googleText}>Sign in with Google</Text>
-                </Pressable>
-
                 <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.tabletCreateButton, pressed && styles.pressed]}>
                   <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} />
                   <Text style={styles.createText}>Create an Account</Text>
@@ -384,9 +377,6 @@ export default function LoginScreen() {
             </Pressable>
 
             <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or</Text><View style={styles.line} /></View>
-            <Pressable onPress={handleSocialPress} style={({ pressed }) => [styles.googleButton, pressed && styles.pressed]}>
-              <Image source={require('../assets/icons/google.png')} style={styles.google} /><Text style={styles.googleText}>Sign in with Google</Text>
-            </Pressable>
             <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
               <Image source={require('../assets/icons/user-add.png')} style={styles.createIcon} /><Text style={styles.createText}>Create an Account</Text>
             </Pressable>
@@ -599,32 +589,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  googleButton: {
-    height: 55,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-  },
-
-  google: {
-    width: 26,
-    height: 26,
-    resizeMode: 'contain',
-  },
-
-  googleText: {
-    color: INK,
-    fontSize: 16,
-    fontWeight: '400',
-  },
-
   createButton: {
     height: 57.5,
-    marginTop: 38,
+    marginTop: 16,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: TEAL,
@@ -769,17 +736,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     marginBottom: 14,
-  },
-  tabletGoogleButton: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#D9E7E4',
-    backgroundColor: '#FFFFFF',
   },
   tabletCreateButton: {
     height: 48,

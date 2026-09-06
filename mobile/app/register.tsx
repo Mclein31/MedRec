@@ -32,7 +32,7 @@ export default function RegisterScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { register, loginWithGoogle } = useAuth();
+  const { register } = useAuth();
   const router = useRouter();
   const { isTablet, isLandscape, insets, scaleFont } = useResponsive();
 
@@ -66,24 +66,6 @@ export default function RegisterScreen() {
       Alert.alert('Registration failed', err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSocialPress = async (provider: string) => {
-    if (provider === 'Google') {
-      try {
-        setLoading(true);
-        await loginWithGoogle();
-        router.replace('/(tabs)');
-      } catch (err: any) {
-        if (err?.message && !err.message.includes('cancel')) {
-          Alert.alert('Google Sign-In', err.message || 'Could not complete Google authentication.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      Alert.alert('Coming soon', `${provider} sign-up will be available in a future update.`);
     }
   };
 
@@ -174,20 +156,6 @@ export default function RegisterScreen() {
         {!loading && (
           <Image source={require('../assets/icons/arrow.png')} style={styles.arrowIcon} />
         )}
-      </Pressable>
-
-      <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
-      <Pressable
-        onPress={() => handleSocialPress('Google')}
-        style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
-      >
-        <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
-        <Text style={styles.outlineBtnText}>Sign in with Google</Text>
       </Pressable>
 
       <View style={styles.loginRow}>
@@ -349,20 +317,6 @@ export default function RegisterScreen() {
                   )}
                 </Pressable>
 
-                <View style={styles.tabletDivider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>or</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                <Pressable
-                  onPress={() => handleSocialPress('Google')}
-                  style={({ pressed }) => [styles.tabletOutlineBtn, pressed && { opacity: 0.7 }]}
-                >
-                  <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
-                  <Text style={styles.tabletOutlineBtnText}>Sign in with Google</Text>
-                </Pressable>
-
                 <View style={styles.tabletLoginRow}>
                   <Text style={styles.loginText}>Already have an Account? </Text>
                   <Pressable onPress={() => router.push('/login')}>
@@ -481,20 +435,6 @@ export default function RegisterScreen() {
               {!loading && (
                 <Image source={require('../assets/icons/arrow.png')} style={styles.arrowIcon} />
               )}
-            </Pressable>
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <Pressable
-              onPress={() => handleSocialPress('Google')}
-              style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
-            >
-              <Image source={require('../assets/icons/google.png')} style={styles.socialIcon} />
-              <Text style={styles.outlineBtnText}>Sign in with Google</Text>
             </Pressable>
 
             <View style={styles.loginRow}>

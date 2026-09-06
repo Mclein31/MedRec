@@ -3,13 +3,23 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 function getApiBaseUrl(): string {
+  // In development, auto-detect the host machine IP from the Metro bundler connection
+  // so IP changes on local Wi-Fi never cause connection drops.
+  if (__DEV__) {
+    const debuggerHost =
+      Constants.expoConfig?.hostUri ||
+      (Constants as any).manifest?.debuggerHost ||
+      (Constants as any).manifest2?.extra?.expoClient?.hostUri;
+    if (debuggerHost) {
+      const ip = debuggerHost.split(':')[0];
+      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+        return `http://${ip}:4000/api`;
+      }
+    }
+  }
+
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
-  }
-  const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any).manifest?.debuggerHost || (Constants as any).manifest2?.extra?.expoClient?.hostUri;
-  if (debuggerHost) {
-    const ip = debuggerHost.split(':')[0];
-    if (ip) return `http://${ip}:4000/api`;
   }
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:4000/api';
