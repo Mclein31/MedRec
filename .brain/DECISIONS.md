@@ -7,10 +7,52 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-09-06
+last_updated: 2026-09-07
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-09-07 — Pre-SignIn Patient Onboarding Flow & First-Launch Guard (DD-38)
+
+### Decision
+1. **Zero-Dependency Persistent First-Launch Guard (`mobile/lib/api.ts`, `mobile/context/AuthContext.tsx`)**:
+   - Implemented `medrec_onboarding_completed_v1` using existing `tokenStorage` abstraction (SecureStore on iOS/Android, localStorage on Web). Strictly enforced alphanumeric and underscore formatting (`medrec_onboarding_completed_v1`) to comply with Expo SecureStore native key constraints (`^[a-zA-Z0-9._-]+$`), avoiding unhandled key validation exceptions that previously stalled app bootstrap.
+   - Wrapped `tokenStorage` get/set/delete operations and `AuthContext` bootstrap hydration in resilient `try...catch...finally` blocks, guaranteeing `setIsLoading(false)` always fires.
+   - Enforced persistent completion via `completeOnboarding()` on explicit user action ("Skip", "Get Started", or "Sign In"), reliably recording completion before routing to the next destination while eliminating in-memory state desynchronization.
+2. **Dual-Guard Expo Router v6 Stack Strategy (`mobile/app/_layout.tsx`)**:
+   - Structured the root stack navigator into declarative protected route groups:
+     - `guard={!!token}`: Authenticated workspace (`(tabs)`, `record/add`, `record/[id]`, plus `onboarding` modal for guided replay).
+     - `guard={!token && !hasCompletedOnboarding}`: First-launch onboarding route (`onboarding` placed at stack index 0).
+     - `guard={!token}`: Unauthenticated auth routes (`login`, `register`).
+   - Because `Stack.Protected` filters unmounted screens from the React Navigation tree, setting `hasCompletedOnboarding = true` automatically unmounts `onboarding` and promotes `login` to root position with zero flicker or navigation stack collisions.
+3. **Flicker-Free Bootstrap Inset & Font Coordination (`mobile/app/_layout.tsx`)**:
+   - `SplashScreen.preventAutoHideAsync()` is held until `fontsLoaded && !isLoading`. Both custom typography (`Lexend Deca`) and persistent storage hydration (`[getToken(), getHasCompletedOnboarding()]`) resolve concurrently before revealing the UI.
+   - Completely eliminated the white flash and intermediate spinner previously visible before route evaluation.
+4. **Interactive Component Architecture for Clinical Value Compositions (`mobile/app/onboarding.tsx`)**:
+   - Emphasized core MedRec value propositions using high-fidelity native card compositions:
+     - Slide 1: Unified medical records (CBC lab with normal badge, cardiology consult card, AI clinical summary).
+     - Slide 2: Frictionless QR sharing (doctor consultation pass, 15-minute expiring countdown, instant 1-tap revocation).
+     - Slide 3: Emergency Medical ID (red emergency card, O+ blood type, critical allergy warnings, paramedic access note).
+     - Slide 4: Zero-knowledge privacy (padlock ring, 3 privacy pillars: zero ads/selling, AES-256 R2 vault, ephemeral tokens).
+5. **Replay Mode for Authenticated Patients (`mobile/app/(tabs)/profile.tsx`)**:
+   - Added an "App Tour & Feature Guide" action in the Profile screen's Security & Preferences section.
+   - When opened by an authenticated patient, `OnboardingScreen` dynamically adapts: the "Skip" button transforms into an accessible "Close" button (`router.back()`), and Slide 4 displays "Finish Tutorial" returning cleanly to the profile.
+6. **Code Review Hardening & Accessibility Architecture**:
+   - **Production Tree-Shaking**: Gated all developer QA reset triggers (`onLongPress`) behind `__DEV__ ? ... : undefined` in `login.tsx` (all viewports) and `profile.tsx`, ensuring debug shortcuts are stripped out in release builds.
+   - **WCAG 2.5.5 / Apple HIG Touch Targets**: Expanded hit targets to $\ge 44 \times 44\text{pt}$ via calibrated `hitSlop` on carousel dots, secondary CTAs, and login tour links.
+   - **Screen Reader Parity**: Annotated all interactive elements with descriptive `accessibilityHint` strings.
+   - **Type Safety**: Introduced `IoniconName` and `PrivacyPillar` types in `constants/onboarding.ts`, eliminating `as any` casts.
+   - **Gesture & Layout Synchronization**: Bound `onScrollEndDrag` alongside `onMomentumScrollEnd` on Android, and added responsive window dimension re-alignment on orientation changes.
+
+### Reason
+- Accelerates patient conversion and establishes clinical trust prior to authentication while respecting existing user flows and maintaining a strict one-time onboarding guard.
+
+### Alternatives Considered
+- In-line walkthrough dialogs within the authenticated dashboard: Dismissed because it delayed critical patient education until after registration.
+- Adding AsyncStorage dependency: Dismissed because MedRec's existing `tokenStorage` already provides tested SecureStore/localStorage wrappers with 0 additional bundle footprint.
+
+### Consequences
+- First-time installs smoothly educate users on MedRec's core value pillars; returning users never see the carousel again; authenticated users can replay the tour on demand.
 
 ## 2026-09-06 — Hierarchical Touch Dispatch & Cross-Platform Modal Insets (DD-37)
 

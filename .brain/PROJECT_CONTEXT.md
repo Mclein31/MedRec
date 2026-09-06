@@ -13,7 +13,7 @@ tags:
   - postgresql
   - cloudflare-r2
   - ai
-last_updated: 2026-09-05
+last_updated: 2026-09-07
 ---
 
 # 🏥 MedRecord_App (MedRec) — Project Context
@@ -25,8 +25,8 @@ last_updated: 2026-09-05
 
 ## 🎯 Current Status
 - **Status**: `Production-Ready (Awaiting Cloud Deployment)`
-- **Completed**: Full backend implementation, multi-platform responsive UI (Phone, Tablet Portrait, iPad Landscape), Cloudflare R2 cloud storage, comprehensive record management (CRUD + edit metadata + lightbox), sharing system (QR, scoped access, AI summary, ZIP download, session termination), notification sidebar, native Google Sign-In with backend ID token verification, and security audit remediation.
-- **Security**: All P0/P1/P2 security and data integrity findings from formal code review resolved and verified (bcrypt password verification, presigned URL guard, R2 orphan cleanup, logout JWT invalidation, pre-account takeover protection on Google SSO, silent upload fallback removal).
+- **Completed**: Full backend implementation, multi-platform responsive UI (Phone, Tablet Portrait, iPad Landscape), Cloudflare R2 cloud storage, comprehensive record management (CRUD + edit metadata + lightbox), sharing system (QR, scoped access, AI summary, ZIP download, session termination), notification sidebar, native Google Sign-In with backend ID token verification, security audit remediation, and Pre-SignIn Patient Onboarding Flow (4-step carousel, first-launch persistent storage guard, profile replay guide, full accessibility & HIG touch-target hardening).
+- **Security**: All P0/P1/P2 security and data integrity findings from formal code review resolved and verified (bcrypt password verification, presigned URL guard, R2 orphan cleanup, logout JWT invalidation, pre-account takeover protection on Google SSO, silent upload fallback removal, `__DEV__`-gated QA reset triggers).
 - **Testing**: 71/71 backend tests passing (8 suites). TypeScript: 0 errors.
 - **Next Phase**: Production PostgreSQL & Cloudflare R2 Credentials Deployment & Real Device QA.
 
@@ -66,8 +66,9 @@ last_updated: 2026-09-05
 - `backend/src/routes/`: `authRoutes.js`, `profileRoutes.js`, `recordRoutes.js` (PUT+PATCH), `shareRoutes.js` (summarize, terminate, download, zip, export), `storageRoutes.js`, `aiRoutes.js`, `notificationRoutes.js`.
 - `backend/tests/`: `auth.test.js`, `profile.test.js`, `record.test.js`, `share.test.js`, `storage.test.js`, `notification.test.js`, `security.test.js`, `integration.test.js`.
 - `mobile/app/`:
+  - `onboarding.tsx`: Pre-signin clinical introduction tour & feature guide (4-step carousel, native component heroes, first-launch guard, profile replay).
   - `(tabs)/index.tsx`: Records dashboard — search, category carousel, Master-Detail on tablet.
-  - `(tabs)/profile.tsx`: Patient demographics, Emergency Medical ID, avatar (R2), password change.
+  - `(tabs)/profile.tsx`: Patient demographics, Emergency Medical ID, avatar (R2), password change, and onboarding replay guide.
   - `(tabs)/share.tsx`: QR code generator, active sessions, share history.
   - `(tabs)/scan.tsx`: Doctor QR scanner, shared record viewer, AI summary, per-record download, ZIP bundle download, terminate session.
   - `record/[id].tsx`: Record detail — attachment lightbox, metadata, clinical notes, AI insights, edit button.

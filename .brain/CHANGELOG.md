@@ -5,10 +5,39 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-06
+last_updated: 2026-09-07
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.4.26] — Pre-SignIn Patient Onboarding Flow & First-Launch Guard
+
+- **First-Launch Detection & Persistent Storage Guard (`mobile/lib/api.ts`, `mobile/context/AuthContext.tsx`, `mobile/app/_layout.tsx`)**:
+  - Introduced `medrec_onboarding_completed_v1` key in `tokenStorage` with `getHasCompletedOnboarding()`, `setHasCompletedOnboarding()`, and `resetHasCompletedOnboarding()` (conforming strictly to Expo SecureStore `^[a-zA-Z0-9._-]+$` key format constraints).
+  - Added `hasCompletedOnboarding`, `completeOnboarding()`, `markOnboardingSeen()`, and `resetOnboarding()` to `AuthContextType`.
+  - Fixed premature screen eviction bug where `markOnboardingSeen()` flipped in-memory state on mount; now it records to persistent storage without unmounting the active carousel.
+  - Refactored unauthenticated `Stack.Protected` in `_layout.tsx` to conditionally order screen priority (`onboarding` at index 0 on first launch; `login` at index 0 for returning users while keeping `onboarding` accessible).
+  - Hardened app bootstrap in `AuthProvider` with asynchronous `try...catch...finally` execution, ensuring `setIsLoading(false)` always executes and eliminating preload splash screen hang.
+  - Added splash screen safety dismiss timeout (2.5s) and font loading error fallbacks in `_layout.tsx`.
+  - Added tour link and first-launch QA reset trigger to `mobile/app/login.tsx`.
+- **4-Step Interactive Patient Onboarding Screen (`mobile/app/onboarding.tsx`, `mobile/constants/onboarding.ts`)**:
+  - Implemented responsive horizontal carousel with segmented progress indicator, comfortable Skip button, Back/Next navigation, and animated pill dots.
+  - **Slide 1 (Unified Health Vault)**: Category filter chips, Complete Blood Count lab card with Normal status badge, Cardiology Review consultation card, and AI Clinical Summary callout card with vitals insight.
+  - **Slide 2 (Doctor QR Sharing)**: Consultation Pass card with Dr. Sarah Mitchell, centered stylized QR code box with teal corner brackets, 14:59 live countdown pill, auto-expiration security notice, and 1-tap instant revoke callout badge.
+  - **Slide 3 (Emergency Medical ID)**: Red-accented emergency pass, medical shield icon, O+ Blood Type pill, Critical Allergy warning box (Penicillin anaphylaxis, Peanuts), chronic condition & ICE contact grid, and paramedic vital access notice.
+  - **Slide 4 (Zero-Knowledge Privacy)**: Padlock halo emblem, 3 value pillar cards (Zero Ads / No Selling, Private R2 Vault with AES-256, Ephemeral Doctor Tokens), and Dual CTAs ("Get Started" ➔ `/register`, "Already have an account? Sign In" ➔ `/login`).
+- **Flicker-Free Bootstrap Coordination (`mobile/app/_layout.tsx`)**:
+  - Configured `SplashScreen.hideAsync()` to wait until both custom Lexend Deca fonts and auth/onboarding hydration are resolved, completely eliminating intermediate loading spinners or white flash before destination screen render.
+- **In-App Onboarding Replay Guide (`mobile/app/(tabs)/profile.tsx`)**:
+  - Added "App Tour & Feature Guide" under Security & Preferences in the Profile screen, enabling authenticated patients to revisit the 4 core product pillars at any time with modal presentation and return dismiss.
+- **Code Review Hardening & Quality Refinements**:
+  - Gated developer QA reset triggers (`onLongPress`) behind `__DEV__` across `login.tsx` (Phone, Tablet Portrait, Tablet Landscape) and `profile.tsx`.
+  - Added comprehensive `accessibilityHint` descriptions to all interactive onboarding controls (close, skip, back, next, indicator dots, and CTAs) for screen readers.
+  - Expanded touch hit areas via `hitSlop` on `tourLink`, indicator pills, and `signInLinkBtn` to exceed the 44x44pt minimum target standard.
+  - Pruned dead `markOnboardingSeen` method and simplified `completeOnboarding` parameter signature in `AuthContext.tsx` and call sites.
+  - Elevated type safety in `constants/onboarding.ts` with typed `IoniconName` and `PrivacyPillar` interfaces, eliminating `as any` type assertions in `onboarding.tsx`.
+  - Added `onScrollEndDrag` alongside `onMomentumScrollEnd` on carousel `ScrollView` to prevent Android low-velocity flick index desync.
+  - Added orientation and window dimension re-alignment hook in `onboarding.tsx`.
 
 ## [1.4.25] — Comprehensive Review Fixes: iOS Hit-Testing, Android Modal Insets, Tablet Navbar & A11y
 
