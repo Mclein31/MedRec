@@ -7,10 +7,59 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-09-05
+last_updated: 2026-09-06
 ---
 
 # ⚖️ MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-09-06 — Hierarchical Touch Dispatch & Cross-Platform Modal Insets (DD-37)
+
+### Decision
+1. **iOS Hierarchical Hit-Testing on Protruding Containers (`(tabs)/_layout.tsx`)**:
+   - On iOS native view hierarchies, touch dispatching is strictly top-down via `[UIView pointInside:withEvent:]`. When child components protrude outside parent container bounds (e.g. the 35pt protruding center Add button extending above the 85pt navbar), any touch event occurring in the negative coordinate space (`y < 0`) causes the parent's `pointInside:` to evaluate to `NO`.
+   - Consequently, iOS discards the touch event immediately without querying descendant views, completely bypassing any child `hitSlop` declarations.
+   - **Resolution**: Always declare corresponding `hitSlop={{ top: N }}` on the parent container enclosing the protrusion, expanding the parent's touch evaluation boundary to envelop the child's protruding geometry.
+2. **Android Edge-to-Edge Safe Insets on Modal Presentations (`record/add.tsx`)**:
+   - With `edgeToEdgeEnabled: true` configured in `app.json`, React Navigation renders `presentation: 'modal'` as a transparent full-screen window on Android, starting at physical screen coordinate `y = 0` directly behind the Android status bar.
+   - On iOS, `presentation: 'modal'` renders as a native `pageSheet` that is automatically offset below the status bar by the operating system.
+   - **Resolution**: Apply platform-aware top padding (`Platform.OS === 'android' ? insets.top + padding : padding`) across all modal screen headers to prevent collisions with status bar icons and clock text on Android while preventing double-inset gaps on iOS.
+3. **Form-Factor Adaptive Tab Bar Center Actions (`(tabs)/_layout.tsx`)**:
+   - While docked full-width phone navbars benefit from continuous semicircular protruding domes, tablet floating pill navbars require concentric, flush button containment (`tabletAddButton`) to prevent visual intersection artifacts against elevated rounded cards.
+
+## 2026-09-06 — Floating Bottom Navigation Bar Redesign (DD-36)
+
+### Decision
+1. **Floating Pill Surface Geometry (`FloatingBottomNav.tsx`, `(tabs)/_layout.tsx`)**:
+   - Replaced heavy full-width bottom bar with an Apple-inspired floating container (`borderRadius: 26` on phones, `borderRadius: 30` on tablets).
+   - Elevated position dynamically anchored to bottom safe insets (`bottom: isTablet ? Math.max(insets.bottom, 16) + 8 : Math.max(insets.bottom, 12)`), with margins on phones (`16pt`) and centered maximum width on tablets (`maxWidth: 500pt`).
+   - Soft multi-layered ambient shadow (`shadowColor: '#072722'`, `shadowOffset: { width: 0, height: 4 }`, `shadowOpacity: 0.08`, `shadowRadius: 16`, `elevation: 8`) over `#FFFFFF` canvas.
+2. **Elevated Floating Center "+" Primary Action**:
+   - Designed the center Add Record button as a prominent circular action (`58x58pt` on phones, `64x64pt` on tablet) elevated above the navbar (`marginTop: -26pt`) in MedRec Teal (`#159A83`).
+   - Styled with a 3.5pt solid white isolation border and elevated drop shadow (`shadowColor: '#159A83'`, `shadowOffset: { width: 0, height: 5 }`, `shadowOpacity: 0.38`, `shadowRadius: 8`, `elevation: 10`).
+   - Integrated medium haptic impact (`Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)`) and scale compression (`0.93`) on press.
+3. **Refined 5-Action Navigation & Consistent Stroke Weights**:
+   - Tab 1: **Records** (Ionicons `folder-outline` / route: `/(tabs)`).
+   - Tab 2: **Scan** (Ionicons `qr-code-outline` / route: `/(tabs)/scan`).
+   - Tab 3: **Add Record (+)** (Center elevated primary button / route: `/record/add`).
+   - Tab 4: **Camera** (Ionicons `camera-outline` / route: `/record/add?initialMode=camera`).
+   - Tab 5: **Profile** (Ionicons `person-outline` or dynamic profile avatar / route: `/(tabs)/profile`).
+4. **Subtle Active State Refinement**:
+   - Avoided heavy colored boxes or thick pill outlines in favor of a subtle translucent tint (`rgba(21, 154, 131, 0.09)`) with `borderRadius: 14`, paired with MedRec Teal icon and SemiBold LexendDeca text.
+   - Inactive tabs display clean muted slate (`#94A3B8`) with Medium typography.
+5. **Direct Document Camera Initialization (`app/record/add.tsx`)**:
+   - Connected `useLocalSearchParams` parsing for `initialMode: 'camera'` and `mode: 'camera'`, allowing the bottom bar Camera action to launch `DocumentCamera` instantly without extra clicks.
+
+### Reason
+- Modernizes MedRec's bottom navigation to match high-end Apple-inspired medical UI design standards, giving the center "+" action clear visual prominence while providing balanced, spacious access to all 5 core health actions.
+
+### Alternatives
+- **Solid Tab Bar**: Looked outdated and generic compared to modern floating UI conventions.
+- **Icon-Only Navigation**: Lacked clear clinical accessibility and discoverability compared to clean icon + small typography pairings.
+
+### Consequences
+- Navigation is spacious, elegant, and responsive across all device sizes; all actions remain accessible with 0 regressions.
+
+---
 
 ## 2026-09-05 — Tablet Notification Modal Dual-Layer Animation Decoupling (DD-35)
 

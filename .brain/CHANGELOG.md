@@ -5,10 +5,109 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-05
+last_updated: 2026-09-06
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.4.25] — Comprehensive Review Fixes: iOS Hit-Testing, Android Modal Insets, Tablet Navbar & A11y
+
+- **iOS Hit-Testing on Protruding Add Button (`(tabs)/_layout.tsx`)**:
+  - Added `hitSlop={!isTablet ? { top: 35 } : undefined}` to parent `styles.navbar` container so iOS `[UIView pointInside:withEvent:]` does not discard taps on the upper 35pt protruding dome before reaching the Add button.
+- **Android Edge-to-Edge Status Bar Collision Fix (`record/add.tsx`)**:
+  - Added platform-aware top padding (`Platform.OS === 'android' ? insets.top + 8 : 8`) in modal `styles.header` to clear transparent status bar clock and icons on edge-to-edge Android displays while keeping compact 8pt padding on iOS `pageSheet` modals.
+- **Tablet Portrait Floating Navbar Add Button (`(tabs)/_layout.tsx`)**:
+  - Guarded the flat white `domeCircle` from rendering on tablet portrait; on tablets, the Add button now renders as a clean centered circular teal button (`tabletAddButton`, 48x48pt, `borderRadius: 24`) flush within the floating rounded pill navbar.
+- **Tab Navigation Stack & Accessibility Improvements (`(tabs)/_layout.tsx`)**:
+  - Switched tab navigation from `router.push` to `_props?.navigation.navigate(tab.name)` (reserving `router.push` for `/record/add`), preventing duplicate screens from polluting the back navigation stack.
+  - Added explicit clinical accessibility labels via `TAB_A11Y_LABELS` (`Records tab`, `Share tab`, `Add health record`, `Scan tab`, `Profile tab`) replacing the automated "Index tab" and "Add action" labels.
+- **Code & Style Cleanups (`login.tsx`, `record/add.tsx`)**:
+  - Deleted orphaned Google sign-in style definitions (`googleButton`, `google`, `googleText`, `tabletGoogleButton`) and normalized `createButton.marginTop` to 16pt in `login.tsx`.
+  - Removed dead, unreachable `isTablet && { maxWidth: ... }` conditions from phone form container in `record/add.tsx`.
+
+## [1.4.24] — Fixed/Static Top Navigation Bar on Share Records Tab
+
+- **Fixed Top Navigation Bar Parity (`(tabs)/share.tsx`)**:
+  - Extracted the global navigation toolbar (hamburger menu button and notification bell icon) outside the scrollable `ScrollView` container in the phone view of the Share Records tab, matching the architectural layout of the Records (`(tabs)/index.tsx`) and Profile (`(tabs)/profile.tsx`) screens.
+  - Used `ScreenHeader` with `hideToolbar={true}` inside the `ScrollView` so that the page title ("Share Records") and subtitle scroll smoothly underneath the fixed toolbar with zero visual bleed or layout shift.
+  - Preserved full interactive parity for menu opening (`setMenuVisible(true)`), notification center modal triggers (`refreshNotifications()`, `setNotificationsVisible(true)`), unread badge counts, and haptic feedback.
+
+## [1.4.23] — Eliminate Excessive Top Spacing on Add Health Record Modal
+
+- **Modal Header Layout Normalization (`record/add.tsx`)**:
+  - Removed redundant push-screen inset calculation (`paddingTop: insets.top > 20 ? insets.top + 4 : 8`) that caused a 63pt empty gap on notch/dynamic-island devices within the `pageSheet` modal presentation.
+  - Integrated `<DragHandle />` directly inside `styles.header` with clean standardized top padding (`paddingTop: 8`, `paddingBottom: 12`), aligning with `RecordEditModal` and `NotificationCenterModal` modal design system conventions.
+
+## [1.4.22] — Doctor QR Access Notification Card Icons Alignment
+
+- **Doctor QR Notification Icon Parity (`NotificationCard.tsx`)**:
+  - Aligned all Doctor QR Access notification cards (`share_created`, `share_expired`, `share_revoked`, `qr_generated`, `qr_terminated`) with the navigation bar's Share/QR icon by replacing Ionicons `qr-code-outline` with `assets/icons/share-inactive.png` (`26x26pt`, `resizeMode: 'contain'`).
+  - Kept default/generic notifications using `notifications-outline` and Notification Center empty state using `notifications-off-outline`.
+
+## [1.4.21] — Borderless Solid Navbar with Semicircular Protruding Add Button
+
+- **Navigation UI Enhancement (`(tabs)/_layout.tsx`)**:
+  - Removed all top and surrounding borders from the solid navbar and circular dome, creating a seamless, pure white background as designed in Figma.
+  - Increased the vertical protrusion to 35pt (`top: -35pt`) with a 74pt circular dome (`borderRadius: 37pt`) and 56pt teal button (`borderRadius: 28pt`), forming a clean semicircular protrusion above the navbar.
+  - Expanded touch target bounds to `hitSlop={{ top: 42, bottom: 8, left: 8, right: 8 }}`.
+
+## [1.4.20] — Elevate Protruding Add Button Dome Contour
+
+- **Navigation UI Enhancement (`(tabs)/_layout.tsx`)**:
+  - Increased the vertical protrusion of the center add button dome from 20pt to 28pt (`top: -28pt`), expanding the circular dome diameter to 72pt and the inner teal button to 54pt (`borderRadius: 27pt`).
+  - Expanded upward touch target coverage (`hitSlop={{ top: 34, bottom: 8, left: 8, right: 8 }}`) to ensure smooth touch interactions across the full elevated dome.
+
+## [1.4.19] — Protruding Dome Add Button on Solid Navbar
+
+- **Navigation UI Enhancement (`(tabs)/_layout.tsx`)**:
+  - Implemented the protruding center add button with a white circular dome (`width: 70, height: 70, borderRadius: 35`) that extends 20pt above the solid navbar's top line, framed by a continuous top border contour (`borderColor: '#EEF3F2'`).
+  - Positioned the circular teal Add button (`52x52pt`, `borderRadius: 26`, `backgroundColor: Colors.teal`) concentrically within the dome, yielding an even 9pt white rim framing the button with zero drop shadows.
+  - Configured `overflow: 'visible'` on the navbar and expanded the hit area (`hitSlop={{ top: 24, bottom: 8, left: 8, right: 8 }}`) to ensure responsive touch responsiveness across the protruding dome on mobile devices.
+
+## [1.4.18] — Solid Bottom Navigation Bar with Original Icons & Flush Add Button
+
+- **Navigation UI Refinement (`(tabs)/_layout.tsx`)**:
+  - Restored the solid docked bottom navigation bar anchored to the bottom edge (`position: 'absolute', bottom: 0, left: 0, right: 0`, solid `#FFFFFF` background, `borderTopWidth: 1, borderTopColor: '#EEF3F2'`).
+  - Restored the original icon set (`records-active.png` / `records-inactive.png`, `share-active.png` / `share-inactive.png`, `scan-active.png` / `scan-inactive.png`, `profile-active.png` / `profile-inactive.png`, and user avatar).
+  - Kept icon color switching on active/inactive states (`source={isActive ? tab.activeIcon : tab.inactiveIcon}`).
+  - Removed all text labels for an icon-only presentation.
+  - Removed icon background highlights/pills.
+  - Styled the new add button as a flush circular teal button (`width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.teal`) with a crisp white plus (`Ionicons name="add"`), with zero shadows and no floating elevation.
+
+## [1.4.17] — Dynamic Metro IP Auto-Detection & Resilient Login Error Handling
+
+- **Development API Routing (`mobile/lib/api.ts`, `mobile/.env`)**:
+  - Identified that your computer's Wi-Fi IP address had changed from `192.168.1.38` to `192.168.1.25`, leaving mobile client requests hanging on an unreachable stale IP.
+  - Updated `mobile/.env` to point to `http://192.168.1.25:4000/api`.
+  - Added dynamic Metro bundler host IP detection (`Constants.expoConfig?.hostUri`) in `getApiBaseUrl()` during development (`__DEV__`), ensuring future Wi-Fi DHCP IP shifts automatically resolve to the host machine running Metro.
+- **Accurate Error Reporting (`mobile/app/login.tsx`)**:
+  - Replaced indiscriminate `catch` handler that was misreporting network/connection timeouts as "Wrong password" and unfairly penalizing users with account lockouts.
+  - Network timeouts and unreachable host errors now report clear connection alerts without incrementing failed attempt lockouts. Genuine authentication errors display the backend's explicit error response.
+
+## [1.4.16] — Remove Google Sign-In Native Module Dependencies for Development Compatibility
+
+- **Authentication Module Clean-up (`AuthContext.tsx`, `login.tsx`, `register.tsx`, `app.json`)**:
+  - Removed `@react-native-google-signin/google-signin` native TurboModule import and `configure` calls from `AuthContext.tsx` to eliminate runtime `Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNGoogleSignin' could not be found` warnings/errors when running in Expo Go or unlinked development binaries.
+  - Removed `loginWithGoogle` from `AuthContextType` and `AuthProvider`.
+  - Removed Google Sign-in button triggers and social authentication handlers from `login.tsx` and `register.tsx`.
+  - Removed `@react-native-google-signin/google-signin` config plugin from `app.json`.
+
+## [1.4.15] — Modern Floating Bottom Navigation Bar Redesign
+
+- **Floating Bottom Navigation Architecture (`FloatingBottomNav.tsx`, `(tabs)/_layout.tsx`)**:
+  - **Floating Pill Container**: Replaced heavy rectangular bar with a lightweight, Apple-inspired floating container (`borderRadius: 26` on phones, `borderRadius: 30` on tablets) with clean `#FFFFFF` surface, `#EEF4F2` border, and soft multi-layered shadow (`shadowColor: '#072722'`, `shadowOpacity: 0.08`, `shadowRadius: 16`).
+  - **Elevated Center "+" Primary Action**: Integrated a floating primary action circular button (`58x58pt` on phones, `64x64pt` on tablet) elevated above the navbar (`marginTop: -26pt`) in MedRec Teal (`#159A83`) with a 3.5pt solid white border and elevated teal drop shadow (`shadowColor: '#159A83'`, `elevation: 10`), navigating to `/record/add` with medium haptic feedback (`Haptics.impactAsync`).
+  - **Refined 5-Action Layout Hierarchy**:
+    - `Records`: Folder outline icon, navigates to `/(tabs)`.
+    - `Scan`: QR Code outline icon, navigates to `/(tabs)/scan`.
+    - `Add (+)`: Floating center primary action, navigates to `/record/add`.
+    - `Camera`: Camera outline icon, launches `/record/add` directly in document camera mode (`initialMode: 'camera'`).
+    - `Profile`: User outline icon (or dynamic avatar image), navigates to `/(tabs)/profile`.
+  - **Subtle Active & Pressed States**: Active tabs receive a refined translucent background tint (`rgba(21, 154, 131, 0.09)`), MedRec Teal icon tint, and SemiBold LexendDeca typography without bulky pill outlines. Inactive tabs display clean muted slate (`#94A3B8`). Added press scale (`0.96`) and selection haptics.
+  - **Direct Camera Mode Integration (`record/add.tsx`)**: Added `useLocalSearchParams` parsing for `initialMode: 'camera'` / `mode: 'camera'`, opening `DocumentCamera` instantly from the bottom navigation bar.
+  - **Responsive & Safe Area Support**: Full viewport adaptation across compact phones, standard/large phones, tablet portrait (`maxWidth: 500pt`), and tablet landscape (`TabletLandscapeNavRail`).
+- **Durable Knowledge Documentation**:
+  - Recorded technical decision `DD-36` in `.brain/DECISIONS.md`.
 
 ## [1.4.14] — Tablet Notification Popup Modal Dual-Layer Animation Decoupling
 

@@ -130,10 +130,9 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - **Share Session Cap**: Max 5 active sessions per patient. `pruneExcessActiveShares(userId, 4)` auto-revokes oldest before inserting new token.
 
 ## 🔔 Notification Card Icons
-- `record_added` → `document-text-outline`
-- `share_created`, `qr_generated` → `qr-code-outline`
-- `share_revoked`, `qr_terminated` → `qr-code-outline`
+- `record_added` → `folder-outline`
+- `share_created`, `share_expired`, `share_revoked`, `qr_generated`, `qr_terminated` (Doctor QR Access) → `share-inactive.png` (matching navigation bar Share/QR icon)
 - `security_alert` → `shield-checkmark-outline`
-- `emergency_updated` → `pulse-outline`
+- `emergency_updated` → `medical-outline`
 - `ai_summary_ready` → `sparkles-outline`
 - Default → `notifications-outline`

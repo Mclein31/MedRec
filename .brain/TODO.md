@@ -5,7 +5,7 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-09-05
+last_updated: 2026-09-06
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
@@ -39,7 +39,7 @@ last_updated: 2026-09-05
 - [x] Notification sidebar redesign matching BurgerNav design language; unread/read state distinction; enlarged centered icons.
 - [x] Instant record detail expand animation (0ms timing).
 - [x] Category carousel in RecordEditModal matching add.tsx design.
-- [x] Implement Google SSO (Single Sign-On) with native `@react-native-google-signin/google-signin`, backend ID token verification (`google-auth-library`), automatic account linking, and security alerts.
+- [ ] **Google SSO (Single Sign-On)**: Native library temporarily decoupled ahead of future reimplementation; backend verification pipeline and token linking remain intact.
 - [ ] Add Biometric Authentication (FaceID / Fingerprint) enforcement via `expo-local-authentication` on app launch / resumption.
 
 ## 🟢 Low Priority
