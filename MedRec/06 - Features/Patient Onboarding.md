@@ -80,6 +80,8 @@ New users downloading a personal health records application face high skepticism
 - **Gesture Synchronization**: The horizontal carousel binds both `onMomentumScrollEnd` and `onScrollEndDrag` to eliminate low-velocity flick desynchronization on Android devices.
 - **Orientation Resilience**: A `useEffect` hook realigns the carousel offset `scrollTo({ x: activeIndex * width, animated: false })` on device rotation or dimension change.
 - **Production Safety**: Developer QA reset triggers (`onLongPress`) are gated behind `__DEV__ ? ... : undefined` and tree-shaken in release builds.
+- **Full-Screen Responsive Architecture & Form-Factor Bounding**: On phones, hero preview cards expand with `flex: 1`, `minHeight: 280`, and `width: 100%` centered vertically on screen. On tablets and iPads, `maxContentWidth` is bounded to `Math.min(width - 48, 580)` to maintain authentic mobile card replica proportions and prevent widescreen line-length distortion.
+- **Editorial Typography & Card Grouping**: Category badges and headlines are centered, while narrative descriptions (`subtitleText`, `aiBodyText`, `pillarDescText`) use `textAlign: 'justify'` with `alignSelf: 'stretch'`. Multi-card list feeds (Slide 1 records stack, Slide 3 emergency data cluster) are enclosed in dedicated containers (`gap: 8`) to eliminate gap dispersion on tall viewports.
 
 ## Dependencies
 - [[Authentication]]: Downstream sign-up and sign-in routes triggered upon onboarding completion.

@@ -38,6 +38,13 @@ last_updated: 2026-09-07
   - Elevated type safety in `constants/onboarding.ts` with typed `IoniconName` and `PrivacyPillar` interfaces, eliminating `as any` type assertions in `onboarding.tsx`.
   - Added `onScrollEndDrag` alongside `onMomentumScrollEnd` on carousel `ScrollView` to prevent Android low-velocity flick index desync.
   - Added orientation and window dimension re-alignment hook in `onboarding.tsx`.
+- **Full-Screen Carousel Layout & Typography Refinement (`mobile/app/onboarding.tsx`)**:
+  - Centered guide content vertically (`justifyContent: 'center'`) and horizontally across carousel slides.
+  - Centered category badges (`badgeWrapper`) and titles (`headlineText`) while justifying narrative descriptions (`subtitleText`, `aiBodyText`, `pillarDescText`) with full-width stretching.
+  - Expanded hero preview cards to utilize full available vertical screen height (`flex: 1`, `minHeight: 280`, `justifyContent: 'space-between'`).
+  - Added dedicated card grouping in Slide 1 (`recordsGroup`, `recordsCardsStack`) and Slide 3 (`emergencyBodyGroup`) to eliminate artificial ~100pt vertical gaps between list items on tall devices.
+  - Bounded tablet layout width to `Math.min(width - 48, 580)` to prevent widescreen distortion and single-line subtitle collapse while allowing full-width expansion on phones (`width - 32pt`).
+  - Added explicit `width: '100%'` to nested `<ScrollView>` for reliable React Native Web container expansion.
 
 ## [1.4.25] — Comprehensive Review Fixes: iOS Hit-Testing, Android Modal Insets, Tablet Navbar & A11y
 

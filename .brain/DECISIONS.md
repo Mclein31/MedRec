@@ -43,6 +43,12 @@ last_updated: 2026-09-07
    - **Screen Reader Parity**: Annotated all interactive elements with descriptive `accessibilityHint` strings.
    - **Type Safety**: Introduced `IoniconName` and `PrivacyPillar` types in `constants/onboarding.ts`, eliminating `as any` casts.
    - **Gesture & Layout Synchronization**: Bound `onScrollEndDrag` alongside `onMomentumScrollEnd` on Android, and added responsive window dimension re-alignment on orientation changes.
+7. **Full-Screen Carousel Layout & Form-Factor Bounding Architecture**:
+   - **Full-Screen Phone Viewports**: Preview cards (`heroWrapper` and `previewCard`) scale with `flex: 1`, `minHeight: 280`, and `justifyContent: 'space-between'`, utilizing the full vertical screen space while centering content (`justifyContent: 'center'`) between fixed top/bottom bars.
+   - **Bounded Tablet Centering**: `maxContentWidth` is bounded to `Math.min(width - 48, 580)` on tablets, preventing single-column clinical mockups from expanding into 1300px horizontal ribbons on iPad landscape, preserving readable line lengths, and keeping authentic mobile replica proportions.
+   - **Editorial Typography Alignment**: Category badges (`badgeWrapper`) and titles (`headlineText`) are centered, while descriptive narrative copy (`subtitleText`, `aiBodyText`, `pillarDescText`) utilizes `textAlign: 'justify'` with `alignSelf: 'stretch'` for crisp, balanced borders against cards.
+   - **Cohesive Feed Grouping**: Grouped multi-card feeds in Slide 1 (`recordsGroup`, `recordsCardsStack`) and Slide 3 (`emergencyBodyGroup`) in dedicated containers (`gap: 8`), preventing `justifyContent: 'space-between'` from creating artificial ~100pt vertical gaps between record cards on tall displays.
+   - **Cross-Platform Container Safety**: Inner vertical `<ScrollView>` declares explicit `style={styles.slideScrollView}` (`width: '100%'`) to ensure robust horizontal flexbox resolution across React Native Web and mobile native runtimes.
 
 ### Reason
 - Accelerates patient conversion and establishes clinical trust prior to authentication while respecting existing user flows and maintaining a strict one-time onboarding guard.

@@ -53,8 +53,8 @@ export default function OnboardingScreen() {
     scrollRef.current?.scrollTo({ x: activeIndex * width, animated: false });
   }, [width, activeIndex]);
 
-  // Maximum content width for tablet centering
-  const maxContentWidth = isTablet ? 520 : width;
+  // Full-width responsive content layout bounded on tablets to preserve authentic proportions
+  const maxContentWidth = isTablet ? Math.min(width - 48, 580) : width;
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -129,76 +129,82 @@ export default function OnboardingScreen() {
    */
   const renderRecordsHero = () => (
     <View style={styles.previewCard}>
-      {/* Category Chips Filter Bar (Exact pattern from Records tab) */}
-      <View style={styles.chipsRow}>
-        <View style={[styles.chip, styles.chipActive]}>
-          <Text style={styles.chipTextActive}>Labs</Text>
+      {/* Grouped Records List Section */}
+      <View style={styles.recordsGroup}>
+        {/* Category Chips Filter Bar (Exact pattern from Records tab) */}
+        <View style={styles.chipsRow}>
+          <View style={[styles.chip, styles.chipActive]}>
+            <Text style={styles.chipTextActive}>Labs</Text>
+          </View>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>Consultations</Text>
+          </View>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>Prescriptions</Text>
+          </View>
         </View>
-        <View style={styles.chip}>
-          <Text style={styles.chipText}>Consultations</Text>
-        </View>
-        <View style={styles.chip}>
-          <Text style={styles.chipText}>Prescriptions</Text>
-        </View>
-      </View>
 
-      {/* Record Card 1: Lab Result */}
-      <View style={styles.recordCard}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={styles.typeBadgeText}>LAB RESULT</Text>
-          <View style={styles.statusBadgeTeal}>
-            <Text style={styles.statusBadgeTextTeal}>NORMAL</Text>
-          </View>
-        </View>
-        <View style={styles.recordRow}>
-          <View style={[styles.recordIconBox, { backgroundColor: TEAL_LIGHT }]}>
-            <Image
-              source={require('../assets/icons/lab.png')}
-              style={styles.recordIconAsset}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.recordContent}>
-            <Text style={styles.recordTitle} numberOfLines={1}>
-              Complete Blood Count (CBC)
-            </Text>
-            <View style={styles.recordDateRow}>
-              <Image
-                source={require('../assets/icons/calendar.png')}
-                style={styles.calendarIcon}
-              />
-              <Text style={styles.recordDateText}>Oct 14, 2025 • St. Jude Diagnostic</Text>
+        {/* Record Cards Stack */}
+        <View style={styles.recordsCardsStack}>
+          {/* Record Card 1: Lab Result */}
+          <View style={styles.recordCard}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.typeBadgeText}>LAB RESULT</Text>
+              <View style={styles.statusBadgeTeal}>
+                <Text style={styles.statusBadgeTextTeal}>NORMAL</Text>
+              </View>
+            </View>
+            <View style={styles.recordRow}>
+              <View style={[styles.recordIconBox, { backgroundColor: TEAL_LIGHT }]}>
+                <Image
+                  source={require('../assets/icons/lab.png')}
+                  style={styles.recordIconAsset}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.recordContent}>
+                <Text style={styles.recordTitle} numberOfLines={1}>
+                  Complete Blood Count (CBC)
+                </Text>
+                <View style={styles.recordDateRow}>
+                  <Image
+                    source={require('../assets/icons/calendar.png')}
+                    style={styles.calendarIcon}
+                  />
+                  <Text style={styles.recordDateText}>Oct 14, 2025 • St. Jude Diagnostic</Text>
+                </View>
+              </View>
             </View>
           </View>
-        </View>
-      </View>
 
-      {/* Record Card 2: Consultation */}
-      <View style={styles.recordCard}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={[styles.typeBadgeText, { color: BLUE }]}>CONSULTATION</Text>
-          <View style={styles.statusBadgeBlue}>
-            <Text style={styles.statusBadgeTextBlue}>REVIEWED</Text>
-          </View>
-        </View>
-        <View style={styles.recordRow}>
-          <View style={[styles.recordIconBox, { backgroundColor: BLUE_LIGHT }]}>
-            <Image
-              source={require('../assets/icons/consultation.png')}
-              style={styles.recordIconAsset}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.recordContent}>
-            <Text style={styles.recordTitle} numberOfLines={1}>
-              Cardiology Review
-            </Text>
-            <View style={styles.recordDateRow}>
-              <Image
-                source={require('../assets/icons/calendar.png')}
-                style={styles.calendarIcon}
-              />
-              <Text style={styles.recordDateText}>Sep 28, 2025 • Dr. Sarah Mitchell</Text>
+          {/* Record Card 2: Consultation */}
+          <View style={styles.recordCard}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={[styles.typeBadgeText, { color: BLUE }]}>CONSULTATION</Text>
+              <View style={styles.statusBadgeBlue}>
+                <Text style={styles.statusBadgeTextBlue}>REVIEWED</Text>
+              </View>
+            </View>
+            <View style={styles.recordRow}>
+              <View style={[styles.recordIconBox, { backgroundColor: BLUE_LIGHT }]}>
+                <Image
+                  source={require('../assets/icons/consultation.png')}
+                  style={styles.recordIconAsset}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.recordContent}>
+                <Text style={styles.recordTitle} numberOfLines={1}>
+                  Cardiology Review
+                </Text>
+                <View style={styles.recordDateRow}>
+                  <Image
+                    source={require('../assets/icons/calendar.png')}
+                    style={styles.calendarIcon}
+                  />
+                  <Text style={styles.recordDateText}>Sep 28, 2025 • Dr. Sarah Mitchell</Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -244,7 +250,7 @@ export default function OnboardingScreen() {
         <View style={styles.qrInnerBox}>
           <QRCode
             value="https://medrec.health/share/session-sample"
-            size={isCompactPhone ? 96 : 110}
+            size={isCompactPhone ? 96 : isTablet ? 150 : 124}
             color={INK}
             backgroundColor={CARD_BG}
           />
@@ -292,36 +298,39 @@ export default function OnboardingScreen() {
         </View>
       </View>
 
-      {/* Critical Allergies Alert */}
-      <View style={styles.allergyAlertBox}>
-        <View style={styles.allergyLabelRow}>
-          <Ionicons name="warning" size={12} color={RED} />
-          <Text style={styles.allergyLabelText}>CRITICAL ALLERGIES</Text>
+      {/* Cohesive Medical Data Cluster */}
+      <View style={styles.emergencyBodyGroup}>
+        {/* Critical Allergies Alert */}
+        <View style={styles.allergyAlertBox}>
+          <View style={styles.allergyLabelRow}>
+            <Ionicons name="warning" size={12} color={RED} />
+            <Text style={styles.allergyLabelText}>CRITICAL ALLERGIES</Text>
+          </View>
+          <Text style={styles.allergyValueText}>Penicillin (Anaphylactic) • Peanuts</Text>
         </View>
-        <Text style={styles.allergyValueText}>Penicillin (Anaphylactic) • Peanuts</Text>
-      </View>
 
-      {/* Clinical Conditions & Maintenance Meds */}
-      <View style={styles.emergencyGridRow}>
-        <View style={styles.emergencyGridCol}>
-          <Text style={styles.gridLabel}>CONDITIONS</Text>
-          <Text style={styles.gridValue}>Asthma (Mild)</Text>
+        {/* Clinical Conditions & Maintenance Meds */}
+        <View style={styles.emergencyGridRow}>
+          <View style={styles.emergencyGridCol}>
+            <Text style={styles.gridLabel}>CONDITIONS</Text>
+            <Text style={styles.gridValue}>Asthma (Mild)</Text>
+          </View>
+          <View style={styles.emergencyGridDivider} />
+          <View style={styles.emergencyGridCol}>
+            <Text style={styles.gridLabel}>MAINTENANCE MEDS</Text>
+            <Text style={styles.gridValue}>Albuterol Inhaler</Text>
+          </View>
         </View>
-        <View style={styles.emergencyGridDivider} />
-        <View style={styles.emergencyGridCol}>
-          <Text style={styles.gridLabel}>MAINTENANCE MEDS</Text>
-          <Text style={styles.gridValue}>Albuterol Inhaler</Text>
-        </View>
-      </View>
 
-      {/* Emergency ICE Contact Quick Dial */}
-      <View style={styles.emergencyContactRow}>
-        <View style={styles.iceAvatarCircle}>
-          <Ionicons name="call" size={12} color="#FFFFFF" />
-        </View>
-        <View style={styles.iceContent}>
-          <Text style={styles.iceLabel}>Emergency Contact (ICE)</Text>
-          <Text style={styles.iceName}>Sarah (Spouse) • (555) 019-2834</Text>
+        {/* Emergency ICE Contact Quick Dial */}
+        <View style={styles.emergencyContactRow}>
+          <View style={styles.iceAvatarCircle}>
+            <Ionicons name="call" size={12} color="#FFFFFF" />
+          </View>
+          <View style={styles.iceContent}>
+            <Text style={styles.iceLabel}>Emergency Contact (ICE)</Text>
+            <Text style={styles.iceName}>Sarah (Spouse) • (555) 019-2834</Text>
+          </View>
         </View>
       </View>
 
@@ -401,7 +410,7 @@ export default function OnboardingScreen() {
           styles.topHeader,
           {
             paddingTop: insets.top > 0 ? insets.top + 8 : 16,
-            paddingHorizontal: isTablet ? Math.max((width - maxContentWidth) / 2 + 20, 24) : 20,
+            paddingHorizontal: isTablet ? Math.max((width - maxContentWidth) / 2 + 20, 24) : 16,
           },
         ]}
       >
@@ -479,11 +488,12 @@ export default function OnboardingScreen() {
             <View key={slide.id} style={[styles.slidePage, { width }]}>
               <ScrollView
                 showsVerticalScrollIndicator={false}
+                style={styles.slideScrollView}
                 contentContainerStyle={[
                   styles.slideScrollContent,
                   {
                     maxWidth: maxContentWidth,
-                    paddingHorizontal: isTablet ? 0 : 20,
+                    paddingHorizontal: isTablet ? 0 : 16,
                   },
                 ]}
               >
@@ -542,7 +552,7 @@ export default function OnboardingScreen() {
           styles.bottomControlsRoot,
           {
             paddingBottom: Math.max(insets.bottom, 16),
-            paddingHorizontal: isTablet ? Math.max((width - maxContentWidth) / 2 + 20, 24) : 20,
+            paddingHorizontal: isTablet ? Math.max((width - maxContentWidth) / 2 + 20, 24) : 16,
           },
         ]}
       >
@@ -740,18 +750,23 @@ const styles = StyleSheet.create({
   slidePage: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slideScrollView: {
+    width: '100%',
   },
   slideScrollContent: {
     flexGrow: 1,
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 10,
-    paddingBottom: 24,
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 16,
   },
 
   /* Badge & Narrative */
   badgeWrapper: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 8,
   },
   badgePill: {
@@ -768,14 +783,20 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-Bold',
     color: INK,
     marginBottom: 6,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   subtitleText: {
     fontFamily: 'LexendDeca-Regular',
     color: MUTED,
     marginBottom: 16,
+    textAlign: 'justify',
+    alignSelf: 'stretch',
   },
   heroWrapper: {
     width: '100%',
+    flex: 1,
+    justifyContent: 'center',
   },
 
   /* Universal Preview Card Base */
@@ -790,10 +811,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
-    gap: 10,
+    flex: 1,
+    justifyContent: 'space-between',
+    minHeight: 280,
   },
 
   /* ─── Hero 1: Records & AI ─── */
+  recordsGroup: {
+    gap: 10,
+  },
+  recordsCardsStack: {
+    gap: 8,
+  },
   chipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -948,6 +977,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: INK,
     lineHeight: 15.5,
+    textAlign: 'justify',
   },
 
   /* ─── Hero 2: Doctor QR Sharing ─── */
@@ -983,8 +1013,10 @@ const styles = StyleSheet.create({
   },
   qrWrapper: {
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
     gap: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   qrInnerBox: {
     padding: 12,
@@ -1042,6 +1074,9 @@ const styles = StyleSheet.create({
   },
 
   /* ─── Hero 3: Emergency ID ─── */
+  emergencyBodyGroup: {
+    gap: 8,
+  },
   emergencyHeaderBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1213,6 +1248,8 @@ const styles = StyleSheet.create({
     color: MUTED,
   },
   privacyPillarsContainer: {
+    flex: 1,
+    justifyContent: 'space-evenly',
     gap: 8,
   },
   privacyPillarRow: {
@@ -1241,6 +1278,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: MUTED,
     lineHeight: 14,
+    textAlign: 'justify',
   },
   pillarDivider: {
     height: 1,
