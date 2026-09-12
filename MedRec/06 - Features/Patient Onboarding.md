@@ -3,7 +3,7 @@ project: MedRec
 type: feature
 status: active
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-12
 tags:
   - medrec
   - feature
@@ -63,9 +63,10 @@ New users downloading a personal health records application face high skepticism
 - **Persistent Storage**: Backed by `medrec_onboarding_completed_v1` stored in Expo `SecureStore` (iOS/Android) and `localStorage` (Web).
 - **Bootstrap Hydration**: `AuthContext.tsx` reads `[getToken(), getHasCompletedOnboarding()]` in parallel during app initialization.
 - **Root Routing Guard (`_layout.tsx`)**:
-  - `!token && !hasCompletedOnboarding`: Routes to `/onboarding` at stack index 0.
-  - `hasCompletedOnboarding`: Automatically unmounts onboarding and promotes `/login` to root position.
-  - `SplashScreen.preventAutoHideAsync()` is held until custom fonts (`Lexend Deca`) and persistent storage resolve concurrently, preventing visual flashes.
+  - `!token && !hasCompletedOnboarding`: Positions `<Stack.Screen name="onboarding" />` at root stack index 0, followed by `<Stack.Protected guard={!token}>` (`login`, `register`).
+  - `hasCompletedOnboarding`: Moves `login` to root position and places `onboarding` at the trailing position for in-app replay.
+  - `SplashScreen.preventAutoHideAsync()` is held until custom fonts (`Lexend Deca`) and persistent storage resolve concurrently, preventing visual flashes (`preload -> onboarding -> login/register`).
+  - Completely decoupled from `login.tsx` (no manual onboarding buttons or triggers on authentication screens).
 - **Completion Trigger**: Calling `completeOnboarding()` occurs strictly on explicit user action ("Skip", "Get Started", or "Sign In").
 
 ## In-App Replay Mode

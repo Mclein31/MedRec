@@ -55,6 +55,19 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
       initialRouteName={initialRoute}
       screenOptions={{ headerShown: false }}
     >
+      {/* 1. For brand-new patients: Onboarding is at root index 0 */}
+      {!hasCompletedOnboarding ? (
+        <Stack.Screen
+          name="onboarding"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+            animation: 'fade',
+          }}
+        />
+      ) : null}
+
+      {/* 2. Authenticated Routes */}
       <Stack.Protected guard={!!token}>
         <Stack.Screen
           name="(tabs)"
@@ -79,19 +92,23 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
         />
       </Stack.Protected>
 
+      {/* 3. Unauthenticated Routes (Login & Register) */}
       <Stack.Protected guard={!token}>
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
       </Stack.Protected>
 
-      <Stack.Screen
-        name="onboarding"
-        options={{
-          headerShown: false,
-          gestureEnabled: false,
-          animation: 'fade',
-        }}
-      />
+      {/* 4. For returning or authenticated patients: Onboarding at trailing position for replay */}
+      {hasCompletedOnboarding ? (
+        <Stack.Screen
+          name="onboarding"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+            animation: 'fade',
+          }}
+        />
+      ) : null}
     </Stack>
   );
 }

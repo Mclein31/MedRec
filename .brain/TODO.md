@@ -5,7 +5,7 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-09-07
+last_updated: 2026-09-12
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
@@ -27,6 +27,7 @@ last_updated: 2026-09-07
 - [x] Implement active share session cap (max 5 sessions, auto-prune oldest).
 - [x] Complete security audit remediation: bcrypt password verify, presigned URL DB guard, R2 orphan cleanup, logout invalidation, silent upload fallback removal.
 - [x] Implement Pre-SignIn Patient Onboarding Flow (4-step carousel, first-launch persistent storage guard, flicker-free bootstrap, profile replay guide).
+- [x] Automatic First-Launch Onboarding Entry & Login Screen Decoupling (root stack priority, preload-to-onboarding pipeline, removed manual login buttons).
 - [ ] **NEXT PHASE**: Production PostgreSQL & Cloudflare R2 Credentials Deployment & Real Device QA.
 
 ## 🟡 Medium Priority

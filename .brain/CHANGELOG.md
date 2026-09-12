@@ -5,10 +5,23 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-07
+last_updated: 2026-09-12
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [1.4.27] — Automatic First-Launch Onboarding Entry & Login Screen Decoupling
+
+- **Removed Manual Onboarding from Login Screen (`mobile/app/login.tsx`)**:
+  - Completely excised the onboarding entry point button ("✨ New to MedRec? Explore app features →") and developer reset triggers across all screen configurations (Phone, Tablet Portrait, and Tablet Landscape).
+  - Cleaned up unused `resetOnboarding` import from `useAuth()` and dead `tourLink` / `tourLinkText` StyleSheet rules in `login.tsx`.
+- **Automatic First-Launch Stack Priority & Seamless Preload (`mobile/app/_layout.tsx`)**:
+  - Dynamically configured `<Stack>` children ordering in `_layout.tsx`: positioned `<Stack.Screen name="onboarding" />` at root stack index 0 whenever `!hasCompletedOnboarding` is detected, with `login` and `register` available as downstream routes in `<Stack.Protected guard={!token}>`.
+  - Guaranteed `preload -> onboarding -> login/register` pipeline without screen flicker: fonts (`useFonts`) and persistent auth/onboarding state (`AuthProvider.bootstrap()`) hydrate while native `SplashScreen` remains active, revealing `onboarding` directly as the initial view upon splash dismissal.
+  - For returning users (`hasCompletedOnboarding`), `login` is promoted to root index 0 while `onboarding` remains at trailing position for in-app replay from Profile.
+- **Verification**:
+  - Verified clean TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
+  - Verified code quality through `npm run lint` with zero errors across layout and authentication views.
 
 ## [1.4.26] — Pre-SignIn Patient Onboarding Flow & First-Launch Guard
 

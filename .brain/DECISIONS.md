@@ -7,10 +7,28 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-09-07
+last_updated: 2026-09-12
 ---
 
-# ⚖️ MedRecord_App (MedRec) — Technical Decisions
+# 📜 MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-09-12 — Automatic First-Launch Stack Priority & Login Screen Onboarding Decoupling (DD-39)
+
+### Decision
+1. **Login Screen Onboarding Decoupling (`mobile/app/login.tsx`)**:
+   - Removed the manual onboarding entry point button ("✨ New to MedRec? Explore app features →") and dev-mode QA reset triggers from `login.tsx` across Phone, Tablet Portrait, and Tablet Landscape modes.
+   - Cleaned up unneeded imports (`resetOnboarding`) and stylesheet definitions (`tourLink`, `tourLinkText`), strictly adhering to single-responsibility principles for the authentication screen.
+2. **Deterministic Root Navigation Priority (`mobile/app/_layout.tsx`)**:
+   - Reordered `<Stack>` screen definitions: `<Stack.Screen name="onboarding" />` is rendered at root stack index 0 whenever `!hasCompletedOnboarding` is true, followed by `<Stack.Protected guard={!token}>` declaring `login` and `register`.
+   - When `hasCompletedOnboarding` is true, the order shifts dynamically so `login` and `register` sit at the root stack positions, with `onboarding` placed at a trailing index for Profile replay.
+   - This ensures React Navigation / Expo Router selects `onboarding` as the default fallback route without intermediate redirects or screen flashes upon cold start.
+3. **Preserved Preload-to-Onboarding Barrier (`mobile/app/_layout.tsx`)**:
+   - Maintained native `SplashScreen.preventAutoHideAsync()` barrier during parallel font loading (`useFonts`) and async token bootstrap (`AuthProvider`).
+   - The UI only renders and dismisses the splash screen once fonts and onboarding state are resolved, fulfilling the `preload -> onboarding -> login/register` pipeline cleanly.
+
+### Rationale
+- First-time patients downloading the app expect an immediate introductory tour rather than hunting for an onboarding link on a login form.
+- Direct root stack priority avoids race conditions between `router.replace` calls and native splash screen dismissals.
 
 ## 2026-09-07 — Pre-SignIn Patient Onboarding Flow & First-Launch Guard (DD-38)
 

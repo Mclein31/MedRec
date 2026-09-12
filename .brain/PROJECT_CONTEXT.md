@@ -13,7 +13,7 @@ tags:
   - postgresql
   - cloudflare-r2
   - ai
-last_updated: 2026-09-07
+last_updated: 2026-09-12
 ---
 
 # 🏥 MedRecord_App (MedRec) — Project Context
@@ -25,7 +25,7 @@ last_updated: 2026-09-07
 
 ## 🎯 Current Status
 - **Status**: `Production-Ready (Awaiting Cloud Deployment)`
-- **Completed**: Full backend implementation, multi-platform responsive UI (Phone, Tablet Portrait, iPad Landscape), Cloudflare R2 cloud storage, comprehensive record management (CRUD + edit metadata + lightbox), sharing system (QR, scoped access, AI summary, ZIP download, session termination), notification sidebar, native Google Sign-In with backend ID token verification, security audit remediation, and Pre-SignIn Patient Onboarding Flow (4-step carousel, first-launch persistent storage guard, profile replay guide, full accessibility & HIG touch-target hardening).
+- **Completed**: Full backend implementation, multi-platform responsive UI (Phone, Tablet Portrait, iPad Landscape), Cloudflare R2 cloud storage, comprehensive record management (CRUD + edit metadata + lightbox), sharing system (QR, scoped access, AI summary, ZIP download, session termination), notification sidebar, native Google Sign-In with backend ID token verification, security audit remediation, Pre-SignIn Patient Onboarding Flow (4-step carousel, first-launch persistent storage guard, profile replay guide, full accessibility & HIG touch-target hardening), and Automatic First-Launch Entry with Login Decoupling (root stack index 0, preload-to-onboarding pipeline).
 - **Security**: All P0/P1/P2 security and data integrity findings from formal code review resolved and verified (bcrypt password verification, presigned URL guard, R2 orphan cleanup, logout JWT invalidation, pre-account takeover protection on Google SSO, silent upload fallback removal, `__DEV__`-gated QA reset triggers).
 - **Testing**: 71/71 backend tests passing (8 suites). TypeScript: 0 errors.
 - **Next Phase**: Production PostgreSQL & Cloudflare R2 Credentials Deployment & Real Device QA.
