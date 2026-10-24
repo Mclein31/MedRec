@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const profileModel = require('../models/profileModel');
 const userModel = require('../models/userModel');
 const notificationModel = require('../models/notificationModel');
+const { isValidCivilDate, isLocalAttachmentUri } = require('../utils/validation');
 const {
   R2_BUCKET_NAME,
   generatePresignedDownloadUrl,
@@ -127,9 +128,8 @@ async function updateProfile(req, res, next) {
       if (rawDob === '' || rawDob === null) {
         sanitizedData.date_of_birth = null;
       } else {
-        const d = new Date(rawDob);
-        if (isNaN(d.getTime())) {
-          return res.status(400).json({ error: 'Invalid date of birth format' });
+        if (!isValidCivilDate(rawDob)) {
+          return res.status(400).json({ error: 'Date of birth must be a valid calendar date in YYYY-MM-DD format' });
         }
         sanitizedData.date_of_birth = rawDob;
       }
@@ -193,6 +193,9 @@ async function updateProfile(req, res, next) {
     if (address !== undefined) sanitizedData.address = (address === '' || address === null) ? null : String(address).trim();
 
     const rawAvatar = avatar_url !== undefined ? avatar_url : avatarUrl;
+    if (isLocalAttachmentUri(rawAvatar)) {
+      return res.status(400).json({ error: 'Upload the profile photo to secure storage before saving' });
+    }
     if (rawAvatar !== undefined) sanitizedData.avatar_url = (rawAvatar === '' || rawAvatar === null) ? null : String(rawAvatar).trim();
 
     const rawOrganDonor = organ_donor !== undefined ? organ_donor : organDonor;

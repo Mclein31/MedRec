@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,9 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  Modal,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { PrivateModal as Modal } from '../../components/security/PrivateModal';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
@@ -24,16 +24,17 @@ import { SideMenuModal } from '../../components/menu/SideMenuModal';
 import { NotificationCenterModal } from '../../components/notifications/NotificationCenterModal';
 import { RecordSearchBar } from '../../components/records/RecordSearchBar';
 import { RecordEditModal } from '../../components/records/RecordEditModal';
+import { Button } from '../../components/ui/Button';
+import { InsightSheet } from '../../components/ui/InsightSheet';
 import { Colors, Radii, Typography, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { MedicalRecord } from '../../types/record';
 import { RECORD_TYPE_ASSETS, RECORD_TYPE_LABELS, CATEGORY_FILTERS } from '../../constants/records';
-import { formatDateLong, formatDateShort, formatTimeAgo } from '../../utils/dateUtils';
+import { formatDateLong, formatDateShort } from '../../utils/dateUtils';
 
 export type { MedicalRecord };
 
 const TYPE_ASSETS = RECORD_TYPE_ASSETS;
-const timeAgo = formatTimeAgo;
 const formatDate = (dateStr?: string | null) => formatDateLong(dateStr, 'Not specified', 'UTC');
 
 const recordKeyExtractor = (item: MedicalRecord) => item.id;
@@ -43,6 +44,8 @@ export default function RecordsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [insight, setInsight] = useState<{ title: string; text: string } | null>(null);
 
   // Search & Category Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +69,13 @@ export default function RecordsScreen() {
   const [inspectPhotoUri, setInspectPhotoUri] = useState<string | null>(null);
 
   const router = useRouter();
+  const params = useLocalSearchParams<{ selectRecords?: string }>();
+  useEffect(() => {
+    if (params.selectRecords === 'true' && !loading && records.length) {
+      setSelectionMode(true);
+      router.setParams({ selectRecords: undefined });
+    }
+  }, [params.selectRecords, loading, records.length, router]);
   const { user } = useAuth();
   const { unreadCount, refreshNotifications } = useNotifications();
   const {
@@ -79,7 +89,8 @@ export default function RecordsScreen() {
 
   const loadRecords = async () => {
     try {
-      const data = await api.getRecords();
+      const data = await api.getAllRecords();
+      setLoadError(null);
       const fetchedRecords = data.records || [];
       setRecords(fetchedRecords);
       if (fetchedRecords.length === 0) {
@@ -95,7 +106,7 @@ export default function RecordsScreen() {
         });
       }
     } catch (err: any) {
-      Alert.alert('Error loading records', err.message);
+      setLoadError(err.message || 'Unable to load your records.');
     }
   };
 
@@ -120,10 +131,11 @@ export default function RecordsScreen() {
   };
 
   const handleSummarize = async () => {
+    if (summarizing) return;
     setSummarizing(true);
     try {
       const data = await api.summarize();
-      Alert.alert('AI Health Summary', data.summary);
+      setInsight({ title: 'Your health overview', text: data.summary });
     } catch (err: any) {
       Alert.alert('AI summary failed', err.message);
     } finally {
@@ -250,12 +262,12 @@ export default function RecordsScreen() {
     }
     setSharing(true);
     try {
-      const data = await api.createShare(60, Array.from(selectedIds));
+      const data = await api.createShare(15, Array.from(selectedIds));
       setSelectionMode(false);
       setSelectedIds(new Set());
       router.push({
         pathname: '/(tabs)/share',
-        params: { pendingToken: data.token, pendingExpiry: data.expiresAt },
+        params: { pendingToken: data.token, pendingExpiry: data.expiresAt, pendingRecordCount: String(selectedIds.size) },
       });
     } catch (err: any) {
       Alert.alert('Failed to create share', err.message);
@@ -275,11 +287,7 @@ export default function RecordsScreen() {
       const data = await api.summarize({ recordIds: selectedArray });
       const recordCount = selectedArray.length;
       const countLabel = `${recordCount} Selected Record${recordCount === 1 ? '' : 's'}`;
-      Alert.alert(
-        `AI Health Summary (${countLabel})`,
-        `${data.summary}\n\nNotice: This is an informational summary of your selected medical records only. It does not provide medical advice or a clinical diagnosis.`,
-        [{ text: 'OK', style: 'default' }]
-      );
+      setInsight({ title: `Overview · ${countLabel}`, text: data.summary });
     } catch (err: any) {
       Alert.alert('AI summary failed', err.message || 'Unable to generate summary for selected records.');
     } finally {
@@ -527,7 +535,8 @@ export default function RecordsScreen() {
               ListEmptyComponent={
                 <View style={styles.masterEmpty}>
                   <Ionicons name="folder-open-outline" size={32} color={Colors.muted} />
-                  <Text style={styles.masterEmptyText}>No matching records found</Text>
+                  <Text style={styles.masterEmptyText}>{loadError ? 'Unable to load your records' : records.length ? 'No matching records' : 'Add your first health record'}</Text>
+                  <Button label={loadError ? 'Try again' : records.length ? 'Clear filters' : 'Add record'} onPress={loadError ? onRefresh : records.length ? () => { setSearchQuery(''); setSelectedCategory('all'); } : () => router.push('/record/add')} variant="outline" />
                 </View>
               }
               renderItem={({ item }) => {
@@ -892,6 +901,8 @@ export default function RecordsScreen() {
           onOpenAiSummary={handleSummarize}
         />
 
+        <InsightSheet insight={insight} onClose={() => setInsight(null)} />
+
         {/* Record Metadata Edit Modal */}
         <RecordEditModal
           visible={!!editingRecord}
@@ -1043,7 +1054,7 @@ export default function RecordsScreen() {
                   ellipsizeMode="tail"
                   maxFontSizeMultiplier={1.35}
                 >
-                  Hello, {firstName} 👋🏼
+                  Hello, {firstName}
                 </Text>
                 <Text
                   style={[
@@ -1052,19 +1063,31 @@ export default function RecordsScreen() {
                   ]}
                   maxFontSizeMultiplier={1.35}
                 >
-                  Here&apos;s your health overview
+                  Your health history, in one place.
                 </Text>
               </View>
             )}
 
+            {!selectionMode && <View style={{ marginHorizontal: screenPadding, marginBottom: 20, gap: 14 }}>
+              {loadError && <View style={styles.inlineError}><Text style={styles.inlineErrorText} accessibilityLiveRegion="polite">{loadError}</Text><Button label="Try again" variant="outline" onPress={onRefresh} loading={refreshing} /></View>}
+              <View style={styles.actionHero}>
+                <View style={styles.heroCopy}>
+                  <Text style={styles.heroEyebrow}>{records.length ? 'READY WHEN YOU NEED IT' : 'START WITH ONE RECORD'}</Text>
+                  <Text style={styles.heroTitle}>{records.length ? 'Keep your story up to date.' : 'A home for your health history.'}</Text>
+                  <Text style={styles.heroBody}>{records.length ? `${records.length} record${records.length === 1 ? '' : 's'} organized. Add a recent visit, result, or prescription.` : 'Scan a document or write a note. Your first record is a good place to start.'}</Text>
+                </View>
+                <View style={styles.heroActions}><Button label="Add record" onPress={() => router.push('/record/add')} leftIcon={<Ionicons name="add" size={20} color={Colors.white} />} /><Button label="Medical ID" variant="outline" onPress={() => router.push('/(tabs)/profile')} leftIcon={<Ionicons name="heart-outline" size={18} color={Colors.ink} />} /></View>
+              </View>
+            </View>}
+
             {/* Position 1: AI Health Summary Banner */}
             <Pressable
               onPress={selectionMode ? handleSummarizeSelected : handleSummarize}
-              disabled={selectionMode ? (summarizingSelected || selectedIds.size === 0) : summarizing}
+              disabled={selectionMode ? (summarizingSelected || selectedIds.size === 0) : (summarizing || records.length === 0)}
               style={({ pressed }) => [
                 styles.aiBanner,
                 { marginHorizontal: screenPadding },
-                selectionMode && selectedIds.size === 0 && styles.aiBannerDisabled,
+                (selectionMode ? selectedIds.size === 0 : records.length === 0) && styles.aiBannerDisabled,
                 pressed && styles.aiBannerPressed,
               ]}
               accessibilityRole="button"
@@ -1083,7 +1106,7 @@ export default function RecordsScreen() {
                 >
                   {(selectionMode ? summarizingSelected : summarizing)
                     ? 'Generating summary...'
-                    : 'Generate AI Health Summary'}
+                    : 'Understand your records'}
                 </Text>
                 <Text
                   style={[
@@ -1094,13 +1117,13 @@ export default function RecordsScreen() {
                 >
                   {selectionMode
                     ? 'Get clinical insights for selected records'
-                    : 'Get clinical insights and a summary of your records'}
+                    : records.length ? 'A plain-language overview, when you need it' : 'Add a record to unlock your overview'}
                 </Text>
               </View>
               {(selectionMode ? summarizingSelected : summarizing) ? (
-                <ActivityIndicator size="small" color={Colors.white} />
+                <ActivityIndicator size="small" color={Colors.blue} />
               ) : (
-                <Ionicons name="chevron-forward" size={18} color="rgba(255, 255, 255, 0.75)" />
+                <Ionicons name="chevron-forward" size={18} color={Colors.blue} />
               )}
             </Pressable>
 
@@ -1201,6 +1224,7 @@ export default function RecordsScreen() {
                     style={[styles.chip, isActive && styles.chipActive]}
                     accessibilityRole="button"
                     accessibilityLabel={`${cat.label}, ${count} records`}
+                    accessibilityState={{ selected: isActive }}
                   >
                     <Text
                       style={[
@@ -1290,76 +1314,15 @@ export default function RecordsScreen() {
                 </View>
               )}
 
-              {/* Top Row: Record Type Badge */}
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.typeBadge}>
-                  <Text style={styles.typeBadgeText} maxFontSizeMultiplier={1.35}>
-                    {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                  </Text>
+              <View style={styles.compactRecordRow}>
+                <View style={styles.recordIconBox}><Image source={typeAsset} style={styles.recordAsset} /></View>
+                <View style={styles.recordContent}>
+                  <Text style={styles.compactCategory}>{RECORD_TYPE_LABELS[typeKey] || 'Record'}</Text>
+                  <Text style={styles.recordTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.compactDate}>{formatDateShort(item.date, 'No date', true, 'UTC')}</Text>
+                  {!!item.description && <Text style={styles.compactNotes} numberOfLines={2}>{item.description}</Text>}
                 </View>
-              </View>
-
-              <View style={styles.recordBody}>
-                {/* Icon + Content Row */}
-                <View style={styles.recordRow}>
-                  <View style={styles.recordIconBox}>
-                    <Image source={typeAsset} style={styles.recordAsset} />
-                  </View>
-
-                  <View style={styles.recordContent}>
-                    <Text
-                      style={[
-                        styles.recordTitle,
-                        { fontSize: scaleFont(15, 13.5, 16.5) },
-                      ]}
-                      numberOfLines={2}
-                      maxFontSizeMultiplier={1.35}
-                    >
-                      {item.title}
-                    </Text>
-                    <View style={styles.recordDateRow}>
-                      <Image
-                        source={require('../../assets/icons/calendar.png')}
-                        style={styles.dateAsset}
-                      />
-                      <Text
-                        style={[
-                          styles.recordDateText,
-                          { fontSize: scaleFont(11.5, 10.5, 12.5) },
-                        ]}
-                        maxFontSizeMultiplier={1.35}
-                      >
-                        {formatDate(item.date)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {!selectionMode && (
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color={Colors.muted}
-                      style={styles.chevronArrow}
-                    />
-                  )}
-                </View>
-
-                {/* Added ago Footer */}
-                <View style={styles.recordFooter}>
-                  <Image
-                    source={require('../../assets/icons/open-folder.png')}
-                    style={styles.footerAsset}
-                  />
-                  <Text
-                    style={[
-                      styles.recordFooterText,
-                      { fontSize: scaleFont(11, 10.5, 12) },
-                    ]}
-                    maxFontSizeMultiplier={1.35}
-                  >
-                    Added {item.created_at ? timeAgo(item.created_at) : timeAgo(item.date)}
-                  </Text>
-                </View>
+                {!selectionMode && <Ionicons name="chevron-forward" size={18} color={Colors.muted} />}
               </View>
             </Pressable>
           );
@@ -1369,16 +1332,17 @@ export default function RecordsScreen() {
             <Ionicons
               name={searchQuery || selectedCategory !== 'all' ? 'search-outline' : 'document-text-outline'}
               size={48}
-              color={Colors.tealLight}
+              color={Colors.teal}
             />
             <Text style={styles.emptyTitle}>
-              {searchQuery || selectedCategory !== 'all' ? 'No matching records' : 'No records yet'}
+              {loadError ? 'Your records couldn’t load' : searchQuery || selectedCategory !== 'all' ? 'No matching records' : 'Your story starts here'}
             </Text>
             <Text style={styles.emptySub}>
               {searchQuery || selectedCategory !== 'all'
                 ? 'Try adjusting your search keywords or filter category.'
-                : 'Tap the + button on the navigation bar to add your first health record.'}
+                : 'A lab result, prescription, or visit note — add what matters to you.'}
             </Text>
+            <Button label={loadError ? 'Try again' : searchQuery || selectedCategory !== 'all' ? 'Clear filters' : 'Add your first record'} onPress={loadError ? onRefresh : searchQuery || selectedCategory !== 'all' ? () => { setSearchQuery(''); setSelectedCategory('all'); } : () => router.push('/record/add')} variant="outline" style={{ marginTop: 20 }} />
           </View>
         }
       />
@@ -1397,6 +1361,8 @@ export default function RecordsScreen() {
         onOpenAiSummary={handleSummarize}
       />
 
+      <InsightSheet insight={insight} onClose={() => setInsight(null)} />
+
       {/* Record Metadata Edit Modal */}
       <RecordEditModal
         visible={!!editingRecord}
@@ -1411,6 +1377,18 @@ export default function RecordsScreen() {
 }
 
 const styles = StyleSheet.create({
+  inlineError: { gap: 12, padding: 16, backgroundColor: Colors.dangerLight, borderRadius: 16 },
+  inlineErrorText: { fontFamily: 'LexendDeca-Regular', fontSize: 13, lineHeight: 20, color: Colors.danger },
+  actionHero: { backgroundColor: Colors.tealLight, borderRadius: 24, padding: 20, gap: 20 },
+  heroCopy: { gap: 10 },
+  heroEyebrow: { fontFamily: 'LexendDeca-SemiBold', fontSize: 10, letterSpacing: 1, color: Colors.teal },
+  heroTitle: { fontFamily: 'LexendDeca-Bold', fontSize: 22, lineHeight: 29, letterSpacing: -0.4, color: Colors.ink },
+  heroBody: { fontFamily: 'LexendDeca-Regular', fontSize: 13, lineHeight: 21, color: Colors.ink },
+  heroActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  compactRecordRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, paddingRight: 36 },
+  compactCategory: { fontFamily: 'LexendDeca-SemiBold', fontSize: 10, lineHeight: 16, color: Colors.teal, marginBottom: 4 },
+  compactDate: { fontFamily: 'LexendDeca-Regular', fontSize: 12, lineHeight: 18, color: Colors.muted, marginTop: 4 },
+  compactNotes: { fontFamily: 'LexendDeca-Regular', fontSize: 12, lineHeight: 19, color: Colors.muted, marginTop: 8 },
   root: {
     flex: 1,
     backgroundColor: Colors.bg,
@@ -1469,7 +1447,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBg,
     borderWidth: 1,
     borderColor: Colors.border,
-    minHeight: 32,
+    minHeight: 44,
     justifyContent: 'center',
   },
   selectHeaderBtnPressed: {
@@ -1527,7 +1505,9 @@ const styles = StyleSheet.create({
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.blueBorder,
     borderRadius: Radii.card,
     paddingVertical: 13,
     paddingHorizontal: 15,
@@ -1535,9 +1515,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: Colors.blue,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0,
     shadowRadius: 6,
-    elevation: 3,
+    elevation: 0,
   },
   aiBannerPressed: {
     opacity: 0.9,
@@ -1553,7 +1533,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     resizeMode: 'contain',
-    tintColor: Colors.white,
+    tintColor: Colors.blue,
   },
   aiTextBox: {
     flex: 1,
@@ -1561,11 +1541,11 @@ const styles = StyleSheet.create({
   },
   aiTitle: {
     fontFamily: 'LexendDeca-Bold',
-    color: Colors.white,
+    color: Colors.ink,
   },
   aiSubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    color: 'rgba(255, 255, 255, 0.88)',
+    color: Colors.muted,
   },
   aiBannerDisabled: {
     opacity: 0.55,
@@ -1627,8 +1607,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    height: 34,
-    borderRadius: 17,
+    minHeight: 44,
+    paddingVertical: 10,
+    borderRadius: 14,
     backgroundColor: Colors.cardBg,
     paddingHorizontal: 14,
     alignItems: 'center',
@@ -1688,8 +1669,8 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   cardSelected: {
-    borderWidth: 2,
     borderColor: Colors.teal,
+    backgroundColor: Colors.tealLight,
   },
   checkboxArea: {
     position: 'absolute',

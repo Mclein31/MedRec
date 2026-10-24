@@ -1,0 +1,50 @@
+name = "medrec-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+APP_NAME = "MedRec"
+# Public origin of this worker; QR codes point at {PUBLIC_URL}/s/{token}
+PUBLIC_URL = "http://localhost:8787"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite"
+# development logs sign-in codes when SMTP is not configured; production refuses to.
+ENVIRONMENT = "development"
+ALLOWED_ORIGINS = "http://localhost:8081,http://localhost:19006"
+
+[[r2_buckets]]
+binding = "VAULT"
+# Separate from v1's "medrec-vault" so v2 never touches v1 patient files.
+bucket_name = "medrec-v2-vault"
+preview_bucket_name = "medrec-v2-vault-dev"
+
+# Production values (secrets and URLs) live in one file, apps/.env; `npm run deploy:prod` uploads them.
+# Local development uses .dev.vars. Secret names:
+#   DATABASE_URL        Neon pooled connection string
+#   JWT_SECRET          32+ random bytes, hex
+#   FILE_SIGNING_SECRET 32+ random bytes, hex
+#   GEMINI_API_KEY
+#   SMTP_USER           Gmail address that sends sign-in codes
+#   SMTP_PASSWORD       Gmail App Password (Google Account → Security → 2-Step Verification → App passwords)
+
+[env.production]
+# Without this, wrangler would deploy as "medrec-api-production".
+# Address: https://medrec-api.<your-subdomain>.workers.dev
+name = "medrec-api"
+
+[env.production.vars]
+APP_NAME = "MedRec"
+ENVIRONMENT = "production"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite"
+# Filled from apps/.env by `npm run deploy:prod`; the API refuses to start in production without PUBLIC_URL.
+PUBLIC_URL = ""
+ALLOWED_ORIGINS = ""
+
+[[env.production.r2_buckets]]
+binding = "VAULT"
+bucket_name = "medrec-v2-vault"
+
+[triggers]
+crons = ["17 * * * *"]

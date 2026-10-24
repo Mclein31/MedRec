@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'medrec-production-jwt-secret-at-least-32-chars-long';
+const { JWT_SECRET } = require('../config/env');
 
 /**
  * Backend-owned JWT Authentication Middleware.
@@ -12,24 +12,24 @@ async function requireAuth(req, res, next) {
   const [scheme, token] = authHeader.split(' ');
 
   if (scheme !== 'Bearer' || !token) {
-    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
+    return res.status(401).json({ error: 'Missing or malformed Authorization header', code: 'SESSION_EXPIRED' });
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 
-    if (!payload || !payload.sub) {
-      return res.status(401).json({ error: 'Invalid or expired session token' });
+    if (!payload || !payload.sub || !Number.isInteger(payload.token_version) || payload.token_version < 1) {
+      return res.status(401).json({ error: 'Invalid or expired session token', code: 'SESSION_EXPIRED' });
     }
 
     // Verify user existence and token version to invalidate revoked/expired sessions
     const user = await userModel.findById(payload.sub);
     if (!user) {
-      return res.status(401).json({ error: 'User session has been revoked or user not found' });
+      return res.status(401).json({ error: 'User session has been revoked or user not found', code: 'SESSION_EXPIRED' });
     }
 
-    if (payload.token_version !== undefined && user.token_version !== undefined && payload.token_version !== user.token_version) {
-      return res.status(401).json({ error: 'Session token has been invalidated. Please log in again.' });
+    if (payload.token_version !== user.token_version) {
+      return res.status(401).json({ error: 'Session token has been invalidated. Please log in again.', code: 'SESSION_EXPIRED' });
     }
 
     req.user = {
@@ -42,7 +42,11 @@ async function requireAuth(req, res, next) {
 
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired session token' });
+    if (err instanceof jwt.JsonWebTokenError || err instanceof jwt.TokenExpiredError || err instanceof jwt.NotBeforeError) {
+      return res.status(401).json({ error: 'Invalid or expired session token', code: 'SESSION_EXPIRED' });
+    }
+    // Database/service failures do not mean the patient's credentials expired.
+    next(err);
   }
 }
 

@@ -23,16 +23,15 @@ async function summarize(req, res, next) {
           currentMedications: [],
           diagnoses: [],
           keyNotes: [],
+          includedRecordCount: 0,
+          totalRecordCount: 0,
         });
       }
     }
 
-    // Fetch user's records with safety cap
-    const records = await recordModel.getAllForUser(req.user.id, {
-      type,
-      recordIds,
-      limit: aiService.MAX_SUMMARY_RECORDS,
-    });
+    // Count the complete authorized scope, while retaining the AI input safety cap.
+    const allRecords = await recordModel.getAllForShare(req.user.id, type ? [type] : null, recordIds);
+    const records = allRecords.slice(0, aiService.MAX_SUMMARY_RECORDS);
 
     if (records.length === 0) {
       return res.json({
@@ -40,6 +39,8 @@ async function summarize(req, res, next) {
         currentMedications: [],
         diagnoses: [],
         keyNotes: [],
+        includedRecordCount: 0,
+        totalRecordCount: 0,
       });
     }
 
@@ -85,7 +86,14 @@ async function summarize(req, res, next) {
       console.error('Failed to create ai_summary_ready notification:', notifErr);
     }
 
-    res.json(result);
+    res.json({
+      ...result,
+      summary: allRecords.length > records.length
+        ? `This summary covers the latest ${records.length} of ${allRecords.length} ${recordIds ? 'selected ' : ''}records. Older records are not included.\n\n${result.summary}`
+        : result.summary,
+      includedRecordCount: records.length,
+      totalRecordCount: allRecords.length,
+    });
   } catch (err) {
     console.error('AI summarize error:', err.message || err);
     res.status(503).json({ error: 'AI summary is temporarily unavailable. Please try again later.' });

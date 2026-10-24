@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { PrivateModal as Modal } from './security/PrivateModal';
 import { useRef, useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';

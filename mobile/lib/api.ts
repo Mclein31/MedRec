@@ -1,35 +1,32 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import type { MedicalRecord } from '../types/record';
+import { resolveApiBaseUrl } from './apiBaseUrl';
 
 function getApiBaseUrl(): string {
-  // In development, auto-detect the host machine IP from the Metro bundler connection
-  // so IP changes on local Wi-Fi never cause connection drops.
-  if (__DEV__) {
-    const debuggerHost =
-      Constants.expoConfig?.hostUri ||
-      (Constants as any).manifest?.debuggerHost ||
-      (Constants as any).manifest2?.extra?.expoClient?.hostUri;
-    if (debuggerHost) {
-      const ip = debuggerHost.split(':')[0];
-      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-        return `http://${ip}:4000/api`;
-      }
-    }
-  }
-
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:4000/api';
-  }
-  return 'http://localhost:4000/api';
+  const metroHost =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest?.debuggerHost ||
+    (Constants as any).manifest2?.extra?.expoClient?.hostUri;
+  return resolveApiBaseUrl({
+    configuredUrl: process.env.EXPO_PUBLIC_API_URL,
+    development: __DEV__,
+    platform: Platform.OS,
+    metroHost,
+    webHostname: Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.hostname : undefined,
+  });
 }
 
 const API_BASE_URL = getApiBaseUrl();
 
 const TOKEN_KEY = 'authToken';
+const sessionExpiredListeners = new Set<() => void>();
+
+export function onSessionExpired(listener: () => void): () => void {
+  sessionExpiredListeners.add(listener);
+  return () => { sessionExpiredListeners.delete(listener); };
+}
 
 const tokenStorage = {
   async get(key: string) {
@@ -50,6 +47,7 @@ const tokenStorage = {
       await SecureStore.setItemAsync(key, value);
     } catch (e) {
       console.warn(`[tokenStorage] Failed to set key "${key}":`, e);
+      throw new Error('Could not save your session on this device. Please try again.');
     }
   },
   async delete(key: string) {
@@ -61,6 +59,7 @@ const tokenStorage = {
       await SecureStore.deleteItemAsync(key);
     } catch (e) {
       console.warn(`[tokenStorage] Failed to delete key "${key}":`, e);
+      throw new Error('Could not clear your session from this device. Please try again.');
     }
   },
 };
@@ -70,6 +69,13 @@ type RequestOptions = {
   body?: unknown;
 };
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number, public readonly code?: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function request<T = any>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = await tokenStorage.get(TOKEN_KEY);
 
@@ -77,11 +83,20 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method || 'GET',
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('The connection took too long. Please try again.');
+    throw error;
+  } finally { clearTimeout(timeout); }
 
   if (response.status === 204) {
     if (!response.ok) throw new Error('Request failed');
@@ -91,15 +106,34 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.error || `Request failed with status ${response.status}`);
+    const expiredSession = data.code === 'SESSION_EXPIRED' || /^(Invalid or expired session token|User session has been revoked|Session token has been invalidated)/.test(data.error || '');
+    if (response.status === 401 && expiredSession && token && token === await tokenStorage.get(TOKEN_KEY)) {
+      sessionExpiredListeners.forEach(listener => listener());
+    }
+    throw new ApiError(data.error || `Request failed with status ${response.status}`, response.status, data.code);
   }
 
   return data as T;
 }
 
 export const api = {
-  register: (name: string, email: string, password: string) =>
-    request('/auth/register', { method: 'POST', body: { name, email, password } }),
+  register: async (name: string, email: string, password: string) => {
+    try {
+      return await request('/auth/register', { method: 'POST', body: { name, email, password } });
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 409 || error.code !== 'EMAIL_ALREADY_EXISTS') throw error;
+      // Creation may have succeeded before its response or local session save failed.
+      // Password login proves ownership; never replace or modify the existing account.
+      try {
+        return await request('/auth/login', { method: 'POST', body: { email, password } });
+      } catch (loginError) {
+        if (loginError instanceof ApiError && loginError.status === 401) {
+          throw new ApiError('An account with this email exists, but the password does not match. Sign in with your existing password.', 409, 'EMAIL_ALREADY_EXISTS');
+        }
+        throw loginError;
+      }
+    }
+  },
 
   login: (email: string, password: string) =>
     request('/auth/login', { method: 'POST', body: { email, password } }),
@@ -130,6 +164,32 @@ export const api = {
   },
 
   getRecord: (id: string) => request(`/records/${id}`),
+
+  getAllRecords: async (): Promise<{ records: MedicalRecord[] }> => {
+    const records: MedicalRecord[] = [];
+    const seenIds = new Set<string>();
+    const limit = 100;
+    for (let offset = 0; ; offset += limit) {
+      const page = await api.getRecords({ limit, offset });
+      if (!page || !Array.isArray(page.records) || page.records.length > limit) {
+        throw new Error('The server returned an incomplete record list. Please refresh and try again.');
+      }
+      const batch: MedicalRecord[] = page.records;
+      for (const record of batch) {
+        if (!record || typeof record.id !== 'string' || !record.id.trim()
+          || typeof record.title !== 'string' || typeof record.type !== 'string' || typeof record.date !== 'string') {
+          throw new Error('The server returned an invalid record. Please refresh and try again.');
+        }
+        if (seenIds.has(record.id)) {
+          throw new Error('The record list changed while loading. Please refresh and try again.');
+        }
+        seenIds.add(record.id);
+      }
+      records.push(...batch);
+      if (batch.length < limit) break;
+    }
+    return { records };
+  },
 
   addRecord: (record: {
     type: string;
@@ -220,7 +280,7 @@ export const api = {
     request<{ uploadUrl: string; path: string; key?: string }>('/storage/upload-url', { method: 'POST', body: data }),
 
   uploadFileToSignedUrl: async (uploadUrl: string, fileUri: string, mimeType: string = 'image/jpeg') => {
-    if (uploadUrl.includes('mock.r2.cloudflarestorage.com') || uploadUrl.includes('mock.supabase.co')) {
+    if (__DEV__ && (uploadUrl.includes('mock.r2.cloudflarestorage.com') || uploadUrl.includes('mock.supabase.co'))) {
       // Mock upload for local/testing without real storage
       return;
     }

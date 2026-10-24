@@ -25,7 +25,7 @@ export const RecordSearchBar: React.FC<RecordSearchBarProps> = ({
   value,
   onChangeText,
   onClear,
-  placeholder = 'Search records, diagnoses, doctors...',
+  placeholder = 'Search titles, notes, or categories',
   style,
 }) => {
   const { screenPadding, inputHeight, scaleFont } = useResponsive();
@@ -47,6 +47,7 @@ export const RecordSearchBar: React.FC<RecordSearchBarProps> = ({
           style={styles.searchIcon}
         />
         <TextInput
+          accessibilityLabel="Search health records"
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -104,8 +105,8 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     padding: 4,
-    minWidth: 32,
-    minHeight: 32,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

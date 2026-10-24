@@ -1,0 +1,85 @@
+import { View } from 'react-native';
+import type { AiSnapshot } from '../lib/api';
+import { radius, space, useColors } from '../theme';
+import { Icon, Txt } from './core';
+
+export function AiPanel({ ai, title = 'What this document says' }: { ai: AiSnapshot; title?: string }) {
+  const c = useColors();
+  return (
+    <View style={{ gap: space.lg }}>
+      <View style={{ gap: space.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+          <Icon name="text-box-search-outline" size={18} color={c.accent} />
+          <Txt variant="headline">{title}</Txt>
+        </View>
+        <Txt color={c.ink2}>{ai.summary}</Txt>
+        <Txt variant="caption" color={c.ink3}>
+          Read by AI from your pages. It can misread handwriting or small print; your doctor's interpretation comes first.
+        </Txt>
+      </View>
+
+      {ai.labValues.length > 0 && (
+        <View style={{ gap: space.sm }}>
+          <Txt variant="label" color={c.ink2}>Results</Txt>
+          <View style={{ borderRadius: radius.sm, borderWidth: 1, borderColor: c.line, overflow: 'hidden' }}>
+            {ai.labValues.map((l, i) => {
+              const out = l.flag === 'high' || l.flag === 'low';
+              return (
+                <View
+                  key={`${l.name}-${i}`}
+                  accessibilityLabel={`${l.name}: ${l.value}${l.unit ? ' ' + l.unit : ''}${out ? `, ${l.flag}` : ''}${l.range ? `, reference ${l.range}` : ''}`}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.line, backgroundColor: out ? c.dangerSoft : c.surface }}
+                >
+                  <Txt variant="body" style={{ flex: 1 }} numberOfLines={2}>{l.name}</Txt>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Txt variant="label" color={out ? c.danger : c.ink}>
+                      {l.value}
+                      {l.unit ? ` ${l.unit}` : ''}
+                      {l.flag === 'high' ? ' ↑' : l.flag === 'low' ? ' ↓' : ''}
+                    </Txt>
+                    {l.range && <Txt variant="micro" color={c.ink3}>Ref. {l.range}</Txt>}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {ai.medications.length > 0 && (
+        <View style={{ gap: space.sm }}>
+          <Txt variant="label" color={c.ink2}>Medications mentioned</Txt>
+          {ai.medications.map((m, i) => (
+            <View key={`${m.name}-${i}`} style={{ flexDirection: 'row', gap: space.sm }}>
+              <Icon name="pill" size={16} color={c.ink3} />
+              <Txt style={{ flex: 1 }}>
+                {m.name}
+                <Txt color={c.ink3}>{[m.dosage, m.frequency].filter(Boolean).map((x) => ` · ${x}`).join('')}</Txt>
+              </Txt>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {ai.findings.length > 0 && (
+        <View style={{ gap: space.xs }}>
+          <Txt variant="label" color={c.ink2}>Noted on the page</Txt>
+          {ai.findings.map((f, i) => (
+            <Txt key={i} color={c.ink2}>• {f}</Txt>
+          ))}
+        </View>
+      )}
+
+      {ai.terms.length > 0 && (
+        <View style={{ gap: space.sm }}>
+          <Txt variant="label" color={c.ink2}>Terms explained</Txt>
+          {ai.terms.map((t, i) => (
+            <Txt key={`${t.term}-${i}`} color={c.ink2}>
+              <Txt variant="label">{t.term}</Txt> — {t.meaning}
+            </Txt>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}

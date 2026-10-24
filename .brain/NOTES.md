@@ -5,7 +5,7 @@ project: MedRecord_App
 tags:
   - notes
   - reference
-last_updated: 2026-09-05
+last_updated: 2026-10-14
 ---
 
 # 📋 MedRecord_App (MedRec) — Technical Notes
@@ -33,7 +33,7 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - `OPENAI_API_KEY`: API key for medical summarization and explanations (quarantined / future milestone)
 
 ## 🔑 Mobile Environment Variables Required (`mobile/.env`)
-- `EXPO_PUBLIC_API_URL`: Base URL for Express backend (e.g. `http://localhost:4000` or local LAN IP for physical device testing)
+- `EXPO_PUBLIC_API_URL`: Leave blank for local development so API port 4000 follows the current Metro/browser host. Set an explicit `/api` base URL for a separate backend or production. Avoid pinned Wi-Fi IPs.
 - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`: Web Client ID matching backend `GOOGLE_WEB_CLIENT_ID` for ID token audience
 - `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`: iOS Client ID from Google Cloud Console for native iOS sign-in dialog
 
@@ -136,3 +136,16 @@ The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed n
 - `emergency_updated` → `medical-outline`
 - `ai_summary_ready` → `sparkles-outline`
 - Default → `notifications-outline`
+
+
+## Local auth diagnostics
+- `/api/ready` verifies database readiness; `/health` is process liveness only.
+- `cd backend && npm run check:local-auth` verifies running-server registration, login, protected routes, logout, token revocation, and re-login. It removes its exact disposable audit account.
+- `PG_CONNECTION_TIMEOUT_MS` defaults to 5000 and `PG_QUERY_TIMEOUT_MS` defaults to 10000; both require finite positive integers.
+- Backend environment loading is independent of shell cwd. JWT signing and verification use the same required private secret.
+
+## Xcode 27 / Expo SDK 54 launcher (2026-10-14)
+- `xcode-select` correctly selects `/Applications/Xcode.app/Contents/Developer`; `simctl` works. Xcode 27.0 ships Device Hub at `Contents/Applications/DeviceHub.app` (`com.apple.dt.Devices`), while CLI 54.0.27 only knows Simulator.app.
+- `mobile/scripts/patchExpoSimulator.cjs` backports upstream Expo PR #46757: app ID/plist discovery, dual process detection, Device Hub device URL launch fallback, and dual app activation. Applied automatically by postinstall/prestart/preios; exact CLI version and source shapes are guarded. Remove/review during an Expo upgrade.
+- Seven mocked launcher regression checks pass; all 34 mobile test entries and TypeScript pass. The real installed prerequisite also passes using only plist reads and `simctl help`, without AppleScript/UI automation. Live interactive launch remains unverified because computer-use access was denied earlier.
+- Follow-up: launcher progressed to "No development build (com.mclein.medrec) ... installed". Confirmed missing simulator container, then installed the previously successful Debug simulator build from `/private/tmp/medrec-polish-build/Build/Products/Debug-iphonesimulator/mobile.app` on iPhone 14 Plus `ED566BB8-60AB-48FC-A49F-436F400D10B4`. Expo's own installed-app check now finds it, including `EXDevLauncher.bundle`; Metro remains available on 8081. Device Hub computer-use access was again rejected, so UI launch/runtime verification remains pending. A fresh/erased simulator needs a development build installed before pressing `i`; `expo start` alone does not install one.

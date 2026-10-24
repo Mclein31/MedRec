@@ -1,12 +1,5 @@
 const { Pool } = require('pg');
-const path = require('path');
-const dotenv = require('dotenv');
-
-if (process.env.NODE_ENV === 'test') {
-  dotenv.config({ path: path.join(__dirname, '../../.env.test'), override: true });
-} else {
-  dotenv.config();
-}
+const { PG_CONNECTION_TIMEOUT_MS, PG_QUERY_TIMEOUT_MS } = require('./env');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const rejectUnauthorized = process.env.PGSSL_REJECT_UNAUTHORIZED === 'true'
@@ -22,6 +15,9 @@ const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:543
 const pool = new Pool({
   connectionString,
   ssl,
+  connectionTimeoutMillis: PG_CONNECTION_TIMEOUT_MS,
+  query_timeout: PG_QUERY_TIMEOUT_MS,
+  statement_timeout: PG_QUERY_TIMEOUT_MS,
 });
 
 pool.on('error', (err) => {

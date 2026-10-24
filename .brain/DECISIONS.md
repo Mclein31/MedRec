@@ -7,10 +7,56 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-09-12
+last_updated: 2026-10-24
 ---
 
 # 📜 MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-10-24 — v2 rebuild on Workers, Neon, R2, Gemini and emailed codes (DD-44)
+
+### Decision
+Rebuild in `apps/api` + `apps/mobile`, leaving `backend/` and `mobile/` intact until cut-over. API is a Hono Worker; Neon via the HTTP driver (one transaction per statement that first sets `app.user_id`/`app.role`); RLS is forced on every table and the Worker role cannot bypass it, so a missing WHERE clause leaks nothing. Activity is append-only for the app role.
+
+Sign-in = password + 6-digit email code, sent like AdvanCare (Gmail SMTP App Password over `cloudflare:sockets`; development logs codes only when `ENVIRONMENT=development`). Trusted devices skip the code for 30 days per device. Refresh tokens rotate; a rotated token is rejected. PBKDF2-SHA256 (100k, Workers cap) with per-hash cost.
+
+Files never get public URLs: R2 objects are streamed by the Worker for HMAC-signed paths (15 min; capped at share expiry on doctor pages). Upload content type comes from magic bytes. Pages upload as drafts, are read by Gemini (`gemini-3.5-flash-lite` → `gemini-3.1-flash-lite` fallback, JSON schema, guardrails against diagnosis/injection), then attached atomically on save; drafts older than 24 h are purged hourly.
+
+Doctors use a server-rendered page (DD-01) with CSP nonce, no-store, no framing. Medical ID is a separate minimal page (emergency facts only). The Scan tab is replaced by a Medical ID tab: doctors open links with any camera.
+
+### Limits
+Not end-to-end/zero-knowledge encrypted: the server can read records (needed for AI reading and doctor pages). Physical-device biometric/camera QA, real Gmail delivery and a live Neon/R2/Gemini deployment have not been verified. Reanimated entering animations are native-only (web cleanup crash).
+
+## 2026-10-14 — Recover interrupted signup through password verification (DD-43)
+
+The screenshot's email already had a local account created seconds before the report. Keep duplicate-email enforcement; return `EMAIL_ALREADY_EXISTS` for both the pre-check and concurrent unique-insert race. Mobile signup retries that specific conflict via normal password login, preserving the original identity/profile and requiring the existing password. Wrong credentials remain blocked; network/server failures remain distinguishable. A synchronous ref prevents double submission before React rerenders, and session-save failure explicitly says the account is ready. The exact reason the initial client did not finish signup remains unconfirmed; no existing patient account or credential was changed. Backend 144 tests, mobile 39 entries, lint/type checks, and the live disposable-account retry/login probe pass.
+
+## 2026-10-14 — Wi-Fi-independent development sign-in and deterministic backend configuration (DD-42)
+
+Local development leaves `EXPO_PUBLIC_API_URL` blank and derives API port 4000 from the current Metro/browser host; separately configured backend/deployment URLs remain authoritative. A stale pinned LAN address caused sign-in requests to fail before reaching the healthy backend. Backend startup loads its own environment by absolute path, requires one private JWT secret shared by signing/verification, validates versioned HS256 sessions, and bounds database waits. `/api/ready` checks the actual database. A disposable-account runtime probe supplements in-process tests. Existing secrets/account credentials were preserved. Evidence and remaining deployment limits are in [AUTH_AUDIT.md](AUTH_AUDIT.md).
+
+## 2026-10-14 — Restore visible shared action buttons (DD-41)
+
+A Reanimated `AnimatedPressable` must receive a style array/object rather than a Pressable style callback. Its installed prop filter wraps the callback into an array without evaluating it; React Native drops it while flattening, leaving white action labels without backgrounds. The shared Button now uses a static style array and moves pressed opacity/scale into `useAnimatedStyle`. Regression tests use the installed Reanimated prop filter and React Native Web style flattening to verify visible backgrounds, touch-target size, disabled/loading behavior, and reduced-motion press feedback. This fixes login, onboarding Continue, and other shared actions.
+
+## 2026-10-14 — Animated patient onboarding and complete existing flows (DD-40)
+
+### Decision
+Keep MedRec's Lexend Deca/teal identity, deepen action teal to `#087F6D`, use quieter surfaces, and make record intake the dashboard's primary action. Replace duplicated auth layouts with a shared responsive form and visible field labels. Use a labeled floating bottom bar on phones/tablet portrait while preserving the landscape workspace rail.
+
+The four-step tour now explains organization, consultation sharing, Medical ID, and access control using clearly labeled sample previews. Native paging slides between steps; Reanimated springs stage the cards; a pulse and scan line demonstrate QR handoff. Only the active, focused, foreground step animates. Reduce Motion and an explicit pause button stop loops. Do not claim zero knowledge, end-to-end encryption, lock-screen Medical ID, or zero-retention AI processing without an implementation/provider contract that supports it.
+
+Native app lock stores preference per account in SecureStore, verifies enable/disable with biometrics/device passcode, and hides both protected content and existing native modal windows while locked. JSON/PDF exports include fresh profile/complete record text and attachment presence, exclude attachment bytes and transient/signed URLs, and stop on incomplete snapshots. Browser PDF uses a separate escaped print document; native PDF uses expo-print and a file share sheet.
+
+Sharing defaults to 15 minutes with 15/30/60-minute choices, distinguishes selected records from a full vault, rejects explicit empty scopes, and handles response-order/expiry cleanup. API session expiry is coded distinctly from wrong current-password errors and does not invalidate a newer session when an older request finishes. Live AI requests remain bounded to 25 records and disclose omitted scope.
+
+### References and adaptation
+Reviewed the public pages at [UIZZE](https://uizze.com), [Impeccable](https://impeccable.style), [Taste Skill](https://www.tasteskill.dev), [Details](https://www.details.so/inspo), [Refero onboarding](https://styles.refero.design/ai-agents/onboarding-design-prompts), and [Design Spells](https://designspells.com). Applied hierarchy, framed product previews, clear first actions, restrained surface depth, and responsive feedback to MedRec's own content; paid galleries were not accessed.
+
+### Verification and limits
+Backend: 10 suites/101 tests. Mobile: 20 Node test entries, including 23 app-lock assertions, 12 export/pagination cases, and 7 UI-flow cases. TypeScript and whitespace checks pass; lint has no errors and retains 30 existing warnings. Web/iOS/Android bundles export. Native pods installed successfully. Xcode 27 rejects older pod deployment targets; native verification uses `IPHONEOS_DEPLOYMENT_TARGET=15.1` while building, without changing the tracked product's supported platforms. Native simulator build succeeds with that deployment-target override. The built app is at `/private/tmp/medrec-polish-build/Build/Products/Debug-iphonesimulator/mobile.app`; it was not installed/launched because computer-use access was denied.
+
+Safari and Device Hub computer-use approval was denied, so visual, gesture, Dynamic Type, and physical biometric QA remain open. The local `ios/` directory is ignored; native module/Face ID configuration is reproducible from `mobile/app.json`. Password recovery delivery, native Google UI/configuration, full theme parity, deployment, and broader SDK security updates remain backlog items.
+
 
 ## 2026-09-12 — Automatic First-Launch Stack Priority & Login Screen Onboarding Decoupling (DD-39)
 

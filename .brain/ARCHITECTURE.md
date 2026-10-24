@@ -10,7 +10,7 @@ tags:
   - express
   - postgresql
   - cloudflare-r2
-last_updated: 2026-09-05
+last_updated: 2026-10-24
 ---
 
 # 🏛️ MedRecord_App (MedRec) — Architecture
@@ -194,3 +194,20 @@ Three strictly isolated runtime UI states:
 
 - **Backend**: Jest + Supertest. 64 tests across 8 suites: `auth.test.js`, `profile.test.js`, `record.test.js`, `share.test.js`, `storage.test.js`, `notification.test.js`, `security.test.js`, `integration.test.js`. All 64/64 passing.
 - **Mobile**: TypeScript compilation (`npx tsc --noEmit`) — 0 errors.
+
+
+## 2026-10-14 — Client experience and local privacy additions
+- `components/auth/AuthScreen.tsx` shares responsive labeled login/register forms.
+- `components/onboarding/FeaturePreview.tsx` and `hooks/useMotionPreferences.ts` own foreground-only staged previews with accessible motion controls.
+- `context/AppLockContext.tsx` owns per-account native SecureStore preferences and biometric/passcode checks. `AppLockGate` hides the protected tree; `PrivateModal` suppresses other native modal windows during locking.
+- `lib/healthExport.ts` + `healthExportData.ts` fetch all record pages and fresh profile, sanitize export data, escape printable HTML, and invoke native PDF/file sharing or browser download/printing.
+- `lib/api.ts` provides typed HTTP errors, request timeout, verified session-expiry events, and complete pagination. Backend middleware uses `SESSION_EXPIRED` only for session/auth failures; database errors propagate without logging users out.
+- `utils/shareUtils.ts` provides truthful scope and expiry labels. Backend sharing returns the complete authorized record scope; AI alone retains a disclosed latest-25 cap.
+
+
+## 2026-10-24 — v2 architecture (`apps/`)
+- `apps/api/src/app.ts`: middleware (config check, services, CORS, no-store), routes, uniform `{error:{code,message}}`; `cleanup()` for the hourly cron.
+- `lib/db.ts` (Neon HTTP, RLS context per statement) · `lib/localDb.ts` (dev-only TCP for local Postgres) · `lib/auth.ts` (JWT + open session + token version) · `lib/otp.ts` · `lib/email.ts` + `lib/smtp.ts` · `lib/gemini.ts` · `lib/security.ts` (rate limits, share tokens, signed file paths) · `lib/records.ts` (keyset cursor) · `lib/shares.ts`.
+- Routes: `auth`, `profile` (Medical ID, avatar), `records` (drafts, scan, CRUD, pages), `shares`, `vault` (activity, AI summary, export), `public.tsx` (`/s/:token`, `/e/:slug`, `/files/:key`). Views in `src/views/*.tsx` (hono/jsx).
+- Migrations: `001_init.sql` (schema), `002_rls.sql` (forced RLS, `medrec_app` role). Tests run as `medrec_test` (member of `medrec_app`) so the dev password is untouched.
+- `apps/mobile`: expo-router with `Stack.Protected` guards; `src/lib/http.ts` (base-URL discovery, typed errors, single-flight refresh), `src/auth.tsx`, `src/lock.tsx`, `src/theme.ts` tokens, `src/ui/*` primitives, screens under `app/`.

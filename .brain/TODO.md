@@ -5,12 +5,20 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-09-12
+last_updated: 2026-10-24
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
 
 ## 🔴 High Priority
+- [ ] v2: create Neon project, R2 bucket, Gmail App Password and Gemini key; deploy `apps/api` with `--env production` (steps in apps/README.md).
+- [ ] v2: QA `apps/mobile` on physical iOS/Android (camera capture, Face ID/fingerprint lock, PDF share sheet, code autofill).
+- [ ] v2: decide cut-over — retire `backend/` + `mobile/` once v2 is deployed and verified; there is no v1→v2 data migration yet.
+- [x] Redesign animated onboarding, responsive authentication, records dashboard, labeled navigation, and sharing duration/scope controls.
+- [x] Fix first-page truncation, civil-date validation, temporary web attachment persistence, missing storage false success, and session-expiry races.
+- [ ] Implement real password recovery tokens and email delivery; current endpoints deliberately return 503.
+- [ ] Complete browser and native visual/touch QA; computer-use approval was denied during the implementation pass.
+- [ ] Resolve remaining dependency advisories through a compatible SDK/tooling upgrade.
 - [x] Connect React Native mobile client (`lib/api.ts`) to live Express server endpoints for Profile and User data.
 - [x] Implement complete Profile Tab (`(tabs)/profile.tsx`) with Inset Grouped layout, Emergency Medical ID, Demographics, and Data Export.
 - [x] Implement interactive Profile Photo upload (`expo-image-picker`) and Cloudflare R2 `avatar_url` persistence.
@@ -42,12 +50,13 @@ last_updated: 2026-09-12
 - [x] Instant record detail expand animation (0ms timing).
 - [x] Category carousel in RecordEditModal matching add.tsx design.
 - [ ] **Google SSO (Single Sign-On)**: Native library temporarily decoupled ahead of future reimplementation; backend verification pipeline and token linking remain intact.
-- [ ] Add Biometric Authentication (FaceID / Fingerprint) enforcement via `expo-local-authentication` on app launch / resumption.
+- [x] Implement native biometric/passcode app lock on cold start/resume, per-account preference, and protected modal suppression.
+- [ ] Verify biometric enrollment/cancellation/background behavior on physical iOS and Android devices.
 
 ## 🟢 Low Priority
 - [x] Implement JSON export of consolidated patient medical history and profile data.
 - [x] Implement ZIP bundle export of shared records for doctor download.
-- [ ] Implement PDF export of consolidated patient medical history for physical printing.
+- [x] Implement printable PDF history and actual JSON file export, with complete pagination and sanitized access paths.
 - [ ] Dark/Light mode theme parity with system settings across mobile UI components.
 
 ## 💡 Future Ideas

@@ -7,6 +7,7 @@ const path = require('path');
 describe('Profile API Endpoints', () => {
   let token;
   let testEmail;
+  let userId;
   const originalPassword = 'Password123';
   const updatedPassword = 'NewPassword456';
 
@@ -24,6 +25,7 @@ describe('Profile API Endpoints', () => {
       });
     expect(res.status).toBe(201);
     token = res.body.token;
+    userId = res.body.user.id;
   });
 
   afterAll(async () => {
@@ -134,14 +136,14 @@ describe('Profile API Endpoints', () => {
     });
 
     it('should update and persist avatarUrl without wiping other fields', async () => {
-      const sampleAvatar = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+      const sampleAvatar = `${userId}/avatar.jpg`;
       const res = await request(app)
         .put('/profile')
         .set('Authorization', `Bearer ${token}`)
         .send({ avatarUrl: sampleAvatar });
 
       expect(res.status).toBe(200);
-      expect(res.body.profile.avatarUrl).toBe(sampleAvatar);
+      expect(res.body.profile.avatarUrl).toContain('/avatar.jpg');
       expect(res.body.profile.bloodType).toBe('O+');
       expect(res.body.profile.allergies).toBe('Penicillin, Peanuts');
 
@@ -150,8 +152,22 @@ describe('Profile API Endpoints', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(getRes.status).toBe(200);
-      expect(getRes.body.profile.avatarUrl).toBe(sampleAvatar);
+      expect(getRes.body.profile.avatarUrl).toContain('/avatar.jpg');
       expect(getRes.body.profile.bloodType).toBe('O+');
+    });
+
+    it.each(['blob:https://example.com/avatar', 'file:///tmp/avatar.jpg', 'data:image/jpeg;base64,aGVsbG8='])('should reject unuploaded profile photo %s', async (avatarUrl) => {
+      const res = await request(app).put('/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ avatarUrl });
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject impossible dates of birth', async () => {
+      const res = await request(app).put('/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ dateOfBirth: '2026-02-30' });
+      expect(res.status).toBe(400);
     });
 
     it('should reject invalid biological sex', async () => {

@@ -51,6 +51,7 @@ describe('Auth API Endpoints', () => {
 
     expect(res.status).toBe(409);
     expect(res.body.error).toMatch(/already exists/i);
+    expect(res.body.code).toBe('EMAIL_ALREADY_EXISTS');
   });
 
   it('POST /auth/register should reject invalid email format', async () => {
@@ -64,6 +65,18 @@ describe('Auth API Endpoints', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/Invalid email format/i);
+  });
+
+  it('returns the same email conflict code when simultaneous signup loses the unique insert race', async () => {
+    const userModel = require('../src/models/userModel');
+    const create = jest.spyOn(userModel, 'createUser').mockRejectedValueOnce({ code: '23505', constraint: 'users_email_key' });
+    try {
+      const res = await request(app).post('/auth/register').send({
+        name: 'Concurrent Signup', email: `race_${Date.now()}@example.invalid`, password: testPassword,
+      });
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe('EMAIL_ALREADY_EXISTS');
+    } finally { create.mockRestore(); }
   });
 
   it('POST /auth/register should reject password shorter than 8 characters', async () => {
@@ -92,6 +105,45 @@ describe('Auth API Endpoints', () => {
     expect(res.body.user.email).toBe(testEmail);
   });
 
+  it('normalizes surrounding whitespace and email case before authentication', async () => {
+    const res = await request(app).post('/auth/login')
+      .send({ email: `  ${testEmail.toUpperCase()}  `, password: testPassword });
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe(testEmail);
+  });
+
+  it.each([
+    { name: ' ', email: 'invalid-input@example.com', password: 'Password123' },
+    { name: {}, email: 'invalid-input@example.com', password: 'Password123' },
+    { name: 'Patient', email: {}, password: 'Password123' },
+    { name: 'Patient', email: 'invalid-input@example.com', password: {} },
+    { name: 'a'.repeat(121), email: 'invalid-input@example.com', password: 'Password123' },
+    { name: 'Patient', email: `${'a'.repeat(256)}@example.com`, password: 'Password123' },
+    { name: 'Patient', email: 'invalid-input@example.com', password: `Password1${'a'.repeat(64)}` },
+    { name: 'Patient', email: 'invalid-input@example.com', password: `Password1${'é'.repeat(32)}` },
+  ])('rejects malformed or bcrypt-truncated registration input %# with 400', async (body) => {
+    const res = await request(app).post('/auth/register').send(body);
+    expect(res.status).toBe(400);
+  });
+
+  it.each([{ email: {}, password: 'Password123' }, { email: 'patient@example.com', password: {} }, { email: 'patient@example.com', password: 'a'.repeat(4097) }])('rejects malformed or excessive login input %# with 400', async (body) => {
+    const res = await request(app).post('/auth/login').send(body);
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts a 72-byte registration password without silently truncating it', async () => {
+    const email = `boundary_${Date.now()}@example.com`;
+    try {
+      const password = `Password1${'a'.repeat(63)}`;
+      const res = await request(app).post('/auth/register').send({ name: 'Boundary Patient', email, password });
+      expect(res.status).toBe(201);
+      const loginRes = await request(app).post('/auth/login').send({ email, password });
+      expect(loginRes.status).toBe(200);
+    } finally {
+      await pool.query('DELETE FROM public.users WHERE email = $1', [email]);
+    }
+  });
+
   it('POST /auth/login should reject incorrect password with 401', async () => {
     const res = await request(app)
       .post('/auth/login')
@@ -114,15 +166,24 @@ describe('Auth API Endpoints', () => {
     expect(res.body.user.email).toBe(testEmail);
   });
 
-  it('POST /auth/forgot-password should return standard confirmation message', async () => {
+  it('POST /auth/forgot-password should honestly report unavailable recovery', async () => {
     const res = await request(app)
       .post('/auth/forgot-password')
       .send({
         email: testEmail,
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toMatch(/If an account with that email exists/i);
+    expect(res.status).toBe(503);
+    expect(res.body.error).toMatch(/not available yet/i);
+  });
+
+  it('POST /auth/reset-password should not claim to change a password without a valid recovery flow', async () => {
+    const res = await request(app).post('/auth/reset-password')
+      .send({ token: 'fake-token', newPassword: 'ChangedPassword123' });
+    expect(res.status).toBe(503);
+    const loginRes = await request(app).post('/auth/login')
+      .send({ email: testEmail, password: testPassword });
+    expect(loginRes.status).toBe(200);
   });
 
   it('POST /auth/logout should return 204 No Content', async () => {
@@ -139,6 +200,8 @@ describe('Auth API Endpoints', () => {
     let googleNewEmail;
     let sharedGoogleEmail = `google_shared_${Date.now()}@example.com`;
     let sharedGoogleSub = `sub_shared_${Date.now()}`;
+    const previousAudience = process.env.GOOGLE_WEB_CLIENT_ID;
+    beforeAll(() => { process.env.GOOGLE_WEB_CLIENT_ID = 'medrec-test-client.apps.googleusercontent.com'; });
 
     afterEach(() => {
       if (verifySpy) {
@@ -147,6 +210,8 @@ describe('Auth API Endpoints', () => {
     });
 
     afterAll(async () => {
+      if (previousAudience === undefined) delete process.env.GOOGLE_WEB_CLIENT_ID;
+      else process.env.GOOGLE_WEB_CLIENT_ID = previousAudience;
       try {
         await pool.query("DELETE FROM public.users WHERE email LIKE 'google_%' OR email LIKE 'link_%'");
       } catch {}
@@ -170,6 +235,21 @@ describe('Auth API Endpoints', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.error).toMatch(/Invalid Google identity token/i);
+    });
+
+    it('should return 503 before verifying a Google token when no client audiences are configured', async () => {
+      const audienceKeys = ['GOOGLE_WEB_CLIENT_ID', 'GOOGLE_CLIENT_ID_WEB', 'GOOGLE_CLIENT_ID_IOS', 'GOOGLE_CLIENT_ID_ANDROID'];
+      const previous = audienceKeys.map(key => [key, process.env[key]]);
+      audienceKeys.forEach(key => delete process.env[key]);
+      verifySpy = jest.spyOn(OAuth2Client.prototype, 'verifyIdToken');
+      try {
+        const res = await request(app).post('/auth/google').send({ idToken: 'test.token' });
+        expect(res.status).toBe(503);
+        expect(res.body.error).toMatch(/not configured/);
+        expect(verifySpy).not.toHaveBeenCalled();
+      } finally {
+        previous.forEach(([key, value]) => { if (value === undefined) delete process.env[key]; else process.env[key] = value; });
+      }
     });
 
     it('should reject Google tokens where email is not verified with 400', async () => {
@@ -205,6 +285,10 @@ describe('Auth API Endpoints', () => {
         .post('/auth/google')
         .send({ idToken: 'valid.new.user.token' });
 
+      expect(verifySpy).toHaveBeenCalledWith(expect.objectContaining({
+        idToken: 'valid.new.user.token',
+        audience: expect.arrayContaining(['medrec-test-client.apps.googleusercontent.com']),
+      }));
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('token');
       expect(res.body.user.email).toBe(sharedGoogleEmail);

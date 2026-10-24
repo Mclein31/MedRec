@@ -74,3 +74,14 @@ export function formatTimeAgo(dateStr?: string | null): string {
   if (diffMonths < 12) return `${diffMonths} months ago`;
   return `${Math.floor(diffMonths / 12)} years ago`;
 }
+/** Local calendar date, without shifting the patient's day through UTC. */
+export function todayDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+export function isValidRecordDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}

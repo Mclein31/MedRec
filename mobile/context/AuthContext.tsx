@@ -7,6 +7,8 @@ import {
   getHasCompletedOnboarding,
   setHasCompletedOnboarding,
   resetHasCompletedOnboarding,
+  ApiError,
+  onSessionExpired,
 } from '../lib/api';
 
 type AuthUser = {
@@ -38,12 +40,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hasCompletedOnboarding, setHasCompletedOnboardingState] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => onSessionExpired(() => {
+    setToken(null);
+    setUser(null);
+    clearToken().catch(error => console.warn('Could not clear expired session', error));
+  }), []);
+
   const refreshUser = async () => {
+    const sessionToken = await getToken();
     try {
       const [meData, profileData] = await Promise.all([
-        api.getMe().catch(() => null),
+        api.getMe(),
         api.getProfile().catch(() => null),
       ]);
+      if (sessionToken !== await getToken()) return;
       const userData = meData?.user || profileData?.user;
       if (userData) {
         setUser({
@@ -53,8 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatarUrl: profileData?.profile?.avatarUrl || userData.avatarUrl || null,
         });
       }
-    } catch {
-      // Ignore background refresh errors
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401 && sessionToken === await getToken()) {
+        try { await clearToken(); }
+        finally { setToken(null); setUser(null); }
+      }
     }
   };
 
@@ -114,7 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (name: string, email: string, password: string) => {
     const data = await api.register(name, email, password);
-    await saveToken(data.token);
+    try { await saveToken(data.token); }
+    catch {
+      throw new Error('Your account is ready, but this device could not save your session. Sign in to finish, or retry once device storage is available.');
+    }
     setToken(data.token);
     if (data.user) {
       setUser({
@@ -134,9 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Fail open
     }
-    await clearToken();
-    setToken(null);
-    setUser(null);
+    try { await clearToken(); }
+    finally { setToken(null); setUser(null); }
   };
 
   return (

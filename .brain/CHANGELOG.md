@@ -5,10 +5,18 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-09-12
+last_updated: 2026-10-24
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [2.0.0-alpha] — 2026-10-24 — Rebuild from scratch in `apps/` (DD-44)
+
+- **API (`apps/api`)**: Cloudflare Worker (Hono) on Neon Postgres with forced row-level security as an unprivileged `medrec_app` role; R2 private storage streamed through HMAC-signed short-lived paths; Gemini document reading with model fallback; hourly cleanup cron.
+- **Auth**: password + emailed 6-digit code via Gmail SMTP App Password (AdvanCare pattern), newest-code-only, 10-min TTL, 5 tries, 60 s resend cooldown, trusted devices (30 days), rotating refresh tokens with reuse rejection, account lockout, password reset that signs out everywhere.
+- **Sharing**: HMAC share tokens (never stored), scope all/categories/records, 15 min–7 days, revoke/revoke-all, server-rendered doctor page with CSP nonce and view notifications. Public Medical ID page with rotation and throttled view alerts.
+- **App (`apps/mobile`)**: new Expo SDK 54 client — onboarding, sign-in/register/code/reset, Records (search, chips, keyset pagination), Add (camera/photos/PDF → AI read → review), record detail, Share (QR hero + countdown), Medical ID, Profile (app lock, exports, devices), Activity, Health summary. Light/dark tokens, Lexend Deca, visible labels.
+- **Verification**: API 37 integration tests; mobile 7 unit tests; both typecheck; Worker dry-run bundle; web/iOS/Android exports; live `wrangler dev` end-to-end probe; UI sign-in driven in headless Chrome. Legacy `backend/` and `mobile/` untouched.
 
 ## [1.4.27] — Automatic First-Launch Onboarding Entry & Login Screen Decoupling
 

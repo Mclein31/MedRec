@@ -3,6 +3,8 @@ const app = require('../src/app');
 const pool = require('../src/config/db');
 const fs = require('fs');
 const path = require('path');
+const JSZip = require('jszip');
+const aiService = require('../src/services/aiService');
 
 describe('Doctor Sharing API Endpoints', () => {
   let userToken;
@@ -122,6 +124,21 @@ describe('Doctor Sharing API Endpoints', () => {
     const returnedIds = doctorRes.body.records.map((r) => r.id);
     expect(returnedIds).toContain(userRecordId1);
     expect(returnedIds).toContain(userRecordId2);
+  });
+
+  it.each([0, -1, 1.5, 1441, 'Infinity', 'invalid', null])('POST /share should reject invalid duration %s', async (ttlMinutes) => {
+    const res = await request(app).post('/share')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ ttlMinutes });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/whole number between 1 and 1440/);
+  });
+
+  it('POST /share should reject an explicitly empty scope instead of exposing the full vault', async () => {
+    const res = await request(app).post('/share')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ ttlMinutes: 15, recordIds: [] });
+    expect(res.status).toBe(400);
   });
 
   it('POST /share/:token/summarize should summarize all shared records without fabricating data', async () => {
@@ -279,5 +296,48 @@ describe('Doctor Sharing API Endpoints', () => {
     expect(zipRes.body).toBeDefined();
     // Verify non-empty zip payload
     expect(zipRes.body.length).toBeGreaterThan(100);
+  });
+
+  it('should preserve more than 100 scoped records in viewing and exports, and disclose AI scope', async () => {
+    const { rows } = await pool.query(
+      `INSERT INTO public.medical_records (user_id, type, title, date)
+       SELECT $1, 'lab', 'Large history ' || n, '2026-09-01'::date
+       FROM generate_series(1, 105) AS n RETURNING id`,
+      [userId]
+    );
+    const recordIds = rows.map((row) => row.id);
+    const summarySpy = jest.spyOn(aiService, 'summarizeRecords').mockResolvedValue({
+      summary: 'Records overview.', currentMedications: [], diagnoses: [], keyNotes: [],
+    });
+    try {
+      const shareRes = await request(app).post('/share')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ ttlMinutes: 60, recordIds });
+      expect(shareRes.status).toBe(201);
+      const shareToken = shareRes.body.token;
+      const viewRes = await request(app).get(`/share/${shareToken}`);
+      expect(viewRes.body.records).toHaveLength(105);
+      expect(viewRes.body.records.every((record) => recordIds.includes(record.id))).toBe(true);
+      const exportRes = await request(app).get(`/share/${shareToken}/export`);
+      expect(exportRes.body.totalRecords).toBe(105);
+      const zipRes = await request(app).get(`/share/${shareToken}/zip`).responseType('blob');
+      expect(zipRes.status).toBe(200);
+      const zip = await JSZip.loadAsync(zipRes.body);
+      const metadata = JSON.parse(await zip.file('records_metadata.json').async('string'));
+      expect(metadata.records).toHaveLength(105);
+
+      const sharedSummary = await request(app).post(`/share/${shareToken}/summarize`);
+      expect(sharedSummary.body.includedRecordCount).toBe(25);
+      expect(sharedSummary.body.totalRecordCount).toBe(105);
+      expect(sharedSummary.body.summary).toMatch(/latest 25 of 105 shared records/);
+      const patientSummary = await request(app).post('/ai/summarize')
+        .set('Authorization', `Bearer ${userToken}`).send({ recordIds });
+      expect(patientSummary.body.totalRecordCount).toBe(105);
+      expect(patientSummary.body.summary).toMatch(/latest 25 of 105 selected records/);
+      expect(summarySpy.mock.calls.every(([records]) => records.length === 25)).toBe(true);
+    } finally {
+      summarySpy.mockRestore();
+      await pool.query('DELETE FROM public.medical_records WHERE id = ANY($1::uuid[])', [recordIds]);
+    }
   });
 });

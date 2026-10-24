@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  Modal,
   TextInput,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { PrivateModal as Modal } from './security/PrivateModal';
 import { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../lib/api';

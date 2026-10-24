@@ -1,6 +1,8 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { NotificationProvider } from '../context/NotificationContext';
+import { AppLockProvider } from '../context/AppLockContext';
+import { AppLockGate } from '../components/security/AppLockGate';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -124,9 +126,13 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <RootLayoutNav fontsLoaded={fontsReady} />
-      </NotificationProvider>
+      <AppLockProvider>
+        <NotificationProvider>
+          <AppLockGate>
+            <RootLayoutNav fontsLoaded={fontsReady} />
+          </AppLockGate>
+        </NotificationProvider>
+      </AppLockProvider>
     </AuthProvider>
   );
 }

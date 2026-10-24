@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  Modal,
   Pressable,
   FlatList,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { PrivateModal as Modal } from '../security/PrivateModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';

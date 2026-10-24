@@ -2,6 +2,13 @@
 function errorHandler(err, req, res, next) {
   console.error(err);
 
+  const unavailableCodes = ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH', '57P01', '57P02', '57P03', '53300', '08000', '08001', '08006'];
+  if (unavailableCodes.includes(err.code)
+    || (Array.isArray(err.errors) && err.errors.some(error => unavailableCodes.includes(error.code)))
+    || /connection timeout|connection terminated|query read timeout|statement timeout|timeout exceeded when trying to connect/i.test(err.message || '')) {
+    return res.status(503).json({ error: 'The database is temporarily unavailable. Please try again shortly.', code: 'DATABASE_UNAVAILABLE' });
+  }
+
   // Postgres unique violation (e.g. duplicate email)
   if (err.code === '23505') {
     return res.status(409).json({ error: 'A record with that value already exists' });

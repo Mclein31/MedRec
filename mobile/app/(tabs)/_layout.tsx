@@ -1,286 +1,62 @@
-import React from 'react';
-import { View, Pressable, StyleSheet, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { TabletLandscapeNavRail } from '../../components/navigation/TabletLandscapeNavRail';
 
-const GREEN = Colors.teal;
+const destinations = [
+  { name: 'index', label: 'Records', icon: 'documents-outline', activeIcon: 'documents', route: '/(tabs)', hint: 'Browse and organize your health history' },
+  { name: 'share', label: 'Share', icon: 'qr-code-outline', activeIcon: 'qr-code', route: '/(tabs)/share', hint: 'Give a doctor temporary access to your records' },
+  { name: 'add', label: 'Add', icon: 'add', activeIcon: 'add', route: '/record/add', hint: 'Add a document or visit note' },
+  { name: 'scan', label: 'Scan', icon: 'scan-outline', activeIcon: 'scan', route: '/(tabs)/scan', hint: 'View records shared with a QR code' },
+  { name: 'profile', label: 'Profile', icon: 'person-outline', activeIcon: 'person', route: '/(tabs)/profile', hint: 'Your Medical ID, account, and settings' },
+] as const;
 
-const TAB_A11Y_LABELS: Record<string, string> = {
-  index: 'Records tab',
-  share: 'Share tab',
-  add: 'Add health record',
-  scan: 'Scan tab',
-  profile: 'Profile tab',
-};
-
-function CustomTabBar(_props?: BottomTabBarProps) {
+function CustomTabBar(props: BottomTabBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { isTablet, isLandscape, insets } = useResponsive();
-  const { user } = useAuth();
-
-  // Tablet Landscape: Render Purpose-Built Left Navigation Rail (88pt)
-  if (isTablet && isLandscape) {
-    return <TabletLandscapeNavRail />;
-  }
-
-  const tabs = [
-    {
-      name: 'index',
-      route: '/(tabs)',
-      activeIcon: require('../../assets/icons/records-active.png'),
-      inactiveIcon: require('../../assets/icons/records-inactive.png'),
-    },
-    {
-      name: 'share',
-      route: '/(tabs)/share',
-      activeIcon: require('../../assets/icons/share-active.png'),
-      inactiveIcon: require('../../assets/icons/share-inactive.png'),
-    },
-    {
-      name: 'add',
-      route: '/record/add',
-    },
-    {
-      name: 'scan',
-      route: '/(tabs)/scan',
-      activeIcon: require('../../assets/icons/scan-active.png'),
-      inactiveIcon: require('../../assets/icons/scan-inactive.png'),
-    },
-    {
-      name: 'profile',
-      route: '/(tabs)/profile',
-      activeIcon: require('../../assets/icons/profile-active.png'),
-      inactiveIcon: require('../../assets/icons/profile-inactive.png'),
-    },
-  ];
-
-  return (
-    <View
-      style={[
-        styles.navbar,
-        isTablet
-          ? [
-              styles.tabletNavbar,
-              {
-                bottom: Math.max(insets.bottom, 12) + 8,
-              },
-            ]
-          : {
-              paddingBottom: insets.bottom,
-            },
-      ]}
-      hitSlop={!isTablet ? { top: 35 } : undefined}
-    >
-      {tabs.map((tab) => {
-        const isAdd = tab.name === 'add';
-        const isProfile = tab.name === 'profile';
-
-        const isActive =
-          tab.name === 'index'
-            ? pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/index'
-            : pathname.includes(tab.name);
-
-        return (
-          <Pressable
-            key={tab.name}
-            onPress={() => {
-              if (isAdd) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push(tab.route as any);
-              } else {
-                Haptics.selectionAsync();
-                if (_props?.navigation) {
-                  _props.navigation.navigate(tab.name);
-                } else {
-                  router.push(tab.route as any);
-                }
-              }
-            }}
-            style={({ pressed }) => [
-              styles.navItem,
-              isAdd && !isTablet && styles.addNavItem,
-              pressed && styles.navItemPressed,
-            ]}
-            hitSlop={isAdd && !isTablet ? { top: 42, bottom: 8, left: 8, right: 8 } : 8}
-            accessibilityRole={isAdd ? 'button' : 'tab'}
-            accessibilityState={isAdd ? undefined : { selected: isActive }}
-            accessibilityLabel={TAB_A11Y_LABELS[tab.name] || `${tab.name} tab`}
-          >
-            {isAdd ? (
-              isTablet ? (
-                <View style={styles.tabletAddButton}>
-                  <Ionicons name="add" size={28} color="#FFFFFF" />
-                </View>
-              ) : (
-                <View style={styles.protrusionContainer} pointerEvents="none">
-                  <View style={styles.domeCircle} />
-                  <View style={styles.newAddButton}>
-                    <Ionicons name="add" size={30} color="#FFFFFF" />
-                  </View>
-                </View>
-              )
-            ) : isProfile && user?.avatarUrl ? (
-              <Image
-                source={{ uri: user.avatarUrl }}
-                style={[
-                  styles.profileAvatarIcon,
-                  isActive && styles.profileAvatarIconActive,
-                ]}
-              />
-            ) : (
-              <Image
-                source={isActive ? tab.activeIcon : tab.inactiveIcon}
-                style={styles.navIcon}
-              />
-            )}
-          </Pressable>
-        );
+  if (isTablet && isLandscape) return <TabletLandscapeNavRail />;
+  const current = props.state.routes[props.state.index]?.name;
+  return <View style={[styles.position, { bottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
+    <View style={[styles.bar, isTablet && { maxWidth: 480 }]}>
+      {destinations.map(tab => {
+        const add = tab.name === 'add';
+        const selected = !add && (current ? current === tab.name : tab.name === 'index' ? pathname === '/' : pathname.includes(tab.name));
+        return <Pressable key={tab.name} onPress={() => {
+          if (add) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); router.push('/record/add'); return; }
+          const route = props.state.routes.find(route => route.name === tab.name);
+          const event = props.navigation.emit({ type: 'tabPress', target: route?.key, canPreventDefault: true });
+          if (!event.defaultPrevented) { Haptics.selectionAsync().catch(() => {}); props.navigation.navigate(tab.name); }
+        }} onLongPress={() => { if (!add) props.navigation.emit({ type: 'tabLongPress', target: props.state.routes.find(route => route.name === tab.name)?.key }); }} style={({ pressed }) => [styles.item, selected && styles.selected, pressed && styles.pressed]} accessibilityRole={add ? 'button' : 'tab'} accessibilityState={add ? undefined : { selected }} accessibilityLabel={add ? 'Add health record' : `${tab.label} tab`} accessibilityHint={tab.hint}>
+          <View style={add ? styles.addIcon : styles.icon}><Ionicons name={selected ? tab.activeIcon : tab.icon} size={add ? 25 : 22} color={add ? Colors.white : selected ? Colors.teal : Colors.muted} /></View>
+          <Text style={[styles.label, selected && styles.selectedLabel]} maxFontSizeMultiplier={1.3}>{tab.label}</Text>
+        </Pressable>;
       })}
     </View>
-  );
+  </View>;
 }
 
 export default function TabsLayout() {
-  return (
-    <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Records',
-        }}
-      />
-      <Tabs.Screen
-        name="share"
-        options={{
-          title: 'Share',
-        }}
-      />
-      <Tabs.Screen
-        name="scan"
-        options={{
-          title: 'Scan',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-        }}
-      />
-    </Tabs>
-  );
+  return <Tabs tabBar={props => <CustomTabBar {...props} />} screenOptions={{ headerShown: false }}>
+    <Tabs.Screen name="index" options={{ title: 'Records' }} />
+    <Tabs.Screen name="share" options={{ title: 'Share' }} />
+    <Tabs.Screen name="scan" options={{ title: 'Scan' }} />
+    <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+  </Tabs>;
 }
 
 const styles = StyleSheet.create({
-  navbar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 85,
-    paddingTop: 15,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    overflow: 'visible',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -3,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-  },
-  tabletNavbar: {
-    left: 'auto',
-    right: 'auto',
-    width: '100%',
-    maxWidth: 480,
-    alignSelf: 'center',
-    height: 68,
-    paddingTop: 0,
-    borderRadius: 24,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  navItem: {
-    flex: 1,
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addNavItem: {
-    overflow: 'visible',
-    position: 'relative',
-  },
-  navItemPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.96 }],
-  },
-  protrusionContainer: {
-    position: 'absolute',
-    top: -35,
-    width: 74,
-    height: 74,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  domeCircle: {
-    position: 'absolute',
-    top: 0,
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    backgroundColor: '#FFFFFF',
-  },
-  newAddButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: GREEN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabletAddButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: GREEN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navIcon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
-  },
-  profileAvatarIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    resizeMode: 'cover',
-  },
-  profileAvatarIconActive: {
-    borderWidth: 1.5,
-    borderColor: GREEN,
-  },
+  position: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
+  bar: { flexDirection: 'row', width: '100%', padding: 6, gap: 2, backgroundColor: Colors.surface, borderRadius: 24, borderWidth: 1, borderColor: Colors.border, shadowColor: Colors.ink, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 20, elevation: 8 },
+  item: { flex: 1, minWidth: 44, minHeight: 60, alignItems: 'center', justifyContent: 'center', borderRadius: 18, gap: 4, paddingVertical: 6 },
+  selected: { backgroundColor: Colors.tealLight },
+  pressed: { opacity: 0.7 },
+  icon: { height: 28, justifyContent: 'center' },
+  addIcon: { width: 36, height: 28, backgroundColor: Colors.teal, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  label: { fontFamily: 'LexendDeca-SemiBold', fontSize: 10, lineHeight: 15, color: Colors.muted },
+  selectedLabel: { color: Colors.teal },
 });

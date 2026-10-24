@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { Colors, Radii, Typography, ResponsiveLimits, LandscapeTokens } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
+import { isShareActive, shareScopeLabel } from '../../utils/shareUtils';
 
 const TEAL = Colors.teal;
 const BLUE = Colors.blue;
@@ -77,10 +78,25 @@ export default function ShareScreen() {
   const params = useLocalSearchParams<{
     pendingToken?: string;
     pendingExpiry?: string;
+    pendingRecordCount?: string;
   }>();
+  const router = useRouter();
+  const [duration, setDuration] = useState(15);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [sharesLoaded, setSharesLoaded] = useState(false);
+  const sharesRequest = useRef(0);
   const [shares, setShares] = useState<Share[]>([]);
   const [activeToken, setActiveToken] = useState<string | null>(null);
   const [activeExpiry, setActiveExpiry] = useState<string | null>(null);
+  useEffect(() => {
+    if (!activeExpiry) return;
+    const timer = setTimeout(() => {
+      setActiveToken(null);
+      setActiveExpiry(null);
+      setPendingCount(null);
+    }, Math.max(0, new Date(activeExpiry).getTime() - Date.now()));
+    return () => clearTimeout(timer);
+  }, [activeExpiry]);
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -100,10 +116,14 @@ export default function ShareScreen() {
   } = useResponsive();
 
   const loadShares = async () => {
+    const requestId = ++sharesRequest.current;
     try {
       const data = await api.listShares();
+      if (requestId !== sharesRequest.current) return;
       setShares(data.shares);
+      setSharesLoaded(true);
     } catch (err: any) {
+      if (requestId !== sharesRequest.current) return;
       Alert.alert('Error loading shares', err.message);
     }
   };
@@ -113,10 +133,14 @@ export default function ShareScreen() {
       loadShares();
       refreshNotifications();
       if (params.pendingToken) {
+        sharesRequest.current += 1;
+        setSharesLoaded(false);
         setActiveToken(params.pendingToken);
         setActiveExpiry(params.pendingExpiry ?? null);
+        setPendingCount(Number(params.pendingRecordCount) || null);
+        router.setParams({ pendingToken: undefined, pendingExpiry: undefined, pendingRecordCount: undefined });
       }
-    }, [params.pendingToken, params.pendingExpiry, refreshNotifications])
+    }, [params.pendingToken, params.pendingExpiry, params.pendingRecordCount, refreshNotifications, router])
   );
 
   const onRefresh = async () => {
@@ -126,9 +150,12 @@ export default function ShareScreen() {
   };
 
   const handleCreate = async () => {
+    if (creating) return;
     setCreating(true);
     try {
-      const data = await api.createShare(60);
+      const data = await api.createShare(duration);
+      setPendingCount(null);
+      setSharesLoaded(false);
       setActiveToken(data.token);
       setActiveExpiry(data.expiresAt);
       await loadShares();
@@ -172,7 +199,7 @@ export default function ShareScreen() {
   };
 
   const activeShares = shares.filter(
-    (s) => !s.revoked_at && new Date(s.expires_at) > new Date()
+    (s) => isShareActive(s)
   );
   const recentShares = shares.filter(
     (s) => s.revoked_at || new Date(s.expires_at) <= new Date()
@@ -180,7 +207,7 @@ export default function ShareScreen() {
   const isLoadingQr = Boolean(params.pendingToken) && !activeToken;
 
   // Active interval ticker to keep live countdown accurate without manual screen interactions
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     const hasLiveSession = Boolean(activeExpiry || activeShares.length > 0);
     if (!hasLiveSession) return;
@@ -193,6 +220,24 @@ export default function ShareScreen() {
   const activeShareForQr = activeToken
     ? shares.find((s) => s.token === activeToken)
     : null;
+
+  useEffect(() => {
+    if (!activeToken) return;
+    const expired = activeExpiry && new Date(activeExpiry).getTime() <= Date.now();
+    const invalid = sharesLoaded && (!activeShareForQr || !isShareActive(activeShareForQr));
+    if (expired || invalid) {
+      setActiveToken(null);
+      setActiveExpiry(null);
+      setPendingCount(null);
+    }
+  }, [activeToken, activeExpiry, activeShareForQr, sharesLoaded, tick]);
+
+  const renderDurationPicker = () => <View style={styles.durationSettings}>
+    <Text style={styles.durationLabel}>Access expires after</Text>
+    <View style={styles.durationOptions}>{[15, 30, 60].map(minutes => <Pressable key={minutes} onPress={() => setDuration(minutes)} disabled={creating} accessibilityRole="button" accessibilityLabel={`${minutes} minutes`} accessibilityState={{ selected: duration === minutes, disabled: creating }} style={[styles.durationOption, duration === minutes && styles.durationSelected]}><Text style={[styles.durationText, duration === minutes && { color: TEAL }]}>{minutes === 60 ? '1 hour' : `${minutes} min`}</Text></Pressable>)}</View>
+    <Text style={styles.scopeNotice}>This QR shares all records in your vault. Anyone with the code can view them until access ends.</Text>
+    <Pressable onPress={() => router.push({ pathname: '/(tabs)', params: { selectRecords: 'true' } })} style={styles.chooseRecords} accessibilityRole="button"><Ionicons name="documents-outline" size={16} color={TEAL} /><Text style={styles.chooseText}>Choose specific records instead</Text><Ionicons name="arrow-forward" size={16} color={TEAL} /></Pressable>
+  </View>;
 
   const visibleRecentShares = showAllHistory
     ? recentShares
@@ -232,7 +277,7 @@ export default function ShareScreen() {
               ]}
               maxFontSizeMultiplier={1.35}
             >
-              All records · 60 minute temporary access
+              {shareScopeLabel(activeShareForQr, pendingCount)} · read-only access
             </Text>
 
             <View style={styles.qrCodeContainer}>
@@ -317,11 +362,12 @@ export default function ShareScreen() {
                   ]}
                   maxFontSizeMultiplier={1.35}
                 >
-                  Instant, secure 60-min access without logins
+                  Temporary access. No doctor account needed.
                 </Text>
               </View>
             </View>
 
+            {renderDurationPicker()}
             <Pressable
               onPress={handleCreate}
               disabled={creating}
@@ -334,10 +380,10 @@ export default function ShareScreen() {
               accessibilityLabel="Generate QR code for doctor access"
             >
               {creating ? (
-                <ActivityIndicator size="small" color={BLUE} />
+                <ActivityIndicator size="small" color={Colors.white} />
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={16} color={BLUE} />
+                  <Ionicons name="qr-code-outline" size={16} color={Colors.white} />
                   <Text style={styles.generatePrimaryBtnText}>Generate Doctor QR</Text>
                 </>
               )}
@@ -535,7 +581,7 @@ export default function ShareScreen() {
       <View style={styles.securityBox}>
         <Ionicons name="shield-checkmark" size={16} color={TEAL} />
         <Text style={styles.securityText} maxFontSizeMultiplier={1.35}>
-          MedRec sharing links are end-to-end encrypted. Healthcare providers only receive temporary, read-only viewing permissions that automatically expire.
+          Access is temporary and read-only. Revoke a code at any time. Files already downloaded by a recipient remain outside MedRec’s control.
         </Text>
       </View>
     );
@@ -774,7 +820,7 @@ export default function ShareScreen() {
                   ]}
                   maxFontSizeMultiplier={1.35}
                 >
-                  All records · 60 minute temporary access
+                  {shareScopeLabel(activeShareForQr, pendingCount)} · read-only access
                 </Text>
 
                 <View style={styles.qrCodeContainer}>
@@ -859,11 +905,12 @@ export default function ShareScreen() {
                       ]}
                       maxFontSizeMultiplier={1.35}
                     >
-                      Instant, secure 60-min access without logins
+                      Temporary access. No doctor account needed.
                     </Text>
                   </View>
                 </View>
 
+                {renderDurationPicker()}
                 <Pressable
                   onPress={handleCreate}
                   disabled={creating}
@@ -876,10 +923,10 @@ export default function ShareScreen() {
                   accessibilityLabel="Generate QR code for doctor access"
                 >
                   {creating ? (
-                    <ActivityIndicator size="small" color={BLUE} />
+                    <ActivityIndicator size="small" color={Colors.white} />
                   ) : (
                     <>
-                      <Ionicons name="sparkles" size={16} color={BLUE} />
+                      <Ionicons name="qr-code-outline" size={16} color={Colors.white} />
                       <Text style={styles.generatePrimaryBtnText}>Generate Doctor QR</Text>
                     </>
                   )}
@@ -1080,7 +1127,7 @@ export default function ShareScreen() {
             <View style={styles.securityBox}>
               <Ionicons name="shield-checkmark" size={16} color={TEAL} />
               <Text style={styles.securityText} maxFontSizeMultiplier={1.35}>
-                MedRec sharing links are encrypted. Doctors only receive temporary, read-only viewing permissions that automatically expire.
+                Access is temporary and read-only. Revoke a code at any time. Copies already downloaded by a recipient remain outside MedRec’s control.
               </Text>
             </View>
           </View>
@@ -1100,6 +1147,15 @@ export default function ShareScreen() {
 }
 
 const styles = StyleSheet.create({
+  durationSettings: { gap: 12, marginBottom: 16 },
+  durationLabel: { fontFamily: 'LexendDeca-SemiBold', fontSize: 12, color: INK },
+  durationOptions: { flexDirection: 'row', gap: 8 },
+  durationOption: { flex: 1, minHeight: 44, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' },
+  durationSelected: { backgroundColor: Colors.tealLight, borderColor: TEAL },
+  durationText: { fontFamily: 'LexendDeca-SemiBold', fontSize: 12, color: MUTED },
+  scopeNotice: { fontFamily: 'LexendDeca-Regular', fontSize: 12, lineHeight: 20, color: MUTED },
+  chooseRecords: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  chooseText: { flex: 1, fontFamily: 'LexendDeca-SemiBold', fontSize: 12, lineHeight: 18, color: TEAL },
   root: {
     flex: 1,
     backgroundColor: BG,
@@ -1229,15 +1285,12 @@ const styles = StyleSheet.create({
     color: MUTED,
   },
   generateHeroCard: {
-    backgroundColor: BLUE,
-    borderRadius: Radii.card,
-    padding: 18,
-    gap: 14,
-    shadowColor: BLUE,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: Colors.cardBg,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 22,
+    gap: 18,
   },
   generateHeroTopRow: {
     flexDirection: 'row',
@@ -1248,7 +1301,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: TEAL,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1258,15 +1311,15 @@ const styles = StyleSheet.create({
   },
   generateHeroTitle: {
     fontFamily: 'LexendDeca-Bold',
-    color: '#FFFFFF',
+    color: INK,
   },
   generateHeroSubtitle: {
     fontFamily: 'LexendDeca-Regular',
-    color: 'rgba(255, 255, 255, 0.88)',
+    color: MUTED,
     lineHeight: 15,
   },
   generatePrimaryBtn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: TEAL,
     borderRadius: Radii.button,
     height: 48,
     flexDirection: 'row',
@@ -1282,7 +1335,7 @@ const styles = StyleSheet.create({
   generatePrimaryBtnText: {
     fontFamily: 'LexendDeca-Bold',
     fontSize: 13.5,
-    color: BLUE,
+    color: Colors.white,
     letterSpacing: 0.2,
   },
   sectionContainer: {
@@ -1312,7 +1365,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   activeShareCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: TEAL,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: '#D4EBE6',
@@ -1418,7 +1471,7 @@ const styles = StyleSheet.create({
     color: RED,
   },
   historyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: TEAL,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,

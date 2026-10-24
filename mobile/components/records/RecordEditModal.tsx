@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  Modal,
   TextInput,
   Pressable,
   ScrollView,
@@ -13,10 +12,12 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { PrivateModal as Modal } from '../security/PrivateModal';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { api } from '../../lib/api';
+import { isValidRecordDate, todayDate } from '../../utils/dateUtils';
 import { DocumentCamera } from '../camera/DocumentCamera';
 import { DocumentPreview } from '../camera/DocumentPreview';
 import { AttachedDocumentCard } from '../camera/AttachedDocumentCard';
@@ -68,7 +69,7 @@ export const RecordEditModal: React.FC<RecordEditModalProps> = ({
     if (record && visible) {
       setTitle(record.title || '');
       setType(record.type || 'consultation');
-      setDate(record.date ? record.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+      setDate(record.date ? record.date.split('T')[0] : todayDate());
       setDescription(record.description || '');
       const existingAttachment = record.attachment_url || record.attachmentUrl || null;
       setPhotoUri(existingAttachment);
@@ -79,7 +80,7 @@ export const RecordEditModal: React.FC<RecordEditModalProps> = ({
 
   const handleSetToday = () => {
     Haptics.selectionAsync();
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(todayDate());
   };
 
   const handleOpenGallery = async () => {
@@ -108,7 +109,7 @@ export const RecordEditModal: React.FC<RecordEditModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!record) return;
+    if (!record || saving) return;
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       Alert.alert('Title Required', 'Please enter a title for this medical record.');
@@ -116,7 +117,7 @@ export const RecordEditModal: React.FC<RecordEditModalProps> = ({
     }
 
     const trimmedDate = date.trim();
-    if (!trimmedDate || !/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+    if (!isValidRecordDate(trimmedDate)) {
       Alert.alert('Valid Date Required', 'Please enter a valid date in YYYY-MM-DD format.');
       return;
     }
@@ -127,7 +128,7 @@ export const RecordEditModal: React.FC<RecordEditModalProps> = ({
 
       let finalAttachmentUrl: string | null | undefined = undefined;
 
-      if (photoUri && (photoUri.startsWith('file://') || photoUri.startsWith('content://'))) {
+      if (photoUri && /^(file:|content:|blob:|data:)/.test(photoUri)) {
         // Upload new image binary to Cloudflare R2
         try {
           const uploadInfo = await api.getStorageUploadUrl({

@@ -31,6 +31,12 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "MedRec uses Face ID to protect access to your health records."
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "MedRec uses your camera to scan medical records and doctor sharing QR codes."

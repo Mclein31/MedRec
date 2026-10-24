@@ -18,45 +18,45 @@ export const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
     id: 'unified-records',
     stepNumber: 1,
-    badge: 'ALL-IN-ONE HEALTH VAULT',
-    badgeColor: '#159A83',
+    badge: 'A CLEARER HEALTH HISTORY',
+    badgeColor: '#087F6D',
     badgeBg: '#DDF5EE',
-    headline: 'Your Complete Health History, Unified & Clarified',
+    headline: 'Your health story.\nAll together.',
     subtitle:
-      'Organize lab tests, doctor visits, and medications in one secure timeline with automated AI clinical summaries.',
+      'Keep lab results, prescriptions, and visits in one place. Start with a photo or a simple note.',
     heroType: 'records',
   },
   {
     id: 'doctor-sharing',
     stepNumber: 2,
-    badge: 'FRICTIONLESS SHARING',
+    badge: 'READY FOR YOUR NEXT VISIT',
     badgeColor: '#1976D2',
     badgeBg: '#EBF3FB',
-    headline: 'Share Instantly with Doctors via Secure QR',
+    headline: 'Less paperwork.\nMore conversation.',
     subtitle:
-      'Provide doctors instant, temporary read-only access during consultations. No accounts needed and links auto-expire.',
+      'Choose the records to share, then show your doctor a QR code. Access is read-only and expires automatically.',
     heroType: 'sharing',
   },
   {
     id: 'emergency-id',
     stepNumber: 3,
-    badge: 'CRITICAL SAFETY',
+    badge: 'THE DETAILS THAT MATTER',
     badgeColor: '#D92D20',
     badgeBg: '#FEF3F2',
-    headline: 'Emergency Medical ID Ready When Seconds Count',
+    headline: 'Keep your essentials\nclose at hand.',
     subtitle:
-      'Keep your blood type, severe allergies, and emergency contacts accessible to first responders right from your phone.',
+      'Add allergies, medications, and an emergency contact to your Medical ID. Open it from your profile when you need it.',
     heroType: 'emergency',
   },
   {
     id: 'privacy-security',
     stepNumber: 4,
-    badge: 'PATIENT-FIRST PRIVACY',
-    badgeColor: '#159A83',
+    badge: 'YOU CHOOSE WHO SEES WHAT',
+    badgeColor: '#087F6D',
     badgeBg: '#DDF5EE',
-    headline: 'Your Health Data Belongs Only to You',
+    headline: 'Your records.\nYour say.',
     subtitle:
-      'Zero ads, zero data selling, and zero AI training on your private files. Bank-grade encryption safeguards your health.',
+      'Choose what to share, end access at any time, and export your history whenever you need a copy.',
     heroType: 'privacy',
   },
 ];
@@ -70,17 +70,17 @@ export interface PrivacyPillar {
 export const PRIVACY_PILLARS: readonly PrivacyPillar[] = [
   {
     icon: 'shield-checkmark',
-    title: 'Zero Ads & Zero Data Selling',
-    description: 'We never monetize, share, or broker your personal health records.',
+    title: 'Share on your terms',
+    description: 'Choose specific records or share your full history.',
   },
   {
     icon: 'lock-closed',
-    title: 'Private Encrypted Vault',
-    description: 'All documents are stored in private Cloudflare R2 vaults with AES-256 encryption.',
+    title: 'Private document storage',
+    description: 'Attachments use private storage and temporary download links.',
   },
   {
     icon: 'timer-outline',
-    title: 'Time-Expiring Access Tokens',
-    description: 'Doctor shares auto-expire in 15 minutes and can be revoked with 1 tap.',
+    title: 'Access has an end',
+    description: 'QR access expires automatically. Revoke it sooner from Share.',
   },
 ] as const;

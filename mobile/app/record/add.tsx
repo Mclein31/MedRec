@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { api } from '../../lib/api';
+import { isValidRecordDate, todayDate } from '../../utils/dateUtils';
 import { DocumentCamera } from '../../components/camera/DocumentCamera';
 import { DocumentPreview } from '../../components/camera/DocumentPreview';
 import { AttachedDocumentCard } from '../../components/camera/AttachedDocumentCard';
@@ -52,7 +53,7 @@ export default function AddRecordScreen() {
   const [type, setType] = useState('consultation');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(todayDate);
   const [saving, setSaving] = useState(false);
 
   const router = useRouter();
@@ -65,16 +66,21 @@ export default function AddRecordScreen() {
   } = useResponsive();
 
   const handleSave = async () => {
+    if (saving) return;
     if (!title.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert('Title required', 'Please enter a title for this health record.');
+      return;
+    }
+    if (!isValidRecordDate(date.trim())) {
+      Alert.alert('Check the date', 'Enter a real calendar date in YYYY-MM-DD format.');
       return;
     }
     setSaving(true);
     try {
       let finalAttachmentUrl = photoUri || undefined;
 
-      if (photoUri && (photoUri.startsWith('file://') || photoUri.startsWith('content://'))) {
+      if (photoUri && /^(file:|content:|blob:|data:)/.test(photoUri)) {
         try {
           const uploadInfo = await api.getStorageUploadUrl({
             bucket: 'medical-records',
@@ -102,7 +108,7 @@ export default function AddRecordScreen() {
         type,
         title: title.trim(),
         description: description.trim(),
-        date,
+        date: date.trim(),
         attachmentUrl: finalAttachmentUrl,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -457,7 +463,7 @@ export default function AddRecordScreen() {
                 <View style={styles.landscapeVaultNotice}>
                   <Ionicons name="shield-checkmark" size={15} color={TEAL} />
                   <Text style={styles.landscapeVaultNoticeText}>
-                    All document scans are encrypted and stored inside your sovereign health vault.
+                    Keep documents in private storage. Choose when and what to share.
                   </Text>
                 </View>
               </ScrollView>
@@ -606,7 +612,7 @@ export default function AddRecordScreen() {
                 <View style={styles.tabletVaultNotice}>
                   <Ionicons name="shield-checkmark" size={14} color={TEAL} />
                   <Text style={styles.tabletVaultNoticeText}>
-                    Documents are stored encrypted in your sovereign personal vault.
+                    Your documents use private storage with temporary access links.
                   </Text>
                 </View>
               </View>

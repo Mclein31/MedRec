@@ -1,5 +1,6 @@
 const recordModel = require('../models/recordModel');
 const notificationModel = require('../models/notificationModel');
+const { isValidCivilDate, isLocalAttachmentUri } = require('../utils/validation');
 const {
   R2_BUCKET_NAME,
   generatePresignedDownloadUrl,
@@ -40,6 +41,15 @@ async function addRecord(req, res, next) {
       return res.status(400).json({
         error: `type must be one of: ${recordModel.RECORD_TYPES.join(', ')}`,
       });
+    }
+    if (typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ error: 'title cannot be empty' });
+    }
+    if (!isValidCivilDate(date)) {
+      return res.status(400).json({ error: 'date must be a valid calendar date in YYYY-MM-DD format' });
+    }
+    if (isLocalAttachmentUri(attachment_url !== undefined ? attachment_url : attachmentUrl)) {
+      return res.status(400).json({ error: 'Upload the attachment to secure storage before saving the record' });
     }
 
     const record = await recordModel.createRecord({
@@ -122,6 +132,19 @@ async function deleteRecord(req, res, next) {
 async function updateRecord(req, res, next) {
   try {
     const { type, title, description, date, attachmentUrl, attachment_url } = req.body;
+
+    if (type !== undefined && !recordModel.RECORD_TYPES.includes(type)) {
+      return res.status(400).json({ error: `type must be one of: ${recordModel.RECORD_TYPES.join(', ')}` });
+    }
+    if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
+      return res.status(400).json({ error: 'title cannot be empty' });
+    }
+    if (date !== undefined && !isValidCivilDate(date)) {
+      return res.status(400).json({ error: 'date must be a valid calendar date in YYYY-MM-DD format' });
+    }
+    if (isLocalAttachmentUri(attachment_url !== undefined ? attachment_url : attachmentUrl)) {
+      return res.status(400).json({ error: 'Upload the attachment to secure storage before saving the record' });
+    }
 
     // Sanitize attachmentUrl: never overwrite the stored R2 key with a short-lived presigned URL.
     // If the client sends back an http(s) URL (i.e. the signed download URL the API previously

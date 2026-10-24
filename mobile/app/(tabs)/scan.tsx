@@ -6,14 +6,15 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
-  Modal,
   ScrollView,
   Image,
   Alert,
   Platform,
   Animated,
   Easing,
+  AppState,
 } from 'react-native';
+import { PrivateModal as Modal } from '../../components/security/PrivateModal';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
@@ -69,11 +70,14 @@ async function downloadFileDirectly(
 
     if (Platform.OS === 'web') {
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`The download is unavailable (${response.status}). The sharing session may have expired.`);
+      }
       const blob = await response.blob();
       const blobUrl = (window as any).URL.createObjectURL(blob);
       const a = (document as any).createElement('a');
       a.href = blobUrl;
-      a.download = `${filename}.${ext}`;
+      a.download = `${filename.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
       document.body.appendChild(a);
       a.click();
       (window as any).URL.revokeObjectURL(blobUrl);
@@ -584,6 +588,27 @@ export default function ScanScreen() {
   const [downloadingZip, setDownloadingZip] = useState(false);
   const [terminating, setTerminating] = useState(false);
 
+  useEffect(() => {
+    if (!activeShareToken || !shareMetadata?.expiresAt) return;
+    const expiresAt = new Date(shareMetadata.expiresAt).getTime();
+    const expire = () => {
+      if (Date.now() < expiresAt) return;
+      setRecords(null);
+      setSelectedRecord(null);
+      setLightboxImage(null);
+      setActiveShareToken(null);
+      setShareMetadata(null);
+      setSummaryData(null);
+      setSummaryModalVisible(false);
+      setDownloadModalVisible(false);
+      setScanned(false);
+      setError('This sharing session has expired. Ask for a new QR code to continue.');
+    };
+    const timer = setTimeout(expire, Math.max(0, expiresAt - Date.now()));
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') expire(); });
+    return () => { clearTimeout(timer); subscription.remove(); };
+  }, [activeShareToken, shareMetadata?.expiresAt]);
+
   const { unreadCount, refreshNotifications } = useNotifications();
   const {
     isTablet,
@@ -710,7 +735,14 @@ export default function ScanScreen() {
 
   // ─── 2. DIRECT DOWNLOAD TO PHONE (NO REDIRECTS) ───────────────────────────
   const handleDownloadFile = async (fileUri: string, title?: string) => {
-    await downloadFileDirectly(fileUri, title || 'medical_record');
+    try {
+      const record = records?.find(item => (item.attachment_url || item.attachmentUrl) === fileUri);
+      if (!record || !activeShareToken) throw new Error('Open a valid sharing session before downloading.');
+      const fresh = await api.downloadSharedRecord(activeShareToken, record.id);
+      await downloadFileDirectly(fresh.downloadUrl, title || record.title || 'medical_record');
+    } catch (error) {
+      Alert.alert('Download unavailable', error instanceof Error ? error.message : 'Please scan an active QR code and try again.');
+    }
   };
 
   const handleDownloadAllZip = async () => {

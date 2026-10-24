@@ -2,8 +2,8 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   // Brand & Primary Palette
-  primary: '#159A83',
-  teal: '#159A83',
+  primary: '#087F6D',
+  teal: '#087F6D',
   tealDark: '#12343B',
   primaryDark: '#12343B',
   tealLight: '#DDF5EE',
@@ -17,11 +17,11 @@ export const Colors = {
   infoLight: '#EBF3FB',
 
   // Canvas & Surfaces
-  bg: '#F4FAF9',
-  background: '#F4FAF9',
+  bg: '#F5F8F7',
+  background: '#F5F8F7',
   cardBg: '#FFFFFF',
   surface: '#FFFFFF',
-  border: '#E5F0EE',
+  border: '#DCE7E4',
   divider: '#F0F5F4',
 
   // Typography & Text
@@ -29,7 +29,7 @@ export const Colors = {
   textPrimary: '#12343B',
   muted: '#64748B',
   textSecondary: '#64748B',
-  textMuted: '#94A3B8',
+  textMuted: '#64748B',
   white: '#FFFFFF',
 
   // Semantic & Status Tokens
@@ -41,7 +41,7 @@ export const Colors = {
   redBorder: '#FECDCA',
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
-  success: '#159A83',
+  success: '#087F6D',
   successLight: '#DDF5EE',
 
   // UI Overlays & Affordances

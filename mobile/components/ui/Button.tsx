@@ -11,6 +11,9 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Colors, Radii, Typography } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, useReducedMotion } from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface ButtonProps {
   label: string;
@@ -38,6 +41,13 @@ export const Button: React.FC<ButtonProps> = ({
   rightIcon,
 }) => {
   const { buttonHeight, scaleFont } = useResponsive();
+  const reducedMotion = useReducedMotion();
+  const scale = useSharedValue(1);
+  const pressed = useSharedValue(false);
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: disabled || loading ? 0.55 : pressed.value ? 0.8 : 1,
+  }));
 
   const handlePress = () => {
     if (disabled || loading) return;
@@ -101,20 +111,21 @@ export const Button: React.FC<ButtonProps> = ({
   const dynamicHeight = size === 'small' ? 38 : buttonHeight;
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
+      onPressIn={() => { pressed.value = true; scale.value = reducedMotion ? 1 : withSpring(0.97, { stiffness: 420, damping: 30 }); }}
+      onPressOut={() => { pressed.value = false; scale.value = reducedMotion ? 1 : withSpring(1, { stiffness: 420, damping: 30 }); }}
       disabled={disabled || loading}
-      style={({ pressed }) => [
+      style={[
         styles.baseButton,
-        { height: dynamicHeight, minHeight: 44 },
+        { minHeight: Math.max(44, dynamicHeight), paddingVertical: 12 },
         getContainerStyle(),
-        disabled && styles.disabledBtn,
-        pressed && styles.pressed,
         style,
+        pressStyle,
       ]}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled: disabled || loading }}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator size="small" color={getIndicatorColor()} />
@@ -134,7 +145,7 @@ export const Button: React.FC<ButtonProps> = ({
           {rightIcon}
         </>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 };
 
@@ -169,13 +180,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBg,
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  disabledBtn: {
-    backgroundColor: '#E2E8F0',
-    borderColor: '#E2E8F0',
-  },
-  pressed: {
-    opacity: 0.8,
   },
   primaryText: {
     ...Typography.button,

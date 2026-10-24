@@ -126,3 +126,23 @@ The goal is to build a working prototype that demonstrates real-world healthcare
 ## 📌 Disclaimer
 
 This application is for educational purposes only and is not intended for real medical diagnosis or treatment.
+
+
+## UI polish and local verification (October 2026)
+
+The current app uses React Native/Expo SDK 54, Expo Router, an Express API, PostgreSQL, and private Cloudflare R2 storage. Onboarding includes sliding pages, staged previews, pulse/scan animations, a pause control, and Reduce Motion support. Profile offers native app lock, JSON file export, and printable PDF history. Exports contain profile/record text and attachment presence; attachment files are not embedded.
+
+From `mobile/`, run `npm test`, `npm run typecheck`, and `npm run lint`. From `backend/`, run `npm test`. Native biometric/PDF modules require a development build; Expo Go is insufficient for Face ID verification. Dependencies are linked by `pod install` in the existing iOS project. With Xcode 27, local verification of older pods requires adding `IPHONEOS_DEPLOYMENT_TARGET=15.1` to `xcodebuild`; the simulator build passed with this override.
+
+Xcode 27 replaces Simulator.app with Device Hub. SDK 54's CLI still expects Simulator.app, so `mobile/scripts/patchExpoSimulator.cjs` backports [Expo's Device Hub support](https://github.com/expo/expo/pull/46757). It runs on install and before `npm start` / `npm run ios`, and validates the locked CLI version before modifying dependencies. If the launcher reports "Can't determine id of Simulator app" with Xcode already selected correctly, restart with `cd mobile && npm start`, then press `i`. Review/remove this workaround when upgrading Expo CLI. Automated launcher checks and the installed Xcode prerequisite pass; interactive launch remains pending.
+
+"No development build (com.mclein.medrec) ... installed" means the selected simulator needs the native development client. `npm start` only starts Metro. Build/install with `npm run ios` (see the Xcode 27 deployment target override above), or install an already-built simulator `.app` with `xcrun simctl install <device-udid> <app-path>`, then press `i` in Metro. The local iPhone 14 Plus now has the verified Debug build installed; other or erased simulators need their own installation.
+
+Password recovery currently reports unavailable until real token/email delivery is implemented. Missing R2 upload configuration returns 503 outside tests. AI summaries disclose their bounded latest-25-record scope. Production deployment, native Google sign-in setup, full theme parity, remaining SDK/tooling advisories, and visual/physical-device QA remain tracked in `.brain/TODO.md`.
+
+
+## Local sign-in troubleshooting
+
+Leave `EXPO_PUBLIC_API_URL=` blank in `mobile/.env` when the backend runs beside Metro on port 4000. The app follows the current Wi-Fi host automatically; web uses the browser host and Android emulator loopback is mapped correctly. Set an explicit URL only for a separate backend/deployment. Restart Metro after changing environment values.
+
+`GET /api/ready` checks database availability. From `backend/`, `npm run check:local-auth` checks the running local API with a disposable account and removes it afterward. Backend environment paths are independent of launch directory; JWT_SECRET must be a private random value of at least 32 characters. See `.brain/AUTH_AUDIT.md` for the October sign-in audit and its verification limits.

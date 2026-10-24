@@ -6,10 +6,10 @@ import {
   StyleSheet,
   Image,
   Alert,
-  Modal,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { PrivateModal as Modal } from '../security/PrivateModal';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';

@@ -31,7 +31,7 @@ async function getAllForUser(userId, { type, recordIds, limit = 50, offset = 0 }
       `SELECT id, user_id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at, updated_at
        FROM public.medical_records
        WHERE user_id = $1 AND id = ANY($2::uuid[])
-       ORDER BY date DESC
+       ORDER BY date DESC, id DESC
        LIMIT $3 OFFSET $4`,
       [userId, recordIds, safeLimit, safeOffset]
     );
@@ -43,7 +43,7 @@ async function getAllForUser(userId, { type, recordIds, limit = 50, offset = 0 }
       `SELECT id, user_id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at, updated_at
        FROM public.medical_records
        WHERE user_id = $1 AND type = $2
-       ORDER BY date DESC
+       ORDER BY date DESC, id DESC
        LIMIT $3 OFFSET $4`,
       [userId, type, safeLimit, safeOffset]
     );
@@ -53,7 +53,7 @@ async function getAllForUser(userId, { type, recordIds, limit = 50, offset = 0 }
     `SELECT id, user_id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at, updated_at
      FROM public.medical_records
      WHERE user_id = $1
-     ORDER BY date DESC
+     ORDER BY date DESC, id DESC
      LIMIT $2 OFFSET $3`,
     [userId, safeLimit, safeOffset]
   );
@@ -80,9 +80,7 @@ async function deleteForUser(userId, recordId) {
 
 // Used by the doctor share-access flow.
 // Priority: specific record IDs > allowed types > all records
-async function getAllForShare(userId, allowedTypes, recordIds, { limit = 50, offset = 0 } = {}) {
-  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
-  const safeOffset = Math.max(Number(offset) || 0, 0);
+async function getAllForShare(userId, allowedTypes, recordIds) {
 
   // Specific records selected — highest priority
   if (recordIds && recordIds.length > 0) {
@@ -90,9 +88,8 @@ async function getAllForShare(userId, allowedTypes, recordIds, { limit = 50, off
       `SELECT id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at
        FROM public.medical_records
        WHERE user_id = $1 AND id = ANY($2)
-       ORDER BY date DESC
-       LIMIT $3 OFFSET $4`,
-      [userId, recordIds, safeLimit, safeOffset]
+       ORDER BY date DESC, id DESC`,
+      [userId, recordIds]
     );
     return rows;
   }
@@ -103,9 +100,8 @@ async function getAllForShare(userId, allowedTypes, recordIds, { limit = 50, off
       `SELECT id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at
        FROM public.medical_records
        WHERE user_id = $1 AND type = ANY($2)
-       ORDER BY date DESC
-       LIMIT $3 OFFSET $4`,
-      [userId, allowedTypes, safeLimit, safeOffset]
+       ORDER BY date DESC, id DESC`,
+      [userId, allowedTypes]
     );
     return rows;
   }
@@ -115,9 +111,8 @@ async function getAllForShare(userId, allowedTypes, recordIds, { limit = 50, off
     `SELECT id, type, title, description, to_char(date, 'YYYY-MM-DD') AS date, attachment_url, created_at
      FROM public.medical_records
      WHERE user_id = $1
-     ORDER BY date DESC
-     LIMIT $2 OFFSET $3`,
-    [userId, safeLimit, safeOffset]
+     ORDER BY date DESC, id DESC`,
+    [userId]
   );
   return rows;
 }

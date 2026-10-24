@@ -1,6 +1,6 @@
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-require('dotenv').config();
+require('./env');
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '';
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
@@ -33,6 +33,11 @@ const r2Client = new S3Client({
  */
 async function generatePresignedUploadUrl(bucket = R2_BUCKET_NAME, key, contentType, expiresIn = 900) {
   if (!isR2Configured) {
+    if (process.env.NODE_ENV !== 'test') {
+      const error = new Error('Secure document storage is not configured. Uploads are temporarily unavailable.');
+      error.status = 503;
+      throw error;
+    }
     return {
       uploadUrl: `https://mock.r2.cloudflarestorage.com/${bucket}/${key}?X-Amz-Expires=${expiresIn}&mock=true`,
       key,

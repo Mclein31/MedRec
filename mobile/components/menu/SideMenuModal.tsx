@@ -2,21 +2,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Modal,
   Pressable,
   Animated,
   StyleSheet,
   ScrollView,
   Alert,
-  Share,
   Image,
   Easing,
 } from 'react-native';
+import { PrivateModal as Modal } from '../security/PrivateModal';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
+import { exportHealthVault } from '../../lib/healthExport';
 import { SideMenuItem } from './SideMenuItem';
 import { Colors, Radii } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -59,6 +59,7 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
 
   const [activeSharesCount, setActiveSharesCount] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
+  const exportBusy = useRef(false);
   const [modalVisible, setModalVisible] = useState(visible);
 
   const slideAnim = useRef(new Animated.Value(-drawerWidth)).current;
@@ -170,34 +171,15 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
   };
 
   const handleExportVault = async () => {
-    if (exporting) return;
+    if (exportBusy.current) return;
+    exportBusy.current = true;
     setExporting(true);
     try {
-      const [recordsRes, profileRes] = await Promise.all([
-        api.getRecords().catch(() => ({ records: [] })),
-        api.getProfile().catch(() => ({ profile: {} })),
-      ]);
-
-      const archive = {
-        exportedAt: new Date().toISOString(),
-        version: '1.0.0',
-        app: 'MedRec Health Vault',
-        user: {
-          name: user?.name,
-          email: user?.email,
-        },
-        profile: profileRes.profile,
-        recordsCount: recordsRes.records.length,
-        records: recordsRes.records,
-      };
-
-      await Share.share({
-        title: `MedRec_Health_Vault_${new Date().toISOString().split('T')[0]}.json`,
-        message: JSON.stringify(archive, null, 2),
-      });
+      await exportHealthVault('json');
     } catch (err: any) {
       Alert.alert('Export Failed', err.message || 'Unable to export health vault.');
     } finally {
+      exportBusy.current = false;
       setExporting(false);
     }
   };
@@ -205,7 +187,7 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
   const handleAboutPress = () => {
     Alert.alert(
       'About MedRec',
-      'MedRec is your personal, sovereign health records vault.\n\nVersion: 1.0.0 (Build 2026)\nSecurity: Client-side cryptographic access tokens & encrypted data.\n\nMedical Disclaimer:\nMedRec is a personal data organizer and is not a substitute for professional clinical medical advice, diagnosis, or treatment.',
+      'MedRec keeps your health records organized and ready for your next visit.\n\nVersion: 1.0.0 (Build 2026)\nSharing: Temporary, read-only access that you can revoke.\n\nMedical Disclaimer:\nMedRec is a personal data organizer and is not a substitute for professional clinical medical advice, diagnosis, or treatment.',
       [{ text: 'Close', style: 'default' }]
     );
   };
@@ -391,7 +373,8 @@ export const SideMenuModal: React.FC<SideMenuModalProps> = ({
               <SideMenuItem
                 icon="cloud-download-outline"
                 iconColor={MUTED}
-                label="Export Health Vault"
+                label={exporting ? 'Preparing archive…' : 'Export Health Vault'}
+                sublabel="JSON file · attachments not included"
                 onPress={handleExportVault}
               />
             </View>

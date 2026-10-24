@@ -8,7 +8,7 @@ describe('Medical Records API Endpoints', () => {
   let token;
   let testEmail;
   let createdRecordId;
-  const samplePhotoUri = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+  let attachmentPath;
 
   beforeAll(async () => {
     const schemaSql = fs.readFileSync(path.join(__dirname, '../src/migrations/schema.sql'), 'utf8');
@@ -24,6 +24,7 @@ describe('Medical Records API Endpoints', () => {
       });
     expect(res.status).toBe(201);
     token = res.body.token;
+    attachmentPath = `${res.body.user.id}/prescription.jpg`;
   });
 
   afterAll(async () => {
@@ -42,13 +43,14 @@ describe('Medical Records API Endpoints', () => {
         title: 'Amoxicillin 500mg Rx',
         description: 'Take 1 capsule every 8 hours for 10 days',
         date: '2026-08-31',
-        attachmentUrl: samplePhotoUri,
+        attachmentUrl: attachmentPath,
       });
 
     expect(res.status).toBe(201);
     expect(res.body.record).toHaveProperty('id');
     expect(res.body.record.title).toBe('Amoxicillin 500mg Rx');
-    expect(res.body.record.attachment_url).toBe(samplePhotoUri);
+    expect(res.body.record.attachmentPath).toBe(attachmentPath);
+    expect(res.body.record.attachment_url).toMatch(/^https:\/\//);
 
     createdRecordId = res.body.record.id;
   });
@@ -60,7 +62,7 @@ describe('Medical Records API Endpoints', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.record.id).toBe(createdRecordId);
-    expect(res.body.record.attachment_url).toBe(samplePhotoUri);
+    expect(res.body.record.attachmentPath).toBe(attachmentPath);
   });
 
   it('GET /records should list all records including attachment_url', async () => {
@@ -72,7 +74,7 @@ describe('Medical Records API Endpoints', () => {
     expect(Array.isArray(res.body.records)).toBe(true);
     const found = res.body.records.find((r) => r.id === createdRecordId);
     expect(found).toBeDefined();
-    expect(found.attachment_url).toBe(samplePhotoUri);
+    expect(found.attachmentPath).toBe(attachmentPath);
   });
 
   it('PUT /records/:id should update record metadata and return updated record', async () => {
@@ -114,6 +116,52 @@ describe('Medical Records API Endpoints', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ title: '   ' });
     expect(emptyTitleRes.status).toBe(400);
+  });
+
+  it.each(['2026-02-29', '2026-04-31', '2026-13-01', '2026-00-10', '0000-01-01', '2026-09-02T12:00:00Z'])('should reject invalid civil date %s on create and update', async (date) => {
+    const createRes = await request(app).post('/records')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ type: 'lab', title: 'Invalid date', date });
+    expect(createRes.status).toBe(400);
+    const updateRes = await request(app).put(`/records/${createdRecordId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ date });
+    expect(updateRes.status).toBe(400);
+    const unchanged = await request(app).get(`/records/${createdRecordId}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(unchanged.body.record.date).toBe('2026-09-02');
+  });
+
+  it.each(['blob:https://example.com/photo', 'file:///tmp/photo.jpg', 'content://photo', 'data:image/jpeg;base64,aGVsbG8='])('should reject local attachment URI %s on create and update', async (attachmentUrl) => {
+    const createRes = await request(app).post('/records')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ type: 'lab', title: 'Local attachment', date: '2026-09-02', attachmentUrl });
+    expect(createRes.status).toBe(400);
+    const updateRes = await request(app).put(`/records/${createdRecordId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ attachmentUrl });
+    expect(updateRes.status).toBe(400);
+    const unchanged = await request(app).get(`/records/${createdRecordId}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(unchanged.body.record.attachmentPath).toBe(attachmentPath);
+  });
+
+  it('should accept leap-day dates and preserve stable pagination for tied dates', async () => {
+    const ids = [];
+    for (let i = 0; i < 3; i++) {
+      const res = await request(app).post('/records')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ type: 'lab', title: `Leap day ${i}`, date: '2028-02-29' });
+      expect(res.status).toBe(201);
+      ids.push(res.body.record.id);
+    }
+    const pages = [];
+    for (let offset = 0; offset < 3; offset++) {
+      const res = await request(app).get(`/records?limit=1&offset=${offset}`)
+        .set('Authorization', `Bearer ${token}`);
+      pages.push(res.body.records[0].id);
+    }
+    expect(pages).toEqual(ids.sort().reverse());
   });
 
   it('DELETE /records/:id should remove record and attachment', async () => {

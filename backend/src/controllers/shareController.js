@@ -13,12 +13,15 @@ const MAX_ACTIVE_SHARE_SESSIONS = 5;
 async function createShare(req, res, next) {
   try {
     const { ttlMinutes, allowedTypes, recordIds } = req.body;
-    const minutes = Number(ttlMinutes) > 0 ? Number(ttlMinutes) : DEFAULT_TTL_MINUTES;
+    const minutes = ttlMinutes === undefined ? DEFAULT_TTL_MINUTES : Number(ttlMinutes);
+    if (!Number.isFinite(minutes) || !Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+      return res.status(400).json({ error: 'ttlMinutes must be a whole number between 1 and 1440' });
+    }
 
     if (allowedTypes && !Array.isArray(allowedTypes)) {
       return res.status(400).json({ error: 'allowedTypes must be an array of record types' });
     }
-    if (recordIds && !Array.isArray(recordIds)) {
+    if (recordIds !== undefined && (!Array.isArray(recordIds) || recordIds.length === 0)) {
       return res.status(400).json({ error: 'recordIds must be an array of UUIDs' });
     }
 
@@ -111,15 +114,24 @@ async function summarizeShared(req, res, next) {
       return res.status(404).json({ error: 'This share link is invalid, expired, or revoked' });
     }
 
-    const records = await recordModel.getAllForShare(
+    const allRecords = await recordModel.getAllForShare(
       share.user_id,
       share.allowed_types,
       share.record_ids
     );
+    const records = allRecords.slice(0, aiService.MAX_SUMMARY_RECORDS);
+    const scope = {
+      includedRecordCount: records.length,
+      totalRecordCount: allRecords.length,
+    };
+    const scopeNote = allRecords.length > records.length
+      ? `This summary covers the latest ${records.length} of ${allRecords.length} shared records. Older records are not included.\n\n`
+      : '';
 
     if (records.length === 0) {
       return res.json({
         summary: 'No medical records are included in this shared clinical session.',
+        ...scope,
         currentMedications: [],
         diagnoses: [],
         keyNotes: [],
@@ -128,7 +140,7 @@ async function summarizeShared(req, res, next) {
 
     try {
       const result = await aiService.summarizeRecords(records);
-      return res.json(result);
+      return res.json({ ...result, ...scope, summary: scopeNote + result.summary });
     } catch (aiErr) {
       // Deterministic structured clinical synthesis fallback (0 hallucinations, 100% resilient)
       const medications = records
@@ -147,7 +159,8 @@ async function summarizeShared(req, res, next) {
         .join(', ');
 
       return res.json({
-        summary: `Shared medical record history for ${share.patient_name || 'patient'} containing ${records.length} authorized clinical entries across ${distinctTypes}.`,
+        ...scope,
+        summary: scopeNote + `Shared medical record history for ${share.patient_name || 'patient'} containing ${records.length} authorized clinical entries across ${distinctTypes}.`,
         currentMedications: medications,
         diagnoses: diagnoses,
         keyNotes: keyNotes,

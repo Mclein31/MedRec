@@ -8,18 +8,19 @@ import {
   Alert,
   StyleSheet,
   Linking,
-  Share,
   Switch,
   Image,
 } from 'react-native';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../lib/api';
+import { exportHealthVault, HealthExportFormat } from '../../lib/healthExport';
 import { useAuth } from '../../context/AuthContext';
+import { useAppLock } from '../../context/AppLockContext';
 import { useNotifications } from '../../context/NotificationContext';
 import ProfileEditModal, { ProfileData } from '../../components/ProfileEditModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
@@ -61,8 +62,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Preference Toggles
-  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const { enabled: biometricsEnabled, setEnabled: setBiometricsEnabled, available: biometricsAvailable, ready: biometricsReady, busy: biometricsBusy, hint: biometricsHint } = useAppLock();
 
   // Modals state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -73,10 +73,14 @@ export default function ProfileScreen() {
   const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [exporting, setExporting] = useState<HealthExportFormat | null>(null);
+  const exportBusy = useRef(false);
 
   const { unreadCount, refreshNotifications } = useNotifications();
 
   const handlePickPhoto = async () => {
+    if (uploadingPhoto) return;
+    const previousAvatar = profile.avatarUrl ?? null;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -137,7 +141,9 @@ export default function ProfileScreen() {
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
-      Alert.alert('Photo Error', err?.message || 'Could not open photo library.');
+      setProfile(prev => ({ ...prev, avatarUrl: previousAvatar }));
+      setUser(prev => prev ? { ...prev, avatarUrl: previousAvatar } : null);
+      Alert.alert('Photo Error', err?.message || 'Could not save your profile photo. Please try again.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -223,42 +229,18 @@ export default function ProfileScreen() {
       });
   };
 
-  const handleExportData = async () => {
+  const handleExportData = async (format: HealthExportFormat = 'json') => {
+    if (exportBusy.current) return;
+    exportBusy.current = true;
+    setExporting(format);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const recordsData = await api.getRecords();
-      const exportPayload = {
-        exportDate: new Date().toISOString(),
-        application: 'MedRec Health Vault',
-        user: {
-          name: user?.name,
-          email: user?.email,
-        },
-        profile: {
-          dateOfBirth: profile.dateOfBirth,
-          biologicalSex: profile.biologicalSex,
-          bloodType: profile.bloodType,
-          allergies: profile.allergies,
-          medicalConditions: profile.medicalConditions,
-          medicationsSummary: profile.medicationsSummary,
-          emergencyContact: {
-            name: profile.emergencyContactName,
-            relationship: profile.emergencyContactRelationship,
-            phone: profile.emergencyContactPhone,
-          },
-          phone: profile.phone,
-          address: profile.address,
-          organDonor: profile.organDonor,
-        },
-        medicalRecords: recordsData?.records || [],
-      };
-
-      await Share.share({
-        title: 'MedRec Health Vault Export',
-        message: JSON.stringify(exportPayload, null, 2),
-      });
+      await exportHealthVault(format);
     } catch (err: any) {
-      Alert.alert('Export Failed', err.message || 'Could not export records.');
+      Alert.alert('Export Failed', err.message || 'Could not export your health vault. Please try again.');
+    } finally {
+      exportBusy.current = false;
+      setExporting(null);
     }
   };
 
@@ -383,7 +365,7 @@ export default function ProfileScreen() {
             style={[styles.rowValue, !profile.medicalConditions && styles.mutedValue]}
             numberOfLines={2}
           >
-            {profile.medicalConditions || 'None reported'}
+            {profile.medicalConditions || 'Not added'}
           </Text>
         </View>
 
@@ -396,7 +378,7 @@ export default function ProfileScreen() {
             style={[styles.rowValue, !profile.medicationsSummary && styles.mutedValue]}
             numberOfLines={2}
           >
-            {profile.medicationsSummary || 'None reported'}
+            {profile.medicationsSummary || 'Not added'}
           </Text>
         </View>
 
@@ -406,7 +388,7 @@ export default function ProfileScreen() {
         <View style={styles.row}>
           <Text style={styles.rowLabel}>Organ Donor</Text>
           <Text style={styles.rowValue}>
-            {profile.organDonor ? 'Yes (Registered Donor)' : 'No / Not registered'}
+            {profile.organDonor ? 'Yes' : 'No / Not registered'}
           </Text>
         </View>
 
@@ -569,14 +551,21 @@ export default function ProfileScreen() {
         {/* Biometrics Toggle */}
         <View style={styles.switchRow}>
           <View style={styles.switchLabelGroup}>
-            <Text style={styles.switchTitle}>Biometric Unlock</Text>
-            <Text style={styles.switchSubtitle}>Use Face ID / Touch ID to open MedRec</Text>
+            <Text style={styles.switchTitle}>App lock</Text>
+            <Text style={styles.switchSubtitle}>{biometricsHint}</Text>
           </View>
           <Switch
             value={biometricsEnabled}
-            onValueChange={(val) => {
+            disabled={!biometricsReady || biometricsBusy || (!biometricsAvailable && !biometricsEnabled)}
+            accessibilityLabel="Lock MedRec with biometrics or device passcode"
+            accessibilityHint={biometricsHint}
+            onValueChange={async (val) => {
               Haptics.selectionAsync();
-              setBiometricsEnabled(val);
+              try {
+                await setBiometricsEnabled(val);
+              } catch (err) {
+                Alert.alert('App lock', err instanceof Error ? err.message : 'Could not update app lock. Try again.');
+              }
             }}
             trackColor={{ false: '#E2E8F0', true: TEAL }}
             thumbColor="#FFFFFF"
@@ -585,23 +574,11 @@ export default function ProfileScreen() {
 
         <View style={styles.rowDivider} />
 
-        {/* Health Notifications Toggle */}
-        <View style={styles.switchRow}>
-          <View style={styles.switchLabelGroup}>
-            <Text style={styles.switchTitle}>Health Alerts &amp; Logs</Text>
-            <Text style={styles.switchSubtitle}>Notifications for doctor QR shares &amp; uploads</Text>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={(val) => {
-              Haptics.selectionAsync();
-              setNotificationsEnabled(val);
-            }}
-            trackColor={{ false: '#E2E8F0', true: TEAL }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
+        <Pressable onPress={() => { refreshNotifications(); setNotificationsVisible(true); }} style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel="Open activity and access log">
+          <View style={styles.actionIconBox}><Ionicons name="notifications-outline" size={16} color={INK} /></View>
+          <Text style={styles.actionTitle}>Activity &amp; access log</Text>
+          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+        </Pressable>
         <View style={styles.rowDivider} />
 
         {/* Change Password */}
@@ -622,17 +599,37 @@ export default function ProfileScreen() {
 
         {/* Export Data Archive */}
         <Pressable
-          onPress={handleExportData}
+          onPress={() => handleExportData('json')}
+          disabled={exporting !== null}
           style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Export all health data as JSON"
+          accessibilityState={{ disabled: exporting !== null, busy: exporting === 'json' }}
         >
           <View style={styles.actionIconBox}>
             <Ionicons name="download-outline" size={16} color={INK} />
           </View>
-          <Text style={styles.actionTitle}>Export Health Vault (JSON)</Text>
-          <Ionicons name="chevron-forward" size={15} color={MUTED} />
+          <Text style={styles.actionTitle}>{exporting === 'json' ? 'Preparing archive…' : 'Export Health Vault (JSON)'}</Text>
+          {exporting === 'json' ? <ActivityIndicator color={TEAL} /> : <Ionicons name="chevron-forward" size={15} color={MUTED} />}
         </Pressable>
+
+        <View style={styles.rowDivider} />
+
+        <Pressable
+          onPress={() => handleExportData('pdf')}
+          disabled={exporting !== null}
+          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Save or print patient health history as PDF"
+          accessibilityState={{ disabled: exporting !== null, busy: exporting === 'pdf' }}
+        >
+          <View style={styles.actionIconBox}>
+            <Ionicons name="document-text-outline" size={16} color={INK} />
+          </View>
+          <Text style={styles.actionTitle}>{exporting === 'pdf' ? 'Preparing history…' : 'Health History (PDF)'}</Text>
+          {exporting === 'pdf' ? <ActivityIndicator color={TEAL} /> : <Ionicons name="chevron-forward" size={15} color={MUTED} />}
+        </Pressable>
+        <Text style={styles.exportNote}>Profile and record text only. Attachment files are not included. On the web, choose Save as PDF in the print dialog.</Text>
 
         <View style={styles.rowDivider} />
 
@@ -1520,6 +1517,14 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendDeca-Regular',
     fontSize: 11,
     color: MUTED,
+  },
+  exportNote: {
+    fontFamily: 'LexendDeca-Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: MUTED,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   actionRow: {
     flexDirection: 'row',

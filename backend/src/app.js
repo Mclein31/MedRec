@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+require('./config/env');
 const helmet = require('helmet');
 const authRoutes = require('./routes/authRoutes');
 const recordRoutes = require('./routes/recordRoutes');
@@ -11,6 +11,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const pool = require('./config/db');
 
 const app = express();
 
@@ -39,6 +40,18 @@ app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+async function readiness(req, res) {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ready', database: 'available' });
+  } catch (error) {
+    console.error('[Readiness] Database check failed:', error.code || error.name);
+    res.status(503).json({ status: 'unavailable', database: 'unavailable', code: 'DATABASE_UNAVAILABLE' });
+  }
+}
+app.get('/ready', readiness);
+app.get('/api/ready', readiness);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -81,6 +94,8 @@ if (process.env.NODE_ENV !== 'test') {
   app.use('/api/auth/login', authLimiter);
   app.use('/api/auth/register', authLimiter);
   app.use('/api/auth/google', authLimiter);
+  app.use('/api/auth/forgot-password', passwordResetLimiter);
+  app.use('/api/auth/reset-password', passwordResetLimiter);
   app.use('/share', shareCreateLimiter);
   app.use('/share/:token', shareAccessLimiter);
   app.use('/api/share', shareCreateLimiter);
