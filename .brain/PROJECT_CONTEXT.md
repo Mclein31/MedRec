@@ -13,7 +13,7 @@ tags:
   - postgresql
   - cloudflare-r2
   - ai
-last_updated: 2026-10-24
+last_updated: 2026-10-26
 ---
 
 # 🏥 MedRecord_App (MedRec) — Project Context
@@ -25,6 +25,7 @@ last_updated: 2026-10-24
 
 ## 🎯 Current Status
 - **v2 rebuild (2026-10-24, DD-44)**: New stack in `apps/api` (Cloudflare Worker + Neon + R2 + Gemini + Gmail OTP) and `apps/mobile` (Expo SDK 54). Feature-complete for records, AI reading, sharing, Medical ID, exports, app lock and 2FA; verified locally (37 API + 7 app tests, live `wrangler dev` probe, headless UI run). Not yet deployed; legacy `backend/` and `mobile/` below remain the shipped v1 until cut-over. See [apps/README.md](../apps/README.md).
+- **Warm folio UI (2026-10-26, DD-45)**: every `apps/mobile` screen rebuilt to `design/medrec-uiux-handoff` with the Remy mascot animated throughout, an animated preload, new onboarding, QR receipts and a rule-based Ask Remy (no chat model). Verified on web and in native bundles; not yet on devices.
 - **Status**: Local implementation and UI polish complete for the existing record flows; deployment and real-device QA remain open.
 - **2026-10-14 UX pass**: Four-step onboarding redesigned with sliding pages, staggered sample cards, QR scanning/pulsing, animated progress, pause control, and live Reduce Motion/background handling. Login/register share labeled responsive forms; dashboard has primary record intake, a Medical ID shortcut, compact record rows, actionable errors/empty states, and scrollable AI summaries. Bottom navigation has visible labels and consistent vector icons.
 - **Finished features**: Native biometric/passcode app lock (SecureStore preference per account, cold-start/resume enforcement, protected modal suppression), actual JSON file export, and printable PDF history. Exports fetch every page, remove temporary access URLs, and explicitly exclude attachment bytes.

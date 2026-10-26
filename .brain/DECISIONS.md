@@ -7,10 +7,28 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-10-24
+last_updated: 2026-10-26
 ---
 
 # 📜 MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-10-26 — "Warm folio" UI with Remy, honest Ask Remy (DD-45)
+
+### Decision
+Rebuild every `apps/mobile` screen to the Figma handoff in `design/medrec-uiux-handoff/` (ivory/aubergine/persimmon, DM Sans/Sora/Manrope bundled under OFL, compact text category tabs, centre Add record tab, plain MedRec wordmark, top-right Ask Remy). Remy is one component (`src/ui/Remy.tsx`) with six original poses and motion presets driven by shared values, never layout `entering` animations (DD-44 web crash). At the user's request every screen has an animated Remy; launch and onboarding get extra motion (hop with squash, sparkles, Remy riding the progress bar). Clinical facts stay in front of the art, and an access-ended state uses a calm pose, not a celebration.
+
+Motion: 180 ms routine, 220 ms onboarding. System Reduce Motion plus an in-app "Gentler motion" setting (`src/prefs.ts`) stop all decorative movement. The preload shows only while session/first-launch state loads and always clears (timer fallback if frames are throttled).
+
+Ask Remy has no chat model. `src/remy/answer.ts` answers only from the user's own records (API search), terms the AI already explained in a saved record, a small labelled general glossary, and fixed MedRec help. Personal-advice and urgent questions get fixed refusals that point to a clinician or emergency care; everything else gets "can't answer yet".
+
+### Alternatives
+- A new LLM chat endpoint: out of scope for a visual migration; needs its own guardrails and authorisation.
+- Keeping 1-day and 7-day share links: dropped from the app UI because the design and spec fix 15/30/60 minutes. The API still accepts the longer values.
+
+### Consequences
+Design tokens keep the old key names (`accent`, `ink3`, …) so nothing else had to change shape; new roles are `persimmon`, `gold`, `panel`. QR receipts are always ink-on-white so they scan in dark mode. A free-form conversational backend remains an open gap.
+
+---
 
 ## 2026-10-24 — v2 rebuild on Workers, Neon, R2, Gemini and emailed codes (DD-44)
 

@@ -5,10 +5,27 @@ project: MedRecord_App
 tags:
   - notes
   - reference
-last_updated: 2026-10-14
+last_updated: 2026-10-26
 ---
 
 # 📋 MedRecord_App (MedRec) — Technical Notes
+
+## 2026-10-26 — Reviewable Figma redesign
+
+- **Complete UI/UX implementation handoff (2026-10-26):** `design/medrec-uiux-handoff/` contains all 52 current PNG/SVG screen references, three boards, 2,737 layer nodes, semantic/raw tokens, 221 prototype-linked nodes, selected Remy assets, gallery, route map and `CLAUDE_PROMPT.md`. Target is v2 `apps/mobile` + `apps/api` per DD-44. The snapshot includes 40px header Remy and the white welcome panel. This packaging changed no production code; Figma remains the editable source.
+
+- **Figma organization:** latest MedRec screens, components/states and brand/Remy assets moved to the dedicated **MedRec · App design** page (`77:3066`) in the existing file. Current section IDs remain `71:15559`, `71:15560`, `71:18177`. The old rejected sections `69:746` and `69:747` were deleted at user request; SERVIO's 76 unrelated top-level nodes and three flows were unchanged. Five current MedRec flows moved; destination validation found no broken links. Local page ledger: `/Users/mclein/Documents/ChatGPT/MedRec/design-output/MedRec-page-organization.json`.
+
+- **Current reviewable direction:** [Warm folio](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15559), replacing the rejected mint theme and folded-M logo. Ivory, aubergine, persimmon, golden/peach; 29 main screens include launch/loading and [Ask Remy](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2656). User calls the selected organizer mascot Remy and intends him as the chatbot. Four expression variants and a page-by-page placement plan are on the [brand board](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-18177). Chat is a fixed synthetic Figma demo, not live AI. Full rationale: [[07 - Product Design/UI Concepts#2026-10-26 — Warm folio and Remy assistant]]. This does not approve or implement production changes.
+- **Review-file preference:** user objected to filling Downloads. All 24 exact session-created exports were moved into `/Users/mclein/Documents/ChatGPT/MedRec/design-output/review-exports/`. Keep future review files inside the workspace and use live Figma views for routine checking.
+- **Rejected category treatment:** oversized folder-shaped record cards were rejected. Current Figma records use compact text filters and a roomier document list; the onboarding preview uses document rows. Remy's selected character and the logo are unaffected. Do not restore the bulky category folders.
+- **Latest Figma refinement:** five-item navbar with Add record centered; plain MedRec header name, Remy beside Ask Remy at top right. Launch and all five QR receipt headers use Remy; QR cards have top/bottom zigzag tear edges. Magnifying-glass Remy is on search-empty, and the app icon is a new Remy close-up. Current visual rules and asset/prompt paths: `/Users/mclein/Documents/ChatGPT/MedRec/DESIGN.md`. These are Figma concepts, not production changes.
+
+- **Superseded direction 04:** the first teal draft was rejected. The subsequent [iris, mint and coral proposal](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15559) contained 24 main screens and the selected organizer. Mint and the M logo were subsequently rejected. The orange/serif journal concept, conventional clinical-blue palette, and paper mascot were also rejected. See [[07 - Product Design/UI Concepts#2026-10-26 — Iris, mint and coral brand direction]].
+
+- Draft created beside SERVIO in the existing [Personal Projects file](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=69-746), same page, section `69:746`; components and supporting states in `69:747`.
+- 20 main screens, supporting variants/sheets, reusable components and 203 linked prototype actions. Lexend Deca, restrained teal, bare icons, larger controls, explicit share scopes. Production source was not changed; this does not supersede existing design decisions until reviewed.
+- Rationale, source references, validation and limitations: [[07 - Product Design/UI Concepts#2026-10-26 — Figma redesign draft]]. Builder and exported state/overview are under `/Users/mclein/Documents/ChatGPT/MedRec/`.
 
 ## 📂 MedRec Obsidian Vault Integration
 The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed notes across:

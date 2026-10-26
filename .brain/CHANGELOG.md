@@ -5,10 +5,18 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-10-24
+last_updated: 2026-10-26
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [2.0.0-alpha.2] — 2026-10-26 — Warm folio redesign with Remy (DD-45)
+
+- **Design system**: new tokens, bundled DM Sans/Sora/Manrope, persimmon/aubergine/gold buttons, text category tabs, bottom sheet, zigzag QR receipt (28 teeth, 6 px), Remy app icon, adaptive icon and splash.
+- **Remy**: six poses with idle/wave/hop/read/search/cheer/peek motion, ground shadow and sparkles; animated on every screen, extra on launch and onboarding.
+- **New routes**: animated launch preload, welcome + 4-step onboarding, `/remy` (Ask Remy), `/share/[id]` (QR pass and access ended), `/record/explain`, `/preferences` (larger text, appearance, gentler motion).
+- **Flows restyled**: auth/OTP/recovery, records (loading, empty, no-match, category sheet), record detail, intake (upload incomplete, reading, review, saved after the API confirms), sharing, Medical ID, profile/export sheet, security (app lock moved here), activity, summary, app lock.
+- **Verification**: mobile typecheck (incl. no unused locals); 15 unit tests (8 new for Ask Remy); web/iOS/Android exports; web UI walk-through at 390×844 and 320 px with larger text against a local API: real OTP sign-in, record list/search/no-match, detail/explain, upload → save, Ask Remy, share QR decoded with BarcodeDetector, scope (labs only) and revoke (404 afterwards), gentler motion. No native device QA.
 
 ## [2.0.0-alpha] — 2026-10-24 — Rebuild from scratch in `apps/` (DD-44)
 

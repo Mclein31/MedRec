@@ -5,12 +5,14 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-10-24
+last_updated: 2026-10-26
 ---
 
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
 
 ## 🔴 High Priority
+- [ ] v2 UI (DD-45): device QA of Remy motion, haptics, safe areas, keyboard and VoiceOver/TalkBack on real iOS/Android; dark-mode visual pass (tokens mapped, no dark design exists).
+- [ ] v2: decide whether Ask Remy needs a real conversational backend; today it only searches records, explains saved terms and gives app help.
 - [ ] v2: create Neon project, R2 bucket, Gmail App Password and Gemini key; deploy `apps/api` with `--env production` (steps in apps/README.md).
 - [ ] v2: QA `apps/mobile` on physical iOS/Android (camera capture, Face ID/fingerprint lock, PDF share sheet, code autofill).
 - [ ] v2: decide cut-over — retire `backend/` + `mobile/` once v2 is deployed and verified; there is no v1→v2 data migration yet.
