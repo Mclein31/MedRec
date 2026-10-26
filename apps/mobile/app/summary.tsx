@@ -1,11 +1,11 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import { Remy } from '../src/ui/Remy';
 import { formatDate } from '../src/format';
 import { api, type HistorySummary } from '../src/lib/api';
 import { messageFor } from '../src/lib/errors';
 import { space, useColors } from '../src/theme';
-import { Banner, Button, Icon, Tappable, Txt } from '../src/ui/core';
+import { Banner, Button, Txt } from '../src/ui/core';
 import { Screen, Section } from '../src/ui/layout';
 
 export default function Summary() {
@@ -35,21 +35,17 @@ export default function Summary() {
 
   return (
     <Screen
-      title="Health summary"
+      nav={{ title: 'Health summary', back: 'close' }}
+      title="Your health summary."
       subtitle="A plain-language overview written from your records and health details."
       tabBar={false}
-      right={
-        <Tappable onPress={() => router.back()} accessibilityLabel="Close" hitSlop={10} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="close" size={24} color={c.ink} />
-        </Tappable>
-      }
     >
       {error && <Banner message={error} />}
       {!result ? (
         <View style={{ gap: space.md }}>
           <Txt color={c.ink2}>MedRec sends the text of your newest records — not the photos — to Google Gemini to write this. Nothing is saved until you share it.</Txt>
-          <Button label={busy ? 'Writing summary…' : 'Write my summary'} onPress={generate} loading={busy} />
-          {busy && <ActivityIndicator color={c.ink3} />}
+          {busy && <Remy pose="reading" motion="read" size={140} ground style={{ alignSelf: 'center' }} />}
+          <Button kind="dark" label={busy ? 'Writing summary…' : 'Write my summary'} onPress={generate} loading={busy} />
         </View>
       ) : (
         <>
