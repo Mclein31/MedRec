@@ -55,7 +55,7 @@ To maintain absolute clarity between assumptions, raw data, and proven facts, al
 
 ### 5. 🔵 Conclusion
 - **Definition:** A high-level deduction, strategic insight, or architectural decision derived from multiple validated findings.
-- **Location:** Synthesized in [[Research Insights]] and [[Architecture Decisions]].
+- **Location:** Synthesized in [[Research Insights]] and [[Decision Log|Architecture Decisions]].
 
 ---
 

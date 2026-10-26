@@ -62,7 +62,7 @@ My overarching ambition is twofold:
   - Implement dynamic QR-code sharing and pin-protected, time-expiring web links for doctor consultations ([[Record Sharing]]).
 
 ### Goal 4: Validate and Security-Harden the System
-- **Scope**: Testing and verification in [[Testing Strategy]].
+- **Scope**: Testing and verification in [[Testing|Testing Strategy]].
 - **Key Results**:
   - Perform rigorous cryptographic verification and threat modeling.
   - Test record import/export with synthetic FHIR patient datasets.
@@ -88,8 +88,8 @@ My overarching ambition is twofold:
 | Problem Domain Research | Phase 1 | 🟡 In Progress | [[Research MOC]], [[Research Questions]] |
 | Patient-Centered UX Design | Phase 2 | ⚪ Proposed | [[Product Design MOC]], [[User Flow]] |
 | MVP Engineering Build | Phase 3 | ⚪ Planned | [[Development MOC]], [[Technical Architecture]] |
-| Security & Cryptographic Audit | Phase 4 | ⚪ Planned | [[Security & Privacy MOC]], [[Testing Strategy]] |
-| Academic Synthesis & Publication | Phase 5 | ⚪ Planned | [[MedRec Roadmap]], [[Reference Materials]] |
+| Security & Cryptographic Audit | Phase 4 | ⚪ Planned | [[Security & Privacy MOC]], [[Testing\|Testing Strategy]] |
+| Academic Synthesis & Publication | Phase 5 | ⚪ Planned | [[MedRec Roadmap]], [[Resources\|Reference Materials]] |
 
 ---
 

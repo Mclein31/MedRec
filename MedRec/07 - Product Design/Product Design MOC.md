@@ -80,4 +80,4 @@ Welcome to the Product Design Map of Content for **MedRec**. This space serves a
 ## 🔗 Project Connections
 - Back to Root: [[MedRec MOC]]
 - Dashboard View: [[MedRec Dashboard]]
-- Technical Synergies: [[08 - Technical Architecture/Technical Architecture MOC|Technical Architecture MOC]]
+- Technical Synergies: [[Technical Architecture|Technical Architecture MOC]]

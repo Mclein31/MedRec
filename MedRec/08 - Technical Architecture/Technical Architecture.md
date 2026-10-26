@@ -77,7 +77,7 @@ graph TD
 - [[Decision - Backend Technology]] (Node.js/Express/FastAPI/Go)
 - [[Decision - Database Choice]] (PostgreSQL vs MongoDB vs SQLite)
 - [[Decision - API Style]] (REST vs GraphQL)
-- [[Decision - Cloud Provider]] (AWS vs GCP vs Supabase vs Render/Fly.io)
+- [[Decision Log|Decision - Cloud Provider]] (AWS vs GCP vs Supabase vs Render/Fly.io)
 
 ## Next Steps
 

@@ -28,7 +28,7 @@ Medical documentation is heterogeneous — an X-ray report is fundamentally diff
 
 ## Target User
 - [[Patients]]: Easily finding specific document types (e.g., pulling up "Prescriptions" at the pharmacy).
-- [[Healthcare Providers]]: Filtering records to their domain specialty (e.g., an orthopedist filtering directly to "Imaging & Radiology").
+- [[Doctors|Healthcare Providers]]: Filtering records to their domain specialty (e.g., an orthopedist filtering directly to "Imaging & Radiology").
 
 ## Related Research
 - *Status*: Pending research validation.

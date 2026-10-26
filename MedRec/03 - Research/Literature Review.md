@@ -27,7 +27,7 @@ This note serves as the systematic tracker and analysis repository for published
 For an in-depth synthesis of findings, statistical benchmarks, and core takeaways across surveyed papers, see [[Academic Literature Summary]]. For market solutions and legal frameworks, see [[Competitive Landscape]] and [[Regulatory Landscape]].
 
 > [!NOTE]
-> **Status:** `ACTIVE` — Completed the initial landscape literature pass across 9 foundational academic papers and industry reports. Synthesis and thematic extractions are actively informing [[Product Architecture]], [[Functional Requirements]], and [[Research Hypotheses]].
+> **Status:** `ACTIVE` — Completed the initial landscape literature pass across 9 foundational academic papers and industry reports. Synthesis and thematic extractions are actively informing [[System Architecture|Product Architecture]], [[Functional Requirements]], and [[Research Hypotheses]].
 
 ---
 

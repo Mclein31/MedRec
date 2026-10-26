@@ -29,7 +29,7 @@ Medical history is fundamentally chronological, yet traditional folders and flat
 
 ## Target User
 - [[Patients]]: Gaining holistic perspective on their health journey, chronic disease management, and life events.
-- [[Healthcare Providers]]: Rapidly reconstructing the sequence of prior clinical interventions during initial consultations.
+- [[Doctors|Healthcare Providers]]: Rapidly reconstructing the sequence of prior clinical interventions during initial consultations.
 
 ## Related Research
 - *Status*: Pending research validation.

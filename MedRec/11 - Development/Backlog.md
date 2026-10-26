@@ -64,5 +64,5 @@ Future work items, ideas, and upcoming technical tasks for **MedRec**, organized
 
 - [ ] Document data retention and export policies &rarr; [[Non-Functional Requirements]]
 - [ ] Write Architecture Decision Records (ADRs) as tech stack decisions finalize &rarr; [[Decision Log]]
-- [ ] Create automated testing strategy for cryptographic operations &rarr; [[Testing MOC]] *(future)*
+- [ ] Create automated testing strategy for cryptographic operations &rarr; [[Testing|Testing MOC]] *(future)*
 - [ ] Maintain technical debt log once code development commences &rarr; [[Technical Debt]]

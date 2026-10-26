@@ -72,7 +72,7 @@ Phase 5: Academic Integration & Open Source Release
   - Finalize the tech stack, API schemas, and local database architecture ([[Technical Architecture]], [[System Architecture]]).
 - **Core Deliverables**:
   - High-fidelity wireframes and user journey maps.
-  - Comprehensive database schema ([[Data Models]]).
+  - Comprehensive database schema ([[Database Schema|Data Models]]).
   - Architectural Decision Records in [[Decision Log]].
 
 ---
@@ -97,7 +97,7 @@ Phase 5: Academic Integration & Open Source Release
   - Execute end-to-end user flow testing with synthetic health datasets (FHIR synthetic records).
   - Optimize mobile document scanning, OCR accuracy, and offline sync resilience.
 - **Core Deliverables**:
-  - [[Testing Strategy]] report and automated test suites.
+  - [[Testing|Testing Strategy]] report and automated test suites.
   - Performance benchmarks for encryption and export pipelines.
 
 ---

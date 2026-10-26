@@ -40,6 +40,7 @@ This is the master Map of Content for the entire **MedRec** vault. It provides a
 ---
 
 ## 02 - Problem Space
+- [[Problem Space MOC]] — Section hub linking every note in this folder.
 - [[Problems MOC]] — Master index of clinical, patient, and system pain points.
 - [[Medical Record Portability]] — Friction in moving patient history across distinct healthcare networks.
 - [[User Pain Points]] — Redundant testing, fragmented web portals, lost paper records.
@@ -55,18 +56,21 @@ This is the master Map of Content for the entire **MedRec** vault. It provides a
 ---
 
 ## 04 - Users & Stakeholders
+- [[Users MOC]] — Section hub linking every note in this folder.
 - [[User Personas]] — Patient personas (Chronic Charlie, Nomadic Nina, Caregiver Chris) and Clinician personas.
 - [[User Pain Points]] — Specific user frustrations mapped to solution vectors.
 
 ---
 
 ## 05 - Requirements
+- [[Requirements MOC]] — Section hub linking every note in this folder.
 - [[Functional Requirements]] — Ingestion, categorization, OCR/parsing, search, sharing, export.
 - [[Non-Functional Requirements]] — Zero-knowledge security, sub-second search, offline operation, crash resilience.
 
 ---
 
 ## 06 - Features & Capabilities
+- [[Features MOC]] — Section hub linking every note in this folder.
 - [[Digital Medical Records]] — Unified timeline view, categorized dossiers, and full-text record search.
 - [[Record Sharing]] — QR-code sharing, temporary web links with PIN protection, granular permission scopes.
 - [[Record Transfer]] — Direct export to FHIR Bundle, encrypted ZIP, or flattened PDF summary.
@@ -86,7 +90,7 @@ This is the master Map of Content for the entire **MedRec** vault. It provides a
 ---
 
 ## 09 - Database & Data Models
-- [[Data Models]] — Schema definitions for patients, medical documents, record categories, and share tokens.
+- [[Database Schema|Data Models]] — Schema definitions for patients, medical documents, record categories, and share tokens.
 
 ---
 
@@ -105,7 +109,7 @@ This is the master Map of Content for the entire **MedRec** vault. It provides a
 ---
 
 ## 12 - Testing & Validation
-- [[Testing Strategy]] — Unit testing, encryption validation, mock FHIR data parsing, and user testing plans.
+- [[Testing|Testing Strategy]] — Unit testing, encryption validation, mock FHIR data parsing, and user testing plans.
 
 ---
 
@@ -126,7 +130,7 @@ This is the master Map of Content for the entire **MedRec** vault. It provides a
 ---
 
 ## 16 - Resources & References
-- [[Reference Materials]] — External links, FHIR documentation, academic papers, and benchmark datasets.
+- [[Resources|Reference Materials]] — External links, FHIR documentation, academic papers, and benchmark datasets.
 
 ---
 

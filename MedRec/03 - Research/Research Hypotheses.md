@@ -49,7 +49,7 @@ This note formalizes the core testable hypotheses for the [[MedRec]] project. Hy
   - Data points from [[Literature Review]] and interviews indicating $>60\%$ of multi-system transfers involve physical paper, fax, or manual scanning.
 - **Testing Approach:** Process mapping in [[Qualitative Research]], literature statistics on fax usage in healthcare.
 - **Mapped Research Question:** [[Research Questions#RQ-01: Patient Access & Transfer Workflows|RQ-01]]
-- **Related Topics:** [[Healthcare Fragmentation]], [[Legacy Systems]]
+- **Related Topics:** [[Healthcare Data Silos|Healthcare Fragmentation]], [[Hospital Record Systems|Legacy Systems]]
 
 ---
 
@@ -62,7 +62,7 @@ This note formalizes the core testable hypotheses for the [[MedRec]] project. Hy
   - Reduction in time spent preparing for new specialist visits during usability evaluations.
 - **Testing Approach:** Usability testing of prototype workflows, concept testing interviews.
 - **Mapped Research Question:** [[Research Questions#RQ-03: Competitive Landscape & Shortcomings of Existing Solutions|RQ-03]]
-- **Related Topics:** [[Patient Self-Efficacy]], [[User Needs]]
+- **Related Topics:** Patient Self-Efficacy, [[User Needs]]
 
 ---
 
@@ -75,7 +75,7 @@ This note formalizes the core testable hypotheses for the [[MedRec]] project. Hy
   - Positive user sentiment toward offline-first / device-stored records without central database tracking.
 - **Testing Approach:** Privacy-focused interview prompts in [[Interview Questions]], privacy trade-off survey questions.
 - **Mapped Research Question:** [[Research Questions#RQ-04: Legal, Regulatory & Compliance Landscape|RQ-04]]
-- **Related Topics:** [[Security & Privacy MOC]], [[Local-First Architecture]]
+- **Related Topics:** [[Security & Privacy MOC]], Local-First Architecture
 
 ---
 
@@ -87,7 +87,7 @@ This note formalizes the core testable hypotheses for the [[MedRec]] project. Hy
   - Clinician feedback confirms preference for chronological summaries with linked source verification.
 - **Testing Approach:** Clinician stakeholder interviews, intake workflow analysis.
 - **Mapped Research Question:** [[Research Questions#RQ-05: Healthcare Provider Ingestion & Interoperability|RQ-05]]
-- **Related Topics:** [[Provider Workflows]], [[Clinical Summaries]]
+- **Related Topics:** [[Doctors|Provider Workflows]], Clinical Summaries
 
 ---
 

@@ -31,7 +31,7 @@ Directly tackles [[Medical Record Portability]] and [[Patient Frustrations]]. To
 
 ## Target User
 - [[Patients]]: Sharing pertinent records with a new specialist or consulting physician.
-- [[Healthcare Providers]]: Accessing a web-based, read-only view of the patient's records on their clinic workstation without needing to register for an app account.
+- [[Doctors|Healthcare Providers]]: Accessing a web-based, read-only view of the patient's records on their clinic workstation without needing to register for an app account.
 
 ## Related Research
 - *Status*: Pending research validation.

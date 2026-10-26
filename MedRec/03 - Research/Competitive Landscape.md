@@ -62,7 +62,7 @@ This document synthesizes secondary market research, product teardowns, and indu
 ## 📱 Major Patient-Facing Solutions
 
 ### 1. Apple Health Records
-* **Core Architecture**: Native iOS framework integrating HealthKit with [[FHIR]] (Fast Healthcare Interoperability Resources) endpoints via SMART on FHIR. Connects directly to hundreds of certified health systems.
+* **Core Architecture**: Native iOS framework integrating HealthKit with [[Regulatory Landscape|FHIR]] (Fast Healthcare Interoperability Resources) endpoints via SMART on FHIR. Connects directly to hundreds of certified health systems.
 * **⚪ Secondary Observations**:
   * **Strengths**:
     * **Zero-Knowledge Privacy**: End-to-end encrypted when synced to iCloud; on-device decryption with secure enclave hardware protection.
@@ -126,7 +126,7 @@ This document synthesizes secondary market research, product teardowns, and indu
 * **Core Architecture**: Cloud-based consumer PHR platform launched by Microsoft in 2007 and officially shut down in November 2019 after 12 years of operation.
 * **⚪ Historical Post-Mortem Observations**:
   * **Why It Failed**:
-    1. **Pre-FHIR Era Ingestion Bottleneck**: Built before modern RESTful [[FHIR]] standards existed; relied on brittle XML schemas (Continuity of Care Record / CCR and CCD) and cumbersome device drivers.
+    1. **Pre-FHIR Era Ingestion Bottleneck**: Built before modern RESTful [[Regulatory Landscape|FHIR]] standards existed; relied on brittle XML schemas (Continuity of Care Record / CCR and CCD) and cumbersome device drivers.
     2. **Extreme Manual Entry Burden**: Required users to manually type diagnoses, lab results, and medications. Without automated data pipelines, user retention collapsed within weeks.
     3. **Healthy User Disengagement**: Failed to deliver ongoing value to healthy users while proving too complex for overwhelmed chronic patients.
     4. **Zero Provider Incentive**: Health systems had no regulatory mandate (pre-21st Century Cures Act) or financial incentive to push structured clinical data to Microsoft's cloud.
@@ -187,7 +187,7 @@ National health information networks facilitate data exchange primarily between 
 Despite billions of dollars invested in health IT, the competitive landscape reveals eight systemic, unsolved gaps:
 
 ### 1. The 80% Unstructured Data Blindspot
-* **⚪ Observation**: Current [[FHIR]] APIs transport discrete data codified in the United States Core Data for Interoperability (USCDI) standard (labs, vitals, meds). However, industry studies estimate that $\approx 80\%$ of actionable clinical context is trapped in unstructured narrative physician notes, PDF discharge summaries, legacy faxes, and DICOM imaging files.
+* **⚪ Observation**: Current [[Regulatory Landscape|FHIR]] APIs transport discrete data codified in the United States Core Data for Interoperability (USCDI) standard (labs, vitals, meds). However, industry studies estimate that $\approx 80\%$ of actionable clinical context is trapped in unstructured narrative physician notes, PDF discharge summaries, legacy faxes, and DICOM imaging files.
 * **Impact**: Portal aggregators miss the rich qualitative nuances of complex diagnoses.
 
 ### 2. Lack of a Universal National Patient Identifier (UPI)
@@ -259,4 +259,4 @@ Based on the analysis of existing solutions and systemic market failures, I form
 - **Master Index**: [[Research MOC]]
 - **Problem Foundation**: [[Medical Record Portability]], [[Healthcare Data Silos]], [[Hospital Record Systems]], [[Patient Frustrations]]
 - **Inquiries & Gaps**: [[Research Questions#RQ-03: Competitive Landscape & Shortcomings of Existing Solutions|RQ-03]], [[Research Gaps#GAP-03: Competitive Landscape & Post-Mortem Analysis of Prior Failures|GAP-03]]
-- **Standards & Vision**: [[FHIR]], [[MedRec Vision]]
+- **Standards & Vision**: [[Regulatory Landscape|FHIR]], [[MedRec Vision]]

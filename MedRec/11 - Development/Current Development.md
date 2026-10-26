@@ -53,7 +53,7 @@ I have **completed the initial landscape research pass**, producing three founda
 
 ### 3. Technical Standards & FHIR R4 Deep-Dive
 - **Focus**: Reviewing FHIR R4 US Core Implementation Guide (USCDI v1/v2 profiles) and SMART on FHIR OAuth2 PKCE authorization flows for direct EHR querying.
-- **Related Notes**: [[Standards & Interoperability]], [[Technical Architecture MOC]], [[Regulatory Landscape]]
+- **Related Notes**: [[Regulatory Landscape|Standards & Interoperability]], [[Technical Architecture|Technical Architecture MOC]], [[Regulatory Landscape]]
 
 ---
 

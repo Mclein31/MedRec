@@ -28,7 +28,7 @@ Fixes the frustration patients and doctors experience when attempting to open un
 
 ## Target User
 - [[Patients]]: Reviewing past lab results, doctor instructions, and prescription dosages at home.
-- [[Healthcare Providers]]: Rapidly examining historical reports, lab trends, and discharge summaries during consultations.
+- [[Doctors|Healthcare Providers]]: Rapidly examining historical reports, lab trends, and discharge summaries during consultations.
 
 ## Related Research
 - *Status*: Pending research validation.

@@ -75,7 +75,7 @@ This document identifies known blind spots, unverified domains, and knowledge de
   - Collect sample anonymized patient export files across major EHR vendor portals (Epic, Cerner, AthenaHealth).
   - Prototype local parsing benchmarks for PDF extraction and FHIR data normalization.
 - **Linked Questions:** [[Research Questions#RQ-05: Healthcare Provider Ingestion & Interoperability|RQ-05]]
-- **Related Notes:** [[Technical Architecture MOC]], [[Standards & Interoperability]]
+- **Related Notes:** [[Technical Architecture|Technical Architecture MOC]], [[Regulatory Landscape|Standards & Interoperability]]
 - **Status:** `OPEN`
 
 ---

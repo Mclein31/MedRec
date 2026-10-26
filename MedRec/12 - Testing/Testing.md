@@ -13,7 +13,7 @@ tags:
 related:
   - "[[Development MOC]]"
   - "[[Technical Architecture]]"
-  - "[[Quality]]"
+  - "Quality"
   - "[[Deployment]]"
   - "[[Security Requirements]]"
 ---

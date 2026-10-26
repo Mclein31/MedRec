@@ -26,7 +26,7 @@ related:
 Allows users to upload physical and digital medical documents into their MedRec repository, including camera document photo captures (e.g., physical prescriptions, lab slips, consultation notes) and existing photos imported from the device's photo library.
 
 ## Problem it Solves
-Addresses the bottleneck of digitizing physical medical paperwork. Most clinic encounters produce paper slips, handwritten prescriptions, and printed lab reports. Without an intuitive capture and upload pipeline, records remain scattered across physical drawers ([[Scattered Health History]]).
+Addresses the bottleneck of digitizing physical medical paperwork. Most clinic encounters produce paper slips, handwritten prescriptions, and printed lab reports. Without an intuitive capture and upload pipeline, records remain scattered across physical drawers ([[Incomplete Medical History|Scattered Health History]]).
 
 ## Target User
 - [[Patients]]: Scanning paper slips right after a consultation or attaching digital document photos received via email or messaging apps.

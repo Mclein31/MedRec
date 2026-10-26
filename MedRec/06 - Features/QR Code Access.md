@@ -29,7 +29,7 @@ Solves the friction of manually typing URLs, sending emails, or pairing devices 
 
 ## Target User
 - [[Patients]]: Displaying their phone screen to a doctor during in-person visits.
-- [[Healthcare Providers]]: Scanning the patient's QR code on mobile or desktop webcam to load records instantly.
+- [[Doctors|Healthcare Providers]]: Scanning the patient's QR code on mobile or desktop webcam to load records instantly.
 
 ## Related Research
 - *Status*: Pending research validation.

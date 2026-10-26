@@ -68,7 +68,7 @@ An honest, prioritized breakdown of technical skills, medical domain knowledge, 
   - Envelope Encryption schemes: Using symmetric data encryption keys (DEKs) encrypted with master key encryption keys (KEKs).
   - Transparent database encryption using SQLCipher.
 * **Learning Resources**: Cryptography engineering guides, OWASP Mobile Security Testing Guide (MSTG).
-* **Output Goal**: Hardened encryption implementation in [[Security Architecture]].
+* **Output Goal**: Hardened encryption implementation in [[Security & Privacy MOC|Security Architecture]].
 * **Related**: [[Security & Privacy MOC]], [[Technical Architecture]]
 
 ---

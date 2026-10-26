@@ -23,11 +23,11 @@ related:
 The Digital Medical Records feature provides the core foundation of MedRec: a centralized, secure digital repository where patients can aggregate, manage, and maintain their personal health records, clinical visit summaries, lab test results, prescriptions, and immunizations over time.
 
 ## Problem it Solves
-Solves the fragmentation and physical deterioration of paper medical records described in [[Medical Records]] and [[Scattered Health History]]. Patients frequently lose physical documents or struggle to recall past diagnoses, leading to gaps in clinical history when switching healthcare providers.
+Solves the fragmentation and physical deterioration of paper medical records described in [[Medical Records]] and [[Incomplete Medical History|Scattered Health History]]. Patients frequently lose physical documents or struggle to recall past diagnoses, leading to gaps in clinical history when switching healthcare providers.
 
 ## Target User
 - [[Patients]]: Primary individuals wanting autonomous control and unified custody over their medical history.
-- [[Healthcare Providers]]: Secondary recipients who need rapid, accurate access to comprehensive patient history during consultations.
+- [[Doctors|Healthcare Providers]]: Secondary recipients who need rapid, accurate access to comprehensive patient history during consultations.
 
 ## Related Research
 - *Status*: Pending research validation.
@@ -35,7 +35,7 @@ Solves the fragmentation and physical deterioration of paper medical records des
 
 ## Requirements
 - [[Functional Requirements]] — Core CRUD operations on medical record entries (metadata, attachments, visit notes).
-- [[Data Security Requirements]] — At-rest encryption for sensitive health information.
+- [[Security Requirements|Data Security Requirements]] — At-rest encryption for sensitive health information.
 - Support structured fields (visit date, doctor/facility name, diagnosis, medication list) and unstructured attachments.
 
 ## Dependencies

@@ -99,7 +99,7 @@ Synthesized landscape overviews establishing the competitive, legal, standards, 
 
 - **[[Research Findings]]**: Validated empirical findings categorized using the epistemic taxonomy (Assumption, Hypothesis, Observation, Finding, Conclusion).
 - **[[Research Themes]]**: Higher-level thematic clusters that emerge across multiple research streams.
-- **[[Research Insights]]**: Strategic takeaways translating findings into actionable requirements for [[Functional Requirements]] and [[Product Design]].
+- **[[Research Insights]]**: Strategic takeaways translating findings into actionable requirements for [[Functional Requirements]] and [[Product Design MOC|Product Design]].
 
 ---
 
@@ -115,4 +115,4 @@ Related Vault MOCs:
 - [[Problem Space MOC]]
 - [[Users MOC]]
 - [[Requirements MOC]]
-- [[Architecture MOC]]
+- [[Technical Architecture|Architecture MOC]]

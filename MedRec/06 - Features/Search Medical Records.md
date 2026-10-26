@@ -29,7 +29,7 @@ As patients accumulate years of medical history, finding a specific blood test f
 
 ## Target User
 - [[Patients]]: Finding past prescriptions, allergy test results, or immunization dates before an appointment.
-- [[Healthcare Providers]]: Searching during consultation for specific past diagnostic outcomes.
+- [[Doctors|Healthcare Providers]]: Searching during consultation for specific past diagnostic outcomes.
 
 ## Related Research
 - *Status*: Pending research validation.

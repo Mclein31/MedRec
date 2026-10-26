@@ -18,7 +18,7 @@ related:
   - "[[Ideas MOC]]"
   - "[[Security Requirements]]"
   - "[[Patients]]"
-  - "[[Healthcare Providers]]"
+  - "[[Doctors|Healthcare Providers]]"
 ---
 
 # Emergency Access
@@ -31,7 +31,7 @@ In acute medical emergencies (e.g., unconscious patient, trauma, anaphylaxis), f
 
 ## Target User
 - [[Patients]]: Seeking peace of mind that critical medical facts are discoverable in an emergency.
-- [[Healthcare Providers]] / First Responders (EMT, Paramedics, ER Physicians): Needing immediate, unauthenticated read-only access to vital baseline facts.
+- [[Doctors|Healthcare Providers]] / First Responders (EMT, Paramedics, ER Physicians): Needing immediate, unauthenticated read-only access to vital baseline facts.
 
 ## Related Research
 - *Status*: Pending research validation.

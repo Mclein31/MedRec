@@ -36,7 +36,7 @@ All questions are currently **OPEN** and will be updated as evidence is gathered
   - How frequently do patients experience missing, incomplete, or corrupted records during a clinical encounter?
 - **Target Method:** [[Qualitative Research]] (Semi-structured interviews), [[Quantitative Research]] (Surveys)
 - **Related Hypotheses:** [[Research Hypotheses#H1 - Transfer Frustration|H1]], [[Research Hypotheses#H2 - Physical & Manual Dependency|H2]]
-- **Related Topics:** [[Medical Record Portability]], [[Patient Workflows]], [[Patients]]
+- **Related Topics:** [[Medical Record Portability]], [[User Journey|Patient Workflows]], [[Patients]]
 
 ---
 
@@ -49,7 +49,7 @@ All questions are currently **OPEN** and will be updated as evidence is gathered
   - How often are diagnostic tests (e.g., blood panels, MRIs, X-rays) unnecessarily repeated due to inaccessible prior records?
 - **Target Method:** [[Interview Questions]], [[Literature Review]]
 - **Related Hypotheses:** [[Research Hypotheses#H1 - Transfer Frustration|H1]]
-- **Related Topics:** [[Patient Frustrations]], [[Caregiver Burden]], [[Problem Space MOC]]
+- **Related Topics:** [[Patient Frustrations]], [[Patient Frustrations|Caregiver Burden]], [[Problem Space MOC]]
 
 ---
 
@@ -62,7 +62,7 @@ All questions are currently **OPEN** and will be updated as evidence is gathered
   - What structural factors led to historical PHR failures (e.g., Google Health v1, Microsoft HealthVault)?
 - **Target Method:** [[Literature Review]], Competitive Analysis
 - **Related Hypotheses:** [[Research Hypotheses#H3 - Patient-Centric Portability Value|H3]]
-- **Related Topics:** [[Existing Solutions]], [[Competitive Landscape]], [[Research Gaps]]
+- **Related Topics:** [[Competitive Landscape|Existing Solutions]], [[Competitive Landscape]], [[Research Gaps]]
 
 ---
 
@@ -75,7 +75,7 @@ All questions are currently **OPEN** and will be updated as evidence is gathered
   - What consent and cryptographic authentication standards are required when sharing records between patients and clinics?
 - **Target Method:** Regulatory Analysis, [[Literature Review]]
 - **Related Hypotheses:** [[Research Hypotheses#H4 - Privacy and Autonomy Concerns|H4]]
-- **Related Topics:** [[Regulatory Landscape]], [[HIPAA Compliance]], [[Security & Privacy MOC]]
+- **Related Topics:** [[Regulatory Landscape]], [[Regulatory Landscape|HIPAA Compliance]], [[Security & Privacy MOC]]
 
 ---
 
@@ -88,7 +88,7 @@ All questions are currently **OPEN** and will be updated as evidence is gathered
   - What administrative barriers exist for front-desk staff uploading external records into their local EHR?
 - **Target Method:** Clinician Interviews, [[Qualitative Research]]
 - **Related Hypotheses:** [[Research Hypotheses#H5 - Clinician Trust & Ingestion Friction|H5]]
-- **Related Topics:** [[Provider Workflows]], [[Standards & Interoperability]], [[EHR Integration]]
+- **Related Topics:** [[Doctors|Provider Workflows]], [[Regulatory Landscape|Standards & Interoperability]], [[Hospital Record Systems|EHR Integration]]
 
 ---
 

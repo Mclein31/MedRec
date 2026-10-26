@@ -16,7 +16,7 @@ related:
   - "[[Technical Architecture]]"
   - "[[Backend]]"
   - "[[File Storage]]"
-  - "[[Decision - Cloud Provider]]"
+  - "[[Decision Log|Decision - Cloud Provider]]"
 ---
 
 # Cloud Infrastructure Architecture
@@ -25,7 +25,7 @@ related:
 
 The cloud infrastructure architecture provides the hosting foundation for MedRec's backend services, database persistence, object storage, and DNS/TLS termination. For a solo project handling sensitive medical data, the infrastructure strategy must prioritize **low operational overhead, rock-solid security defaults, cost efficiency, and automated provisioning**.
 
-The specific cloud provider and hosting model are **NOT YET SELECTED** and are being evaluated in [[Decision - Cloud Provider]].
+The specific cloud provider and hosting model are **NOT YET SELECTED** and are being evaluated in [[Decision Log|Decision - Cloud Provider]].
 
 ```mermaid
 graph TD
@@ -60,4 +60,4 @@ graph TD
 
 ## Related Decision Notes
 
-- [[Decision - Cloud Provider]]
+- [[Decision Log|Decision - Cloud Provider]]

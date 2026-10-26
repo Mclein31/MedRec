@@ -17,7 +17,7 @@ related:
   - "[[Functional Requirements]]"
   - "[[Digital Medical Records]]"
   - "[[Patients]]"
-  - "[[Healthcare Providers]]"
+  - "[[Doctors|Healthcare Providers]]"
 ---
 
 # Record Transfer
@@ -30,7 +30,7 @@ Eliminates [[Manual Record Transfer]] procedures where patients must file physic
 
 ## Target User
 - [[Patients]]: Relocating to a new city, switching primary care physicians, or undergoing specialized referral care.
-- [[Healthcare Providers]]: Ingesting an incoming transfer bundle into their internal clinic charts.
+- [[Doctors|Healthcare Providers]]: Ingesting an incoming transfer bundle into their internal clinic charts.
 
 ## Related Research
 - *Status*: Pending research validation.
