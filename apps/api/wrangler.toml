@@ -13,6 +13,12 @@ GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite"
 ENVIRONMENT = "development"
 ALLOWED_ORIGINS = "http://localhost:8081,http://localhost:19006"
 
+[dev]
+# Listen on all interfaces so the simulator and phones on your Wi-Fi reach the
+# API at this Mac's network address (the app derives it from Metro's host).
+ip = "0.0.0.0"
+port = 8787
+
 [[r2_buckets]]
 binding = "VAULT"
 # Separate from v1's "medrec-vault" so v2 never touches v1 patient files.
