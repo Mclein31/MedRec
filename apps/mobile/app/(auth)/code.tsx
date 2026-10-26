@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Switch, View } from 'react-native';
 import { useAuth } from '../../src/auth';
@@ -8,7 +8,7 @@ import { messageFor } from '../../src/lib/errors';
 import { getPending, setPending } from '../../src/pending';
 import { space, useColors } from '../../src/theme';
 import { AuthFrame } from '../../src/ui/AuthFrame';
-import { Banner, Button, Tappable, Txt } from '../../src/ui/core';
+import { Banner, Button, Tappable, TextLink, Txt } from '../../src/ui/core';
 import { CodeInput } from '../../src/ui/form';
 
 export default function Code() {
@@ -68,23 +68,36 @@ export default function Code() {
 
   return (
     <AuthFrame
-      title={confirming ? 'Confirm your email' : 'Check your email'}
+      navTitle={confirming ? 'Verify email' : 'Sign-in code'}
+      icon="email-outline"
+      remy={{ pose: 'reading', motion: 'read' }}
+      title="Check your email"
       subtitle={
-        <Txt color={c.ink3}>
-          Enter the 6-digit code we sent to <Txt color={c.ink} variant="label">{challenge.maskedEmail}</Txt>. It expires in 10 minutes.
+        <Txt color={c.ink}>
+          Enter the 6-digit code sent to <Txt variant="label">{challenge.maskedEmail}</Txt>
         </Txt>
       }
+      footer={<Button label={confirming ? 'Verify & continue' : 'Verify & sign in'} onPress={() => submit()} loading={busy} disabled={code.length !== 6} />}
     >
       {error && <Banner message={error} />}
       {note && !error && <Banner tone="info" message={note} />}
-      <CodeInput
-        value={code}
-        error={!!error}
-        onChange={(v) => {
-          setCode(v);
-          if (v.length === 6) void submit(v);
-        }}
-      />
+      <View style={{ gap: space.sm }}>
+        <CodeInput
+          value={code}
+          error={!!error}
+          onChange={(v) => {
+            setCode(v);
+            if (v.length === 6) void submit(v);
+          }}
+        />
+        <Txt variant="caption" color={c.ink3}>This code expires in 10 minutes. Can't find it? Check Spam or Promotions.</Txt>
+      </View>
+      <Tappable onPress={resend} disabled={cooldown > 0} accessibilityLabel={cooldown > 0 ? `Send a new code in ${cooldown} seconds` : 'Send a new code'} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
+        <Txt variant="label" color={cooldown > 0 ? c.ink3 : c.ink}>
+          {cooldown > 0 ? `Send a new code in ${cooldown}s` : 'Send a new code'}
+        </Txt>
+      </Tappable>
+      <TextLink label="Use a different email" icon={null} onPress={() => { setPending(null); router.replace('/(auth)/sign-in'); }} />
       {Platform.OS !== 'web' && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           <View style={{ flex: 1 }}>
@@ -94,17 +107,6 @@ export default function Code() {
           <Switch value={trust} onValueChange={setTrust} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="Trust this device for 30 days" />
         </View>
       )}
-      <Button label={confirming ? 'Confirm and open vault' : 'Verify and sign in'} onPress={() => submit()} loading={busy} disabled={code.length !== 6} />
-      <View style={{ alignItems: 'center', gap: space.sm }}>
-        <Tappable onPress={resend} disabled={cooldown > 0} accessibilityLabel={cooldown > 0 ? `Resend code in ${cooldown} seconds` : 'Resend code'} hitSlop={8}>
-          <Txt variant="label" color={cooldown > 0 ? c.ink3 : c.accent}>
-            {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
-          </Txt>
-        </Tappable>
-        <Txt variant="caption" color={c.ink3} style={{ textAlign: 'center' }}>
-          Can't find it? Check your Spam or Promotions folder.
-        </Txt>
-      </View>
     </AuthFrame>
   );
 }
