@@ -12,19 +12,19 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
   const [hidden, setHidden] = useState(true);
   return (
     <View style={{ gap: 6 }}>
-      <Txt variant="label" color={c.ink2} nativeID={`${label}-label`}>
+      <Txt variant="label" color={c.ink} nativeID={`${label}-label`}>
         {label}
       </Txt>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          minHeight: 50,
-          borderRadius: radius.sm,
-          borderWidth: 1.5,
+          minHeight: 54,
+          borderRadius: radius.sm + 2,
+          borderWidth: focused || error ? 1.5 : 1,
           borderColor: error ? c.danger : focused ? c.accent : c.line,
           backgroundColor: c.surface,
-          paddingHorizontal: space.md,
+          paddingHorizontal: space.lg,
         }}
       >
         <TextInput
@@ -42,7 +42,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
             setFocused(false);
             input.onBlur?.(e);
           }}
-          style={[t.body, { flex: 1, color: c.ink, paddingVertical: 12 }, style]}
+          style={[t.body, { flex: 1, color: c.ink, paddingVertical: 12, outlineWidth: 0 }, style]}
           maxFontSizeMultiplier={1.6}
         />
         {secureToggle && (
@@ -77,8 +77,8 @@ export function CodeInput({ value, onChange, error, autoFocus = true }: { value:
                 flex: 1,
                 maxWidth: 56,
                 aspectRatio: 0.86,
-                borderRadius: radius.sm,
-                borderWidth: 1.5,
+                borderRadius: radius.sm - 2,
+                borderWidth: active || error ? 1.5 : 1,
                 borderColor: error ? c.danger : active ? c.accent : c.line,
                 backgroundColor: c.surface,
                 alignItems: 'center',
@@ -121,25 +121,104 @@ export function Chip({ label, selected, onPress, count }: { label: string; selec
       accessibilityState={{ checked: selected }}
       accessibilityLabel={count === undefined ? label : `${label}, ${count}`}
       style={{
-        minHeight: 36,
-        paddingHorizontal: 14,
-        borderRadius: radius.pill,
+        minHeight: 44,
+        paddingHorizontal: space.lg,
+        borderRadius: radius.sm,
         borderWidth: 1,
-        borderColor: selected ? c.ink : c.line,
-        backgroundColor: selected ? c.ink : c.surface,
+        borderColor: selected ? c.accent : c.line,
+        backgroundColor: selected ? c.accent : c.surface,
+        justifyContent: 'center',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
       }}
     >
-      <Txt variant="label" color={selected ? c.bg : c.ink}>
+      <Txt variant="label" color={selected ? c.onAccent : c.ink}>
         {label}
       </Txt>
       {count !== undefined && (
-        <Txt variant="micro" color={selected ? c.bg : c.ink3}>
+        <Txt variant="caption" color={selected ? c.onAccent : c.ink3}>
           {count}
         </Txt>
       )}
     </Tappable>
+  );
+}
+
+/** Search box with a leading magnifier; the label is for screen readers. */
+export function SearchField({ value, onChangeText, placeholder, label = 'Search records' }: { value: string; onChangeText: (v: string) => void; placeholder: string; label?: string }) {
+  const c = useColors();
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 54, borderRadius: radius.md, backgroundColor: c.surface, borderWidth: 1, borderColor: focused ? c.accent : value ? c.line : 'transparent', paddingHorizontal: space.lg }}>
+      <Icon name="magnify" size={22} color={c.ink2} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={c.ink3}
+        accessibilityLabel={label}
+        returnKeyType="search"
+        autoCorrect={false}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={[t.body, { flex: 1, color: c.ink, paddingVertical: 12, outlineWidth: 0 }]}
+        maxFontSizeMultiplier={1.6}
+      />
+      {!!value && (
+        <Tappable onPress={() => onChangeText('')} accessibilityLabel="Clear search" hitSlop={10}>
+          <Icon name="close-circle" size={20} color={c.ink3} />
+        </Tappable>
+      )}
+    </View>
+  );
+}
+
+/** Selectable card used for share scope: check circle, title, detail. */
+export function Choice({ title, subtitle, selected, onPress, multi = false }: { title: string; subtitle?: string; selected: boolean; onPress: () => void; multi?: boolean }) {
+  const c = useColors();
+  return (
+    <Tappable
+      onPress={onPress}
+      haptic
+      accessibilityRole={multi ? 'checkbox' : 'radio'}
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg, padding: space.lg, minHeight: 64, borderRadius: radius.md, borderWidth: selected ? 1.5 : 1, borderColor: selected ? c.accent : c.line, backgroundColor: selected ? c.surface : 'transparent' }}
+    >
+      <Icon name={selected ? (multi ? 'checkbox-marked-outline' : 'check-circle-outline') : multi ? 'checkbox-blank-outline' : 'circle-outline'} size={26} color={selected ? c.accent : c.ink3} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Txt variant="headline">{title}</Txt>
+        {subtitle ? <Txt variant="caption" color={c.ink3}>{subtitle}</Txt> : null}
+      </View>
+    </Tappable>
+  );
+}
+
+/** Compact text selector (All / Lab results / Prescriptions / More) with an underline on the active tab. */
+export function TextTabs({ items, active, onSelect }: { items: { key: string; label: string; selected?: boolean }[]; active: string; onSelect: (key: string) => void }) {
+  const c = useColors();
+  return (
+    <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, minHeight: 52, marginLeft: -2, alignItems: 'center' }}>
+      {items.map((it) => {
+        const on = it.selected ?? it.key === active;
+        return (
+          <Tappable
+            key={it.key}
+            onPress={() => onSelect(it.key)}
+            haptic
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={it.label}
+            style={{ minHeight: 44, minWidth: 44, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Txt variant="body" color={on ? c.ink : c.ink3} style={on ? { fontFamily: 'DMSans-SemiBold' } : undefined}>
+              {it.label}
+            </Txt>
+            <View style={{ marginTop: 4, height: 3, width: 22, borderRadius: 2, backgroundColor: on ? c.persimmon : 'transparent' }} />
+          </Tappable>
+        );
+      })}
+    </View>
   );
 }

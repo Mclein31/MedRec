@@ -26,15 +26,54 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "web": { "output": "single", "favicon": "./assets/images/favicon.png" },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      ["expo-font", { "fonts": ["./assets/fonts/LexendDeca-Regular.ttf", "./assets/fonts/LexendDeca-Medium.ttf", "./assets/fonts/LexendDeca-SemiBold.ttf", "./assets/fonts/LexendDeca-Bold.ttf"] }],
-      ["expo-local-authentication", { "faceIDPermission": "MedRec uses Face ID to unlock your health records." }],
-      ["expo-image-picker", { "cameraPermission": "MedRec uses the camera to photograph medical documents you choose to add.", "photosPermission": "MedRec lets you add photos of medical documents from your library." }],
-      ["expo-splash-screen", { "image": "./assets/images/logo.png", "imageWidth": 120, "backgroundColor": "#F6F7F6", "dark": { "backgroundColor": "#0F1513" } }]
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/DMSans_400Regular.ttf",
+            "./assets/fonts/DMSans_500Medium.ttf",
+            "./assets/fonts/DMSans_600SemiBold.ttf",
+            "./assets/fonts/DMSans_700Bold.ttf",
+            "./assets/fonts/Sora_600SemiBold.ttf",
+            "./assets/fonts/Sora_700Bold.ttf",
+            "./assets/fonts/Manrope_800ExtraBold.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "MedRec uses Face ID to unlock your health records."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "MedRec uses the camera to photograph medical documents you choose to add.",
+          "photosPermission": "MedRec lets you add photos of medical documents from your library."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-remy.png",
+          "imageWidth": 180,
+          "backgroundColor": "#492D48",
+          "dark": {
+            "backgroundColor": "#492D48"
+          }
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

@@ -42,4 +42,5 @@ export const KEYS = {
   deviceToken: (email: string) => `medrec.device.${email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
   onboarded: 'medrec.onboarded.v2',
   appLock: (userId: string) => `medrec.lock.${userId}`,
+  prefs: 'medrec.prefs.v1',
 };

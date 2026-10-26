@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import type { ComponentProps, ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { usePrefs } from '../prefs';
 import { motion, radius, space, type as t, useColors } from '../theme';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -11,7 +12,32 @@ type Variant = keyof typeof t;
 
 export function Txt({ variant = 'body', color, style, ...rest }: TextProps & { variant?: Variant; color?: string }) {
   const c = useColors();
-  return <Text {...rest} style={[t[variant], { color: color ?? c.ink }, style]} maxFontSizeMultiplier={1.6} />;
+  const { largerText } = usePrefs();
+  const base = t[variant];
+  const sized = largerText ? { fontSize: Math.round(base.fontSize * 1.15), lineHeight: Math.round(base.lineHeight * 1.15) } : null;
+  return <Text {...rest} style={[base, sized, { color: color ?? c.ink }, style]} maxFontSizeMultiplier={1.6} />;
+}
+
+/** Small uppercase label above a section or card ("LAB RESULT / 22 OCT 2026"). */
+export function Eyebrow({ children, color }: { children: ReactNode; color?: string }) {
+  const c = useColors();
+  return (
+    <Txt variant="micro" color={color ?? c.ink2} style={{ textTransform: 'uppercase' }}>
+      {children}
+    </Txt>
+  );
+}
+
+/** Inline text action with a trailing arrow, e.g. "View this record ↗". */
+export function TextLink({ label, onPress, icon = 'arrow-top-right', color }: { label: string; onPress: () => void; icon?: IconName | null; color?: string }) {
+  const c = useColors();
+  const fg = color ?? c.ink;
+  return (
+    <Tappable onPress={onPress} accessibilityRole="link" accessibilityLabel={label} hitSlop={10} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44 }}>
+      <Txt variant="label" color={fg}>{label}</Txt>
+      {icon && <Icon name={icon} size={16} color={fg} />}
+    </Tappable>
+  );
 }
 
 export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: string }) {
@@ -28,6 +54,7 @@ export function Tappable({
   children,
   disabled,
   accessibilityLabel,
+  accessibilityHint,
   accessibilityRole = 'button',
   accessibilityState,
   haptic = false,
@@ -39,6 +66,7 @@ export function Tappable({
   children: ReactNode;
   disabled?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
   accessibilityRole?: 'button' | 'link' | 'tab' | 'checkbox' | 'radio' | 'switch';
   accessibilityState?: { selected?: boolean; checked?: boolean; disabled?: boolean };
   haptic?: boolean;
@@ -65,6 +93,7 @@ export function Tappable({
       hitSlop={hitSlop}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!disabled, ...accessibilityState }}
       style={[style, animated]}
     >
@@ -84,7 +113,8 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  kind?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  /** primary: persimmon signature action. dark: aubergine. secondary: outlined. gold: on dark panels. */
+  kind?: 'primary' | 'dark' | 'secondary' | 'gold' | 'ghost' | 'danger';
   icon?: IconName;
   loading?: boolean;
   disabled?: boolean;
@@ -92,8 +122,10 @@ export function Button({
 }) {
   const c = useColors();
   const palette = {
-    primary: { bg: c.accent, fg: c.onAccent, border: c.accent },
-    secondary: { bg: c.surface, fg: c.ink, border: c.line },
+    primary: { bg: c.persimmon, fg: c.onPersimmon, border: c.persimmon },
+    dark: { bg: c.accent, fg: c.onAccent, border: c.accent },
+    secondary: { bg: c.surface, fg: c.ink, border: c.ink },
+    gold: { bg: c.gold, fg: c.onGold, border: c.gold },
     ghost: { bg: 'transparent', fg: c.accent, border: 'transparent' },
     danger: { bg: c.dangerSoft, fg: c.danger, border: c.dangerSoft },
   }[kind];
@@ -107,7 +139,7 @@ export function Button({
       dimmed={!!disabled && !loading}
       style={[
         {
-          minHeight: 50,
+          minHeight: 56,
           borderRadius: radius.md,
           paddingHorizontal: space.xl,
           backgroundColor: palette.bg,
@@ -122,7 +154,7 @@ export function Button({
       ]}
     >
       {loading ? <ActivityIndicator color={palette.fg} /> : icon ? <Icon name={icon} size={18} color={palette.fg} /> : null}
-      <Txt variant="headline" color={palette.fg} style={{ fontFamily: 'LexendDeca-Medium' } as TextStyle}>
+      <Txt variant="headline" color={palette.fg} style={{ textAlign: 'center' } as TextStyle}>
         {label}
       </Txt>
     </Tappable>
