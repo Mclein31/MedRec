@@ -37,9 +37,9 @@ export function RecordForm({ value, onChange, errors, aiFilled }: { value: FormV
   const set = (k: keyof FormValue) => (text: string) => onChange({ ...value, [k]: text });
   return (
     <View style={{ gap: space.lg }}>
-      <Field label="Title" value={value.title} onChangeText={set('title')} error={errors.title} hint={aiFilled ? 'Filled in from the document. Check it.' : undefined} />
+      <Field label="Record title" value={value.title} onChangeText={set('title')} error={errors.title} hint={aiFilled ? 'Filled in from the document. Check it.' : undefined} />
       <View style={{ gap: 6 }}>
-        <Txt variant="label" color={c.ink2}>Type</Txt>
+        <Txt variant="label">Record type</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }} accessibilityRole="radiogroup">
           {CATEGORIES.map((k) => (
             <Chip key={k} label={CATEGORY_META[k]!.label} selected={value.category === k} onPress={() => onChange({ ...value, category: k })} />
@@ -48,7 +48,7 @@ export function RecordForm({ value, onChange, errors, aiFilled }: { value: FormV
       </View>
       <View style={{ gap: 6 }}>
         <Field
-          label="Date of visit or test"
+          label="Record date"
           value={value.eventDate}
           onChangeText={(t) => set('eventDate')(t.replace(/[^\d-]/g, '').slice(0, 10))}
           placeholder="YYYY-MM-DD"

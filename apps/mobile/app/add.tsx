@@ -1,31 +1,37 @@
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Linking, Platform, View } from 'react-native';
+import { CameraStage, Reading, Saved, UploadIncomplete } from '../src/add/AddParts';
 import { MAX_PAGES, pickFromCamera, pickFromLibrary, pickPdf, uploadPage, type Page } from '../src/add/pages';
 import { PageStrip } from '../src/add/PageStrip';
 import { RecordForm, emptyForm, toInput, validate, type FormValue } from '../src/add/RecordForm';
-import { api, type AiSnapshot } from '../src/lib/api';
+import { api, type AiSnapshot, type HealthRecord } from '../src/lib/api';
 import { messageFor } from '../src/lib/errors';
-import { GUTTER, space, useColors } from '../src/theme';
+import { space, useColors } from '../src/theme';
 import { AiPanel } from '../src/ui/AiPanel';
-import { Banner, Button, Icon, Tappable, Txt } from '../src/ui/core';
-import { Group, Row } from '../src/ui/layout';
+import { Banner, Button, Icon, Txt } from '../src/ui/core';
+import { Group, Row, Screen } from '../src/ui/layout';
+
+type Step = 'pages' | 'review' | 'saved';
 
 export default function AddRecord() {
   const c = useColors();
-  const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<'pages' | 'review'>('pages');
+  const { source } = useLocalSearchParams<{ source?: 'camera' | 'pdf' }>();
+  const [step, setStep] = useState<Step>('pages');
   const [pages, setPages] = useState<Page[]>([]);
   const [form, setForm] = useState<FormValue>(emptyForm);
   const [ai, setAi] = useState<AiSnapshot | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValue, string>>>({});
   const [notice, setNotice] = useState<{ tone: 'danger' | 'warn' | 'info'; message: string } | null>(null);
   const [busy, setBusy] = useState<'scan' | 'save' | null>(null);
+  const [saved, setSaved] = useState<HealthRecord | null>(null);
   const saving = useRef(false);
+  const autoOpened = useRef(false);
 
   const ready = pages.filter((p) => p.status === 'ready');
+  const failed = pages.filter((p) => p.status === 'failed');
   const uploading = pages.some((p) => p.status === 'uploading');
+  const camera = Platform.OS !== 'web';
 
   const add = async (pick: () => Promise<Page[]>) => {
     setNotice(null);
@@ -43,6 +49,15 @@ export default function AddRecord() {
       } else setNotice({ tone: 'danger', message: messageFor(err) });
     }
   };
+
+  // Entry points such as "Scan my first document" open the matching picker once.
+  useEffect(() => {
+    if (autoOpened.current || !source) return;
+    autoOpened.current = true;
+    if (source === 'pdf') void add(pickPdf);
+    else if (camera) void add(pickFromCamera);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
   const retry = async (key: string) => {
     const page = pages.find((p) => p.key === key);
@@ -82,15 +97,26 @@ export default function AddRecord() {
     if (Object.keys(found).length) return;
     saving.current = true;
     setBusy('save');
+    setNotice(null);
     try {
       const { record } = await api.createRecord({ ...toInput(form), ai, fileIds: ready.map((p) => p.fileId!) });
-      router.replace({ pathname: '/record/[id]', params: { id: record.id } });
+      setSaved(record);
+      setStep('saved');
     } catch (err) {
-      setNotice({ tone: 'danger', message: messageFor(err) });
+      setNotice({ tone: 'danger', message: `${messageFor(err)} Nothing was saved yet.` });
     } finally {
       saving.current = false;
       setBusy(null);
     }
+  };
+
+  const reset = () => {
+    setPages([]);
+    setForm(emptyForm);
+    setAi(null);
+    setSaved(null);
+    setNotice(null);
+    setStep('pages');
   };
 
   const close = () => {
@@ -106,52 +132,79 @@ export default function AddRecord() {
     ]);
   };
 
-  return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={{ paddingTop: insets.top + space.sm, paddingHorizontal: GUTTER, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52 }}>
-        <Tappable onPress={step === 'review' ? () => setStep('pages') : close} accessibilityLabel={step === 'review' ? 'Back to pages' : 'Cancel'} hitSlop={10} style={{ width: 44, height: 44, justifyContent: 'center' }}>
-          <Icon name={step === 'review' ? 'arrow-left' : 'close'} size={24} color={c.ink} />
-        </Tappable>
-        <Txt variant="micro" color={c.ink3}>STEP {step === 'pages' ? 1 : 2} OF 2</Txt>
-        <View style={{ width: 44 }} />
-      </View>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: insets.bottom + space.xxxl, gap: space.xxl, width: '100%', maxWidth: 640, alignSelf: 'center' }}>
-        <View style={{ gap: space.sm }}>
-          <Txt variant="display" accessibilityRole="header">{step === 'pages' ? 'Add a record' : 'Check the details'}</Txt>
-          <Txt color={c.ink3}>
-            {step === 'pages' ? 'Photograph each page in good light, or choose photos or PDFs you already have.' : ai ? 'MedRec filled these in from your pages. Correct anything that looks wrong.' : 'Fill in what you know. Only the title is required.'}
-          </Txt>
-        </View>
-        {notice && (
-          <Banner
-            tone={notice.tone}
-            message={notice.message}
-            action={notice.tone === 'warn' && notice.message.includes('Settings') ? { label: 'Settings', onPress: () => Linking.openSettings() } : undefined}
-          />
-        )}
+  const banner = notice && (
+    <Banner
+      tone={notice.tone}
+      message={notice.message}
+      action={notice.tone === 'warn' && notice.message.includes('Settings') ? { label: 'Settings', onPress: () => Linking.openSettings() } : undefined}
+    />
+  );
 
-        {step === 'pages' ? (
-          <>
-            {pages.length > 0 && <PageStrip pages={pages} onRemove={remove} onRetry={retry} />}
-            <Group>
-              {Platform.OS !== 'web' && <Row icon="camera-outline" title="Take a photo" subtitle="Lay the page flat and fill the frame" onPress={() => add(pickFromCamera)} />}
-              <Row icon="image-multiple-outline" title="Choose photos" onPress={() => add(() => pickFromLibrary(MAX_PAGES - pages.length))} />
-              <Row icon="file-pdf-box" title="Choose a PDF" onPress={() => add(pickPdf)} />
-            </Group>
-            <View style={{ gap: space.md }}>
-              <Button label={uploading ? 'Uploading pages…' : 'Read with AI'} icon="text-box-search-outline" onPress={scan} loading={busy === 'scan'} disabled={!ready.length || uploading} />
-              <Button kind="secondary" label="Fill in myself" onPress={() => { setAi(null); setStep('review'); }} disabled={uploading} />
-              {busy === 'scan' && <Txt variant="caption" color={c.ink3} style={{ textAlign: 'center' }}>Reading {ready.length} {ready.length === 1 ? 'page' : 'pages'}. This usually takes 5–15 seconds.</Txt>}
+  if (step === 'saved' && saved) {
+    return (
+      <Screen tabBar={false} footer={<Button kind="dark" label="Back to records" onPress={() => router.dismissTo('/(tabs)')} />}>
+        <View style={{ height: space.xl }} />
+        <Saved record={saved} onAnother={reset} />
+      </Screen>
+    );
+  }
+
+  if (step === 'review') {
+    return (
+      <Screen
+        tabBar={false}
+        nav={{ title: 'Review details', onBack: () => setStep('pages') }}
+        title="Almost filed."
+        subtitle={ai ? "We've filled in the details. Give them a quick check before saving." : 'Fill in what you know. Only the title is required.'}
+        footer={<Button label="Save this record" onPress={save} loading={busy === 'save'} />}
+      >
+        {banner}
+        {ready.length > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: c.surface, padding: space.lg, borderRadius: 4 }}>
+            <Icon name="file-document-outline" size={24} color={c.ink} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="label">{ready.length === 1 ? (ready[0]!.name ?? (ready[0]!.kind === 'pdf' ? 'PDF' : 'Photo')) : `${ready.length} pages`}</Txt>
+              <Txt variant="caption" color={c.ink3}>{ready.length} {ready.length === 1 ? 'page' : 'pages'} · Ready to save</Txt>
             </View>
-          </>
-        ) : (
-          <>
-            <RecordForm value={form} onChange={setForm} errors={errors} aiFilled={!!ai} />
-            {ai && <AiPanel ai={ai} />}
-            <Button label="Save record" onPress={save} loading={busy === 'save'} />
-          </>
+          </View>
         )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <RecordForm value={form} onChange={setForm} errors={errors} aiFilled={!!ai} />
+        {ai && <AiPanel ai={ai} />}
+      </Screen>
+    );
+  }
+
+  const hasPages = pages.length > 0;
+  const footer = busy === 'scan' ? null : hasPages ? (
+    <>
+      <Button label={uploading ? 'Uploading pages…' : 'Read with AI'} onPress={scan} disabled={!ready.length || uploading} loading={uploading} />
+      <Button kind="secondary" label="Fill in myself" onPress={() => { setAi(null); setStep('review'); }} disabled={uploading} />
+    </>
+  ) : camera ? (
+    <Button label="Scan a document" onPress={() => add(pickFromCamera)} />
+  ) : (
+    <Button label="Choose photos" onPress={() => add(() => pickFromLibrary(MAX_PAGES))} />
+  );
+
+  return (
+    <Screen tabBar={false} nav={{ title: 'Add a record', back: 'close', onBack: close }} title={'Add a medical\nrecord.'} footer={footer}>
+      {banner}
+      {busy === 'scan' ? (
+        <Reading pages={ready.length} />
+      ) : (
+        <>
+          {failed.length > 0 && !uploading && (
+            <UploadIncomplete failed={failed.length} onRetry={() => failed.forEach((p) => void retry(p.key))} onRemove={() => failed.forEach((p) => remove(p.key))} />
+          )}
+          {hasPages ? <PageStrip pages={pages} onRemove={remove} onRetry={retry} /> : <CameraStage onPress={camera ? () => add(pickFromCamera) : undefined} />}
+          <Group bare>
+            {hasPages && camera && <Row inset={false} icon="camera-outline" title="Take another photo" subtitle="Lay the page flat and fill the frame" onPress={() => add(pickFromCamera)} chevron={false} />}
+            <Row inset={false} icon="image-outline" title="Choose from photos" subtitle="JPG, PNG or HEIC" onPress={() => add(() => pickFromLibrary(MAX_PAGES - pages.length))} chevron={false} />
+            <Row inset={false} icon="file-upload-outline" title="Upload a PDF" subtitle="Results, prescriptions or visit notes" onPress={() => add(pickPdf)} chevron={false} />
+          </Group>
+          <Txt variant="caption" color={c.ink3}>We read the document. You check the details.</Txt>
+        </>
+      )}
+    </Screen>
   );
 }
