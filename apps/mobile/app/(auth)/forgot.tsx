@@ -34,38 +34,51 @@ export default function Forgot() {
 
   if (done) {
     return (
-      <AuthFrame title="Password changed" subtitle="For your safety, every device was signed out. Sign in with your new password.">
-        <Button label="Go to sign in" onPress={() => router.replace('/(auth)/sign-in')} />
+      <AuthFrame navTitle="Account recovery" remy={{ pose: 'saved', motion: 'cheer' }} title="Password changed" subtitle="For your safety, every device was signed out. Sign in with your new password." footer={<Button label="Go to sign in" onPress={() => router.replace('/(auth)/sign-in')} />}>
+        {null}
       </AuthFrame>
     );
   }
 
   if (!challenge) {
     return (
-      <AuthFrame title="Reset your password" subtitle="Enter your account email. If it's registered, we'll send a 6-digit code.">
+      <AuthFrame
+        navTitle="Account recovery"
+        icon="lock-reset"
+        remy={{ pose: 'curious', motion: 'peek' }}
+        title="Reset your password"
+        subtitle="Enter your account email. If it's registered, we'll send a 6-digit code."
+        footer={<Button label="Send reset code" loading={busy} onPress={() => run(async () => setChallenge((await api.forgot(email.trim().toLowerCase())).challenge))} />}
+      >
         {!!error && <Banner message={messageFor(error)} />}
-        <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" returnKeyType="go" />
-        <Button label="Send reset code" loading={busy} onPress={() => run(async () => setChallenge((await api.forgot(email.trim().toLowerCase())).challenge))} />
+        <Field label="Email address" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" returnKeyType="go" />
       </AuthFrame>
     );
   }
 
   return (
-    <AuthFrame title="Choose a new password" subtitle={`Enter the code sent to ${challenge.maskedEmail}, then your new password.`}>
+    <AuthFrame
+      navTitle="Account recovery"
+      remy={{ pose: 'reading', motion: 'read' }}
+      title="Choose a new password"
+      subtitle={`Enter the code sent to ${challenge.maskedEmail}, then your new password.`}
+      footer={
+        <Button
+          label="Save new password"
+          loading={busy}
+          disabled={code.length !== 6 || password.length < 10}
+          onPress={() =>
+            run(async () => {
+              await api.reset(challenge.challengeId, code, password);
+              setDone(true);
+            })
+          }
+        />
+      }
+    >
       {!!error && !fieldError(error, 'password') && <Banner message={messageFor(error)} />}
       <CodeInput value={code} onChange={setCode} />
       <Field label="New password" value={password} onChangeText={setPassword} secureToggle autoComplete="new-password" textContentType="newPassword" hint="At least 10 characters." error={fieldError(error, 'password')} />
-      <Button
-        label="Save new password"
-        loading={busy}
-        disabled={code.length !== 6 || password.length < 10}
-        onPress={() =>
-          run(async () => {
-            await api.reset(challenge.challengeId, code, password);
-            setDone(true);
-          })
-        }
-      />
     </AuthFrame>
   );
 }
