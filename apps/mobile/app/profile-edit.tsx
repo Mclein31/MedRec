@@ -9,6 +9,7 @@ import { radius, space, useColors } from '../src/theme';
 import { Banner, Button, Icon, Tappable, Txt } from '../src/ui/core';
 import { Chip, Field } from '../src/ui/form';
 import { Screen, Section } from '../src/ui/layout';
+import { Remy } from '../src/ui/Remy';
 
 const BLOOD = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'];
 const SEX = [['female', 'Female'], ['male', 'Male'], ['intersex', 'Intersex'], ['unspecified', 'Prefer not to say']] as const;
@@ -32,7 +33,7 @@ function ListEditor({ label, items, onChange, placeholder }: { label: string; it
       {items.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
           {items.map((i) => (
-            <Tappable key={i} onPress={() => onChange(items.filter((x) => x !== i))} accessibilityLabel={`Remove ${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 12, paddingRight: 8, minHeight: 34, borderRadius: radius.pill, backgroundColor: c.accentSoft }}>
+            <Tappable key={i} onPress={() => onChange(items.filter((x) => x !== i))} accessibilityLabel={`Remove ${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 12, paddingRight: 8, minHeight: 34, borderRadius: radius.pill, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
               <Txt variant="label">{i}</Txt>
               <Icon name="close" size={14} />
             </Tappable>
@@ -88,14 +89,10 @@ export default function ProfileEdit() {
     }
   };
 
-  const close = (
-    <Tappable onPress={() => router.back()} accessibilityLabel="Close" hitSlop={10} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon name="close" size={24} color={c.ink} />
-    </Tappable>
-  );
 
   return (
-    <Screen title="Health details" subtitle="Shown on your Medical ID and to doctors you share with." right={close} tabBar={false}>
+    <Screen nav={{ title: 'Edit Medical ID', back: 'close' }} title="Health details" subtitle="Shown on your Medical ID and to doctors you share with." tabBar={false} footer={d ? <Button label="Save details" onPress={save} loading={busy} /> : undefined}>
+      {!d && !error && <Remy pose="reading" motion="read" size={120} style={{ alignSelf: 'center' }} />}
       {!!error && <Banner message={error instanceof Error && !('status' in error) ? error.message : messageFor(error)} />}
       {d && (
         <>
@@ -132,7 +129,6 @@ export default function ProfileEdit() {
             <Field label="Relationship" value={d.emergencyContactRelation ?? ''} onChangeText={text('emergencyContactRelation')} placeholder="e.g. Sister" />
             <Field label="Phone" value={d.emergencyContactPhone ?? ''} onChangeText={text('emergencyContactPhone')} keyboardType="phone-pad" autoComplete="tel" error={fieldError(error, 'emergencyContactPhone')} />
           </Section>
-          <Button label="Save details" onPress={save} loading={busy} />
         </>
       )}
     </Screen>
