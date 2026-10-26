@@ -2,23 +2,24 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform, Switch, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import { useAuth } from '../../src/auth';
 import { api } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
 import { exportJson, exportPdf } from '../../src/lib/exports';
-import { useAppLock } from '../../src/lock';
 import { space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
-import { Banner, Tappable, Txt } from '../../src/ui/core';
-import { Group, Row, Screen, Section } from '../../src/ui/layout';
+import { Banner, Button, Tappable, Txt } from '../../src/ui/core';
+import { Group, Row, Screen } from '../../src/ui/layout';
+import { Sheet } from '../../src/ui/Sheet';
 
 export default function ProfileTab() {
   const c = useColors();
   const { signOut } = useAuth();
-  const lock = useAppLock();
-  const { data: p, setData, error, refreshing, refresh, reload } = useLoad(() => api.profile().then((r) => r.profile), []);
+  const { data, setData, error, refreshing, refresh, reload } = useLoad(() => Promise.all([api.profile().then((r) => r.profile), api.activity()]), []);
+  const [p, activity] = data ?? [null, null];
   const [busy, setBusy] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'danger' | 'info'; message: string } | null>(null);
 
   const run = async (key: string, fn: () => Promise<unknown>) => {
@@ -38,7 +39,8 @@ export default function ProfileTab() {
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.6 });
       if (res.canceled || !res.assets[0]) return;
       const blob = await (await fetch(res.assets[0].uri)).blob();
-      setData((await api.uploadAvatar(blob)).profile);
+      const { profile } = await api.uploadAvatar(blob);
+      setData((d) => (d ? [profile, d[1]] : d));
     });
 
   const confirmSignOut = () => {
@@ -50,67 +52,50 @@ export default function ProfileTab() {
   };
 
   const initials = (p?.name ?? '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-  const facts = p ? [p.bloodType && p.bloodType !== 'unknown' ? p.bloodType : null, p.allergies.length ? `${p.allergies.length} allergies` : null, p.medications.length ? `${p.medications.length} medications` : null].filter(Boolean).join(' · ') : '';
+  const unread = activity?.unread ?? 0;
 
   return (
-    <Screen title="Profile" refreshing={refreshing} onRefresh={refresh}>
+    <Screen brand title={'Profile &\nsettings'} refreshing={refreshing} onRefresh={refresh}>
       {(error || notice) && <Banner tone={notice?.tone ?? 'danger'} message={notice?.message ?? error!} action={error ? { label: 'Retry', onPress: reload } : undefined} />}
       {p && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}>
           <Tappable onPress={changePhoto} accessibilityLabel="Change profile photo">
             {p.avatarUrl ? (
-              <Image source={{ uri: p.avatarUrl }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+              <Image source={{ uri: p.avatarUrl }} style={{ width: 72, height: 72, borderRadius: 36 }} />
             ) : (
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt variant="title" color={c.accent}>{initials || '?'}</Txt>
+              <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: c.persimmon, alignItems: 'center', justifyContent: 'center' }}>
+                <Txt variant="title" color={c.onPersimmon} style={{ fontSize: 24 }}>{initials || '?'}</Txt>
               </View>
             )}
           </Tappable>
           <View style={{ flex: 1, gap: 2 }}>
             <Txt variant="title">{p.name}</Txt>
-            <Txt variant="caption" color={c.ink3}>{p.email}</Txt>
+            <Txt variant="caption" color={c.ink3}>{busy === 'photo' ? 'Uploading photo…' : p.email}</Txt>
           </View>
         </View>
       )}
 
-      <Section title="Health">
-        <Group>
-          <Row icon="card-account-details-outline" title="Health details" subtitle={facts || 'Add blood type, allergies and medications'} onPress={() => router.push('/profile-edit')} />
-          <Row icon="text-box-search-outline" title="Health summary" subtitle="Plain-language overview of your records" onPress={() => router.push('/summary')} />
-        </Group>
-      </Section>
+      <Group bare>
+        <Row inset={false} icon="heart-pulse" title="Health details" subtitle="Your Medical ID" onPress={() => router.push('/profile-edit')} chevron={false} />
+        <Row inset={false} icon="format-text" title="Reading & motion" subtitle="Make it comfortable" onPress={() => router.push('/preferences')} chevron={false} />
+        <Row inset={false} icon="lock-outline" title="Security & privacy" subtitle="App lock, password and devices" onPress={() => router.push('/security')} chevron={false} />
+        <Row inset={false} icon="tray-arrow-down" title="Export my records" subtitle="Take a copy with you" onPress={() => setExporting(true)} chevron={false} />
+        <Row inset={false} icon="bell-outline" title="Activity" subtitle="Sign-ins, shares and who opened your links" value={unread ? `${unread} new` : null} onPress={() => router.push('/activity')} chevron={false} />
+        <Row inset={false} icon="text-box-search-outline" title="Health summary" subtitle="Plain-language overview of your records" onPress={() => router.push('/summary')} chevron={false} />
+        <Row inset={false} icon="play-circle-outline" title="How MedRec works" subtitle="Replay the tour" onPress={() => router.push('/tour')} chevron={false} />
+      </Group>
+      <Tappable onPress={confirmSignOut} accessibilityLabel="Sign out" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
+        <Txt variant="headline">Sign out</Txt>
+      </Tappable>
+      <Txt variant="caption" color={c.ink3}>MedRec organises your own records. It does not give medical advice.</Txt>
 
-      <Section title="Security">
-        <Group>
-          {lock.available && (
-            <Row
-              icon="fingerprint"
-              title="App lock"
-              subtitle="Face ID, fingerprint or device passcode when MedRec opens"
-              chevron={false}
-              accessory={<Switch value={lock.enabled} onValueChange={(v) => void lock.setEnabled(v)} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="App lock" />}
-            />
-          )}
-          <Row icon="shield-key-outline" title="Password and devices" subtitle="Change password, see where you're signed in" onPress={() => router.push('/security')} />
-        </Group>
-      </Section>
-
-      <Section title="Your data">
-        <Group>
-          <Row icon="file-pdf-box" title={busy === 'pdf' ? 'Preparing PDF…' : 'Printable history (PDF)'} subtitle="For a new doctor or your own files" onPress={() => run('pdf', exportPdf)} />
-          <Row icon="code-json" title={busy === 'json' ? 'Preparing file…' : 'Export everything (JSON)'} subtitle="Profile and all records, to keep or move" onPress={() => run('json', exportJson)} />
-        </Group>
-      </Section>
-
-      <Section title="Help">
-        <Group>
-          <Row icon="play-circle-outline" title="How MedRec works" onPress={() => router.push('/tour')} />
-          <Row icon="logout" title="Sign out" tone="danger" chevron={false} onPress={confirmSignOut} />
-        </Group>
-      </Section>
-      <Txt variant="caption" color={c.ink3} style={{ textAlign: 'center' }}>
-        MedRec organises your own records. It does not give medical advice.
-      </Txt>
+      <Sheet visible={exporting} onClose={() => setExporting(false)} title="Export records" message="Export a readable PDF or a copy of your data. Attachments are downloaded separately." closeLabel="Done" closeKind="dark">
+        <View style={{ gap: space.md, paddingBottom: space.xs }}>
+          <Button kind="secondary" icon="file-pdf-box" label={busy === 'pdf' ? 'Preparing PDF…' : 'Printable history (PDF)'} loading={busy === 'pdf'} onPress={() => run('pdf', exportPdf)} />
+          <Button kind="secondary" icon="code-json" label={busy === 'json' ? 'Preparing file…' : 'Everything as a file (JSON)'} loading={busy === 'json'} onPress={() => run('json', exportJson)} />
+          {notice && <Banner tone={notice.tone} message={notice.message} />}
+        </View>
+      </Sheet>
     </Screen>
   );
 }
