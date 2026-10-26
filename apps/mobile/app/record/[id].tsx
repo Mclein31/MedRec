@@ -1,17 +1,18 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Linking, Modal, Platform, Pressable, View } from 'react-native';
 import { RecordForm, toInput, validate, type FormValue } from '../../src/add/RecordForm';
 import { formatDate } from '../../src/format';
 import { api, type RecordFile } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
-import { CATEGORY_META, radius, space, useColors } from '../../src/theme';
+import { CATEGORY_META, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
-import { AiPanel } from '../../src/ui/AiPanel';
-import { Banner, Button, Icon, Tappable, Txt } from '../../src/ui/core';
+import { Banner, Button, Eyebrow, Icon, Tappable, Txt } from '../../src/ui/core';
 import { Screen } from '../../src/ui/layout';
-import { CategoryBadge } from '../../src/ui/RecordRow';
+import { Rise } from '../../src/ui/motion';
+import { DocCard, PageThumbs } from '../../src/ui/RecordDoc';
+import { Remy } from '../../src/ui/Remy';
 
 export default function RecordDetail() {
   const c = useColors();
@@ -23,24 +24,17 @@ export default function RecordDetail() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<RecordFile | null>(null);
 
-  const back = (
-    <Tappable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))} accessibilityLabel="Back to records" hitSlop={10} style={{ width: 44, height: 44, justifyContent: 'center' }}>
-      <Icon name="arrow-left" size={24} color={c.ink} />
-    </Tappable>
-  );
-
   if (!data) {
     return (
-      <Screen tabBar={false}>
-        {back}
-        {error ? <Banner message={error} action={{ label: 'Retry', onPress: reload }} /> : loading ? <Txt color={c.ink3}>Loading…</Txt> : null}
+      <Screen tabBar={false} nav={{ title: 'Record details' }}>
+        {error ? <Banner message={error} action={{ label: 'Retry', onPress: reload }} /> : loading ? <Remy pose="reading" motion="read" size={140} style={{ alignSelf: 'center' }} /> : null}
       </Screen>
     );
   }
 
   const r = data;
-  const startEdit = () =>
-    setEditing({ title: r.title, category: r.category, eventDate: r.eventDate ?? '', provider: r.provider ?? '', facility: r.facility ?? '', notes: r.notes ?? '' });
+  const open = (f: RecordFile) => (f.contentType.startsWith('image/') ? setViewing(f) : void Linking.openURL(f.url));
+  const kind = r.files.length ? (r.files.every((f) => f.contentType === 'application/pdf') ? 'PDF' : r.files.every((f) => f.contentType.startsWith('image/')) ? 'Photo' : 'Mixed') : undefined;
 
   const saveEdit = async () => {
     if (!editing) return;
@@ -75,72 +69,71 @@ export default function RecordDetail() {
     ]);
   };
 
-  const meta = [CATEGORY_META[r.category]?.label, formatDate(r.eventDate, { year: true })].filter(Boolean).join(' · ');
+  if (editing) {
+    return (
+      <Screen
+        tabBar={false}
+        nav={{ title: 'Edit record', back: 'close', onBack: () => setEditing(null) }}
+        footer={<Button label="Save changes" onPress={saveEdit} loading={busy} />}
+      >
+        {actionError && <Banner message={actionError} />}
+        <RecordForm value={editing} onChange={setEditing} errors={errors} />
+      </Screen>
+    );
+  }
+
+  const headerActions = (
+    <View style={{ flexDirection: 'row' }}>
+      <Tappable onPress={() => setEditing({ title: r.title, category: r.category, eventDate: r.eventDate ?? '', provider: r.provider ?? '', facility: r.facility ?? '', notes: r.notes ?? '' })} accessibilityLabel="Edit record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="pencil-outline" size={22} color={c.ink} />
+      </Tappable>
+      <Tappable onPress={() => router.push({ pathname: '/share/new', params: { recordId: r.id } })} accessibilityLabel="Share this record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="share-variant-outline" size={22} color={c.ink} />
+      </Tappable>
+    </View>
+  );
 
   return (
-    <Screen tabBar={false}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        {back}
-        {!editing && (
-          <Tappable onPress={startEdit} accessibilityLabel="Edit record" hitSlop={10} style={{ height: 44, justifyContent: 'center' }}>
-            <Txt variant="label" color={c.accent}>Edit</Txt>
-          </Tappable>
-        )}
-      </View>
+    <Screen
+      tabBar={false}
+      nav={{ title: 'Record details', right: headerActions }}
+      eyebrow={<Eyebrow>{`${CATEGORY_META[r.category]?.short ?? 'Record'}  /  ${r.eventDate ? formatDate(r.eventDate, { year: true }) : 'Undated'}`}</Eyebrow>}
+      title={r.title}
+      subtitle={[r.facility, r.provider].filter(Boolean).join(' · ') || undefined}
+      footer={
+        r.ai ? (
+          <Button kind="dark" label="Explain this record" onPress={() => router.push({ pathname: '/record/explain', params: { id: r.id } })} />
+        ) : (
+          <Txt variant="caption" color={c.ink3} style={{ textAlign: 'center' }}>No AI reading was saved with this record, so there's nothing to explain yet.</Txt>
+        )
+      }
+    >
       {actionError && <Banner message={actionError} />}
+      <Rise scale={0.97}>
+        <DocCard record={r} pages={r.files.length} kind={kind} />
+      </Rise>
+      <PageThumbs files={r.files} onOpen={open} />
+      {r.files[0] && <Button kind="secondary" label={`Open original ${kind === 'PDF' ? 'PDF' : 'document'}`} onPress={() => open(r.files[0]!)} />}
 
-      {editing ? (
-        <>
-          <Txt variant="display" accessibilityRole="header">Edit record</Txt>
-          <RecordForm value={editing} onChange={setEditing} errors={errors} />
-          <Button label="Save changes" onPress={saveEdit} loading={busy} />
-          <Button kind="secondary" label="Cancel" onPress={() => setEditing(null)} />
-        </>
-      ) : (
-        <>
-          <View style={{ gap: space.md }}>
-            <CategoryBadge category={r.category} size={48} />
-            <Txt variant="display" accessibilityRole="header">{r.title}</Txt>
-            <Txt color={c.ink3}>{meta}</Txt>
-            {(r.provider || r.facility) && <Txt color={c.ink2}>{[r.provider, r.facility].filter(Boolean).join(' · ')}</Txt>}
-          </View>
+      <Tappable onPress={() => router.push({ pathname: '/remy', params: { recordId: r.id } })} accessibilityLabel="Have a question? Ask Remy about this record." style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 56 }}>
+        <Remy pose="greeting" size={44} motion="idle" />
+        <View style={{ flex: 1 }}>
+          <Txt>Have a question?</Txt>
+          <Txt>Ask Remy about this record.</Txt>
+        </View>
+      </Tappable>
 
-          {r.files.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md }}>
-              {r.files.map((f, i) => (
-                <Tappable
-                  key={f.id}
-                  onPress={() => (f.contentType.startsWith('image/') ? setViewing(f) : void Linking.openURL(f.url))}
-                  accessibilityLabel={`Open page ${i + 1}`}
-                  style={{ width: 120, height: 156, borderRadius: radius.sm, overflow: 'hidden', borderWidth: 1, borderColor: c.line, backgroundColor: c.surfaceSunken }}
-                >
-                  {f.contentType.startsWith('image/') ? (
-                    <Image source={{ uri: f.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                  ) : (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                      <Icon name="file-pdf-box" size={36} />
-                      <Txt variant="micro" color={c.ink3}>PDF · page {i + 1}</Txt>
-                    </View>
-                  )}
-                </Tappable>
-              ))}
-            </ScrollView>
-          )}
-
-          {r.notes && (
-            <View style={{ gap: space.sm }}>
-              <Txt variant="label" color={c.ink2}>Your notes</Txt>
-              <Txt>{r.notes}</Txt>
-            </View>
-          )}
-          {r.ai && <AiPanel ai={r.ai} />}
-
-          <View style={{ gap: space.md }}>
-            <Button label="Share this record" icon="qrcode" onPress={() => router.push({ pathname: '/share/new', params: { recordId: r.id } })} />
-            <Button kind="danger" label="Delete record" icon="trash-can-outline" onPress={remove} />
-          </View>
-        </>
+      {r.notes && (
+        <View style={{ gap: space.sm }}>
+          <Eyebrow>Your notes</Eyebrow>
+          <Txt>{r.notes}</Txt>
+        </View>
       )}
+
+      <Tappable onPress={remove} accessibilityLabel="Delete record" style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44, alignSelf: 'flex-start' }}>
+        <Icon name="trash-can-outline" size={20} color={c.danger} />
+        <Txt variant="label" color={c.danger}>Delete record</Txt>
+      </Tappable>
 
       <Modal visible={!!viewing} animationType="fade" onRequestClose={() => setViewing(null)} presentationStyle="fullScreen">
         <Pressable onPress={() => setViewing(null)} style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }} accessibilityLabel="Close page" accessibilityRole="button">
