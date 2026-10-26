@@ -1,0 +1,8 @@
+# Remy — magnifying-glass pose
+
+Generated with the built-in image generation tool on 2026-10-26 as an edit of the selected warm Remy design. Saved asset: `remy-searching.png`, transparent background. Intended placement: no matching search results, plus the brand expression sheet.
+
+## Exact final prompt
+
+Use case: precise-object-edit. Create one new pose of this exact Remy mascot for MedRec. Preserve its recognizable record-organizer body, layered golden and peach folders, ivory lined front card and persimmon tab, golden face panel and feet, rich warm aubergine body and arms, same proportions, soft graphic shading and illustration style. Change the pose to a curious little record detective: Remy is leaning slightly forward and holding a clearly recognizable round MAGNIFYING GLASS in one hand, raised near one eye, looking through the lens inquisitively. The lens has a thin aubergine round rim, a persimmon handle, a transparent interior with only a faint small ivory glint, and gently enlarges that eye while preserving its appearance. Keep the other eye visible outside the lens, one eyebrow raised, a subtle friendly smile. Other hand rests on its side; both golden feet grounded. No costume, hat, clothing, extra records or tools. Full body, single character centered in a square with breathing room. Genuine transparent alpha background. No scenery, backing shape, ground shadow, text, letters, questions marks, sparkles, extra characters, green, mint, teal, cyan, blue or saturated violet. This is a friendly search-helper pose for finding medical records, not a doctor or diagnostic character. Preserve original character identity and change only the pose, gaze and magnifying-glass accessory.
+

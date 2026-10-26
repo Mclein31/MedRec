@@ -1,0 +1,51 @@
+[
+  {
+    "path": "assets/brand/medrec-app-icon.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGB",
+    "alpha": false
+  },
+  {
+    "path": "assets/remy/remy-curious.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha": true
+  },
+  {
+    "path": "assets/remy/remy-default.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha": true
+  },
+  {
+    "path": "assets/remy/remy-greeting.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha": true
+  },
+  {
+    "path": "assets/remy/remy-reading.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha": true
+  },
+  {
+    "path": "assets/remy/remy-saved.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha": true
+  },
+  {
+    "path": "assets/remy/remy-searching.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha": true
+  }
+]

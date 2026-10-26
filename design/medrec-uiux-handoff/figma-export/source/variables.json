@@ -1,0 +1,405 @@
+[
+  {
+    "id": "VariableID:71:15531",
+    "name": "raw/paper",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 1,
+        "g": 0.9764705896377563,
+        "b": 0.9372549057006836,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15532",
+    "name": "color/paper",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15531"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15533",
+    "name": "raw/white",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15534",
+    "name": "color/white",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15533"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15535",
+    "name": "raw/ink",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.1882352977991104,
+        "g": 0.13333334028720856,
+        "b": 0.21960784494876862,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15536",
+    "name": "color/ink",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15535"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15537",
+    "name": "raw/blue",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.2862745225429535,
+        "g": 0.1764705926179886,
+        "b": 0.2823529541492462,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15538",
+    "name": "color/aubergine",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15537"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15539",
+    "name": "raw/orange",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.9019607901573181,
+        "g": 0.4313725531101227,
+        "b": 0.30980393290519714,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15540",
+    "name": "color/action-accent",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15539"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15541",
+    "name": "raw/muted",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.43529412150382996,
+        "g": 0.35686275362968445,
+        "b": 0.40392157435417175,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15542",
+    "name": "color/muted",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15541"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15543",
+    "name": "raw/line",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.8509804010391235,
+        "g": 0.7960784435272217,
+        "b": 0.7764706015586853,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15544",
+    "name": "color/line",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15543"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15545",
+    "name": "raw/soft",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.9607843160629272,
+        "g": 0.9254902005195618,
+        "b": 0.8980392217636108,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15546",
+    "name": "color/soft",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15545"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15547",
+    "name": "raw/danger",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.6666666865348816,
+        "g": 0.1568627506494522,
+        "b": 0.23137255012989044,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15548",
+    "name": "color/danger",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15547"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:15549",
+    "name": "raw/board",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.9137254953384399,
+        "g": 0.8823529481887817,
+        "b": 0.8549019694328308,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:15550",
+    "name": "color/board",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:15549"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:18173",
+    "name": "raw/mint",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.95686274766922,
+        "g": 0.8039215803146362,
+        "b": 0.38823530077934265,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:18174",
+    "name": "color/golden",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:18173"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:71:18175",
+    "name": "raw/coral",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.9019607901573181,
+        "g": 0.4313725531101227,
+        "b": 0.30980393290519714,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:71:18176",
+    "name": "color/persimmon",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:71:18175"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  },
+  {
+    "id": "VariableID:75:2287",
+    "name": "raw/peach",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "r": 0.95686274766922,
+        "g": 0.7215686440467834,
+        "b": 0.6039215922355652,
+        "a": 1
+      }
+    },
+    "scopes": []
+  },
+  {
+    "id": "VariableID:75:2288",
+    "name": "color/peach",
+    "resolvedType": "COLOR",
+    "valuesByMode": {
+      "71:4": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:75:2287"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL",
+      "TEXT_FILL",
+      "STROKE_COLOR"
+    ]
+  }
+]

@@ -1,0 +1,418 @@
+[
+  {
+    "key": "welcome",
+    "id": "71:15717",
+    "name": "MedRec 03 / Welcome",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15717"
+  },
+  {
+    "key": "records",
+    "id": "71:15759",
+    "name": "MedRec 03 / Your records",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15759"
+  },
+  {
+    "key": "record",
+    "id": "71:15854",
+    "name": "MedRec 03 / A record",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15854"
+  },
+  {
+    "key": "explain",
+    "id": "71:15904",
+    "name": "MedRec 03 / Explanation",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15904"
+  },
+  {
+    "key": "add",
+    "id": "71:15947",
+    "name": "MedRec 03 / Add a document",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15947"
+  },
+  {
+    "key": "review",
+    "id": "71:16000",
+    "name": "MedRec 03 / Review details",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16000"
+  },
+  {
+    "key": "saved",
+    "id": "71:16047",
+    "name": "MedRec 03 / Saved",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16047"
+  },
+  {
+    "key": "share",
+    "id": "71:16084",
+    "name": "MedRec 03 / Share",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16084"
+  },
+  {
+    "key": "share-setup",
+    "id": "71:16153",
+    "name": "MedRec 03 / Choose access",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16153"
+  },
+  {
+    "key": "qr",
+    "id": "71:16207",
+    "name": "MedRec 03 / Live pass",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16207"
+  },
+  {
+    "key": "ended",
+    "id": "71:16254",
+    "name": "MedRec 03 / Access ended",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16254"
+  },
+  {
+    "key": "medical",
+    "id": "71:16291",
+    "name": "MedRec 03 / Medical ID",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16291"
+  },
+  {
+    "key": "profile",
+    "id": "71:16369",
+    "name": "MedRec 03 / Profile",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16369"
+  },
+  {
+    "key": "sign-in",
+    "id": "71:16466",
+    "name": "MedRec 03 / Sign in",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16466"
+  },
+  {
+    "key": "verify",
+    "id": "71:16508",
+    "name": "MedRec 03 / Verify email",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16508"
+  },
+  {
+    "key": "empty",
+    "id": "71:16557",
+    "name": "MedRec 03 / First record",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16557"
+  },
+  {
+    "key": "labs",
+    "id": "71:16621",
+    "name": "MedRec 03 / Lab results",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16621"
+  },
+  {
+    "key": "no-match",
+    "id": "71:16723",
+    "name": "MedRec 03 / No results",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16723"
+  },
+  {
+    "key": "upload-error",
+    "id": "71:16789",
+    "name": "MedRec 03 / Upload retry",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16789"
+  },
+  {
+    "key": "preferences",
+    "id": "71:16829",
+    "name": "MedRec 03 / Reading preferences",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16829"
+  },
+  {
+    "key": "onboarding-records",
+    "id": "71:16885",
+    "name": "MedRec 03 / Onboarding · Records",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16885"
+  },
+  {
+    "key": "onboarding-understand",
+    "id": "71:16944",
+    "name": "MedRec 03 / Onboarding · Understanding",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16944"
+  },
+  {
+    "key": "onboarding-share",
+    "id": "71:16986",
+    "name": "MedRec 03 / Onboarding · Sharing",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-16986"
+  },
+  {
+    "key": "onboarding-medical",
+    "id": "71:17032",
+    "name": "MedRec 03 / Onboarding · Medical ID",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17032"
+  },
+  {
+    "key": "share-single",
+    "id": "71:17080",
+    "name": "MedRec 03 / State / share-single",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17080"
+  },
+  {
+    "key": "qr-single",
+    "id": "71:17134",
+    "name": "MedRec 03 / State / qr-single",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17134"
+  },
+  {
+    "key": "share-all",
+    "id": "71:17181",
+    "name": "MedRec 03 / State / share-all",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17181"
+  },
+  {
+    "key": "qr-all",
+    "id": "71:17235",
+    "name": "MedRec 03 / State / qr-all",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17235"
+  },
+  {
+    "key": "setup-30",
+    "id": "71:17282",
+    "name": "MedRec 03 / State / setup-30",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17282"
+  },
+  {
+    "key": "qr-30",
+    "id": "71:17336",
+    "name": "MedRec 03 / State / qr-30",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17336"
+  },
+  {
+    "key": "setup-60",
+    "id": "71:17383",
+    "name": "MedRec 03 / State / setup-60",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17383"
+  },
+  {
+    "key": "qr-60",
+    "id": "71:17437",
+    "name": "MedRec 03 / State / qr-60",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17437"
+  },
+  {
+    "key": "summary",
+    "id": "71:17484",
+    "name": "MedRec 03 / State / summary",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17484"
+  },
+  {
+    "key": "consultations",
+    "id": "71:17527",
+    "name": "MedRec 03 / State / consultations",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17527"
+  },
+  {
+    "key": "prescriptions",
+    "id": "71:17645",
+    "name": "MedRec 03 / State / prescriptions",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17645"
+  },
+  {
+    "key": "imaging",
+    "id": "71:17755",
+    "name": "MedRec 03 / State / imaging",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17755"
+  },
+  {
+    "key": "copied",
+    "id": "71:17873",
+    "name": "MedRec 03 / Overlay / copied",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17873"
+  },
+  {
+    "key": "medical-edit",
+    "id": "71:17879",
+    "name": "MedRec 03 / Overlay / medical-edit",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17879"
+  },
+  {
+    "key": "register",
+    "id": "71:17901",
+    "name": "MedRec 03 / Overlay / register",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17901"
+  },
+  {
+    "key": "original",
+    "id": "71:17920",
+    "name": "MedRec 03 / Overlay / original",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17920"
+  },
+  {
+    "key": "categories",
+    "id": "71:17931",
+    "name": "MedRec 03 / Overlay / categories",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17931"
+  },
+  {
+    "key": "security",
+    "id": "71:17947",
+    "name": "MedRec 03 / Overlay / security",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17947"
+  },
+  {
+    "key": "export",
+    "id": "71:17953",
+    "name": "MedRec 03 / Overlay / export",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17953"
+  },
+  {
+    "key": "resent",
+    "id": "71:17959",
+    "name": "MedRec 03 / Overlay / resent",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17959"
+  },
+  {
+    "key": "recovery",
+    "id": "71:17965",
+    "name": "MedRec 03 / Overlay / recovery",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17965"
+  },
+  {
+    "key": "larger",
+    "id": "71:17971",
+    "name": "MedRec 03 / Overlay / larger",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17971"
+  },
+  {
+    "key": "motion",
+    "id": "71:17978",
+    "name": "MedRec 03 / Overlay / motion",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-17978"
+  },
+  {
+    "key": "launch",
+    "id": "75:2580",
+    "name": "Action/welcome",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2580"
+  },
+  {
+    "key": "loading",
+    "id": "75:2604",
+    "name": "Action/records",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2604"
+  },
+  {
+    "key": "chat",
+    "id": "75:2656",
+    "name": "MedRec 05 / Ask Remy",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2656"
+  },
+  {
+    "key": "chat-answer",
+    "id": "75:2695",
+    "name": "MedRec 05 / Chat · Find a record",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2695"
+  },
+  {
+    "key": "chat-term",
+    "id": "75:2738",
+    "name": "MedRec 05 / Chat · A medical term",
+    "width": 390,
+    "height": 844,
+    "url": "https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2738"
+  }
+]

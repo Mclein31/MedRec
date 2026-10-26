@@ -1,0 +1,770 @@
+{
+  "snapshot": "2026-10-26",
+  "files": [
+    {
+      "path": "ASSETS.json",
+      "bytes": 918,
+      "sha256": "74f4f860b31042c0bf4722e672a9103446a4e83f74b557a0b89c84b9addea412"
+    },
+    {
+      "path": "CLAUDE_PROMPT.md",
+      "bytes": 4746,
+      "sha256": "e547b0119402e35b46493ff9c512623797a6bf34001b889f26fb46a9b67f1e76"
+    },
+    {
+      "path": "DESIGN.md",
+      "bytes": 9420,
+      "sha256": "306a7812d1b539885509ba23ad1a75035447b5a822718b90d7cab00c7cd6bb83"
+    },
+    {
+      "path": "IMPLEMENTATION_SPEC.md",
+      "bytes": 8958,
+      "sha256": "3c459d1ff7db0c0e18f3d84539d57c4c3737eb0751ecd4a862a67baabb819c4b"
+    },
+    {
+      "path": "QUICK_PREVIEW.png",
+      "bytes": 179273,
+      "sha256": "69e7d7e87c5d61093d6315208fc3ce0155ca2200763c8c0f4edc4630669b2df6"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2765,
+      "sha256": "ad91905a6d326fb898d7ef594e1e005df71afd0b6c9867e6166c19e25e3c03d0"
+    },
+    {
+      "path": "SCREEN_MAP.md",
+      "bytes": 16654,
+      "sha256": "c97006e354756589cedc9e0428715abfecaa45942821aa1aeaf2076d83650fc9"
+    },
+    {
+      "path": "TOKENS.json",
+      "bytes": 1254,
+      "sha256": "70df051cdb6ff630f28ee651df68a59bc89ff490b03dc4d8fa05a10ead3f7b25"
+    },
+    {
+      "path": "VALIDATION.json",
+      "bytes": 971,
+      "sha256": "6b2f6df6939cd3caa6e3881a672a882908bc682f72b25f8e499b40396c2bb789"
+    },
+    {
+      "path": "assets/brand/medrec-app-icon.png",
+      "bytes": 1695717,
+      "sha256": "49f0469bc452141cc2b9bfefd9dc9ef20d754c81dde7f34d136e100fd2a08c5e"
+    },
+    {
+      "path": "assets/remy/remy-curious.png",
+      "bytes": 961124,
+      "sha256": "716364659d28be333df8d964ea787e4e522ea6f691c07d942cf298a8038870cd"
+    },
+    {
+      "path": "assets/remy/remy-default.png",
+      "bytes": 939560,
+      "sha256": "0beb352064b8c0db3121138eb2619758bf0f65870effd29bdd068663719939a4"
+    },
+    {
+      "path": "assets/remy/remy-greeting.png",
+      "bytes": 931192,
+      "sha256": "c048379e4640f080f6f0024f2bb54339cf418e46687da3af03e9a707bc0fa890"
+    },
+    {
+      "path": "assets/remy/remy-reading.png",
+      "bytes": 920352,
+      "sha256": "fa7ea5c73b9e69938e25f274eb39677c54d278cea88ebbe5f178e132378742dd"
+    },
+    {
+      "path": "assets/remy/remy-saved.png",
+      "bytes": 927006,
+      "sha256": "68885b2a5d90964925af8cad890c6106f6210e407cb0adc39d32fdc92b866f8b"
+    },
+    {
+      "path": "assets/remy/remy-searching.png",
+      "bytes": 992168,
+      "sha256": "0526c1d79b7a82aefe921d43137d268beed8bec93504313ff9f7a08be5b780df"
+    },
+    {
+      "path": "figma-export/identity/appIcon.png",
+      "bytes": 93380,
+      "sha256": "121a6ec2171d31d03e2a152f2f816ced7e31e266a4d5f9ea6a44a7684aa2eb87"
+    },
+    {
+      "path": "figma-export/identity/appIcon.svg",
+      "bytes": 2261480,
+      "sha256": "1bad522139099b01375269c042653141abb5dd808f707cfe79e20fde02676893"
+    },
+    {
+      "path": "figma-export/identity/primary.png",
+      "bytes": 49591,
+      "sha256": "d15f7960b64745c4f8a7805666a7372a269d0554f1140be295887f832f40d920"
+    },
+    {
+      "path": "figma-export/identity/primary.svg",
+      "bytes": 1258118,
+      "sha256": "f90cfe4f7f645eb8d343383fa712c4399a54a37255b4c1f7b891d390a238e09d"
+    },
+    {
+      "path": "figma-export/identity/reversed.png",
+      "bytes": 48155,
+      "sha256": "6606491ccd8c1faeeb4c993cbadc0d057e14dc6ff03993382b5f56d6677e007e"
+    },
+    {
+      "path": "figma-export/identity/reversed.svg",
+      "bytes": 1258116,
+      "sha256": "0fbe5d018808d614a80abbff6e106db672992ceb9e533c8d4e59ed3c8711605e"
+    },
+    {
+      "path": "figma-export/identity/wordmark.png",
+      "bytes": 4214,
+      "sha256": "a4b86e138211a054bd7808ada523260a76855ba74132a0cfbdba77937e38abe9"
+    },
+    {
+      "path": "figma-export/identity/wordmark.svg",
+      "bytes": 4822,
+      "sha256": "f6d721a2c86fcc2b0d5d112113b5693afabc1734fbf98437ae50436c4a008e26"
+    },
+    {
+      "path": "figma-export/overviews/app-board.png",
+      "bytes": 778701,
+      "sha256": "c18bd199c4a787fbf61231a062b8cafc75802fdcb1c18d8864cedbf64ad0d6dc"
+    },
+    {
+      "path": "figma-export/overviews/components-and-states.png",
+      "bytes": 408029,
+      "sha256": "d21cb4106b9124b8e710eb517448956348b850b0632eecdb8fd71e07b82934da"
+    },
+    {
+      "path": "figma-export/overviews/identity-and-remy.png",
+      "bytes": 241399,
+      "sha256": "7548cc81d7ad2d59f3e23aea08a0b12c2c84957f2f3605156a680f799ca329a8"
+    },
+    {
+      "path": "figma-export/screens/png/add.png",
+      "bytes": 92056,
+      "sha256": "99df8e0426364d7aac7584724cc7448f8a60bb301616a4c81da8b77ff99b52e6"
+    },
+    {
+      "path": "figma-export/screens/png/categories.png",
+      "bytes": 18637,
+      "sha256": "21686e5cfcb2139b66937d6deba4138bf61ec957eebda86aaf1db7daf9c6db6f"
+    },
+    {
+      "path": "figma-export/screens/png/chat-answer.png",
+      "bytes": 39740,
+      "sha256": "aded0264f9648e0b57270dcc15485b34c23dc8a230231941ee27eafab4c94709"
+    },
+    {
+      "path": "figma-export/screens/png/chat-term.png",
+      "bytes": 44693,
+      "sha256": "a99596bb97ad093851a4ebbbec1e3c2ccfce47d7034bba8ec6a1151c0ba01fe7"
+    },
+    {
+      "path": "figma-export/screens/png/chat.png",
+      "bytes": 46040,
+      "sha256": "1f87442291a8f9880f183f1219ee7cef11470768fe710cd68a6e3ae8b8c0a042"
+    },
+    {
+      "path": "figma-export/screens/png/consultations.png",
+      "bytes": 96094,
+      "sha256": "d21ab9de16abb423b561b4fc4c06a9a42c09dd8e4647f2d9c3756fe3d507e5b8"
+    },
+    {
+      "path": "figma-export/screens/png/copied.png",
+      "bytes": 12619,
+      "sha256": "9369ec02851e8bab27961fe2018057dc804d7e081357162a0e33316f9c01e553"
+    },
+    {
+      "path": "figma-export/screens/png/empty.png",
+      "bytes": 143817,
+      "sha256": "3e44dd364106ef8a20018eb1de0a426128e90ef523af2748649e4e830103d7a6"
+    },
+    {
+      "path": "figma-export/screens/png/ended.png",
+      "bytes": 92311,
+      "sha256": "01cefd00eb9be739712b04bdb6537913b8c2d79600a9fa9c84875ec3f4e70c87"
+    },
+    {
+      "path": "figma-export/screens/png/explain.png",
+      "bytes": 111524,
+      "sha256": "8ab57340147f4874e9a6680dfeb2a866a86fc002901a00532cc5b673927eb43e"
+    },
+    {
+      "path": "figma-export/screens/png/export.png",
+      "bytes": 15445,
+      "sha256": "14caa5c20e997a5d8c243647e3bc55eabea95baab8c6bc23caa6e917dee05ae3"
+    },
+    {
+      "path": "figma-export/screens/png/imaging.png",
+      "bytes": 95257,
+      "sha256": "100727b5a1aec59d1b054563fe8a6ef17a75980da7fb9159892095fa3bfa77ef"
+    },
+    {
+      "path": "figma-export/screens/png/labs.png",
+      "bytes": 103152,
+      "sha256": "0b621dc18b04ad5c8c39fed2092962af60394d50be01e8e526ff813d7cd15a3b"
+    },
+    {
+      "path": "figma-export/screens/png/larger.png",
+      "bytes": 16182,
+      "sha256": "6b86707f8abbc34db76ffb3ff866d9a8b1584cd6566e93cdb2b2ce11a352698c"
+    },
+    {
+      "path": "figma-export/screens/png/launch.png",
+      "bytes": 38140,
+      "sha256": "3f68919dfbd4649e4531d382d4499ca6dc9fee0578a3916fa9ddc94eae69f954"
+    },
+    {
+      "path": "figma-export/screens/png/loading.png",
+      "bytes": 44800,
+      "sha256": "3631d467e9eea8eab242c8cf5a19c5966aa23f62bd8fd30eb02c6855d69e5eb2"
+    },
+    {
+      "path": "figma-export/screens/png/medical-edit.png",
+      "bytes": 22795,
+      "sha256": "21bc7d6bd2dee8c871f733b0932ee3991848f0a2f5002dad1dbe5dc094be38e5"
+    },
+    {
+      "path": "figma-export/screens/png/medical.png",
+      "bytes": 105058,
+      "sha256": "d618597172655cb45e58b31b0cc5a22142fcb5b523f62a5a79d2a7176c2da5e7"
+    },
+    {
+      "path": "figma-export/screens/png/motion.png",
+      "bytes": 14503,
+      "sha256": "9a359886a8cf169c41b98374c7e96a5b230493bf2d9746202c1ec24b9879c50f"
+    },
+    {
+      "path": "figma-export/screens/png/no-match.png",
+      "bytes": 121540,
+      "sha256": "d60587a6e962f4ba7d582b5bcbbf3a2420e8668210ab6af19f850f5b2d839407"
+    },
+    {
+      "path": "figma-export/screens/png/onboarding-medical.png",
+      "bytes": 100073,
+      "sha256": "56a2da813b656e810b95aadfd2956047ce6e782c82c6edce35d68ad2585be354"
+    },
+    {
+      "path": "figma-export/screens/png/onboarding-records.png",
+      "bytes": 100288,
+      "sha256": "965fab44efab1fd5d0c0eaec6adf0afe75a2999f704dbca34ffcbd70e6662c40"
+    },
+    {
+      "path": "figma-export/screens/png/onboarding-share.png",
+      "bytes": 99072,
+      "sha256": "d2fd50e3a9845f58684cd966630226feb8e8b5abece71d383ffff72bf873e2a9"
+    },
+    {
+      "path": "figma-export/screens/png/onboarding-understand.png",
+      "bytes": 103590,
+      "sha256": "4741668c4622b33cc845248fb7b65799ddedcdded6dc37c5a626a02fed4c5cbb"
+    },
+    {
+      "path": "figma-export/screens/png/original.png",
+      "bytes": 19896,
+      "sha256": "9d8ba20cdb9ca55a1820bf55f6253a143fe6858ba057472ced3f81feebc9fe7c"
+    },
+    {
+      "path": "figma-export/screens/png/preferences.png",
+      "bytes": 99475,
+      "sha256": "55a8d4f2461b8558dc04fc6dfa53dd19629ddcf165695a70423d3012426ed551"
+    },
+    {
+      "path": "figma-export/screens/png/prescriptions.png",
+      "bytes": 93355,
+      "sha256": "32f1e949c96abbcbb64804cf16e94c86dff9c21079f40b1c8eb9c9ede3362610"
+    },
+    {
+      "path": "figma-export/screens/png/profile.png",
+      "bytes": 105085,
+      "sha256": "c352b2afc31125c4fa721e5e6d8b3826b5d82ff09b6c4af49083cd4c68a30bb3"
+    },
+    {
+      "path": "figma-export/screens/png/qr-30.png",
+      "bytes": 96233,
+      "sha256": "e31ba9446ccee25ad0f38e9bcaf0382eb3b598ee1e71d8ba1f5d6aa235b5451e"
+    },
+    {
+      "path": "figma-export/screens/png/qr-60.png",
+      "bytes": 96232,
+      "sha256": "c50cc6f19f309a72e0eae2a8d3bbeb91f318f0114a25522f238b76ccdf0013b7"
+    },
+    {
+      "path": "figma-export/screens/png/qr-all.png",
+      "bytes": 96358,
+      "sha256": "e208f496bbfc736b99d2779a45427fc2d0c352282749c1be95c8aec1132ecb60"
+    },
+    {
+      "path": "figma-export/screens/png/qr-single.png",
+      "bytes": 95808,
+      "sha256": "af7c746e010baf49fd18fc9c538d1d66858fba546334498539c49910c566062c"
+    },
+    {
+      "path": "figma-export/screens/png/qr.png",
+      "bytes": 96225,
+      "sha256": "a5d7e5f8493fd6487fc3b9c1d63d685bbbdb9d988b79f7d2601d3ef23c7a094f"
+    },
+    {
+      "path": "figma-export/screens/png/record.png",
+      "bytes": 98840,
+      "sha256": "cdcd4688fb8fea5d6ebf7d4d9da2f7488b37d957d9be9e8f28353a0685869df8"
+    },
+    {
+      "path": "figma-export/screens/png/records.png",
+      "bytes": 109000,
+      "sha256": "e95073e0861f19f975139c6278d5193dd02bdfbd27631568c9ad9385077d01d4"
+    },
+    {
+      "path": "figma-export/screens/png/recovery.png",
+      "bytes": 13346,
+      "sha256": "613bbfd352d56d2d34a1ae3b8d17c64b10ec52855239c66f2d455ff98209bfc9"
+    },
+    {
+      "path": "figma-export/screens/png/register.png",
+      "bytes": 27459,
+      "sha256": "08e0d8e07f644c2d8ed945c694a49af559ab409e27697f90cef3aa98e6dc35cf"
+    },
+    {
+      "path": "figma-export/screens/png/resent.png",
+      "bytes": 12882,
+      "sha256": "c827e8d7e1eef1ed2d09699f9f1766197a1bfd6aed1e8e9d5345b654b56ad53a"
+    },
+    {
+      "path": "figma-export/screens/png/review.png",
+      "bytes": 94994,
+      "sha256": "10849ccdd041e83c39a5a27237d210d45073d3aa8b9cce96d2dc3891c7424d11"
+    },
+    {
+      "path": "figma-export/screens/png/saved.png",
+      "bytes": 112813,
+      "sha256": "bc2e8a24215fb66c88726fa4698ecc4cee9f76204ce1fa3c56104545f00ebd77"
+    },
+    {
+      "path": "figma-export/screens/png/security.png",
+      "bytes": 14191,
+      "sha256": "1ff82a910b4973eeba116df51068fa7d25c564291c71dd58415881c720c45fa5"
+    },
+    {
+      "path": "figma-export/screens/png/setup-30.png",
+      "bytes": 101873,
+      "sha256": "7871481ae533945b4ba13ac4566f881e9f2f9b19108c91b393b0dfc79a1c961d"
+    },
+    {
+      "path": "figma-export/screens/png/setup-60.png",
+      "bytes": 101825,
+      "sha256": "3033c5440715d14096c9cd143927721de4f70a9028f1b5a73867420884485601"
+    },
+    {
+      "path": "figma-export/screens/png/share-all.png",
+      "bytes": 102434,
+      "sha256": "4618c08268979525bd225e7069435d5412a6f5f76f6972897a60e0371def42c8"
+    },
+    {
+      "path": "figma-export/screens/png/share-setup.png",
+      "bytes": 101864,
+      "sha256": "9306e71386ba36b2d19ba4dad3e75f6f7e2d5afc2bab3750349510b5657fda45"
+    },
+    {
+      "path": "figma-export/screens/png/share-single.png",
+      "bytes": 102280,
+      "sha256": "ba211798abc0f53f0744d2e02f8ab68c3521d21b8629934310f7335284b1c716"
+    },
+    {
+      "path": "figma-export/screens/png/share.png",
+      "bytes": 104149,
+      "sha256": "1f80335d045331691c1e123c182570d175ffdbf342470cc683b8d368a3baf010"
+    },
+    {
+      "path": "figma-export/screens/png/sign-in.png",
+      "bytes": 92002,
+      "sha256": "eae6ddee2c5566ee54ba8df6aa2dae1477f8c8d768c92f8e873a0e70f2466d95"
+    },
+    {
+      "path": "figma-export/screens/png/summary.png",
+      "bytes": 109433,
+      "sha256": "74846a47d65df9a29175304370843ca0976a5e10ba0e74ce11a16839352f9440"
+    },
+    {
+      "path": "figma-export/screens/png/upload-error.png",
+      "bytes": 97779,
+      "sha256": "c6dfa658c55639c44fa0773f30e322562f7fefbcdafbe8a1b9f343f881f15d7d"
+    },
+    {
+      "path": "figma-export/screens/png/verify.png",
+      "bytes": 90706,
+      "sha256": "d4dad232f33c75b4025a82ad989adccf7ea0d49da0b17c4c767dfef02745e0b0"
+    },
+    {
+      "path": "figma-export/screens/png/welcome.png",
+      "bytes": 138131,
+      "sha256": "36a8c772efe1d238ff237bbf000b2bdab90f6d710ae1ec0a6c508aa7dcd32b51"
+    },
+    {
+      "path": "figma-export/screens/svg/add.svg",
+      "bytes": 157622,
+      "sha256": "3c9cdbabcf86039eef7a7fe6587f4730f4d33fcbe80b6b321bbdddbec751ed0a"
+    },
+    {
+      "path": "figma-export/screens/svg/categories.svg",
+      "bytes": 90020,
+      "sha256": "6a33dd3ff241cf520cbc2c40b26eb52e419230579216c18baedd6150cefa71d1"
+    },
+    {
+      "path": "figma-export/screens/svg/chat-answer.svg",
+      "bytes": 1529280,
+      "sha256": "ba694436cad5b6fcc2fd05df6baecf8f33753d2217fbb31b03fa297d3b047f0d"
+    },
+    {
+      "path": "figma-export/screens/svg/chat-term.svg",
+      "bytes": 1585568,
+      "sha256": "0b3c676ce51925c84465466da54cc028c349ceb49118787c7080fb2392a7a614"
+    },
+    {
+      "path": "figma-export/screens/svg/chat.svg",
+      "bytes": 1453802,
+      "sha256": "076795fd35831bb3e8e01d835061834acd84f3aa0b05af9c64c31f9d7d3edbae"
+    },
+    {
+      "path": "figma-export/screens/svg/consultations.svg",
+      "bytes": 142880,
+      "sha256": "8584c7bd99e4e4f420c8619947c97cb370f8931fe8c40238847cc4892ccb4142"
+    },
+    {
+      "path": "figma-export/screens/svg/copied.svg",
+      "bytes": 53782,
+      "sha256": "b4409339a1d0352167201411e8fced98b2e4388d61536a15339b4f186dc9bf42"
+    },
+    {
+      "path": "figma-export/screens/svg/empty.svg",
+      "bytes": 2704677,
+      "sha256": "aa53a4defa500180b9bf0a09493aaeb894613919e9adcaf12051a3a3f8c0be02"
+    },
+    {
+      "path": "figma-export/screens/svg/ended.svg",
+      "bytes": 150262,
+      "sha256": "3f53efebc5535b17ab6013457ddf801ddd1acdeec04718448d677660d2b1f27c"
+    },
+    {
+      "path": "figma-export/screens/svg/explain.svg",
+      "bytes": 319872,
+      "sha256": "53b27885bc05a27c02477d15209f3062081e0b19689091354cf9fb7982132880"
+    },
+    {
+      "path": "figma-export/screens/svg/export.svg",
+      "bytes": 74923,
+      "sha256": "9bd9f644d61653572f1f6e5569f6c53f93583a0d9765bf633bf54cf0d1de1f7c"
+    },
+    {
+      "path": "figma-export/screens/svg/imaging.svg",
+      "bytes": 154189,
+      "sha256": "927b4961713bc2006d2cd8537b1fafef14af4b9ffd0d8aad0bdd5e67df5f0682"
+    },
+    {
+      "path": "figma-export/screens/svg/labs.svg",
+      "bytes": 217209,
+      "sha256": "2833ec83d25ab615c07e847a5966424e600f628b9ff683d9ccf010deab73673c"
+    },
+    {
+      "path": "figma-export/screens/svg/larger.svg",
+      "bytes": 66336,
+      "sha256": "cd4748b4b728b4912be96dbf6398203f06544c7e70f4a57c5ad49c97328f0bed"
+    },
+    {
+      "path": "figma-export/screens/svg/launch.svg",
+      "bytes": 1272956,
+      "sha256": "533af48357a01c2a64e7b09b6f2be953d3b9b5da125ab772a2d86314b6166899"
+    },
+    {
+      "path": "figma-export/screens/svg/loading.svg",
+      "bytes": 1288342,
+      "sha256": "4334bc669119a3112a0404d5ed0e6be839a65988c42c92c866b54b98261b1f87"
+    },
+    {
+      "path": "figma-export/screens/svg/medical-edit.svg",
+      "bytes": 100176,
+      "sha256": "b57460e505b4f500244123294735cf701cb9c34554ae23df7bdac60a0d6aa1e2"
+    },
+    {
+      "path": "figma-export/screens/svg/medical.svg",
+      "bytes": 1443293,
+      "sha256": "2a4503579161e79fe150a67db9c75155004d3c2870f0c1006e0a87d4930194f8"
+    },
+    {
+      "path": "figma-export/screens/svg/motion.svg",
+      "bytes": 61744,
+      "sha256": "e2c097b9e05ede5d95533454f066a7487070216623843b69afea9d276291e6bc"
+    },
+    {
+      "path": "figma-export/screens/svg/no-match.svg",
+      "bytes": 1482794,
+      "sha256": "61e6cf1976d9548a7c6f7b3aff08b55aa2e1d3784ba123ce68daaa1c4f8d3832"
+    },
+    {
+      "path": "figma-export/screens/svg/onboarding-medical.svg",
+      "bytes": 198672,
+      "sha256": "233c3bd7978b7dda766b29e5a66834f078774a2c7f59e477f0518f981bffa6a4"
+    },
+    {
+      "path": "figma-export/screens/svg/onboarding-records.svg",
+      "bytes": 210527,
+      "sha256": "978f9e9b0d51d92fcf719fe6b97df55c9ae70c988489e7974a7059e21286eeab"
+    },
+    {
+      "path": "figma-export/screens/svg/onboarding-share.svg",
+      "bytes": 207524,
+      "sha256": "712de4360334589788248519780b135719fd6b058fb2f0021de9379e3e39bef5"
+    },
+    {
+      "path": "figma-export/screens/svg/onboarding-understand.svg",
+      "bytes": 243343,
+      "sha256": "06e61dfe274624ad5cf00312b1f5a38a518c591897e7950d0acb3b01d033414e"
+    },
+    {
+      "path": "figma-export/screens/svg/original.svg",
+      "bytes": 106262,
+      "sha256": "a243c2cb1c19de5729f98dc44f991bf3c34aa38ffe2380639dc9505e31f15036"
+    },
+    {
+      "path": "figma-export/screens/svg/preferences.svg",
+      "bytes": 205207,
+      "sha256": "d70740ff8ad890e245e3bb1c566e6a793f5e92c9460acf86dda6093fb7872855"
+    },
+    {
+      "path": "figma-export/screens/svg/prescriptions.svg",
+      "bytes": 130475,
+      "sha256": "924f7056a09a71e93d07e1582df63536e95a29b44163c5c07bdd64d9e67e62b7"
+    },
+    {
+      "path": "figma-export/screens/svg/profile.svg",
+      "bytes": 1444764,
+      "sha256": "78069460e2ea2f6247fb0b33a2cadc34f102c801376d96784e9be25347b10170"
+    },
+    {
+      "path": "figma-export/screens/svg/qr-30.svg",
+      "bytes": 1409847,
+      "sha256": "d8576539dd28f135402472098a84ce33975a2100b184b9e7dd8bd58c96725721"
+    },
+    {
+      "path": "figma-export/screens/svg/qr-60.svg",
+      "bytes": 1410742,
+      "sha256": "71ab2cd3dbf44966070e24528f99eae2c5a4b9788c9419288d43114e5df28ca5"
+    },
+    {
+      "path": "figma-export/screens/svg/qr-all.svg",
+      "bytes": 1405531,
+      "sha256": "1f73a7eabfd711f1979177677a172a7dd76c65ffa330ee7aebfa75408fb3b942"
+    },
+    {
+      "path": "figma-export/screens/svg/qr-single.svg",
+      "bytes": 1402045,
+      "sha256": "fe257d6a64933d361d87cc8866c7fab8f5c198f0e04efd7cb6869a5dea0cd8b4"
+    },
+    {
+      "path": "figma-export/screens/svg/qr.svg",
+      "bytes": 1406886,
+      "sha256": "e21d827db93ab74366e2569ec36338bd9b22a8a416e9e7fbb15a93133ababb79"
+    },
+    {
+      "path": "figma-export/screens/svg/record.svg",
+      "bytes": 195010,
+      "sha256": "5d283c131e51ae47b5eaa4a72bbe1967cb82d31ff04224e3e497c168c37945c4"
+    },
+    {
+      "path": "figma-export/screens/svg/records.svg",
+      "bytes": 1504507,
+      "sha256": "1ed04269140ef9ce468821649d1f9bab6c90c1123c02f09ddf96b24b2bdedd36"
+    },
+    {
+      "path": "figma-export/screens/svg/recovery.svg",
+      "bytes": 48356,
+      "sha256": "0c99634b63c2a3ae4592db7925fed3c309b0deb30a856a6b0f4420306e9946ef"
+    },
+    {
+      "path": "figma-export/screens/svg/register.svg",
+      "bytes": 164637,
+      "sha256": "a909a372cfa0c1b430668b88cc91764b84da99d792b7a46579e5c588bcc37ade"
+    },
+    {
+      "path": "figma-export/screens/svg/resent.svg",
+      "bytes": 45313,
+      "sha256": "9a3ee7a278daa8274256a503a96f257e997bc506a0e3106844b3756e6f37c26a"
+    },
+    {
+      "path": "figma-export/screens/svg/review.svg",
+      "bytes": 172670,
+      "sha256": "686ffd3c79f434a3942afc853a65248d6b6f4896a42c135c294571bb57a3c5e6"
+    },
+    {
+      "path": "figma-export/screens/svg/saved.svg",
+      "bytes": 1392205,
+      "sha256": "ce82b48110a0c4feda72879956320b79d50767dd76d5a14cf6aa2e9338ac7539"
+    },
+    {
+      "path": "figma-export/screens/svg/security.svg",
+      "bytes": 59776,
+      "sha256": "8d91d3f83327f424547ee348c630d499e39dabc7f06a341af515f842a87d871b"
+    },
+    {
+      "path": "figma-export/screens/svg/setup-30.svg",
+      "bytes": 225794,
+      "sha256": "aebf5cca9eb4bf7dc4e3abc8764e91d860326327312519c0a597dc556aa59afa"
+    },
+    {
+      "path": "figma-export/screens/svg/setup-60.svg",
+      "bytes": 225794,
+      "sha256": "4b54376cdd208387e608715cc7afd18308ebb6684f6225566a541fadbd622fea"
+    },
+    {
+      "path": "figma-export/screens/svg/share-all.svg",
+      "bytes": 235029,
+      "sha256": "e5e08157669885eadc9cd738ed3849634fbebaed23fda8238edc93946bc9518d"
+    },
+    {
+      "path": "figma-export/screens/svg/share-setup.svg",
+      "bytes": 225797,
+      "sha256": "6bf15f65a827a8f4b7c85c40d59e84bfad524fda161bdaa1d12cc62f86cab350"
+    },
+    {
+      "path": "figma-export/screens/svg/share-single.svg",
+      "bytes": 229951,
+      "sha256": "005624d3eed767b98ad7035442f8889333d036bc8414e78841b0c9acf521e44e"
+    },
+    {
+      "path": "figma-export/screens/svg/share.svg",
+      "bytes": 1424701,
+      "sha256": "de4a13a43101fc2f75c1c5d19ed857506e98b03ce067d6e5aa09b352ab2853e3"
+    },
+    {
+      "path": "figma-export/screens/svg/sign-in.svg",
+      "bytes": 142919,
+      "sha256": "ad49c23702dc9d183ef79ff4a8667f77be4298c42784622281b7710bbed010b3"
+    },
+    {
+      "path": "figma-export/screens/svg/summary.svg",
+      "bytes": 306227,
+      "sha256": "f532895eaf0b35382d7f979ed0abb6684f9e2daf83df17f8d13e6a70bd54ca28"
+    },
+    {
+      "path": "figma-export/screens/svg/upload-error.svg",
+      "bytes": 211213,
+      "sha256": "481f2bdebb7725cc0e4124f2bb2550acece01569bdf184a7bd579706ed708775"
+    },
+    {
+      "path": "figma-export/screens/svg/verify.svg",
+      "bytes": 128774,
+      "sha256": "cc3960894918ad2f9d54e1456d4a71d105835d5daab7a230824d4c89e12ba204"
+    },
+    {
+      "path": "figma-export/screens/svg/welcome.svg",
+      "bytes": 1365406,
+      "sha256": "8dcfe310e684cfd04539f888f5dc9e8895f5846a92fc3fb89e5447803f215f2f"
+    },
+    {
+      "path": "figma-export/source/app-board.json",
+      "bytes": 2958814,
+      "sha256": "3a7be546770b65b8055a4d2d0d5ac839478e299145102d1fab27690c272489cd"
+    },
+    {
+      "path": "figma-export/source/components-and-states.json",
+      "bytes": 1943771,
+      "sha256": "eccecd12bfededa41e5328d5b95d3bde4c4b97b9c867c39bb4e041e781a00428"
+    },
+    {
+      "path": "figma-export/source/current-state.json",
+      "bytes": 84453,
+      "sha256": "22b916655e6c0b5498e135f6577b0b611657ef44a664fd17a9d79a7a435e2faa"
+    },
+    {
+      "path": "figma-export/source/flow-starts.json",
+      "bytes": 390,
+      "sha256": "006ede1045d0118d9710d73dfbab45714e675cb0484a6a8910905d09ad9b5e8f"
+    },
+    {
+      "path": "figma-export/source/identity-and-remy.json",
+      "bytes": 142681,
+      "sha256": "eb61fcae758aac0436bb1cdb807f00585d36ad5ea78c2d59fcb844551035968c"
+    },
+    {
+      "path": "figma-export/source/prototype-links.json",
+      "bytes": 216940,
+      "sha256": "2b04f044993f1b3f0bd8d2efa4381240c4e8f513d6ca733ba748db2319d91df2"
+    },
+    {
+      "path": "figma-export/source/screens.json",
+      "bytes": 12141,
+      "sha256": "2faba4b69e1fc9c31fbd8670a43a20a6c030f441a52b3b429bef53896e319687"
+    },
+    {
+      "path": "figma-export/source/variables.json",
+      "bytes": 7785,
+      "sha256": "be19c52402f86d98695a038e9f3f0e6c2e75f054f1afe1d3171357e732479add"
+    },
+    {
+      "path": "index.html",
+      "bytes": 25784,
+      "sha256": "7503059817223d58396eb79a280ea6d10aaaf29399d8367b36b7f83074230559"
+    },
+    {
+      "path": "provenance/PROMPTS.md",
+      "bytes": 5877,
+      "sha256": "285e305d2589d83d8384cf86ac5edf9b5d6fd0809b5833884f0c7710d8b03318"
+    },
+    {
+      "path": "provenance/REMY-APP-ICON.md",
+      "bytes": 2321,
+      "sha256": "115cfb776e2f16f234a103f4b0090cc7a14c1be98edbdb110227ec371aca67cb"
+    },
+    {
+      "path": "provenance/SEARCH-PROMPT.md",
+      "bytes": 1714,
+      "sha256": "f92eaee52cdb37558a68c6e15653efb522523b3f7f4f504fad747ff522e28390"
+    },
+    {
+      "path": "provenance/page-organization.json",
+      "bytes": 598,
+      "sha256": "aa81d6710f9466a13ba7fd86b1b1a67019a2de17dd7b1605668ac379927ffa92"
+    },
+    {
+      "path": "references/emil-SKILL.md",
+      "bytes": 27123,
+      "sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939"
+    },
+    {
+      "path": "references/impeccable-SKILL.md",
+      "bytes": 12459,
+      "sha256": "a2c627ba2fbfb0697921ff663b9ea9dbff6584e0fb23977a7185026d07131264"
+    },
+    {
+      "path": "references/impeccable-animate.md",
+      "bytes": 5253,
+      "sha256": "59f38d50c799aa47ecd7288c69dce0245d8c3e3e2368b29499d583996b5030b3"
+    },
+    {
+      "path": "references/impeccable-colorize.md",
+      "bytes": 4554,
+      "sha256": "dcc0c3ebb76bd22c543f45d73c283e3890e5b8a44eb5053ca2f7fdd425635c32"
+    },
+    {
+      "path": "references/impeccable-craft-floor.md",
+      "bytes": 7166,
+      "sha256": "086e731940b72db13d9693b575db377a7b102729a56da5c79a21461635695c87"
+    },
+    {
+      "path": "references/impeccable-delight.md",
+      "bytes": 3733,
+      "sha256": "8f157ae861c578d54b2710ea200a6ba2253bd36ab68b6b4c4b880875bd0a415b"
+    },
+    {
+      "path": "references/impeccable-new-work.md",
+      "bytes": 63661,
+      "sha256": "cbe4612444af11a45c3d0e6f1e0b3790e8f935f995d3c5fcda1a08cad3a6c6a5"
+    },
+    {
+      "path": "references/taste-SKILL.md",
+      "bytes": 39537,
+      "sha256": "3435ed963b15a1b6447746ec8844ab2cd38d8d2e8ead3451937f42df01e408c4"
+    },
+    {
+      "path": "references/taste-app-screens.md",
+      "bytes": 85358,
+      "sha256": "55e937ec30de605b53a11310b446f328a3ce7403de24fff008920a00be1a5ed4"
+    }
+  ]
+}

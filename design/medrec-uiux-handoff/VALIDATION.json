@@ -1,0 +1,31 @@
+{
+  "snapshot": "2026-10-26",
+  "pageId": "77:3066",
+  "screens": 52,
+  "pngs": 52,
+  "svgs": 52,
+  "overviewBoards": 3,
+  "layerNodes": 2737,
+  "prototypeLinkedNodes": 221,
+  "prototypeDestinations": 49,
+  "unresolvedDestinations": [],
+  "flowStarts": 5,
+  "welcomePanel": "#FFFFFF",
+  "selectedRemyPoses": 6,
+  "checks": [
+    "ZIP CRC valid",
+    "all screen nodes covered by exported layer trees",
+    "all 52 PNGs decode",
+    "all 52 SVGs present",
+    "all prototype destinations resolve within exported trees",
+    "current dedicated page and white welcome surface verified",
+    "authored export and gallery JavaScript syntax valid",
+    "all local gallery links resolve"
+  ],
+  "limitations": [
+    "design handoff only; no app implementation or runtime test in this packaging task",
+    "Figma is the editable source; layer JSON is a specification snapshot, not .fig",
+    "font binaries not bundled",
+    "chat answers and QR examples are illustrative"
+  ]
+}

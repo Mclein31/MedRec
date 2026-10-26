@@ -1,0 +1,20 @@
+{
+  "fileKey": "ejP1MZ0Bzaqxzc31vgo5Bi",
+  "pageId": "77:3066",
+  "pageName": "MedRec · App design",
+  "sourcePageId": "0:1",
+  "movedSectionIds": ["71:15559", "71:15560", "71:18177"],
+  "deletedRejectedSectionIds": ["69:746", "69:747"],
+  "positions": {
+    "71:15559": {"x": 0, "y": 0},
+    "71:15560": {"x": 0, "y": 6054},
+    "71:18177": {"x": 2436, "y": 0}
+  },
+  "preservedUnrelatedSourceRoots": 76,
+  "changedUnrelatedSourceRoots": [],
+  "sourcePrototypeFlows": 3,
+  "targetPrototypeFlows": 5,
+  "brokenPrototypeDestinations": [],
+  "nodeIdsPreserved": true,
+  "verifiedOn": "2026-10-26"
+}
