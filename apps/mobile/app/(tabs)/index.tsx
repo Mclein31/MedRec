@@ -1,26 +1,28 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../src/auth';
-import { formatDate } from '../../src/format';
 import { api, type HealthRecord } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
+import { FirstRecord, NoMatch, OpeningRecords } from '../../src/screens/RecordsStates';
 import { CATEGORIES, CATEGORY_META, GUTTER, MAX_CONTENT_WIDTH, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
-import { Bell } from '../../src/ui/Bell';
-import { Banner, Button, Icon, Tappable, Txt } from '../../src/ui/core';
-import { Chip, Field } from '../../src/ui/form';
-import { Empty, Enter, TAB_BAR_CLEARANCE } from '../../src/ui/layout';
+import { BrandHeader } from '../../src/ui/brand';
+import { Banner, Icon, Tappable, Txt } from '../../src/ui/core';
+import { SearchField, TextTabs } from '../../src/ui/form';
+import { Enter, Rule, TAB_BAR_CLEARANCE } from '../../src/ui/layout';
 import { RecordRow } from '../../src/ui/RecordRow';
+import { Sheet } from '../../src/ui/Sheet';
+
+const PINNED = ['lab', 'prescription'];
 
 export default function Records() {
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const { state } = useAuth();
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  const [picker, setPicker] = useState(false);
   const [more, setMore] = useState<{ cursor: string | null; loading: boolean; error: string | null }>({ cursor: null, loading: false, error: null });
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export default function Records() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const summary = useLoad(() => Promise.all([api.summary(), api.activity()]), []);
+  const summary = useLoad(() => api.summary(), []);
   const list = useLoad(async () => {
     const page = await api.records({ q: debounced, category: category ?? undefined });
     setMore({ cursor: page.nextCursor, loading: false, error: null });
@@ -47,93 +49,116 @@ export default function Records() {
     }
   };
 
-  const [counts, activity] = summary.data ?? [null, null];
-  const firstName = state.status === 'signedIn' ? state.user.name.split(' ')[0] : '';
+  const counts = summary.data;
+  const firstLoad = (summary.loading && !counts) || (list.loading && !list.data);
+  const empty = !!counts && counts.total === 0;
   const filtering = !!debounced || !!category;
-  const chips = useMemo(() => CATEGORIES.filter((k) => (counts?.counts[k] ?? 0) > 0), [counts]);
+  const otherSelected = category && !PINNED.includes(category) ? category : null;
+  const clear = () => {
+    setQuery('');
+    setCategory(null);
+  };
+  const title = debounced ? 'Search records' : category ? `${CATEGORY_META[category]?.label}.` : 'Your records.';
+  const listLabel = debounced ? 'Results' : category ? `${CATEGORY_META[category]?.short ?? 'Record'} history` : 'Recently added';
+  const shown = category ? counts?.counts[category] : counts?.total;
 
   const header = (
-    <View style={{ gap: space.xl, paddingBottom: space.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Txt variant="caption" color={c.ink3}>{firstName ? `Hi, ${firstName}` : 'Your vault'}</Txt>
-          <Txt variant="display" accessibilityRole="header">Records</Txt>
-          {counts && counts.total > 0 && (
-            <Txt color={c.ink3}>
-              {counts.total} {counts.total === 1 ? 'record' : 'records'}
-              {counts.latest ? ` · latest ${formatDate(counts.latest)}` : ''}
-            </Txt>
-          )}
-        </View>
-        <Bell unread={activity?.unread ?? 0} />
-      </View>
-
-      {counts && counts.total > 0 && (
+    <View style={{ gap: space.lg, paddingBottom: space.xs }}>
+      <BrandHeader />
+      {firstLoad && !list.error && !summary.error ? (
+        <OpeningRecords />
+      ) : empty && !list.error ? (
+        <FirstRecord />
+      ) : (
         <>
-          <Field label="Search" value={query} onChangeText={setQuery} placeholder="Test, doctor, clinic or note" returnKeyType="search" autoCorrect={false} clearButtonMode="while-editing" />
-          {chips.length > 1 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }} style={{ marginHorizontal: -GUTTER }}>
-              <View style={{ width: GUTTER - space.sm }} />
-              <Chip label="All" selected={!category} onPress={() => setCategory(null)} count={counts.total} />
-              {chips.map((k) => (
-                <Chip key={k} label={CATEGORY_META[k]!.label} selected={category === k} onPress={() => setCategory(category === k ? null : k)} count={counts.counts[k]} />
-              ))}
-              <View style={{ width: GUTTER - space.sm }} />
-            </ScrollView>
+          <Txt variant="display" accessibilityRole="header">{title}</Txt>
+          <SearchField value={query} onChangeText={setQuery} placeholder="Find a record by name or date" />
+          <TextTabs
+            active={category ?? 'all'}
+            onSelect={(k) => (k === 'more' ? setPicker(true) : setCategory(k === 'all' ? null : k))}
+            items={[
+              { key: 'all', label: 'All' },
+              { key: 'lab', label: 'Lab results' },
+              { key: 'prescription', label: 'Prescriptions' },
+              { key: 'more', label: otherSelected ? CATEGORY_META[otherSelected]!.label : 'More', selected: !!otherSelected },
+            ]}
+          />
+          {!filtering && (
+            <>
+              <Tappable onPress={() => router.push('/summary')} accessibilityLabel="Your health summary" style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt variant="headline">Your health summary</Txt>
+                  <Txt variant="caption" color={c.ink3}>Review your saved health details</Txt>
+                </View>
+                <Icon name="arrow-right" size={22} color={c.ink} />
+              </Tappable>
+              <Rule />
+            </>
           )}
-          <Tappable onPress={() => router.push('/summary')} accessibilityLabel="Health summary" style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs }}>
-            <Icon name="text-box-search-outline" size={22} color={c.accent} />
-            <View style={{ flex: 1 }}>
-              <Txt variant="headline">Health summary</Txt>
-              <Txt variant="caption" color={c.ink3}>A plain-language overview of your records</Txt>
+          {!!list.data?.length && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <Txt variant="headline" style={{ fontSize: 18 }} accessibilityRole="header">{listLabel}</Txt>
+              {shown !== undefined && !debounced && <Txt variant="caption" color={c.ink3}>{shown} {shown === 1 ? 'record' : 'records'}</Txt>}
             </View>
-            <Icon name="chevron-right" color={c.ink3} />
-          </Tappable>
+          )}
         </>
       )}
-      {(list.error || summary.error) && <Banner message={list.error ?? summary.error!} action={{ label: 'Retry', onPress: () => { void list.reload(); void summary.reload(); } }} />}
+      {(list.error || summary.error) && <Banner message={(list.error ?? summary.error)!} action={{ label: 'Retry', onPress: () => { void list.reload(); void summary.reload(); } }} />}
     </View>
   );
 
-  const empty = list.loading ? (
-    <ActivityIndicator style={{ marginTop: space.xxxl }} color={c.ink3} />
-  ) : filtering ? (
-    <Empty icon="magnify" title="No matching records" message="Try another word, or clear the category filter." />
-  ) : list.error ? null : (
-    <Empty
-      icon="file-document-plus-outline"
-      title="Add your first record"
-      message="Photograph a lab result, prescription or discharge summary. MedRec reads it and fills in the details for you to check."
-      action={<Button label="Scan a document" icon="camera-outline" onPress={() => router.push('/add')} style={{ alignSelf: 'stretch', marginTop: space.sm }} />}
-    />
-  );
-
+  const hideRows = firstLoad || empty;
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <FlatList<HealthRecord>
-        data={list.data ?? []}
+        data={hideRows ? [] : list.data ?? []}
         keyExtractor={(r) => r.id}
         renderItem={({ item, index }) => (
           <Enter index={index}>
             <RecordRow record={item} />
           </Enter>
         )}
-        ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: c.line, marginLeft: 52 }} />}
+        ItemSeparatorComponent={() => <Rule />}
         ListHeaderComponent={header}
-        ListEmptyComponent={empty}
+        ListEmptyComponent={!hideRows && filtering && !list.loading && !list.error ? <NoMatch onClear={clear} /> : null}
         ListFooterComponent={
-          more.cursor ? (
+          more.cursor && !hideRows ? (
             <View style={{ paddingVertical: space.lg }}>
               {more.error ? <Banner message={more.error} action={{ label: 'Retry', onPress: loadMore }} /> : <ActivityIndicator color={c.ink3} />}
             </View>
+          ) : list.data?.length ? (
+            <Rule />
           ) : null
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
         refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={() => { void list.refresh(); void summary.refresh(); }} tintColor={c.ink3} />}
-        contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE, paddingHorizontal: GUTTER, width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' }}
+        contentContainerStyle={{ paddingTop: insets.top + space.sm, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE, paddingHorizontal: GUTTER, width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' }}
         keyboardShouldPersistTaps="handled"
       />
+      <Sheet visible={picker} onClose={() => setPicker(false)} title="Record categories" message="Choose what you're looking for.">
+        {[null, ...CATEGORIES].map((k) => {
+          const n = k ? counts?.counts[k] ?? 0 : counts?.total ?? 0;
+          const on = category === k;
+          return (
+            <Tappable
+              key={k ?? 'all'}
+              onPress={() => {
+                setCategory(k);
+                setPicker(false);
+              }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={`${k ? CATEGORY_META[k]!.label : 'All records'}, ${n}`}
+              style={{ flexDirection: 'row', alignItems: 'center', minHeight: 48, gap: space.md }}
+            >
+              <Txt variant="headline" style={{ flex: 1 }}>{k ? CATEGORY_META[k]!.label : 'All records'}</Txt>
+              <Txt variant="caption" color={c.ink3}>{n}</Txt>
+              {on && <Icon name="check" size={20} color={c.ink} />}
+            </Tappable>
+          );
+        })}
+      </Sheet>
     </View>
   );
 }
