@@ -6,32 +6,19 @@ import { api, type ShareScope } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
 import { CATEGORIES, CATEGORY_META, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
-import { Banner, Button, Icon, Tappable, Txt } from '../../src/ui/core';
-import { Chip, Field } from '../../src/ui/form';
-import { Group, Screen, Section } from '../../src/ui/layout';
+import { Banner, Button, Eyebrow, Txt } from '../../src/ui/core';
+import { Chip, Choice, Field } from '../../src/ui/form';
+import { Screen } from '../../src/ui/layout';
 
 const DURATIONS = [
   { minutes: 15, label: '15 min' },
   { minutes: 30, label: '30 min' },
   { minutes: 60, label: '1 hour' },
-  { minutes: 1440, label: '1 day' },
-  { minutes: 10080, label: '7 days' },
 ];
 
 type Mode = 'all' | 'categories' | 'records';
-
-function Choice({ title, subtitle, selected, onPress }: { title: string; subtitle: string; selected: boolean; onPress: () => void }) {
-  const c = useColors();
-  return (
-    <Tappable onPress={onPress} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={title} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg }}>
-      <Icon name={selected ? 'radiobox-marked' : 'radiobox-blank'} size={22} color={selected ? c.accent : c.ink3} />
-      <View style={{ flex: 1 }}>
-        <Txt variant="headline">{title}</Txt>
-        <Txt variant="caption" color={c.ink3}>{subtitle}</Txt>
-      </View>
-    </Tappable>
-  );
-}
+const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+const plural = (n: number) => `${n} ${n === 1 ? 'record' : 'records'}`;
 
 export default function NewShare() {
   const c = useColors();
@@ -44,10 +31,8 @@ export default function NewShare() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-  const { data } = useLoad(() => Promise.all([api.summary(), api.records({ limit: 100 })]), []);
+  const { data, error: loadError, reload } = useLoad(() => Promise.all([api.summary(), api.records({ limit: 100 })]), []);
   const [summary, page] = data ?? [null, null];
-
-  const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const create = async () => {
     if (inFlight.current) return;
@@ -63,8 +48,8 @@ export default function NewShare() {
     setBusy(true);
     setError(null);
     try {
-      await api.createShare(scope, minutes, label.trim() || undefined);
-      router.dismissTo('/(tabs)/share');
+      const { share } = await api.createShare(scope, minutes, label.trim() || undefined);
+      router.replace({ pathname: '/share/[id]', params: { id: share.id } });
     } catch (err) {
       setError(messageFor(err));
     } finally {
@@ -76,55 +61,43 @@ export default function NewShare() {
   const available = CATEGORIES.filter((k) => (summary?.counts[k] ?? 0) > 0);
 
   return (
-    <Screen
-      title="New share link"
-      tabBar={false}
-      right={
-        <Tappable onPress={() => router.back()} accessibilityLabel="Close" hitSlop={10} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="close" size={24} color={c.ink} />
-        </Tappable>
-      }
-    >
-      {error && <Banner message={error} />}
-      <Section title="What to share">
-        <Group>
-          <Choice title="Everything" subtitle={summary ? `All ${summary.total} records and your key health facts` : 'All records and your key health facts'} selected={mode === 'all'} onPress={() => setMode('all')} />
-          <Choice title="Some types" subtitle="For example, only lab results" selected={mode === 'categories'} onPress={() => setMode('categories')} />
-          <Choice title="Specific records" subtitle={selected.length ? `${selected.length} chosen` : 'Pick them one by one'} selected={mode === 'records'} onPress={() => setMode('records')} />
-        </Group>
+    <Screen tabBar={false} nav={{ title: 'Create a share link' }} title="Choose what to share." footer={<Button label="Create share link" onPress={create} loading={busy} />}>
+      {(error || loadError) && <Banner message={(error ?? loadError)!} action={loadError ? { label: 'Retry', onPress: reload } : undefined} />}
+
+      <View style={{ gap: space.md }}>
+        <Eyebrow>01  What can they see?</Eyebrow>
+        <Choice title="All records" subtitle={summary ? `${plural(summary.total)} + health details` : 'Every record + health details'} selected={mode === 'all'} onPress={() => setMode('all')} />
+        <Choice title="Some types" subtitle={categories.length ? categories.map((k) => CATEGORY_META[k]?.label).join(', ') : 'For example, only lab results · view only'} selected={mode === 'categories'} onPress={() => setMode('categories')} />
         {mode === 'categories' && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+          <View style={{ gap: space.sm, paddingLeft: space.lg }}>
             {available.map((k) => (
-              <Chip key={k} label={CATEGORY_META[k]!.label} count={summary?.counts[k]} selected={categories.includes(k)} onPress={() => setCategories((l) => toggle(l, k))} />
+              <Choice key={k} multi title={CATEGORY_META[k]!.label} subtitle={`${plural(summary?.counts[k] ?? 0)} · view only`} selected={categories.includes(k)} onPress={() => setCategories((l) => toggle(l, k))} />
             ))}
           </View>
         )}
+        <Choice title="Specific records" subtitle={selected.length ? `${plural(selected.length)} chosen · view only` : 'Pick them one by one'} selected={mode === 'records'} onPress={() => setMode('records')} />
         {mode === 'records' && page && (
-          <Group>
+          <View style={{ gap: space.sm, paddingLeft: space.lg }}>
             {page.records.map((r) => (
-              <Tappable key={r.id} onPress={() => setSelected((l) => toggle(l, r.id))} accessibilityRole="checkbox" accessibilityState={{ checked: selected.includes(r.id) }} accessibilityLabel={r.title} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md }}>
-                <Icon name={selected.includes(r.id) ? 'checkbox-marked' : 'checkbox-blank-outline'} size={22} color={selected.includes(r.id) ? c.accent : c.ink3} />
-                <View style={{ flex: 1 }}>
-                  <Txt variant="headline" numberOfLines={1}>{r.title}</Txt>
-                  <Txt variant="caption" color={c.ink3}>{CATEGORY_META[r.category]?.label} · {formatDate(r.eventDate)}</Txt>
-                </View>
-              </Tappable>
+              <Choice key={r.id} multi title={r.title} subtitle={`${CATEGORY_META[r.category]?.short} · ${formatDate(r.eventDate)}`} selected={selected.includes(r.id)} onPress={() => setSelected((l) => toggle(l, r.id))} />
             ))}
-          </Group>
+          </View>
         )}
-      </Section>
+      </View>
 
-      <Section title="How long">
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+      <View style={{ gap: space.md }}>
+        <Eyebrow>02  How long?</Eyebrow>
+        <View style={{ flexDirection: 'row', gap: space.sm }} accessibilityRole="radiogroup">
           {DURATIONS.map((d) => (
-            <Chip key={d.minutes} label={d.label} selected={minutes === d.minutes} onPress={() => setMinutes(d.minutes)} />
+            <View key={d.minutes} style={{ flex: 1 }}>
+              <Chip label={d.label} selected={minutes === d.minutes} onPress={() => setMinutes(d.minutes)} />
+            </View>
           ))}
         </View>
-        <Txt variant="caption" color={c.ink3}>The link stops working after this. You can turn it off sooner.</Txt>
-      </Section>
+        <Txt variant="caption" color={c.ink3}>Access ends automatically. You can stop it earlier, too.</Txt>
+      </View>
 
-      <Field label="Who is it for?" value={label} onChangeText={setLabel} placeholder="Optional, e.g. Dr. Santos" maxLength={80} />
-      <Button label="Create link and QR code" icon="qrcode" onPress={create} loading={busy} />
+      <Field label="Label (optional)" value={label} onChangeText={setLabel} placeholder="e.g. Dr. Rivera" maxLength={80} hint="Anyone with this link can view the selected records until access ends." />
     </Screen>
   );
 }
