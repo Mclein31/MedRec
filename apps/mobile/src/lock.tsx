@@ -3,7 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { AppState, Platform, View } from 'react-native';
 import { KEYS, secure } from './lib/storage';
 import { space, useColors } from './theme';
-import { Button, Icon, Txt } from './ui/core';
+import { Button, Txt } from './ui/core';
+import { Remy } from './ui/Remy';
 
 const RELOCK_AFTER_MS = 60_000;
 
@@ -91,12 +92,12 @@ export function AppLockGate({ userId, children }: { userId: string | null; child
   if (locked) {
     return (
       <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.lg }}>
-        <Icon name="lock-outline" size={40} color={c.accent} />
-        <Txt variant="title">MedRec is locked</Txt>
+        <Remy pose="default" size={140} motion="idle" ground />
+        <Txt variant="display">MedRec is locked</Txt>
         <Txt color={c.ink3} style={{ textAlign: 'center' }}>
           Unlock with Face ID, fingerprint or your device passcode.
         </Txt>
-        <Button label="Unlock" icon="fingerprint" onPress={unlock} />
+        <Button kind="dark" label="Unlock" icon="fingerprint" onPress={unlock} style={{ alignSelf: 'stretch', maxWidth: 360, width: '100%' }} />
       </View>
     );
   }

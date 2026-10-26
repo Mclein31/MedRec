@@ -1,18 +1,20 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
+import { Switch } from 'react-native';
 import { timeAgo } from '../src/format';
 import { api } from '../src/lib/api';
 import { fieldError, messageFor } from '../src/lib/errors';
 import { useAuth } from '../src/auth';
 import { useColors } from '../src/theme';
 import { useLoad } from '../src/useLoad';
-import { Banner, Button, Icon, Tappable, Txt } from '../src/ui/core';
+import { useAppLock } from '../src/lock';
+import { Banner, Button, Txt } from '../src/ui/core';
 import { Field } from '../src/ui/form';
 import { Group, Row, Screen, Section } from '../src/ui/layout';
 
 export default function Security() {
   const c = useColors();
   const { signOut } = useAuth();
+  const lock = useAppLock();
   const sessions = useLoad(() => api.sessions().then((r) => r.sessions), []);
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
@@ -36,16 +38,18 @@ export default function Security() {
 
   const general = error && !fieldError(error, 'currentPassword') && !fieldError(error, 'newPassword') ? messageFor(error) : null;
   return (
-    <Screen
-      tabBar={false}
-      title="Password and devices"
-      right={
-        <Tappable onPress={() => router.back()} accessibilityLabel="Back" hitSlop={10} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="close" size={24} color={c.ink} />
-        </Tappable>
-      }
-    >
+    <Screen tabBar={false} nav={{ title: 'Security & privacy' }} title="Security & privacy" subtitle="Every new sign-in needs your password and a code emailed to you.">
       {(general || notice) && <Banner tone={general ? 'danger' : 'info'} message={(general ?? notice)!} />}
+      <Group>
+        <Row
+          icon="fingerprint"
+          title="App lock"
+          subtitle={lock.available ? 'Face ID, fingerprint or device passcode when MedRec opens' : 'Needs Face ID, a fingerprint or a passcode set up on this device'}
+          chevron={false}
+          accessory={<Switch value={lock.enabled} disabled={!lock.available} onValueChange={(v) => void lock.setEnabled(v)} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="App lock" />}
+        />
+        <Row icon="email-check-outline" title="Email verification" subtitle="On for every new device. It can't be turned off." chevron={false} />
+      </Group>
       <Section title="Change password">
         <Field label="Current password" value={current} onChangeText={setCurrent} secureToggle autoComplete="current-password" error={fieldError(error, 'currentPassword')} />
         <Field label="New password" value={next} onChangeText={setNext} secureToggle autoComplete="new-password" hint="At least 10 characters. You'll be signed out everywhere." error={fieldError(error, 'newPassword')} />
