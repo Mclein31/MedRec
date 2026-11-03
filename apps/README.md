@@ -5,7 +5,7 @@ A rebuild of MedRec from scratch:
 - `api/`: a Cloudflare Worker (Hono) on Neon Postgres, with row-level security, Cloudflare R2 for files and Google Gemini for reading documents. It also serves the doctor share page (`/s/:token`) and the public Medical ID (`/e/:slug`).
 - `mobile/`: an Expo SDK 54 app for iOS, Android and web.
 
-The original `backend/` and `mobile/` folders are still there, untouched, until v2 replaces them.
+The legacy root `backend/` and `mobile/` folders were removed on 2026-11-03. These two `apps/` projects are the only active implementation.
 
 ## Sign-in
 
