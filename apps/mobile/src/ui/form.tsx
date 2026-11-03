@@ -1,7 +1,10 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { Platform, Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, Pressable, Switch, TextInput, View, type TextInputProps } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useCalmMotion } from '../prefs';
 import { radius, space, type as t, useColors } from '../theme';
 import { Icon, Tappable, Txt } from './core';
+import { colorTransition, useSlidingMarker } from './motion';
 
 type FieldProps = TextInputProps & { label: string; hint?: string; error?: string | null; secureToggle?: boolean; onVisibilityChange?: (visible: boolean) => void };
 
@@ -10,6 +13,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
   const c = useColors();
   const inputRef = useRef<TextInput>(null);
   useImperativeHandle(ref, () => inputRef.current!, []);
+  const calm = useCalmMotion();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
   // Opt out from the first render: changing hints after focus cannot remove UIKit's
@@ -20,8 +24,8 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
       <Txt variant="label" color={c.ink} nativeID={`${label}-label`}>
         {label}
       </Txt>
-      <View
-        style={{
+      <Animated.View
+        style={[colorTransition(calm, ['borderColor']), {
           flexDirection: 'row',
           alignItems: 'center',
           minHeight: 48,
@@ -30,7 +34,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
           borderColor: error ? c.danger : focused ? c.accent : c.line,
           backgroundColor: c.surface,
           paddingHorizontal: space.lg,
-        }}
+        }]}
       >
         <TextInput
           ref={inputRef}
@@ -59,7 +63,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
             <Icon name={hidden ? 'eye-off-outline' : 'eye-outline'} />
           </Tappable>
         )}
-      </View>
+      </Animated.View>
       {(error || hint) && (
         <Txt variant="caption" color={error ? c.danger : c.ink3}>
           {error ?? hint}
@@ -126,6 +130,7 @@ export function Chip({ label, selected, onPress, count }: { label: string; selec
     <Tappable
       onPress={onPress}
       haptic
+      transition
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={count === undefined ? label : `${label}, ${count}`}
@@ -190,6 +195,7 @@ export function Choice({ title, subtitle, selected, onPress, multi = false }: { 
     <Tappable
       onPress={onPress}
       haptic
+      transition
       accessibilityRole={multi ? 'checkbox' : 'radio'}
       accessibilityState={{ checked: selected }}
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
@@ -204,30 +210,56 @@ export function Choice({ title, subtitle, selected, onPress, multi = false }: { 
   );
 }
 
-/** Compact text selector (All / Lab results / Prescriptions / More) with an underline on the active tab. */
+/** Compact text selector (All / Lab results / Prescriptions / More). One persimmon bar slides to the active tab. */
 export function TextTabs({ items, active, onSelect }: { items: { key: string; label: string; selected?: boolean }[]; active: string; onSelect: (key: string) => void }) {
   const c = useColors();
+  const activeKey = items.find((it) => it.selected ?? it.key === active)?.key;
+  const marker = useSlidingMarker(activeKey, BAR);
+
   return (
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, minHeight: 52, marginLeft: -2, alignItems: 'center' }}>
       {items.map((it) => {
-        const on = it.selected ?? it.key === active;
+        const on = it.key === activeKey;
         return (
-          <Tappable
-            key={it.key}
-            onPress={() => onSelect(it.key)}
-            haptic
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={it.label}
-            style={{ minHeight: 44, minWidth: 44, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Txt variant="body" color={on ? c.ink : c.ink3} style={on ? { fontFamily: 'DMSans-SemiBold' } : undefined}>
-              {it.label}
-            </Txt>
-            <View style={{ marginTop: 4, height: 3, width: 22, borderRadius: 2, backgroundColor: on ? c.persimmon : 'transparent' }} />
-          </Tappable>
+          <View key={it.key} onLayout={marker.item(it.key)}>
+            <Tappable
+              onPress={() => onSelect(it.key)}
+              haptic
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={it.label}
+              style={{ minHeight: 44, minWidth: 44, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Txt variant="body" color={on ? c.ink : c.ink3} style={on ? { fontFamily: 'DMSans-SemiBold' } : undefined}>
+                {it.label}
+              </Txt>
+              <View onLayout={marker.bar(it.key)} style={{ marginTop: 4, height: 3, width: BAR }} />
+            </Tappable>
+          </View>
         );
       })}
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: BAR, height: 3, borderRadius: 2, backgroundColor: c.persimmon }, marker.style]} />
     </View>
+  );
+}
+
+const BAR = 22;
+
+/** Brand switch: aubergine/gold track with a white thumb on every platform (web defaults to teal). */
+export function Toggle({ value, onValueChange, disabled, accessibilityLabel }: { value: boolean; onValueChange: (v: boolean) => void; disabled?: boolean; accessibilityLabel: string }) {
+  const c = useColors();
+  // react-native-web reads activeThumbColor; native platforms ignore it.
+  const web = { activeThumbColor: '#FFFFFF' } as object;
+  return (
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+      trackColor={{ true: c.accent, false: c.line }}
+      thumbColor="#FFFFFF"
+      ios_backgroundColor={c.line}
+      accessibilityLabel={accessibilityLabel}
+      {...web}
+    />
   );
 }

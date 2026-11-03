@@ -7,18 +7,21 @@ import { messageFor } from '../src/lib/errors';
 import { space, useColors } from '../src/theme';
 import { Banner, Button, Txt } from '../src/ui/core';
 import { Screen, Section } from '../src/ui/layout';
+import { Rise, Swap } from '../src/ui/motion';
 
 export default function Summary() {
   const c = useColors();
   const [result, setResult] = useState<{ summary: HistorySummary; basedOn: number; limited: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [version, setVersion] = useState(0);
 
   const generate = async () => {
     setBusy(true);
     setError(null);
     try {
       setResult(await api.aiSummary());
+      setVersion((v) => v + 1);
     } catch (err) {
       setError(messageFor(err));
     } finally {
@@ -41,10 +44,15 @@ export default function Summary() {
       tabBar={false}
     >
       {error && <Banner message={error} />}
+      <Swap id={result ? `summary-${version}` : 'intro'} style={{ gap: space.xl }}>
       {!result ? (
         <View style={{ gap: space.md }}>
           <Txt color={c.ink2}>MedRec sends the text of your newest records — not the photos — to Google Gemini to write this. Nothing is saved until you share it.</Txt>
-          {busy && <Remy pose="reading" motion="read" size={140} ground style={{ alignSelf: 'center' }} />}
+          {busy && (
+            <Rise from={6} style={{ alignSelf: 'center' }}>
+              <Remy pose="reading" motion="read" size={140} ground />
+            </Rise>
+          )}
           <Button kind="dark" label={busy ? 'Writing summary…' : 'Write my summary'} onPress={generate} loading={busy} />
         </View>
       ) : (
@@ -68,6 +76,7 @@ export default function Summary() {
           <Button kind="secondary" label="Write again" onPress={generate} loading={busy} />
         </>
       )}
+      </Swap>
     </Screen>
   );
 }

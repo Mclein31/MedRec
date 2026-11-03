@@ -4,13 +4,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth';
 import { AppLockGate } from '../src/lock';
 import { loadOnboarded, useOnboarded } from '../src/onboarded';
-import { loadPrefs } from '../src/prefs';
+import { loadPrefs, useCalmMotion } from '../src/prefs';
 import { Launch } from '../src/screens/Launch';
 import { useColors } from '../src/theme';
 import { Button, Txt } from '../src/ui/core';
@@ -78,6 +78,7 @@ function Routes() {
   const c = useColors();
   const { state, retry } = useAuth();
   const onboarded = useOnboarded();
+  const calm = useCalmMotion();
 
   if (state.status === 'offline') {
     return (
@@ -92,6 +93,14 @@ function Routes() {
   }
 
   const signedIn = state.status === 'signedIn';
+  // Movement says where a screen lives: drill-downs push from the side, tasks rise from below.
+  // Root swaps (auth <-> app) and every route under reduced motion cross-fade instead.
+  const fade = { animation: 'fade', animationDuration: 180 } as const;
+  const push = calm ? fade : ({ animation: 'default' } as const);
+  const rise = { animation: Platform.OS === 'android' ? ('slide_from_bottom' as const) : ('default' as const) };
+  // Routes using `sheet` must also be listed in SHEET_ROUTES (src/ui/layout.tsx) for their top inset.
+  const sheet = { presentation: 'modal' as const, ...(calm ? fade : rise) };
+  const cover = { presentation: 'fullScreenModal' as const, ...(calm ? fade : ({ animation: 'slide_from_bottom' } as const)) };
   return (
     <AppLockGate userId={signedIn ? state.user.id : null}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'fade', animationDuration: 180 }}>
@@ -103,18 +112,18 @@ function Routes() {
         </Stack.Protected>
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="add" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="record/[id]" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="record/explain" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="remy" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="preferences" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="share/new" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="share/[id]" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="activity" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="profile-edit" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="security" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="tour" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="summary" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="add" options={cover} />
+          <Stack.Screen name="record/[id]" options={push} />
+          <Stack.Screen name="record/explain" options={push} />
+          <Stack.Screen name="remy" options={sheet} />
+          <Stack.Screen name="preferences" options={push} />
+          <Stack.Screen name="share/new" options={push} />
+          <Stack.Screen name="share/[id]" options={push} />
+          <Stack.Screen name="activity" options={sheet} />
+          <Stack.Screen name="profile-edit" options={sheet} />
+          <Stack.Screen name="security" options={push} />
+          <Stack.Screen name="tour" options={cover} />
+          <Stack.Screen name="summary" options={sheet} />
         </Stack.Protected>
       </Stack>
     </AppLockGate>

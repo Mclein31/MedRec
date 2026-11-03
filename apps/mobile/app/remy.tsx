@@ -7,7 +7,8 @@ import { answer, type Reply, type Search } from '../src/remy/answer';
 import { Answer, Failed, Question, Thinking } from '../src/remy/Messages';
 import { GUTTER, MAX_CONTENT_WIDTH, radius, space, type as t, useColors } from '../src/theme';
 import { Button, Icon, Tappable, Txt } from '../src/ui/core';
-import { Rise } from '../src/ui/motion';
+import { useTopInset } from '../src/ui/layout';
+import { Rise, Swap } from '../src/ui/motion';
 import { Remy, Sparkles } from '../src/ui/Remy';
 
 type Turn = { id: number; question: string; reply?: Reply; failed?: boolean };
@@ -18,6 +19,7 @@ const search: Search = async (params) => (await api.records(params)).records;
 export default function AskRemy() {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const top = useTopInset();
   const { recordId } = useLocalSearchParams<{ recordId?: string }>();
   const [context, setContext] = useState<HealthRecord | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -58,7 +60,7 @@ export default function AskRemy() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={[column, { paddingTop: insets.top + space.sm, flexDirection: 'row', alignItems: 'center', minHeight: 52 + insets.top }]}>
+      <View style={[column, { paddingTop: top + space.sm, flexDirection: 'row', alignItems: 'center', minHeight: 52 + top }]}>
         <Txt variant="title" accessibilityRole="header" style={{ flex: 1 }}>Ask Remy</Txt>
         <Tappable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))} accessibilityLabel="Close Ask Remy" style={{ minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' }}>
           <Txt variant="label">Close</Txt>
@@ -66,6 +68,7 @@ export default function AskRemy() {
       </View>
 
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" onContentSizeChange={() => turns.length && scroll.current?.scrollToEnd({ animated: true })} contentContainerStyle={[column, { gap: space.xl, paddingVertical: space.lg }]}>
+        <Swap id={turns.length ? 'conversation' : 'intro'} style={{ gap: space.xl }}>
         {turns.length === 0 ? (
           <View style={{ gap: space.lg }}>
             <View style={{ alignSelf: 'center', width: 220, height: 150, alignItems: 'center' }}>
@@ -95,6 +98,7 @@ export default function AskRemy() {
             </View>
           ))
         )}
+        </Swap>
       </ScrollView>
 
       <View style={[column, { paddingTop: space.sm, paddingBottom: insets.bottom + space.md }]}>

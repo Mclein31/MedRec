@@ -92,7 +92,17 @@ export const GUTTER = 24;
 export const MAX_CONTENT_WIDTH = 640;
 
 /** Motion: 180ms routine ease-out, 220ms onboarding, no overshoot on clinical surfaces. */
-export const motion = { press: 140, routine: 180, enter: 220, stagger: 60, pressScale: 0.97 } as const;
+export const motion = { press: 120, release: 160, routine: 180, enter: 220, sheetIn: 320, sheetOut: 220, stagger: 50, pressScale: 0.97 } as const;
+
+/**
+ * Cubic-bezier control points shared by worklet easings and CSS transitions.
+ * out: entrances and state changes. inOut: things moving on screen. sheet: iOS sheet curve.
+ */
+export const curves = {
+  out: [0.23, 1, 0.32, 1],
+  inOut: [0.77, 0, 0.175, 1],
+  sheet: [0.32, 0.72, 0, 1],
+} as const;
 
 export function useColors(): Colors {
   const system = useColorScheme();

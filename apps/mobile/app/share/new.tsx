@@ -4,11 +4,12 @@ import { View } from 'react-native';
 import { formatDate } from '../../src/format';
 import { api, type ShareScope } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
-import { CATEGORIES, CATEGORY_META, space, useColors } from '../../src/theme';
+import { CATEGORIES, CATEGORY_META, motion, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
 import { Banner, Button, Eyebrow, Txt } from '../../src/ui/core';
 import { Chip, Choice, Field } from '../../src/ui/form';
 import { Screen } from '../../src/ui/layout';
+import { Rise } from '../../src/ui/motion';
 
 const DURATIONS = [
   { minutes: 15, label: '15 min' },
@@ -69,19 +70,19 @@ export default function NewShare() {
         <Choice title="All records" subtitle={summary ? `${plural(summary.total)} + health details` : 'Every record + health details'} selected={mode === 'all'} onPress={() => setMode('all')} />
         <Choice title="Some types" subtitle={categories.length ? categories.map((k) => CATEGORY_META[k]?.label).join(', ') : 'For example, only lab results · view only'} selected={mode === 'categories'} onPress={() => setMode('categories')} />
         {mode === 'categories' && (
-          <View style={{ gap: space.sm, paddingLeft: space.lg }}>
+          <Rise from={-6} duration={motion.routine} style={{ gap: space.sm, paddingLeft: space.lg }}>
             {available.map((k) => (
               <Choice key={k} multi title={CATEGORY_META[k]!.label} subtitle={`${plural(summary?.counts[k] ?? 0)} · view only`} selected={categories.includes(k)} onPress={() => setCategories((l) => toggle(l, k))} />
             ))}
-          </View>
+          </Rise>
         )}
         <Choice title="Specific records" subtitle={selected.length ? `${plural(selected.length)} chosen · view only` : 'Pick them one by one'} selected={mode === 'records'} onPress={() => setMode('records')} />
         {mode === 'records' && page && (
-          <View style={{ gap: space.sm, paddingLeft: space.lg }}>
+          <Rise from={-6} duration={motion.routine} style={{ gap: space.sm, paddingLeft: space.lg }}>
             {page.records.map((r) => (
               <Choice key={r.id} multi title={r.title} subtitle={`${CATEGORY_META[r.category]?.short} · ${formatDate(r.eventDate)}`} selected={selected.includes(r.id)} onPress={() => setSelected((l) => toggle(l, r.id))} />
             ))}
-          </View>
+          </Rise>
         )}
       </View>
 

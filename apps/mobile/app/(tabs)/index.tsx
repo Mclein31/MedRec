@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, RefreshControl, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, type HealthRecord } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
@@ -11,6 +12,8 @@ import { BrandHeader } from '../../src/ui/brand';
 import { Banner, Icon, Tappable, Txt } from '../../src/ui/core';
 import { SearchField, TextTabs } from '../../src/ui/form';
 import { Enter, Rule, TAB_BAR_CLEARANCE } from '../../src/ui/layout';
+import { useCalmMotion } from '../../src/prefs';
+import { ease, Rise } from '../../src/ui/motion';
 import { RecordRow } from '../../src/ui/RecordRow';
 import { Sheet } from '../../src/ui/Sheet';
 
@@ -23,6 +26,10 @@ export default function Records() {
   const [debounced, setDebounced] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [picker, setPicker] = useState(false);
+  // Rows already shown once never replay their entrance when virtualization remounts them.
+  const seen = useRef(new Set<string>());
+  const filterKey = useRef('|');
+  const calm = useCalmMotion();
   const [more, setMore] = useState<{ cursor: string | null; loading: boolean; error: string | null }>({ cursor: null, loading: false, error: null });
 
   useEffect(() => {
@@ -33,6 +40,12 @@ export default function Records() {
   const summary = useLoad(() => api.summary(), []);
   const list = useLoad(async () => {
     const page = await api.records({ q: debounced, category: category ?? undefined });
+    // A new filter is new content: rows it brings back may enter again. Focus reloads keep the record.
+    const key = `${debounced}|${category ?? ''}`;
+    if (key !== filterKey.current) {
+      filterKey.current = key;
+      seen.current.clear();
+    }
     setMore({ cursor: page.nextCursor, loading: false, error: null });
     return page.records;
   }, [debounced, category]);
@@ -68,9 +81,11 @@ export default function Records() {
       {firstLoad && !list.error && !summary.error ? (
         <OpeningRecords />
       ) : empty && !list.error ? (
-        <FirstRecord />
+        <Rise from={6}>
+          <FirstRecord />
+        </Rise>
       ) : (
-        <>
+        <Rise from={6} style={{ gap: space.lg }}>
           <Txt variant="display" accessibilityRole="header">{title}</Txt>
           <SearchField value={query} onChangeText={setQuery} placeholder="Find a record by name or date" />
           <TextTabs
@@ -101,7 +116,7 @@ export default function Records() {
               {shown !== undefined && !debounced && <Txt variant="caption" color={c.ink3}>{shown} {shown === 1 ? 'record' : 'records'}</Txt>}
             </View>
           )}
-        </>
+        </Rise>
       )}
       {(list.error || summary.error) && <Banner message={(list.error ?? summary.error)!} action={{ label: 'Retry', onPress: () => { void list.reload(); void summary.reload(); } }} />}
     </View>
@@ -110,11 +125,11 @@ export default function Records() {
   const hideRows = firstLoad || empty;
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <FlatList<HealthRecord>
+      <Animated.FlatList<HealthRecord>
         data={hideRows ? [] : list.data ?? []}
         keyExtractor={(r) => r.id}
         renderItem={({ item, index }) => (
-          <Enter index={index}>
+          <Enter index={index} animate={index < 6 && !seen.current.has(item.id)} onShown={() => seen.current.add(item.id)}>
             <RecordRow record={item} />
           </Enter>
         )}
@@ -130,6 +145,8 @@ export default function Records() {
             <Rule />
           ) : null
         }
+        // Rows that stay glide into the space left by rows a filter removed (native only, DD-44).
+        itemLayoutAnimation={Platform.OS !== 'web' && !calm ? LinearTransition.duration(220).easing(ease.inOut) : undefined}
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
         refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={() => { void list.refresh(); void summary.refresh(); }} tintColor={c.ink3} />}

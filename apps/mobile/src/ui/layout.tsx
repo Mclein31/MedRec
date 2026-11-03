@@ -1,14 +1,30 @@
-import type { ReactNode } from 'react';
+import { NavigationRouteContext } from '@react-navigation/native';
+import { useContext, useEffect, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { Easing, FadeInDown, ReduceMotion } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCalmMotion } from '../prefs';
 import { GUTTER, MAX_CONTENT_WIDTH, motion, radius, space, useColors } from '../theme';
 import { BrandHeader, NavHeader } from './brand';
 import { Icon, Tappable, Txt, type IconName } from './core';
+import { ease } from './motion';
 import { Remy, type RemyMotion, type RemyPose } from './Remy';
 
 export const TAB_BAR_CLEARANCE = 104;
+
+/** Routes presented with the `sheet` options in app/_layout.tsx. Keep the two lists in sync. */
+export const SHEET_ROUTES = new Set(['activity', 'summary', 'profile-edit', 'remy']);
+
+/**
+ * Top safe-area padding for this screen. An iOS page sheet already starts below the status bar,
+ * so it only needs a little breathing room. Reads the screen's own route, never the global path,
+ * so the tab underneath an open sheet keeps its inset.
+ */
+export function useTopInset() {
+  const insets = useSafeAreaInsets();
+  const route = useContext(NavigationRouteContext);
+  return Platform.OS === 'ios' && route && SHEET_ROUTES.has(route.name) ? space.sm : insets.top;
+}
 
 type Nav = { title?: string; onBack?: () => void; back?: 'arrow-left' | 'close'; right?: ReactNode };
 
@@ -76,7 +92,8 @@ export function Screen({
     </View>
   );
   const bottom = footer ? space.xl : insets.bottom + (tabBar ? TAB_BAR_CLEARANCE : space.xxl);
-  const pad = { paddingTop: insets.top + space.sm, paddingBottom: bottom };
+  const top = useTopInset();
+  const pad = { paddingTop: top + space.sm, paddingBottom: bottom };
   const body = scroll ? (
     <ScrollView
       style={{ flex: 1 }}
@@ -230,19 +247,30 @@ export function Empty({
 }
 
 /**
- * Staggered list entrance; system Reduce Motion and in-app Gentler motion turn it off.
+ * Staggered list entrance for rows the person is seeing for the first time. Pass `animate={false}`
+ * for rows remounted by virtualization or pagination so scrolling never replays an entrance.
+ * System Reduce Motion and in-app Gentler motion turn it off.
  * Native only: Reanimated's web layout-animation cleanup crashes on unmount (DD-44).
  */
-export function Enter({ index = 0, children }: { index?: number; children: ReactNode }) {
+export function Enter({ index = 0, animate = true, onShown, children }: { index?: number; animate?: boolean; onShown?: () => void; children: ReactNode }) {
   const calm = useCalmMotion();
+  useEffect(() => {
+    onShown?.();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   if (Platform.OS === 'web' || calm) return <View>{children}</View>;
   return (
     <Animated.View
-      entering={FadeInDown.duration(motion.routine)
-        .delay(Math.min(index, 8) * motion.stagger)
-        .easing(Easing.out(Easing.cubic))
-        .withInitialValues({ transform: [{ translateY: 8 }] })
-        .reduceMotion(ReduceMotion.System)}
+      entering={
+        animate
+          ? FadeInDown.duration(motion.enter)
+              .delay(Math.min(index, 5) * motion.stagger)
+              .easing(ease.out)
+              .withInitialValues({ transform: [{ translateY: 8 }] })
+              .reduceMotion(ReduceMotion.System)
+          : undefined
+      }
+      // Rows removed by a filter clear out quickly so the rows that stay can close the gap.
+      exiting={index < 8 ? FadeOut.duration(110).easing(ease.out).reduceMotion(ReduceMotion.System) : undefined}
     >
       {children}
     </Animated.View>

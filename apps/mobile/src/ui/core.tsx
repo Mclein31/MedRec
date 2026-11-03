@@ -2,9 +2,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { ComponentProps, ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { usePrefs } from '../prefs';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useCalmMotion, usePrefs } from '../prefs';
 import { motion, radius, space, type as t, useColors } from '../theme';
+import { colorTransition, ease, Rise } from './motion';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -60,6 +61,7 @@ export function Tappable({
   haptic = false,
   hitSlop,
   dimmed = false,
+  transition = false,
 }: {
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
@@ -73,29 +75,32 @@ export function Tappable({
   hitSlop?: number;
   /** Disabled look. Lives in the animated style so press feedback can't override it. */
   dimmed?: boolean;
+  /** Ease background/border colour changes, for selectable surfaces (chips, choices, tabs). */
+  transition?: boolean;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useCalmMotion();
   const pressed = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({
     transform: [{ scale: reduce ? 1 : 1 - pressed.value * (1 - motion.pressScale) }],
     opacity: (dimmed ? 0.45 : 1) * (reduce ? 1 - pressed.value * 0.25 : 1),
   }));
-  const timing = { duration: motion.press, easing: Easing.out(Easing.quad) };
+  // Press lands fast so the touch feels acknowledged; release settles a little slower.
   return (
     <AnimatedPressable
       onPress={() => {
         if (haptic && Platform.OS !== 'web') void Haptics.selectionAsync();
         onPress?.();
       }}
-      onPressIn={() => (pressed.value = withTiming(1, timing))}
-      onPressOut={() => (pressed.value = withTiming(0, timing))}
+      onPressIn={() => (pressed.value = withTiming(1, { duration: motion.press, easing: ease.out }))}
+      onPressOut={() => (pressed.value = withTiming(0, { duration: motion.release, easing: ease.out }))}
+      pressRetentionOffset={16}
       disabled={disabled}
       hitSlop={hitSlop}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!disabled, ...accessibilityState }}
-      style={[style, animated]}
+      style={[style, transition ? colorTransition(reduce) : null, animated]}
     >
       {children}
     </AnimatedPressable>
@@ -168,7 +173,9 @@ export function Banner({ tone = 'danger', message, action }: { tone?: 'danger' |
   const c = useColors();
   const bg = tone === 'danger' ? c.dangerSoft : tone === 'warn' ? c.warnSoft : c.accentSoft;
   const fg = tone === 'danger' ? c.danger : tone === 'warn' ? c.warn : c.ink;
+  // Settles in from just above, so it reads as a response to what was just tapped.
   return (
+    <Rise from={-6} duration={motion.routine}>
     <View accessibilityRole="alert" style={{ backgroundColor: bg, borderRadius: radius.sm, padding: space.md, flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
       <Icon name={tone === 'info' ? 'information-outline' : 'alert-circle-outline'} size={18} color={fg} />
       <Txt variant="caption" color={fg} style={{ flex: 1 }}>
@@ -182,5 +189,6 @@ export function Banner({ tone = 'danger', message, action }: { tone?: 'danger' |
         </Tappable>
       )}
     </View>
+    </Rise>
   );
 }
