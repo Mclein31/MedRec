@@ -60,11 +60,10 @@
           "photosPermission": "MedRec lets you add photos of medical documents from your library."
         }
       ],
+      "./plugins/withLaunchBackground.cjs",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-remy.png",
-          "imageWidth": 180,
           "backgroundColor": "#492D48",
           "dark": {
             "backgroundColor": "#492D48"

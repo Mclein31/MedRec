@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Keyboard, Platform } from 'react-native';
 import { api, type AuthStep, type Challenge, type User } from './lib/api';
 import { ApiError, onSessionExpired, restoreSession, setSession } from './lib/http';
 import { KEYS, secure } from './lib/storage';
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [boot]);
 
   const finish = useCallback(async (step: AuthStep & { status: 'signed_in' }, email: string) => {
+    Keyboard.dismiss();
     await setSession(step.session);
     if (step.deviceToken) await secure.set(KEYS.deviceToken(email), step.deviceToken);
     setState({ status: 'signedIn', user: step.user });

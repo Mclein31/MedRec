@@ -14,10 +14,13 @@ import { loadPrefs } from '../src/prefs';
 import { Launch } from '../src/screens/Launch';
 import { useColors } from '../src/theme';
 import { Button, Txt } from '../src/ui/core';
+import { LaunchReadyContext } from '../src/ui/LaunchReady';
+import { launchPresentation } from '../src/ui/launchFlow';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function Root() {
+  const [splashReady, setSplashReady] = useState(false);
   const [fontsLoaded] = useFonts({
     'DMSans-Regular': require('../assets/fonts/DMSans_400Regular.ttf'),
     'DMSans-Medium': require('../assets/fonts/DMSans_500Medium.ttf'),
@@ -29,23 +32,25 @@ export default function Root() {
   });
   // The native splash (Remy on aubergine) covers font loading; the animated Launch takes over after.
   useEffect(() => {
-    if (fontsLoaded) void SplashScreen.hideAsync();
+    if (fontsLoaded) void SplashScreen.hideAsync().catch(() => undefined).finally(() => setSplashReady(true));
   }, [fontsLoaded]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>{fontsLoaded ? <Navigator /> : null}</AuthProvider>
+        <AuthProvider>{fontsLoaded ? <Navigator splashReady={splashReady} /> : null}</AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-function Navigator() {
+function Navigator({ splashReady }: { splashReady: boolean }) {
   const c = useColors();
   const { state } = useAuth();
   const onboarded = useOnboarded();
 
   const [launchGone, setLaunchGone] = useState(false);
+  const [enteredUser, setEnteredUser] = useState<string | null>(null);
+  const userId = state.status === 'signedIn' ? state.user.id : null;
 
   useEffect(() => {
     void loadOnboarded();
@@ -56,13 +61,15 @@ function Navigator() {
   }, [c.bg]);
 
   const ready = state.status !== 'loading' && onboarded !== null;
-  const onGone = useCallback(() => setLaunchGone(true), []);
-  const launch = launchGone ? null : <Launch done={ready} onGone={onGone} />;
+  useEffect(() => { if (userId === null) setEnteredUser(null); }, [userId]);
+  const presentation = launchPresentation({ startupComplete: launchGone, completedUser: enteredUser, status: state.status, onboarded, userId });
+  const onGone = useCallback(() => { setEnteredUser(userId); setLaunchGone(true); }, [userId]);
+  const launch = presentation ? <Launch key={presentation.key} kind={presentation.kind} reason={presentation.reason} done={presentation.done} splashReady={splashReady} onGone={onGone} /> : null;
   return (
     <View style={{ flex: 1, backgroundColor: ready ? c.bg : '#492D48' }}>
-      {ready && <Routes />}
+      <LaunchReadyContext.Provider value={!presentation}>{ready && <Routes />}</LaunchReadyContext.Provider>
       {launch}
-      <StatusBar style={launchGone ? 'auto' : 'light'} />
+      <StatusBar style={presentation && presentation.kind !== 'returning' ? 'light' : 'auto'} />
     </View>
   );
 }
