@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
-import { Switch, View } from 'react-native';
+import { View } from 'react-native';
 import { setPrefs, usePrefs, type Prefs } from '../src/prefs';
 import { radius, space, useColors } from '../src/theme';
 import { Button, Eyebrow, Txt } from '../src/ui/core';
-import { Chip } from '../src/ui/form';
+import { Chip, Toggle } from '../src/ui/form';
 import { Group, Row, Screen } from '../src/ui/layout';
 import { Remy } from '../src/ui/Remy';
 
@@ -35,7 +35,7 @@ export default function Preferences() {
           title="Larger text"
           subtitle="Makes MedRec's text about 15% larger, on top of your device setting"
           chevron={false}
-          accessory={<Switch value={prefs.largerText} onValueChange={(v) => void setPrefs({ largerText: v })} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="Larger text" />}
+          accessory={<Toggle value={prefs.largerText} onValueChange={(v) => void setPrefs({ largerText: v })} accessibilityLabel="Larger text" />}
         />
         <View style={{ paddingVertical: space.lg, gap: space.md }}>
           <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'center' }}>
@@ -56,7 +56,7 @@ export default function Preferences() {
           title="Gentler motion"
           subtitle="Remy and screens move less. Your device's Reduce Motion is always respected."
           chevron={false}
-          accessory={<Switch value={prefs.gentleMotion} onValueChange={(v) => void setPrefs({ gentleMotion: v })} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="Gentler motion" />}
+          accessory={<Toggle value={prefs.gentleMotion} onValueChange={(v) => void setPrefs({ gentleMotion: v })} accessibilityLabel="Gentler motion" />}
         />
       </Group>
       <Txt variant="caption" color={c.ink3}>Every action stays available, with less movement.</Txt>

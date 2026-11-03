@@ -269,3 +269,26 @@ auth.delete('/trusted-devices', async (c) => {
   await db.query(asUser(c.get('userId')), 'DELETE FROM trusted_devices WHERE user_id = $1', [c.get('userId')]);
   return c.json({ cleared: true });
 });
+
+/**
+ * Permanently deletes the account: every stored file, then the user row, which cascades to
+ * profile, records, shares, sessions, devices, codes and activity. Requires the current password.
+ */
+auth.use('/account', requireAuth);
+auth.delete('/account', async (c) => {
+  const { password } = await body(c, z.object({ password: z.string().min(1, 'Enter your password.').max(128) }));
+  const s = c.get('services');
+  const userId = c.get('userId');
+  const ctx = asUser(userId);
+  await rateLimit(s.db, `delete:user:${userId}`, 5, 900, s.now());
+  const [user] = await s.db.query<{ password_hash: string }>(ctx, 'SELECT password_hash FROM users WHERE id = $1', [userId]);
+  if (!user || !(await verifyPassword(password, user.password_hash))) {
+    throw new HttpError(400, 'WRONG_PASSWORD', "That password isn't right.", { field: 'password' });
+  }
+  const files = await s.db.query<{ object_key: string }>(ctx, 'SELECT object_key FROM record_files WHERE user_id = $1', [userId]);
+  const [profileRow] = await s.db.query<{ avatar_key: string | null }>(ctx, 'SELECT avatar_key FROM profiles WHERE user_id = $1', [userId]);
+  const keys = [...files.map((f) => f.object_key), ...(profileRow?.avatar_key ? [profileRow.avatar_key] : [])];
+  for (let i = 0; i < keys.length; i += 500) await c.env.VAULT.delete(keys.slice(i, i + 500));
+  await s.db.query(ctx, 'DELETE FROM users WHERE id = $1', [userId]);
+  return c.json({ deleted: true });
+});

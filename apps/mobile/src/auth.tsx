@@ -4,7 +4,8 @@ import { api, type AuthStep, type Challenge, type User } from './lib/api';
 import { ApiError, onSessionExpired, restoreSession, setSession } from './lib/http';
 import { KEYS, secure } from './lib/storage';
 
-type State = { status: 'loading' } | { status: 'offline' } | { status: 'signedOut'; reason?: 'expired' } | { status: 'signedIn'; user: User };
+export type SignOutReason = 'expired' | 'passwordChanged' | 'deleted';
+type State = { status: 'loading' } | { status: 'offline' } | { status: 'signedOut'; reason?: SignOutReason } | { status: 'signedIn'; user: User };
 
 interface AuthApi {
   state: State;
@@ -12,7 +13,8 @@ interface AuthApi {
   signIn(email: string, password: string): Promise<Challenge | null>;
   register(name: string, email: string, password: string): Promise<Challenge>;
   verify(challenge: Challenge, code: string, trustDevice: boolean, email: string): Promise<void>;
-  signOut(): Promise<void>;
+  /** Ends the session. Pass a reason so sign-in can explain why; `remote: false` skips the server call (account already gone). */
+  signOut(reason?: Exclude<SignOutReason, 'expired'>, opts?: { remote?: boolean }): Promise<void>;
   retry(): void;
   setUser(user: User): void;
 }
@@ -76,10 +78,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const purpose = challenge.purpose === 'verify_email' ? 'verify_email' : 'login';
         await finish(await api.verify(challenge.challengeId, code, purpose, trustDevice, deviceLabel()), email);
       },
-      async signOut() {
-        await api.logout().catch(() => undefined);
+      async signOut(reason, opts) {
+        if (opts?.remote !== false) await api.logout().catch(() => undefined);
         await setSession(null);
-        setState({ status: 'signedOut' });
+        setState({ status: 'signedOut', reason });
       },
       setUser(user) {
         setState({ status: 'signedIn', user });

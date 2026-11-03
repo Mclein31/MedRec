@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, Platform, Share, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { api } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
+import { shareLink } from '../../src/lib/shareLink';
 import { radius, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
 import { Banner, Button, Eyebrow, Txt } from '../../src/ui/core';
+import { Toggle } from '../../src/ui/form';
 import { Group, Row, Rule, Screen, Section } from '../../src/ui/layout';
 import { Rise } from '../../src/ui/motion';
 import { MedicalIdCard } from '../../src/ui/MedicalIdCard';
@@ -27,6 +29,7 @@ export default function MedicalId() {
   const { data: p, setData, error, refreshing, refresh, reload } = useLoad(() => api.profile().then((r) => r.profile), []);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const set = async (enabled: boolean, rotate = false) => {
     setBusy(true);
@@ -72,7 +75,7 @@ export default function MedicalId() {
             )}
             <Rule />
           </View>
-          <Button kind="secondary" label="Edit Medical ID" onPress={() => router.push('/profile-edit')} />
+          <Button kind="secondary" icon="pencil-outline" label="Edit Medical ID" onPress={() => router.push({ pathname: '/profile-edit', params: { section: 'medical' } })} />
 
           <Section title="Emergency page">
             <Group>
@@ -80,14 +83,14 @@ export default function MedicalId() {
                 icon="earth"
                 title="Public emergency page"
                 subtitle={p.emergency.enabled ? 'On · anyone with the QR code can see the details above' : 'Off · only you can see this ID'}
-                accessory={<Switch value={p.emergency.enabled} disabled={busy} onValueChange={(v) => void set(v)} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="Public emergency page" />}
+                accessory={<Toggle value={p.emergency.enabled} disabled={busy} onValueChange={(v) => void set(v)} accessibilityLabel="Public emergency page" />}
                 chevron={false}
               />
             </Group>
             <Txt variant="caption" color={c.ink3}>
               {p.emergency.enabled
                 ? 'Only this card is shown — never your records or notes. Each view appears in Activity.'
-                : 'Emergency page is off. Only you can see this ID.'}
+                : 'Turn it on to get a QR code responders can scan from your lock screen or a wallet card.'}
             </Txt>
           </Section>
 
@@ -100,7 +103,17 @@ export default function MedicalId() {
                 Screenshot this for your lock screen, or print it for your wallet.
               </Txt>
               <View style={{ flexDirection: 'row', gap: space.sm, alignSelf: 'stretch' }}>
-                <Button kind="secondary" label="Send link" icon="export-variant" style={{ flex: 1 }} onPress={() => void Share.share({ message: url, url })} />
+                <Button
+                  kind="secondary"
+                  label={copied ? 'Link copied' : 'Send link'}
+                  icon={copied ? 'check' : 'export-variant'}
+                  style={{ flex: 1 }}
+                  onPress={async () => {
+                    if ((await shareLink(url, 'My Medical ID')) !== 'copied') return;
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                />
                 <Button kind="secondary" label="Replace" icon="refresh" style={{ flex: 1 }} onPress={rotate} />
               </View>
             </View>

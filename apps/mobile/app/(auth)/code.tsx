@@ -1,6 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Switch, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useAuth } from '../../src/auth';
 import { api, type Challenge } from '../../src/lib/api';
 import { ApiError } from '../../src/lib/http';
@@ -9,7 +9,7 @@ import { getPending, setPending } from '../../src/pending';
 import { space, useColors } from '../../src/theme';
 import { AuthFrame } from '../../src/ui/AuthFrame';
 import { Banner, Button, Tappable, TextLink, Txt } from '../../src/ui/core';
-import { CodeInput } from '../../src/ui/form';
+import { CodeInput, Toggle } from '../../src/ui/form';
 
 export default function Code() {
   const c = useColors();
@@ -104,7 +104,7 @@ export default function Code() {
             <Txt variant="label">Trust this device for 30 days</Txt>
             <Txt variant="caption" color={c.ink3}>Skip the code on this phone. Don't turn on for shared devices.</Txt>
           </View>
-          <Switch value={trust} onValueChange={setTrust} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="Trust this device for 30 days" />
+          <Toggle value={trust} onValueChange={setTrust} accessibilityLabel="Trust this device for 30 days" />
         </View>
       )}
     </AuthFrame>

@@ -15,7 +15,8 @@ export function MedicalIdCard({ p }: { p: Profile }) {
           <Eyebrow color={c.onPanel}>{`Medical ID  /  ${p.name}`}</Eyebrow>
           <Txt variant="display" color={c.onPanel}>{p.name}</Txt>
         </View>
-        <View style={{ alignItems: 'flex-end', gap: space.xs, paddingTop: space.lg }}>
+        {/* Same rhythm as the name column, so label and value line up across the card. */}
+        <View style={{ alignItems: 'flex-end', gap: space.sm }}>
           <Eyebrow color={c.onPanel}>Blood type</Eyebrow>
           <Txt variant="display" color={c.onPanel}>{blood}</Txt>
         </View>

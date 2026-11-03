@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { space, useColors } from '../theme';
 import { Button, TextLink, Txt } from '../ui/core';
 import { Empty } from '../ui/layout';
@@ -26,8 +26,12 @@ export function FirstRecord() {
       <Txt variant="display" accessibilityRole="header">A home for your health history.</Txt>
       <Remy pose="curious" size={200} motion="peek" ground style={{ alignSelf: 'center' }} />
       <Txt>Add a result, prescription or visit note. You'll always know where to find it.</Txt>
-      <Button label="Scan my first document" onPress={() => router.push({ pathname: '/add', params: { source: 'camera' } })} />
-      <Button kind="secondary" label="Upload a PDF" onPress={() => router.push({ pathname: '/add', params: { source: 'pdf' } })} />
+      {Platform.OS === 'web' ? (
+        <Button label="Add my first record" icon="plus" onPress={() => router.push('/add')} />
+      ) : (
+        <Button label="Scan my first document" icon="camera-outline" onPress={() => router.push({ pathname: '/add', params: { source: 'camera' } })} />
+      )}
+      <Button kind="secondary" label="Upload a PDF" icon="file-upload-outline" onPress={() => router.push({ pathname: '/add', params: { source: 'pdf' } })} />
       <Txt variant="caption" color={c.ink3}>Only you can access your records until you choose to share.</Txt>
     </View>
   );

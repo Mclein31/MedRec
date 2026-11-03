@@ -17,7 +17,9 @@ export default function SignIn() {
   const { signIn, state } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(state.status === 'signedOut' && state.reason === 'expired' ? 'Your session ended. Sign in again to continue.' : null);
+  const reason = state.status === 'signedOut' ? state.reason : undefined;
+  const [error, setError] = useState<string | null>(reason === 'expired' ? 'Your session ended. Sign in again to continue.' : null);
+  const notice = reason === 'passwordChanged' ? 'Password changed. Every device was signed out — sign in with your new password.' : reason === 'deleted' ? 'Your account and everything in it was deleted.' : null;
   const [busy, setBusy] = useState(false);
   const [attention, setAttention] = useState<RemyAttention>('idle');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -63,7 +65,7 @@ export default function SignIn() {
         <Txt color={c.ink3} style={{ fontSize: 15, lineHeight: 22 }}>Your records, right where you left them.</Txt>
       </Rise>
     }>
-      {error && <Banner message={error} />}
+      {error ? <Banner message={error} /> : notice ? <Banner tone="info" message={notice} /> : null}
       <Field label="Email address" value={email} onChangeText={setEmail} placeholder="you@example.com" autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" returnKeyType="next" onFocus={() => setAttention('form')} onBlur={() => setAttention('idle')} onSubmitEditing={() => passwordRef.current?.focus()} />
       <Field ref={passwordRef} label="Password" value={password} onChangeText={setPassword} secureToggle onVisibilityChange={setPasswordVisible} autoComplete="current-password" textContentType="password" returnKeyType="go" onFocus={() => setAttention('private')} onBlur={() => setAttention('idle')} onSubmitEditing={submit} />
       <View style={{ alignItems: 'flex-end', marginTop: -space.sm }}><TextLink label="Forgot password?" icon={null} onPress={() => router.push({ pathname: '/(auth)/forgot', params: { email } })} /></View>

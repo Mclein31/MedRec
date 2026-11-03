@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert, Linking, Platform, View } from 'react-native';
 import { CameraStage, Reading, Saved, UploadIncomplete } from '../src/add/AddParts';
 import { MAX_PAGES, pickFromCamera, pickFromLibrary, pickPdf, uploadPage, type Page } from '../src/add/pages';
@@ -11,8 +11,10 @@ import { space, useColors } from '../src/theme';
 import { AiPanel } from '../src/ui/AiPanel';
 import { Banner, Button, Icon, Txt } from '../src/ui/core';
 import { Group, Row, Screen } from '../src/ui/layout';
+import { Swap } from '../src/ui/motion';
 
 type Step = 'pages' | 'review' | 'saved';
+const FLOW = ['pages', 'reading', 'review', 'saved'];
 
 export default function AddRecord() {
   const c = useColors();
@@ -140,8 +142,12 @@ export default function AddRecord() {
     />
   );
 
+  // Each step clears out sideways before the next settles in; going back reverses the direction.
+  const flowId = step === 'saved' && saved ? 'saved' : step === 'review' ? 'review' : busy === 'scan' ? 'reading' : 'pages';
+  const flow = (screen: ReactNode) => <Swap id={flowId} order={FLOW} style={{ flex: 1 }}>{screen}</Swap>;
+
   if (step === 'saved' && saved) {
-    return (
+    return flow(
       <Screen tabBar={false} footer={<Button kind="dark" label="Back to records" onPress={() => router.dismissTo('/(tabs)')} />}>
         <View style={{ height: space.xl }} />
         <Saved record={saved} onAnother={reset} />
@@ -150,7 +156,7 @@ export default function AddRecord() {
   }
 
   if (step === 'review') {
-    return (
+    return flow(
       <Screen
         tabBar={false}
         nav={{ title: 'Review details', onBack: () => setStep('pages') }}
@@ -186,7 +192,7 @@ export default function AddRecord() {
     <Button label="Choose photos" onPress={() => add(() => pickFromLibrary(MAX_PAGES))} />
   );
 
-  return (
+  return flow(
     <Screen tabBar={false} nav={{ title: 'Add a record', back: 'close', onBack: close }} title={'Add a medical\nrecord.'} footer={footer}>
       {banner}
       {busy === 'scan' ? (
@@ -201,6 +207,7 @@ export default function AddRecord() {
             {hasPages && camera && <Row inset={false} icon="camera-outline" title="Take another photo" subtitle="Lay the page flat and fill the frame" onPress={() => add(pickFromCamera)} chevron={false} />}
             <Row inset={false} icon="image-outline" title="Choose from photos" subtitle="JPG, PNG or HEIC" onPress={() => add(() => pickFromLibrary(MAX_PAGES - pages.length))} chevron={false} />
             <Row inset={false} icon="file-upload-outline" title="Upload a PDF" subtitle="Results, prescriptions or visit notes" onPress={() => add(pickPdf)} chevron={false} />
+            {!hasPages && <Row inset={false} icon="pencil-outline" title="No document? Type it in" subtitle="Save a visit, vaccine or result from memory" onPress={() => { setAi(null); setStep('review'); }} chevron={false} />}
           </Group>
           <Txt variant="caption" color={c.ink3}>We read the document. You check the details.</Txt>
         </>

@@ -58,11 +58,13 @@ export const api = {
   sessions: () => request<{ sessions: { id: string; device: string | null; createdAt: string; lastUsedAt: string; current: boolean }[] }>('/api/auth/sessions'),
   revokeSession: (id: string) => request(`/api/auth/sessions/${id}`, { method: 'DELETE' }),
   forgetDevices: () => request('/api/auth/trusted-devices', { method: 'DELETE' }),
+  deleteAccount: (password: string) => request<{ deleted: true }>('/api/auth/account', { method: 'DELETE', json: { password } }),
 
   profile: () => request<{ profile: Profile }>('/api/profile'),
   updateProfile: (patch: Partial<Omit<Profile, 'email' | 'avatarUrl' | 'emergency'>>) => request<{ profile: Profile }>('/api/profile', { method: 'PATCH', json: patch }),
   setEmergency: (enabled: boolean, rotate = false) => request<{ profile: Profile }>('/api/profile/emergency', { method: 'PUT', json: { enabled, rotate } }),
   uploadAvatar: (body: Blob) => request<{ profile: Profile }>('/api/profile/avatar', { method: 'PUT', body, timeoutMs: 60_000 }),
+  removeAvatar: () => request<{ profile: Profile }>('/api/profile/avatar', { method: 'DELETE' }),
 
   records: (params: { q?: string; category?: string; cursor?: string; limit?: number } = {}) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
@@ -77,6 +79,7 @@ export const api = {
   updateRecord: (id: string, patch: Partial<RecordInput>) => request<{ record: HealthRecord }>(`/api/records/${id}`, { method: 'PATCH', json: patch }),
   deleteRecord: (id: string) => request(`/api/records/${id}`, { method: 'DELETE' }),
   removePage: (recordId: string, fileId: string) => request(`/api/records/${recordId}/files/${fileId}`, { method: 'DELETE' }),
+  attachPages: (recordId: string, fileIds: string[]) => request<{ files: RecordFile[] }>(`/api/records/${recordId}/files`, { method: 'POST', json: { fileIds } }),
 
   shares: () => request<{ active: Share[]; history: Share[] }>('/api/shares'),
   createShare: (scope: ShareScope, minutes: number, label?: string) => request<{ share: Share }>('/api/shares', { method: 'POST', json: { ...scope, minutes, label } }),

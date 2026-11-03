@@ -20,7 +20,8 @@ export function CameraStage({ onPress, disabled }: { onPress?: () => void; disab
           <View key={i} style={{ height: 3, width: `${w * 100}%`, backgroundColor: '#D9CBC6', borderRadius: 2 }} />
         ))}
       </View>
-      <Txt variant="caption" color={c.onPanel}>Keep all four corners in view.</Txt>
+      {/* Symmetric padding keeps the caption centred while leaving room for Remy in the corner. */}
+      <Txt variant="caption" color={c.onPanel} style={{ textAlign: 'center', paddingHorizontal: 76 }}>Keep all four corners in view.</Txt>
       <Remy pose="curious" size={64} motion="peek" style={{ position: 'absolute', right: space.md, bottom: space.sm }} />
     </View>
   );
@@ -74,7 +75,11 @@ export function Saved({ record, onAnother }: { record: HealthRecord; onAnother: 
         <Txt variant="hero" accessibilityRole="header" accessibilityLiveRegion="polite">Record saved.</Txt>
       </Rise>
       <Rise delay={200}>
-        <Txt>Your document and its details are saved together. You can open or share it anytime.</Txt>
+        <Txt>
+          {record.fileCount > 0
+            ? 'Your document and its details are saved together. You can open or share it anytime.'
+            : 'Your record is saved. You can attach the document later from the record, or share it anytime.'}
+        </Txt>
       </Rise>
       <Rule />
       <Rise delay={280}>

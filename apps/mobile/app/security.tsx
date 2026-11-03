@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Switch } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import { timeAgo } from '../src/format';
 import { api } from '../src/lib/api';
 import { fieldError, messageFor } from '../src/lib/errors';
 import { useAuth } from '../src/auth';
-import { useColors } from '../src/theme';
+import { space, useColors } from '../src/theme';
 import { useLoad } from '../src/useLoad';
 import { useAppLock } from '../src/lock';
 import { Banner, Button, Txt } from '../src/ui/core';
-import { Field } from '../src/ui/form';
+import { Field, Toggle } from '../src/ui/form';
 import { Group, Row, Screen, Section } from '../src/ui/layout';
 
 export default function Security() {
@@ -21,6 +21,28 @@ export default function Security() {
   const [error, setError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState<'closed' | 'open' | 'busy'>('closed');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const deleteAccount = () => {
+    const go = async () => {
+      setDeleting('busy');
+      setDeleteError(null);
+      try {
+        await api.deleteAccount(deletePassword);
+        await signOut('deleted', { remote: false });
+      } catch (err) {
+        setDeleteError(fieldError(err, 'password') ?? messageFor(err));
+        setDeleting('open');
+      }
+    };
+    if (Platform.OS === 'web') return globalThis.confirm?.('Delete your MedRec account? This cannot be undone.') === false ? undefined : void go();
+    Alert.alert('Delete your account?', 'Every record, page, share link and your Medical ID will be permanently deleted. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete forever', style: 'destructive', onPress: () => void go() },
+    ]);
+  };
 
   const change = async () => {
     setBusy(true);
@@ -28,7 +50,7 @@ export default function Security() {
     try {
       await api.changePassword(current, next);
       // Every session, including this one, ends after a password change.
-      await signOut();
+      await signOut('passwordChanged', { remote: false });
     } catch (err) {
       setError(err);
     } finally {
@@ -44,9 +66,9 @@ export default function Security() {
         <Row
           icon="fingerprint"
           title="App lock"
-          subtitle={lock.available ? 'Face ID, fingerprint or device passcode when MedRec opens' : 'Needs Face ID, a fingerprint or a passcode set up on this device'}
+          subtitle={lock.available ? 'Face ID, fingerprint or device passcode when MedRec opens' : Platform.OS === 'web' ? 'Available in the MedRec app for iPhone and Android' : 'Needs Face ID, a fingerprint or a passcode set up on this device'}
           chevron={false}
-          accessory={<Switch value={lock.enabled} disabled={!lock.available} onValueChange={(v) => void lock.setEnabled(v)} trackColor={{ true: c.accent, false: c.line }} accessibilityLabel="App lock" />}
+          accessory={<Toggle value={lock.enabled} disabled={!lock.available} onValueChange={(v) => void lock.setEnabled(v)} accessibilityLabel="App lock" />}
         />
         <Row icon="email-check-outline" title="Email verification" subtitle="On for every new device. It can't be turned off." chevron={false} />
       </Group>
@@ -79,6 +101,19 @@ export default function Security() {
       <Section title="Trusted devices">
         <Txt color={c.ink3}>Devices you trusted skip the emailed code for 30 days. Forget them to require the code everywhere.</Txt>
         <Button kind="secondary" label="Forget all trusted devices" onPress={async () => { try { await api.forgetDevices(); setNotice('Done. Every device will need an emailed code next time.'); } catch (err) { setError(err); } }} />
+      </Section>
+
+      <Section title="Delete account">
+        <Txt color={c.ink3}>Permanently deletes your records, their pages, share links, Medical ID and sign-in. Export your records first if you want a copy.</Txt>
+        {deleting === 'closed' ? (
+          <Button kind="danger" icon="trash-can-outline" label="Delete my account…" onPress={() => setDeleting('open')} />
+        ) : (
+          <View style={{ gap: space.md }}>
+            <Field label="Enter your password to confirm" value={deletePassword} onChangeText={setDeletePassword} secureToggle autoComplete="current-password" textContentType="password" error={deleteError} />
+            <Button kind="danger" icon="trash-can-outline" label="Delete account permanently" onPress={deleteAccount} loading={deleting === 'busy'} disabled={!deletePassword} />
+            <Button kind="ghost" label="Keep my account" onPress={() => { setDeleting('closed'); setDeletePassword(''); setDeleteError(null); }} />
+          </View>
+        )}
       </Section>
     </Screen>
   );

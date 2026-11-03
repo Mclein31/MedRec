@@ -1,10 +1,11 @@
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Share as NativeShare, View } from 'react-native';
+import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Svg, { Path } from 'react-native-svg';
 import { timeLeft } from '../format';
 import type { Share } from '../lib/api';
+import { shareLink } from '../lib/shareLink';
 import { font, space } from '../theme';
 import { Button, Txt } from './core';
 import { Rule } from './layout';
@@ -104,7 +105,17 @@ export function ShareActions({ share, onRevoke, revoking }: { share: Share; onRe
         }}
       />
       <View style={{ flexDirection: 'row', gap: space.md }}>
-        <Button kind="secondary" label="Send" icon="export-variant" style={{ flex: 1 }} onPress={() => void NativeShare.share({ message: url, url })} />
+        <Button
+          kind="secondary"
+          label="Send"
+          icon="export-variant"
+          style={{ flex: 1 }}
+          onPress={async () => {
+            if ((await shareLink(url, share.label ?? 'MedRec records')) !== 'copied') return;
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+        />
         <Button kind="secondary" label="End access" style={{ flex: 1 }} onPress={onRevoke} loading={revoking} />
       </View>
     </View>
