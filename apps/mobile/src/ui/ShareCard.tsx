@@ -31,13 +31,13 @@ export const durationLabel = (s: Share) => {
 };
 
 /** QR access receipt: Remy + MedRec, zigzag tear edges top and bottom, untouched QR quiet zone. */
-export function ShareReceipt({ share }: { share: Share }) {
+export function ShareReceipt({ share, example = false, compact = false }: { share: Share; example?: boolean; compact?: boolean }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const live = share.state === 'active' && new Date(share.expiresAt).getTime() > Date.now();
+  const live = !example && share.state === 'active' && new Date(share.expiresAt).getTime() > Date.now();
   return (
     <View
       onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
-      style={{ width: '100%', maxWidth: 342, alignSelf: 'center', paddingHorizontal: space.xl, paddingTop: space.xl + DEPTH, paddingBottom: space.xl + DEPTH, gap: space.lg }}
+      style={{ width: '100%', maxWidth: 342, alignSelf: 'center', paddingHorizontal: space.xl, paddingTop: (compact ? space.lg : space.xl) + DEPTH, paddingBottom: (compact ? space.lg : space.xl) + DEPTH, gap: compact ? space.sm : space.lg }}
     >
       {size.w > 0 && (
         <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', left: 0, top: 0 }}>
@@ -48,18 +48,18 @@ export function ShareReceipt({ share }: { share: Share }) {
       )}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Remy pose="default" size={34} motion="idle" />
+          <Remy pose="default" size={34} motion={example ? 'none' : 'idle'} />
           <Txt style={{ fontFamily: font.wordmark, fontSize: 20, lineHeight: 24 }} color={PAPER.ink}>MedRec</Txt>
         </View>
         <View style={{ alignItems: 'flex-end' }} accessibilityLiveRegion="polite">
-          <Txt variant="micro" color={live ? PAPER.live : PAPER.muted}>{live ? 'LIVE' : share.state === 'revoked' ? 'ENDED' : 'EXPIRED'}</Txt>
+          <Txt variant="micro" color={live ? PAPER.live : PAPER.muted}>{example ? 'EXAMPLE' : live ? 'LIVE' : share.state === 'revoked' ? 'ENDED' : 'EXPIRED'}</Txt>
           {live && <Txt variant="micro" color={PAPER.ink}>{timeLeft(share.expiresAt).replace(' left', '').toUpperCase()}</Txt>}
         </View>
       </View>
       <Rule color={PAPER.line} />
-      {live && share.url ? (
-        <View style={{ alignSelf: 'center', padding: 14, backgroundColor: '#FFFFFF' }} accessible accessibilityRole="image" accessibilityLabel={`QR code for ${share.scopeLabel}`}>
-          <QRCode value={share.url} size={176} color="#000000" backgroundColor="#FFFFFF" ecl="M" quietZone={8} />
+      {example || (live && share.url) ? (
+        <View style={{ alignSelf: 'center', padding: compact ? 8 : 14, backgroundColor: '#FFFFFF' }} accessible accessibilityRole="image" accessibilityLabel={`QR code for ${share.scopeLabel}`}>
+          <QRCode value={example ? 'MedRec onboarding example. This is not an access link.' : share.url!} size={compact ? 112 : 176} color="#000000" backgroundColor="#FFFFFF" ecl="M" quietZone={8} />
         </View>
       ) : (
         <View style={{ height: 204, alignItems: 'center', justifyContent: 'center' }}>
@@ -76,13 +76,13 @@ export function ShareReceipt({ share }: { share: Share }) {
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Txt variant="micro" color={PAPER.muted}>ACCESS ENDS</Txt>
-          <Txt variant="headline" color={PAPER.ink}>{endsAt(share.expiresAt)}</Txt>
+          <Txt variant="headline" color={PAPER.ink}>{example ? 'In 15 minutes' : endsAt(share.expiresAt)}</Txt>
           <Txt variant="caption" color={PAPER.muted}>{durationLabel(share)}</Txt>
         </View>
       </View>
-      <Txt variant="caption" color={PAPER.muted} style={{ textAlign: 'center' }}>
+      {!compact && <Txt variant="caption" color={PAPER.muted} style={{ textAlign: 'center' }}>
         {share.viewCount ? `Opened ${share.viewCount}× · each view appears in Activity` : 'Not opened yet'}
-      </Txt>
+      </Txt>}
     </View>
   );
 }

@@ -50,7 +50,7 @@ function SourceCard({ r }: { r: HealthRecord }) {
   );
 }
 
-export function Answer({ reply }: { reply: Reply }) {
+export function Answer({ reply, showCaution = true }: { reply: Reply; showCaution?: boolean }) {
   const c = useColors();
   return (
     <Rise from={10} style={{ gap: space.md }}>
@@ -75,10 +75,10 @@ export function Answer({ reply }: { reply: Reply }) {
               <TextLink label="View the original" icon="arrow-right" onPress={() => router.push({ pathname: '/record/[id]', params: { id: reply.source!.id } })} />
             </View>
           ) : null}
-          <Txt variant="caption" color={c.ink3}>
+          {showCaution && <Txt variant="caption" color={c.ink3}>
             {reply.general ? 'General information, not about your results. ' : 'From the AI reading saved with this record. '}
             AI can make mistakes. Confirm medical decisions with your clinician.
-          </Txt>
+          </Txt>}
         </>
       )}
       {reply.kind === 'help' && reply.link && <TextLink label={reply.link.label} onPress={() => router.push(reply.link!.href as Href)} />}

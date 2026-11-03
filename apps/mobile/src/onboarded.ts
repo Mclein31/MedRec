@@ -11,9 +11,9 @@ export async function loadOnboarded() {
 }
 
 export async function markOnboarded() {
+  await secure.set(KEYS.onboarded, '1');
   value = true;
   emit();
-  await secure.set(KEYS.onboarded, '1');
 }
 
 /** null until loaded from storage. */
