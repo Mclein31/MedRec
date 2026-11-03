@@ -19,6 +19,8 @@ const light = {
   accentSoft: '#F5ECE5',
   onAccent: '#FFFFFF',
   persimmon: '#E66E4F',
+  /** Deeper warm action for white labels on the registration CTA. */
+  persimmonStrong: '#B9432E',
   onPersimmon: '#302238',
   gold: '#F4CD63',
   onGold: '#302238',
@@ -46,6 +48,7 @@ const dark: typeof light = {
   accentSoft: '#33283A',
   onAccent: '#302238',
   persimmon: '#EE8466',
+  persimmonStrong: '#B9432E',
   onPersimmon: '#302238',
   gold: '#F4CD63',
   onGold: '#302238',

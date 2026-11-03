@@ -110,6 +110,7 @@ export function Button({
   loading,
   disabled,
   style,
+  foregroundColor,
 }: {
   label: string;
   onPress: () => void;
@@ -119,9 +120,10 @@ export function Button({
   loading?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  foregroundColor?: string;
 }) {
   const c = useColors();
-  const palette = {
+  const basePalette = {
     primary: { bg: c.persimmon, fg: c.onPersimmon, border: c.persimmon },
     dark: { bg: c.accent, fg: c.onAccent, border: c.accent },
     secondary: { bg: c.surface, fg: c.ink, border: c.ink },
@@ -129,6 +131,7 @@ export function Button({
     ghost: { bg: 'transparent', fg: c.accent, border: 'transparent' },
     danger: { bg: c.dangerSoft, fg: c.danger, border: c.dangerSoft },
   }[kind];
+  const palette = { ...basePalette, fg: foregroundColor ?? basePalette.fg };
   const off = disabled || loading;
   return (
     <Tappable
@@ -154,7 +157,7 @@ export function Button({
       ]}
     >
       {loading ? <ActivityIndicator color={palette.fg} /> : icon ? <Icon name={icon} size={18} color={palette.fg} /> : null}
-      <Txt variant="headline" color={palette.fg} style={{ textAlign: 'center' } as TextStyle}>
+      <Txt variant="headline" color={palette.fg} style={{ textAlign: 'center', flexShrink: 1, paddingVertical: space.sm } as TextStyle}>
         {label}
       </Txt>
     </Tappable>

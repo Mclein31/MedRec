@@ -1,15 +1,20 @@
-import { forwardRef, useRef, useState } from 'react';
-import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { Platform, Pressable, TextInput, View, type TextInputProps } from 'react-native';
 import { radius, space, type as t, useColors } from '../theme';
 import { Icon, Tappable, Txt } from './core';
 
-type FieldProps = TextInputProps & { label: string; hint?: string; error?: string | null; secureToggle?: boolean };
+type FieldProps = TextInputProps & { label: string; hint?: string; error?: string | null; secureToggle?: boolean; onVisibilityChange?: (visible: boolean) => void };
 
 /** Always-visible label above the input; errors replace the hint and say what to do. */
-export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, hint, error, secureToggle, style, ...input }, ref) {
+export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, hint, error, secureToggle, onVisibilityChange, style, ...input }, ref) {
   const c = useColors();
+  const inputRef = useRef<TextInput>(null);
+  useImperativeHandle(ref, () => inputRef.current!, []);
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
+  // Opt out from the first render: changing hints after focus cannot remove UIKit's
+  // stuck strong-password cover. Keep saved-login autofill and other platforms intact.
+  const manualNewPassword = Platform.OS === 'ios' && secureToggle && (input.textContentType === 'newPassword' || input.autoComplete === 'new-password');
   return (
     <View style={{ gap: 6 }}>
       <Txt variant="label" color={c.ink} nativeID={`${label}-label`}>
@@ -19,7 +24,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          minHeight: 54,
+          minHeight: 48,
           borderRadius: radius.sm + 2,
           borderWidth: focused || error ? 1.5 : 1,
           borderColor: error ? c.danger : focused ? c.accent : c.line,
@@ -28,12 +33,16 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
         }}
       >
         <TextInput
-          ref={ref}
+          ref={inputRef}
           accessibilityLabel={label}
           accessibilityHint={error ?? hint}
           placeholderTextColor={c.ink3}
           secureTextEntry={secureToggle ? hidden : input.secureTextEntry}
           {...input}
+          textContentType={manualNewPassword ? 'none' : input.textContentType}
+          autoComplete={manualNewPassword ? 'off' : input.autoComplete}
+          autoCorrect={input.autoCorrect ?? !secureToggle}
+          spellCheck={input.spellCheck ?? !secureToggle}
           onFocus={(e) => {
             setFocused(true);
             input.onFocus?.(e);
@@ -42,12 +51,12 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
             setFocused(false);
             input.onBlur?.(e);
           }}
-          style={[t.body, { flex: 1, color: c.ink, paddingVertical: 12, outlineWidth: 0 }, style]}
+          style={[t.body, { flex: 1, color: c.ink, paddingVertical: 10, outlineWidth: 0 }, style]}
           maxFontSizeMultiplier={1.6}
         />
         {secureToggle && (
-          <Tappable onPress={() => setHidden((h) => !h)} accessibilityLabel={hidden ? 'Show password' : 'Hide password'} hitSlop={10}>
-            <Icon name={hidden ? 'eye-outline' : 'eye-off-outline'} />
+          <Tappable onPress={() => { const nextHidden = !hidden; setHidden(nextHidden); onVisibilityChange?.(!nextHidden); inputRef.current?.focus(); }} accessibilityLabel={hidden ? 'Show password' : 'Hide password'} hitSlop={10}>
+            <Icon name={hidden ? 'eye-off-outline' : 'eye-outline'} />
           </Tappable>
         )}
       </View>
