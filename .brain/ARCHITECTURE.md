@@ -2,212 +2,44 @@
 type: architecture
 title: MedRecord_App Architecture
 project: MedRecord_App
-tags:
-  - architecture
-  - healthcare
-  - mobile
-  - react-native
-  - express
-  - postgresql
-  - cloudflare-r2
-last_updated: 2026-10-24
+last_updated: 2026-11-03
 ---
 
-# 🏛️ MedRecord_App (MedRec) — Architecture
+# MedRec architecture
 
-## 📐 System Architecture Overview
+The active implementation is `apps/mobile` + `apps/api`. The root legacy `mobile/` and `backend/` implementations were deleted at the user's request on 2026-11-03. Historical architecture is available in Git and DECISIONS.md.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        React Native Mobile App                         │
-│                    (Expo Router SDK 54 / TypeScript)                   │
-├──────────────────────────────────┬─────────────────────────────────────┤
-│ Patient View:                    │ Doctor/Recipient View:              │
-│ - Dashboard & Medical Records    │ - QR Code Scanner                   │
-│ - Record Upload (R2) & AI        │ - Read-Only Shared Clinical History │
-│ - Generate Sharing QR Token      │ - AI Clinical Summary               │
-│ - Demographics & Emergency ID    │ - Per-Record & ZIP Bundle Download  │
-│ - Notification Sidebar           │ - Terminate Access Session          │
-└─────────────────┬────────────────┴──────────────────┬──────────────────┘
-                  │                                   │
-                  │ HTTPS REST (Bearer JWT Auth)      │ Direct Binary S3 PUT
-                  ▼                                   ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                     Node.js / Express 5 API Server                     │
-├───────────────────┬───────────────────┬────────────────┬───────────────┤
-│ /api/auth         │ /api/records      │ /api/share     │ /api/storage  │
-│ - Register/Login  │ - Records CRUD    │ - Create QR    │ - Presigned   │
-│ - Bcrypt & JWT    │ - Category Filter │ - Verify Token │   Upload/Get  │
-│ - Logout (invalidate)│ - Edit Metadata│ - AI Summary   │               │
-├───────────────────┴───────────────────┴────────────────┴───────────────┤
-│ /api/profile                                           │ /api/ai       │
-│ - Demographics, Medical ID, Password (bcrypt verify),  │ - Summarize (all / scoped recordIds) │
-│   Avatar (R2), Account Deletion                        │ - Explain     │
-│ /api/notifications                                     │               │
-│ - In-App Audit Logs, Event Triggers, Read/Unread Status│               │
-└───────────────────┬───────────────────────────────────┬────────────────┘
-                    │                                   │
-                    ▼                                   ▼
-      ┌───────────────────────────┐       ┌───────────────────────────┐
-      │    PostgreSQL Database    │       │   Cloudflare R2 Storage   │
-      │  - users (Bcrypt & JWT    │       │  - Private S3-Compatible  │
-      │    + token_version)       │       │  - Presigned PUT (upload) │
-      │  - user_profiles (1:1)    │       │  - 15-min Signed GET URLs │
-      │  - medical_records        │       │  - Path Prefix Isolation  │
-      │  - shared_access (Tokens) │       │  - Streaming for ZIP      │
-      │  - notifications (Ledger) │       └───────────────────────────┘
-      └───────────────────────────┘
-```
+## Client
 
----
+`apps/mobile` uses Expo SDK 54, React Native 0.81.5, Expo Router, SecureStore, and Reanimated shared-value motion. `app/_layout.tsx` owns fonts, Launch, first-use/session routing, and app lock. `src/lib/http.ts` owns API discovery, typed errors, and single-flight session refresh; `src/auth.tsx` owns the session state.
 
-## 🗄️ Database Schema (`backend/src/migrations/schema.sql`)
+- `src/screens/Onboarding.tsx`: five-scene Remy introduction. Gesture-tracked shared position, spring settling, button alternatives, foreground/focus/motion preference handling. Captions and actions remain outside the preview scroll area. No progress bar or Skip action.
+- `src/screens/OnboardingParts.tsx`: production components filled with labeled example data. Web preview controls are inert; native previews hide their controls from accessibility and cannot navigate.
+- `src/ui/LaunchReady.ts`: readiness context prevents consuming first-use entrances behind the launch overlay.
+- `src/screens/Launch.tsx` and `src/ui/launchFlow.ts`: distinct first-use and returning/session arrival, readiness-driven handoff after a short finite intro, foreground/layout/native-splash gating, reduced-motion fallback and single completion guard. Navigator tracks the acknowledged signed-in user, resets it on logout and plays the session arrival only after authentication. Keep the native navigator outside an accessibility-hidden wrapper; the transient overlay's modal flag caused native controls to remain hidden after exit and was removed.
+- `plugins/withLaunchBackground.cjs`: image-free native iOS launch background matching the animated first frame, applied after Expo's image-removal action by registering before its splash plugin/provider. Native splash review uses the signed Release simulator app, because Expo Go renders its own app-icon loader.
+- `src/ui/RecordRow.tsx`, `src/remy/Messages.tsx`, `src/ui/ShareCard.tsx`, `src/ui/MedicalIdCard.tsx`: shared real UI used in the tour and normal app flows.
+- `src/ui/AuthFrame.tsx`: responsive, scrollable authentication layout; `src/ui/form.tsx` uses 48-point labeled inputs. Sign-in has a compact Remy greeting.
+- Shared `Field` suppresses iOS automatic generation for secure new-password fields from initial mount, preventing UIKit's stuck yellow cover. Existing-login autofill and Android/web hints are retained; secure fields default to no autocorrect/spellcheck.
+- `src/ui/Remy.tsx` and `remyActing.ts`: clipped 3×2 sprite atlases in `assets/remy/acting`, shared-value frame selection, sparse blinks/glances/gestures, reversible password cover and peek states. `remyGeometry.ts` normalizes visible alpha height and foot position across original art and all frames. Form focus and visibility callbacks supply attention without passing input contents. Auth route focus/background stop decorative acting; reduced motion uses static expressions. `systemMotion.ts` shares a live OS Reduce Motion subscription with async race protection.
+- `src/ui/SocialSignIn.tsx`: disabled Google/Apple custom previews with identical metrics and centered logo/text groups. No provider authentication is activated.
+- `src/theme.ts`: semantic warm-folio light/dark colors and bundled typography; `src/prefs.ts` combines system/app/scoped reduced-motion preferences.
+- `src/remy/answer.ts`: own-record search, saved AI definitions, labeled glossary, fixed app help. It does not generate personal medical advice.
 
-1. **`public.users`**: Backend-owned user credentials, bcrypt-hashed passwords (`bcryptjs`, salt 10), Google SSO identity (`google_id VARCHAR(255)`, `auth_provider VARCHAR(50) DEFAULT 'local'`, indexed via partial unique `idx_users_google_id`), `token_version INT` for instant session invalidation, and primary identity. `token_version` is atomically incremented on password change, logout (`incrementTokenVersion`), **and** when linking an existing local account to Google.
-2. **`public.user_profiles`**: 1:1 linked demographic and clinical baseline (DOB, sex, height, weight, blood type, allergies, conditions, maintenance medications, emergency contact name/relation/phone, phone, address, `avatar_url`, organ donor status). Auto-provisioned by `on_user_created` PostgreSQL trigger.
-3. **`public.medical_records`**: Individual clinical records (title, category type, date, `attachment_url` R2 storage key, notes). `type` CHECK constraint enforced both inline and via idempotent `DO $$` block for pre-existing databases (`medical_records_type_check`).
-4. **`public.shared_access`**: Cryptographic access tokens, `user_id`, expiration timestamps, optional `allowed_types` and specific `record_ids`, revocation flag (`revoked_at`). Maximum 5 active sessions enforced by `pruneExcessActiveShares` before every new token creation.
-5. **`public.notifications`**: User notifications and audit ledger with compound indexes on `(user_id, created_at DESC)` and `(user_id, read) WHERE read = FALSE`.
+## API and data
 
-Schema is idempotent: all column additions use `ADD COLUMN IF NOT EXISTS`. Migrations run automatically on server startup via `runMigrations()` in `server.js`.
+`apps/api` is a Hono Cloudflare Worker. `src/app.ts` applies configuration checks, services, CORS, no-store, uniform errors, and hourly cleanup.
 
----
+- `lib/db.ts`: Neon HTTP, one statement/transaction with the RLS context set. `lib/localDb.ts` supplies development-only local Postgres access.
+- `lib/auth.ts`: JWT, open session, token version. `lib/otp.ts` owns bounded one-time email codes; `lib/email.ts`/`smtp.ts` send them through Gmail.
+- `lib/security.ts`: rate limits, sharing tokens, signed file paths. `lib/records.ts`: keyset pagination. `lib/shares.ts`: scoped, expiring, revocable access.
+- `lib/gemini.ts`: document reading with structured output and guardrails.
+- Routes: auth, profile/Medical ID/avatar, records/drafts/scan/pages, shares, vault/activity/export, public `/s/:token`, `/e/:slug`, signed files. Public views use hono/jsx.
+- `migrations/001_init.sql`: users, profiles, records/files, sharing/activity, sessions/devices, OTP and rate limits. `002_rls.sql`: forced RLS and the non-bypass medrec_app role.
+- Documents remain in private R2. The Worker serves HMAC-signed file paths; URLs expire and shared-file access cannot outlive its share.
 
-## 🔐 Security & Access Control
+## Configuration and verification
 
-1. **JWT Authentication**: Bcrypt (salt 10) + `jsonwebtoken`. JWT embeds `userId` and `tokenVersion`. `requireAuth` middleware (`authMiddleware.js`) validates signature, expiry, and `token_version` against the DB on every protected request.
-2. **Password Change Verification**: `changePassword` in `profileController.js` calls `bcrypt.compare(currentPassword, user.password_hash)` and returns `401` if incorrect, before updating. Returns `400` if the user is a Google-only account without a password hash.
-3. **Server-Side Logout Invalidation**: `logout` calls `userModel.incrementTokenVersion(req.user.id)`, immediately invalidating the issued JWT for the rest of its 7-day natural window.
-4. **Patient Sharing**: Patient selects records → Backend validates ownership via atomic SQL `verifyOwnership` → Generates high-entropy crypto token with custom TTL → QR rendered in `share.tsx`. Active sessions capped at 5.
-5. **Doctor Record Access**: Doctor scans QR → `getByToken` validates token expiry and revocation → Returns scoped records with short-lived (15 min) signed R2 download URLs via `attachSignedUrlIfNeeded`.
-6. **Storage Security**: R2 bucket is strictly private. Upload uses user-prefix-isolated presigned PUT (`{userId}/{uuid}.{ext}`). Download uses 15-minute presigned GET. **Presigned `https://` URLs are never stored back in PostgreSQL** — `updateRecord` and `updateRecordForUser` guard against this explicitly.
-7. **Google SSO & Takeover Defense**: Mobile client obtains native ID token via `@react-native-google-signin/google-signin` and sends it to `POST /auth/google`. Server verifies token signature and claims via `google-auth-library` (`verifyIdToken`) strictly bound to `GOOGLE_WEB_CLIENT_ID`. Validates `payload.email_verified === true`. If the user registered earlier with local email/password, the account is linked, `users.token_version` is incremented to sanitize existing sessions, and a `security_alert` notification is created. Local password login and password modifications are guarded against NULL passwords for Google-only users.
+Production settings live in ignored `apps/.env`; the deployment/migration scripts distribute each value only where needed. Local Worker settings live in `.dev.vars`. The mobile app discovers port 8787 on Metro's host unless an explicit API URL is configured.
 
----
-
-## ☁️ Cloudflare R2 Storage (`backend/src/config/r2.js`)
-
-- **Client**: AWS SDK v3 S3-compatible (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) targeted at `https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com`.
-- **Upload**: `POST /api/storage/upload-url` → `generatePresignedUploadUrl` → Returns signed PUT URL. Client (`add.tsx`, `profile.tsx`) uploads binary directly to R2, bypassing server memory.
-- **Download**: `generatePresignedDownloadUrl(bucket, key, 900)` → 15-minute signed GET URL. Applied by `attachSignedUrlIfNeeded` when reading records or returning shared records.
-- **Streaming for ZIP**: `getR2ObjectStream(bucket, key)` → Streams raw R2 object data; used by `downloadSharedBundleZip` to populate ZIP attachments without buffering entire files in memory.
-- **Object Lifecycle**: On `DELETE /records/:id`, `deleteR2Object(bucket, key)` removes the R2 object. On `PUT /records/:id`, if a new, different R2 key is provided, the old key is also deleted before writing the update.
-- **Path Convention**: `{userId}/{uuid}.{ext}` for medical records; `{userId}/avatar/{uuid}.jpg` for avatars.
-
----
-
-## 📁 Medical Records
-
-- **CRUD**: `POST /records` (create), `GET /records` (list with type filter + pagination), `GET /records/:id` (single), `PUT /records/:id` / `PATCH /records/:id` (metadata update), `DELETE /records/:id` (with R2 cleanup).
-- **Attachment Flow**: Mobile client requests presigned upload URL → uploads binary directly to R2 → sends the R2 key (path) as `attachmentUrl` to the create/update endpoint → stored in `medical_records.attachment_url`.
-- **Presigned URL Guard**: On edit, if the client sends back the previously-received `https://` signed download URL, the backend ignores it (both controller and model layer guards), preserving the original R2 key in the DB.
-- **Edit Record Modal (`RecordEditModal.tsx`)**: Edits document attachment (camera/gallery capture, thumbnail preview, inspect, retake, remove), title, category type (horizontal carousel), event date, and clinical notes. Uploads new attachment to Cloudflare R2 on save or passes `null` to detach.
-- **Edit Trigger Scoping**: Edit action is scoped to the metadata level (Tablet Master-Detail Overview header card and Record Details view [`record/[id].tsx`]), avoiding card-level clutter in the main dashboard list.
-- **Lightbox**: `record/[id].tsx` displays the attachment with a tap-to-expand fullscreen lightbox with instant `withTiming(0ms)` spring animation.
-
----
-
-## 🤝 Shared Records (`/api/share`)
-
-### Patient-Facing (authenticated)
-- `POST /share` — Create access token (scoped by types/record IDs, TTL in minutes, max 5 sessions enforced).
-- `GET /share` — List all shares (active + history).
-- `DELETE /share/:id` — Revoke a share (sets `revoked_at`).
-
-### Recipient-Facing (token-authenticated, no JWT required)
-- `GET /share/:token` — Returns token validity, patient name, expiry, and scoped records with signed attachment URLs.
-- `POST /share/:token/summarize` — Returns AI-generated clinical summary (medications, diagnoses, key notes). Falls back to deterministic structured synthesis if OpenAI is unavailable.
-- `POST /share/:token/terminate` — Recipient-initiated session termination. Creates `share_revoked` notification for the patient.
-- `GET /share/:token/download/:recordId` — Returns a 15-minute presigned R2 download URL for a specific record's attachment.
-- `GET /share/:token/zip` (alias: `GET /share/:token/download-all`) — Streams a ZIP archive (`application/zip`) containing `README_CLINICAL_SUMMARY.txt`, `records_metadata.json`, and `attachments/` folder. Built with `jszip` (CJS-compatible; `archiver` rejected due to ESM incompatibility with Jest).
-- `GET /share/:token/export` — Returns JSON export bundle of shared records with signed URLs.
-
-### Mobile Shared Records UI (`scan.tsx`)
-- QR scanning via `expo-camera` → calls `/share/:token` → renders Patient header, record list, and action bar.
-- Per-record download: `GET /share/:token/download/:recordId` → presigned URL → `downloadFileDirectly` → native device save/share sheet.
-- ZIP bundle download: `GET /share/:token/zip` → streams ZIP → saved to `FileSystem.documentDirectory` → `Sharing.shareAsync`.
-- AI Summary: `POST /share/:token/summarize` → modal with structured clinical data.
-- Terminate Session: `POST /share/:token/terminate` → removes token from active sessions + patient notification.
-
----
-
-## 🔔 Notification System
-
-### Backend
-- **Table**: `public.notifications` (id, user_id, type, title, body, read BOOL, data JSONB, created_at).
-- **Event Types**: `record_added`, `share_created`, `share_revoked`, `emergency_updated`, `security_alert`, `ai_summary_ready`.
-- **API**: `GET /notifications`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`, `DELETE /notifications/:id`.
-- All writes are non-blocking `try/catch` — notification failures never break the primary action.
-
-### Mobile (`NotificationContext.tsx`)
-- Centralized React Context: `notifications[]`, `unreadCount`, `loading`.
-- `markAsRead(id)`: Checks `target.read === false` before decrementing `unreadCount` (prevents negative counts on double-tap). Optimistic update; rolls back via `refreshNotifications()` on API error.
-- `deleteNotification(id)`: Removes from list; decrements count only if `!target.read`.
-- `markAllAsRead()`: Zeroes `unreadCount` and marks all in state.
-
-### Notification Sidebar UI (`NotificationCenterModal.tsx`)
-- Universal full-screen sliding modal (`animationType="slide"`, `presentationStyle="pageSheet"` on phone; `overFullScreen` transparent on tablet).
-- Matches BurgerNav design language: same surface color, typography, spacing, and border treatment.
-- **Unread cards**: Retain full surface color, bold typography, left-edge teal accent.
-- **Read cards**: Muted ink (`Colors.muted`), normal weight, no left accent.
-- **Icons**: Centered, enlarged category icons per notification type (including QR icon for `share_created` / `share_revoked` / `qr_generated` / `qr_terminated` types).
-- Filter tabs: "All" / "Unread" with live counts.
-- Pull-to-refresh via `RefreshControl`.
-
----
-
-## 📷 Document Capture & Storage
-
-1. `DocumentCamera.tsx`: Full-screen `CameraView` with torch, haptic shutter, and library picker.
-2. `add.tsx`: Requests presigned PUT URL from Express → uploads binary directly to R2 → stores R2 key in record. **Upload failure aborts record creation** with `Alert` (no silent `file://` fallback).
-3. `profile.tsx`: Uploads avatar to R2 via presigned PUT → stores R2 key in `user_profiles.avatar_url`. **Upload failure reverts the optimistic preview** and shows `Alert` (no silent base64 fallback).
-
----
-
-## 📱 Responsive Layout Engine
-
-Three strictly isolated runtime UI states:
-- **Phone** (`!isTablet`): Single-column, bottom tab bar (85pt), edge-to-edge sheets.
-- **Tablet Portrait** (`isTablet && !isLandscape`): Single-column/bento grids, centered 480pt floating pill nav.
-- **Tablet Landscape** (`isTablet && isLandscape`): 88pt left nav rail, Master-Detail workspaces, 2-column studios.
-
-`isTablet` determined by `Math.min(width, height) >= 600` (physical shorter-dimension classification).
-
----
-
-## 🤖 Clinical AI Architecture & Multi-Record Scoping
-
-1. **Full & Scoped Record Summarization (`/api/ai/summarize`)**:
-   - Accepts optional `{ type }` or `{ recordIds: string[] }`.
-   - Validates that `recordIds` contains valid UUID strings; rejects malformed inputs with `400 Bad Request`.
-   - Queries PostgreSQL using `user_id = $1 AND id = ANY($2::uuid[])` ensuring strict patient tenancy and scoped summarization.
-   - Falls back gracefully to deterministic clinical extraction if OpenAI API is unavailable.
-2. **Records Selection Mode (`(tabs)/index.tsx`)**:
-   - Single layout foundation matching normal Records screen flow.
-   - Patient greeting skipped during selection mode.
-   - Filter-bound `selectAllRecords` operates only on visible records (`sortedRecords`), preserving clinical privacy when filters are active.
-   - Selection state cleaned up on tab blur and reconciled on record reload.
-
----
-
-## 🧪 Testing
-
-- **Backend**: Jest + Supertest. 64 tests across 8 suites: `auth.test.js`, `profile.test.js`, `record.test.js`, `share.test.js`, `storage.test.js`, `notification.test.js`, `security.test.js`, `integration.test.js`. All 64/64 passing.
-- **Mobile**: TypeScript compilation (`npx tsc --noEmit`) — 0 errors.
-
-
-## 2026-10-14 — Client experience and local privacy additions
-- `components/auth/AuthScreen.tsx` shares responsive labeled login/register forms.
-- `components/onboarding/FeaturePreview.tsx` and `hooks/useMotionPreferences.ts` own foreground-only staged previews with accessible motion controls.
-- `context/AppLockContext.tsx` owns per-account native SecureStore preferences and biometric/passcode checks. `AppLockGate` hides the protected tree; `PrivateModal` suppresses other native modal windows during locking.
-- `lib/healthExport.ts` + `healthExportData.ts` fetch all record pages and fresh profile, sanitize export data, escape printable HTML, and invoke native PDF/file sharing or browser download/printing.
-- `lib/api.ts` provides typed HTTP errors, request timeout, verified session-expiry events, and complete pagination. Backend middleware uses `SESSION_EXPIRED` only for session/auth failures; database errors propagate without logging users out.
-- `utils/shareUtils.ts` provides truthful scope and expiry labels. Backend sharing returns the complete authorized record scope; AI alone retains a disclosed latest-25 cap.
-
-
-## 2026-10-24 — v2 architecture (`apps/`)
-- `apps/api/src/app.ts`: middleware (config check, services, CORS, no-store), routes, uniform `{error:{code,message}}`; `cleanup()` for the hourly cron.
-- `lib/db.ts` (Neon HTTP, RLS context per statement) · `lib/localDb.ts` (dev-only TCP for local Postgres) · `lib/auth.ts` (JWT + open session + token version) · `lib/otp.ts` · `lib/email.ts` + `lib/smtp.ts` · `lib/gemini.ts` · `lib/security.ts` (rate limits, share tokens, signed file paths) · `lib/records.ts` (keyset cursor) · `lib/shares.ts`.
-- Routes: `auth`, `profile` (Medical ID, avatar), `records` (drafts, scan, CRUD, pages), `shares`, `vault` (activity, AI summary, export), `public.tsx` (`/s/:token`, `/e/:slug`, `/files/:key`). Views in `src/views/*.tsx` (hono/jsx).
-- Migrations: `001_init.sql` (schema), `002_rls.sql` (forced RLS, `medrec_app` role). Tests run as `medrec_test` (member of `medrec_app`) so the dev password is untouched.
-- `apps/mobile`: expo-router with `Stack.Protected` guards; `src/lib/http.ts` (base-URL discovery, typed errors, single-flight refresh), `src/auth.tsx`, `src/lock.tsx`, `src/theme.ts` tokens, `src/ui/*` primitives, screens under `app/`.
+API integration tests create a fresh local Postgres test database and run as medrec_test, a member of the unprivileged runtime role. Mobile checks include TypeScript and Node tests; native visual/interaction checks use Xcode's simulator. Real-device biometrics and provider sign-in require independent verification.

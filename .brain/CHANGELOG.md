@@ -5,10 +5,36 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-10-26
+last_updated: 2026-11-03
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [Unreleased] — 2026-11-03 — Two startup stories and a native preview (DD-49)
+
+- First-use pages gather around Remy before onboarding; confirmed login/returning arrival opens a compact folio using real record placeholders. Added visible-start gating, background pause/resume, reduced-motion fallback and per-session completion; keyboard dismisses before arrival.
+- Removed the native splash icon and generated an image-free plum storyboard through a small CNG plugin. Built and installed a locally signed MedRec 2.0.0 Release app on iPhone 16 Pro so startup is visible without Expo Go's separate icon loader.
+- 29 mobile tests, TypeScript, three-platform exports, native Release compilation and fixture login/navigation checks pass. Actual native startup video and rebuild/QA instructions: `apps/mobile/validation/preload/`.
+
+## [Unreleased] — 2026-11-03 — Working iOS new-password entry (DD-48)
+
+- Prevented UIKit's yellow automatic-password cover by disabling generation from initial mount for iOS secure new-password fields. Applies to registration/reset/password change; existing-login autofill and other platform hints remain.
+- Restored registration typing to native regression coverage: masked entry, revealed editing and repeated hide/show preserve the complete value. Mobile 25 tests, TypeScript, three-platform exports and the native interaction check pass.
+
+## [Unreleased] — 2026-11-03 — Remy expressions and auth motion (DD-47)
+
+- Added minor blinks, glances and wrist gestures to all six Remy poses, plus reversible eye-cover and one-eye-peek sequences for password focus and visibility. Removed repeating whole-body bouncing.
+- Replaced diagonal auth movement with a 200 ms fade. Preserved focus when toggling password visibility; no password contents reach Remy.
+- Normalized Remy's visible height and foot position for every frame/fallback; both auth screens use an 88-point mascot. Matched and centered the disabled social buttons' icons, typography, padding and gaps. Reversed the eye icon to reflect hidden/revealed state.
+- Added live OS Reduce Motion handling and lifecycle guards. Mobile 25 tests, TypeScript, three-platform exports and native visual interaction checks pass. Actual screenshots and recording: `apps/mobile/validation/remy/`. Registration typing has a separately documented iOS simulator AutoFill overlay limitation; password-manager hints were preserved.
+
+## [Unreleased] — 2026-11-03 — First-use and sign-in refinement (DD-46)
+
+- Remy-led onboarding built from the actual app UI, with directional swipe/spring transitions, delayed launch handoff, pause control and reduced-motion support. Removed the progress bar and Skip intro action.
+- Fixed clipped onboarding captions and mascot overlap; moved Back to the header to preserve preview space. Added explicit web accessibility hiding/inert previews.
+- More engaging sign-in with standard-size fields and disabled Google/Apple previews. Authentication actions now scroll with the form.
+- Deleted the legacy root `mobile/` and `backend/` projects at the user's request, removed the old simulator app, stopped the old Metro process, and updated current project docs.
+- Native screenshots and Xcode UI checks in `apps/mobile/validation/onboarding/`. Mobile 15 tests, API 38 tests, TypeScript and three-platform exports pass.
 
 ## [2.0.0-alpha.2] — 2026-10-26 — Warm folio redesign with Remy (DD-45)
 

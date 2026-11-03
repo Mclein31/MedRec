@@ -1,148 +1,55 @@
-# MedRec (Working Title)
+# MedRec
 
-A mobile application that allows users to securely store, manage, and share their personal medical records in one centralized platform.
+Personal health records, together. MedRec keeps documents organized, explains saved medical terms with Remy, and shares selected records through temporary QR access.
 
-The system also includes AI features that help users organize, summarize, and understand their health information.
+The active application lives entirely in `apps/`:
 
----
+- [`apps/mobile`](apps/mobile): Expo SDK 54, React Native, Expo Router, and the warm ivory/aubergine Remy interface. Runs on iOS, Android, and web.
+- [`apps/api`](apps/api): Hono on Cloudflare Workers, Neon Postgres with forced row-level security, private R2 files, Gemini document reading, and Gmail email codes.
 
-## 📱 Overview
+The legacy root `mobile/` and `backend/` applications were removed on November 3, 2026. Use the current paths below.
 
-MedRec is designed to help patients keep all their medical information in one place. Users can store their medical history, including doctor visits, diagnoses, lab results, prescriptions, medications, and appointments.
+## Run locally
 
-When visiting a new doctor, users can securely share their records using a QR code or access token. This allows healthcare providers to quickly view relevant medical history and make better-informed decisions.
+Follow [`apps/README.md`](apps/README.md) for database creation and API configuration. Then run these in separate terminals:
 
----
+```sh
+cd apps/api
+npm run dev
+```
 
-## 🎯 Objectives
+```sh
+cd apps/mobile
+npm start
+```
 
-- Provide a centralized digital storage for medical records
-- Improve accessibility of patient health information
-- Reduce repetition of medical history during consultations
-- Enable secure sharing of records between patients and doctors
-- Use AI to simplify and organize medical data
+The API uses port 8787. With `EXPO_PUBLIC_API_URL` unset, the app follows Metro’s host. Set an explicit API URL for a separate deployment. Configuration for production lives in the ignored `apps/.env`; the committed template is `apps/.env.example`.
 
----
+Expo Go must match SDK 54. Xcode 27 uses Device Hub; the mobile install/start scripts include a guarded launcher compatibility patch. App lock and other device-specific behavior require native device verification.
 
-## ✨ Features
+## Verify
 
-### 👤 User System
-- User registration and login
-- Secure authentication using JWT
-- Basic user profile management
+```sh
+npm test --prefix apps/mobile
+npm run typecheck --prefix apps/mobile
+npm test --prefix apps/api
+npm run typecheck --prefix apps/api
+```
 
-### 📋 Medical Records
-- Store doctor visits, diagnoses, lab results, prescriptions, and medications
-- Organize records by category
-- Search and filter records
-- View detailed medical history
+The API tests create a separate local Postgres test database. See [`apps/README.md`](apps/README.md) for deployment and environment details.
 
-### 🔐 Secure Sharing
-- Generate QR codes or secure access tokens
-- Temporary access for doctors
-- Read-only access mode for shared records
-- Token expiration and revocation
+## First-use experience
 
-### 🤖 AI Features
-- Medical record summarization
-- Automatic record categorization
-- Simplified explanations of medical terms
-- Clear and readable health overview for patients and doctors
+The Remy-led introduction shows the app’s actual record rows, Ask Remy messages, sharing receipt, and Medical ID card with clearly labeled example data. It includes interruptible swipe transitions, Back and Next actions, a pause control, and reduced-motion support. There is no progress bar or Skip intro shortcut.
 
----
+Sign-in uses standard 48-point fields and a compact Remy welcome. Google and Apple sign-in are deliberately disabled UI previews; email/password and the existing email-code flow remain the supported authentication path.
 
-## 🧠 AI Capabilities
+## Project knowledge
 
-The AI system processes user medical data and provides:
+- `.brain/PROJECT_CONTEXT.md`: current state and operating context.
+- `.brain/ARCHITECTURE.md`: current architecture.
+- `.brain/DECISIONS.md`: decisions and historical context.
+- `MedRec/`: product and research vault.
+- `design/medrec-uiux-handoff/`: design reference and Remy assets.
 
-- **Health Summary:** A simple overview of the patient’s medical history
-- **Record Organization:** Automatically classifies medical data into categories
-- **Text Simplification:** Explains medical terms in plain language
-
-> Note: The AI does not provide medical advice. It only summarizes and explains existing data.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend (Mobile App)
-- Flutter / React Native
-
-### Backend
-- Node.js (Express) / FastAPI
-- REST API architecture
-
-### Database
-- MongoDB / PostgreSQL
-
-### Authentication
-- JWT (JSON Web Tokens)
-
-### AI Integration
-- OpenAI API / Claude API
-
----
-
-## 📊 System Flow
-
-1. User registers and logs in
-2. User adds medical records
-3. Records are stored securely in the database
-4. AI processes records for summary and organization
-5. User generates QR code for sharing
-6. Doctor scans QR code to view patient records
-
----
-
-## 🔒 Security Features
-
-- Password hashing
-- JWT authentication
-- Token-based sharing system
-- Expiring access links
-- Role-based access (user vs doctor view)
-
----
-
-## 🚀 Future Improvements
-
-- Integration with hospital systems
-- Appointment booking system
-- Prescription reminders
-- Voice input for medical notes
-- Offline mode support
-- Multi-language support
-
----
-
-## 👨‍💻 Developer Notes
-
-This project is designed as a **capstone project for Computer Science students**. It focuses on full-stack development, secure data handling, and practical AI integration.
-
-The goal is to build a working prototype that demonstrates real-world healthcare data management concepts.
-
----
-
-## 📌 Disclaimer
-
-This application is for educational purposes only and is not intended for real medical diagnosis or treatment.
-
-
-## UI polish and local verification (October 2026)
-
-The current app uses React Native/Expo SDK 54, Expo Router, an Express API, PostgreSQL, and private Cloudflare R2 storage. Onboarding includes sliding pages, staged previews, pulse/scan animations, a pause control, and Reduce Motion support. Profile offers native app lock, JSON file export, and printable PDF history. Exports contain profile/record text and attachment presence; attachment files are not embedded.
-
-From `mobile/`, run `npm test`, `npm run typecheck`, and `npm run lint`. From `backend/`, run `npm test`. Native biometric/PDF modules require a development build; Expo Go is insufficient for Face ID verification. Dependencies are linked by `pod install` in the existing iOS project. With Xcode 27, local verification of older pods requires adding `IPHONEOS_DEPLOYMENT_TARGET=15.1` to `xcodebuild`; the simulator build passed with this override.
-
-Xcode 27 replaces Simulator.app with Device Hub. SDK 54's CLI still expects Simulator.app, so `mobile/scripts/patchExpoSimulator.cjs` backports [Expo's Device Hub support](https://github.com/expo/expo/pull/46757). It runs on install and before `npm start` / `npm run ios`, and validates the locked CLI version before modifying dependencies. If the launcher reports "Can't determine id of Simulator app" with Xcode already selected correctly, restart with `cd mobile && npm start`, then press `i`. Review/remove this workaround when upgrading Expo CLI. Automated launcher checks and the installed Xcode prerequisite pass; interactive launch remains pending.
-
-"No development build (com.mclein.medrec) ... installed" means the selected simulator needs the native development client. `npm start` only starts Metro. Build/install with `npm run ios` (see the Xcode 27 deployment target override above), or install an already-built simulator `.app` with `xcrun simctl install <device-udid> <app-path>`, then press `i` in Metro. The local iPhone 14 Plus now has the verified Debug build installed; other or erased simulators need their own installation.
-
-Password recovery currently reports unavailable until real token/email delivery is implemented. Missing R2 upload configuration returns 503 outside tests. AI summaries disclose their bounded latest-25-record scope. Production deployment, native Google sign-in setup, full theme parity, remaining SDK/tooling advisories, and visual/physical-device QA remain tracked in `.brain/TODO.md`.
-
-
-## Local sign-in troubleshooting
-
-Leave `EXPO_PUBLIC_API_URL=` blank in `mobile/.env` when the backend runs beside Metro on port 4000. The app follows the current Wi-Fi host automatically; web uses the browser host and Android emulator loopback is mapped correctly. Set an explicit URL only for a separate backend/deployment. Restart Metro after changing environment values.
-
-`GET /api/ready` checks database availability. From `backend/`, `npm run check:local-auth` checks the running local API with a disposable account and removes it afterward. Backend environment paths are independent of launch directory; JWT_SECRET must be a private random value of at least 32 characters. See `.brain/AUTH_AUDIT.md` for the October sign-in audit and its verification limits.
+Remy explains saved terms and helps find records; it does not provide medical advice. Provider activation, release signing, production services, and store submission remain separate work.

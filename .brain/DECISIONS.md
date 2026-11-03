@@ -7,10 +7,56 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-10-26
+last_updated: 2026-11-03
 ---
 
 # 📜 MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-11-03 — Distinct first-use and authenticated arrivals, native startup preview (DD-49)
+
+Replace the single preload with a brief first-use document-gathering story around Remy, and a shorter returning/login folio opening using the actual RecordSkeleton. Durations are 1640/720 ms plus 240/180 ms fades; no fake progress. Wait for splash dismissal, layout and active app state before counting visible intro time. Background pauses remaining motion; reduced motion uses the settled composition without the minimum delay. Exit still requires real startup readiness. A confirmed signed-in user triggers the login arrival; password/OTP challenges do not. Track completion per signed-in user and reset on logout. Dismiss the keyboard before committing authenticated state.
+
+Expo Go substitutes its own app-icon loader and obscured review of the requested preload. Generate the native iOS project through Expo CNG, remove the native splash image, preserve a matching plum first frame with `withLaunchBackground.cjs`, and install the real MedRec 2.0.0 Release app on iPhone 16 Pro. Register the custom storyboard mod BEFORE expo-splash-screen because the provider must be last; this also lets the custom action repair the white background/dangling constraints left by SDK 54's image-removal path. Generated native files remain ignored.
+
+Xcode 27 requires a 15.1 deployment-target override for older resource pods. Local simulator signing must be enabled (`CODE_SIGN_IDENTITY=-`): the unsigned build stalled reading Keychain state, while the signed build played the full intro and reached onboarding. No publishing or store signing was performed. Native auto-linked dependencies include the existing Apple-authentication package; provider buttons and backend OAuth remain disabled.
+
+29 mobile tests, TypeScript, all-platform exports and native Release compilation pass. Direct native screenshots/video show the complete first-use story and onboarding handoff. The login arrival and normal navigation/sign-out were exercised with an isolated local empty-account fixture, with no real email/account traffic; the fixture was then stopped. Do not wrap native navigation in a dynamically accessibility-hidden view or leave `accessibilityViewIsModal` on the transient animated overlay: the latter left the native accessibility tree empty after exit. Source, captures, rebuild instructions and native QA target are in `apps/mobile/validation/preload/`.
+
+---
+
+## 2026-11-03 — Prevent the iOS strong-password cover (DD-48)
+
+The new-password field could display UIKit's yellow "Automatic Strong Password cover view text" and accept only the first character. Treat this as a blocking input bug, not a visual-test exception. In shared `Field`, opt out of automatic password generation on iOS secure new-password inputs from their initial render (`textContentType="none"`, `autoComplete="off"`). The earlier attempt to change hints only after reveal could not clear an already-created cover. Apply the policy consistently to registration, reset and password change; retain saved-login autofill and Android/web hints. Secure fields default to no autocorrect/spellcheck.
+
+The native regression check now types a full masked registration password, verifies it after reveal, appends text, then repeats hide/show and checks preservation. This passes alongside sign-in typing, Remy reactions and auth navigation. 25 mobile tests, TypeScript and three-platform exports pass. Proof: `apps/mobile/validation/remy/screenshots/12-registration-password-fixed.png`. Revisit automatic generation only after a reliable native integration is verified; manual entry remains functional.
+
+---
+
+## 2026-11-03 — Remy acting and password reactions (DD-47)
+
+Use generated transparent six-frame atlases for each existing main pose, plus eye-cover and one-eye-peek sequences. Keep the folder and feet planted, with sparse blinks, glances and wrist gestures instead of a perpetual body bounce. Preserve the original PNGs as loading/static fallbacks and for tiny logos. Animate atlas transforms on the UI thread rather than swapping decoded images with JavaScript timers.
+
+Password focus covers Remy's eyes. The visibility toggle maintains input focus and selects peek/covered expressions; blur reverses the hand motion. Remy receives only attention/busy/visibility state, never password contents. Inactive/background auth routes stop acting; system and in-app reduced motion use static expressions. A shared live OS motion signal prevents stale initial queries from overriding subsequent setting changes.
+
+Sign-in and registration use a 200 ms native fade, with no vertical form entrance, eliminating the combined diagonal movement. Measured alpha bounds and foot centers fit every Remy frame/original to a fixed visible height and baseline; both auth slots are 88 points. The shared social previews use matching 48-point controls, 16-point labels, 20-point marks, 24-point icon slots and 10-point gaps, centering each complete logo/text group. Replace the native Apple preview's fixed typography with the same custom disabled layout as Google. Keep Apple black and the registration CTA white. Password eye icons show current state (crossed out when hidden).
+
+Verification: 25 mobile tests, TypeScript and web/iOS/Android exports pass. Native Xcode checks cover hidden/revealed fields, both auth routes and the focus/peek cycle; actual graphics and fade frames were visually reviewed. Typed-text preservation is checked on sign-in. Registration typing separately exposed the iOS 18.6 simulator's strong-password cover overlay; a temporary autofill adjustment did not resolve it and was reverted. Physical-device AutoFill remains unverified. Captures and a short sign-in recording live in `apps/mobile/validation/remy/`. Expo Go retained an older running JS preview until a cold restart; refresh the current Metro URL and dismiss its developer tutorial before visual checks. The atlases were made with built-in image generation; prompts/provenance are saved beside the assets.
+
+---
+
+## 2026-11-03 — Remy-led first use, standard-size sign-in, and removal of legacy apps (DD-46)
+
+### Decision
+Use `apps/mobile` and `apps/api` exclusively. At the user's explicit request, delete root `mobile/` and `backend/`; uninstall MedRec 1.0.0 from the iPhone 14 Plus simulator and stop its old port-8081 Metro server. Keep the new v2 preview on port 8092. Root and app READMEs now describe only the active stack.
+
+Onboarding has a welcome plus records, Remy, sharing and Medical ID scenes, with **no progress bar and no Skip intro shortcut**. Reuse actual RecordRow, Question/Answer, ShareReceipt and MedicalIdCard components with labeled example data. The sample QR never grants record access. Use a shared gesture-tracked position and spring settling, fixed header/actions, and a footer caption that cannot be cut off by the preview viewport. Back moves to the header to give previews more room. LaunchReadyContext gates first-use entrances; scoped motion pauses on request, background, blur, or reduced-motion settings. Native/web accessibility hides inactive scenes and makes preview controls inert on web.
+
+Sign-in has a compact Remy greeting and standard 48-point fields with 16-point input text. Auth actions follow the form rather than obscuring scroll content. Google and Apple buttons remain **disabled UI previews**, as requested after the initial social-auth request. No provider backend flow, credentials, entitlement activation or production deployment was added. The Apple button uses expo-apple-authentication on supported iOS devices; other surfaces show a disabled preview.
+
+### Verification and limits
+15 mobile tests and 38 v2 API integration tests pass; both projects typecheck. Web/iOS/Android bundles export. Native Xcode checks cover all scenes, Back/reverse swipes, pause/resume, standard field sizing and disabled provider controls. Screenshots and repeatable native test target: `apps/mobile/validation/onboarding/`. The audit retains 34 pre-existing findings (6 high); actual provider sign-in, store submission and a full physical-device/accessibility matrix are outside this UI pass.
+
+---
 
 ## 2026-10-26 — "Warm folio" UI with Remy, honest Ask Remy (DD-45)
 
