@@ -1,0 +1,11 @@
+Use case: precise-object-edit. Asset type: six-frame transparent animation sprite atlas for Remy taking a tiny playful peek when a user turns password visibility on.
+Image1 is the EDIT TARGET / exact character registration reference: six-frame Remy covering-eyes atlas. Use its final bottom-right FULLY COVERED-EYES pose as the starting pose for every new frame. Image2 is identity/material supporting reference only.
+Create a LANDSCAPE 1536x1024 RGBA PNG, exact invisible 3-column x 2-row grid, each cell 512x512, transparent alpha background, no grid or labels. Full-body Remy same scale, body position, shoes baseline, papers, plum folder, lighting, golden face, perspective and left hand across all six cells. Keep absolutely everything except the covering hand, one eye and one eyebrow fixed.
+Frames row-major:
+0: exact fully covered-eyes pose from bottom-right of image1; both eyes completely hidden, same smiling mouth below hand.
+1: covering hand dips a tiny amount near image-left eye, eyes still almost hidden.
+2: a narrow sliver of ONE eye becomes visible above the edge of the hand; other eye stays covered.
+3: that one friendly oval eye peeks clearly over the hand with a tiny raised eyebrow, other eye stays covered.
+4: same one-eye peek, pupil shifts slightly toward the viewer.
+5: same warm playful one-eye peek settled; hand still covers the other eye.
+This is a restrained friendly sneak peek, NOT a new character, NOT a large pose change, NOT scary, NOT a whole-body movement. Same paper details and exact foot/body registration in every cell. Transparent outside each silhouette; no background, no glow, no ground shadow, no text. Animation runs forwards on Show password and backwards on Hide password.

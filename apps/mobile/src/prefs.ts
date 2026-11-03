@@ -1,6 +1,8 @@
-import { useSyncExternalStore } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
+import { AccessibilityInfo } from 'react-native';
 import { KEYS, secure } from './lib/storage';
+import { createSystemMotionSignal } from './ui/systemMotion';
 
 export interface Prefs {
   appearance: 'system' | 'light' | 'dark';
@@ -42,7 +44,16 @@ export function usePrefs() {
 }
 
 /** True when either the system setting or the in-app "Gentler motion" asks for less movement. */
+export const CalmMotionContext = createContext(false);
+const systemMotion = createSystemMotionSignal(
+  () => AccessibilityInfo.isReduceMotionEnabled(),
+  (changed) => { const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', changed); return () => subscription.remove(); },
+);
+
 export function useCalmMotion() {
-  const system = useReducedMotion();
-  return system || usePrefs().gentleMotion;
+  const initialSystem = useReducedMotion();
+  const system = useSyncExternalStore(systemMotion.subscribe, systemMotion.getSnapshot, systemMotion.getServerSnapshot);
+  const scoped = useContext(CalmMotionContext);
+  const prefs = usePrefs();
+  return (system ?? initialSystem) || prefs.gentleMotion || scoped;
 }

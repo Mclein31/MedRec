@@ -1,8 +1,13 @@
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
+import { useEffect, useId, useRef, useState } from 'react';
+import { AppState, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { cancelAnimation, Easing, useAnimatedStyle, useDerivedValue, useSharedValue, withDelay, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
 import { useCalmMotion } from '../prefs';
+import { ACTING_CYCLE_MS, actingSeed, minorFrameAt, privacyFrameAt, type RemyAttention, type RemyMotion, type RemyPose } from './remyActing';
+import { ATLAS_BOUNDS, fittedSprite, ORIGINAL_BOUNDS } from './remyGeometry';
+
+export type { RemyAttention, RemyMotion, RemyPose } from './remyActing';
+export { formAttention } from './remyActing';
 
 const POSES = {
   default: require('../../assets/remy/remy-default.png'),
@@ -12,130 +17,147 @@ const POSES = {
   reading: require('../../assets/remy/remy-reading.png'),
   saved: require('../../assets/remy/remy-saved.png'),
 };
+const ATLASES = {
+  default: require('../../assets/remy/acting/remy-default-atlas.png'),
+  greeting: require('../../assets/remy/acting/remy-greeting-atlas.png'),
+  curious: require('../../assets/remy/acting/remy-curious-atlas.png'),
+  searching: require('../../assets/remy/acting/remy-searching-atlas.png'),
+  reading: require('../../assets/remy/acting/remy-reading-atlas.png'),
+  saved: require('../../assets/remy/acting/remy-saved-atlas.png'),
+};
+const PRIVACY = require('../../assets/remy/acting/remy-privacy-atlas.png');
+const PEEK = require('../../assets/remy/acting/remy-peek-atlas.png');
 
-export type RemyPose = keyof typeof POSES;
 /**
- * idle: slow breathing bob. wave: friendly sway. hop: bouncy jump with squash (launch, onboarding).
- * read: calm sway while work is pending. search: looks side to side. cheer: little celebratory jumps.
- * peek: curious head tilt. none: entrance only.
+ * Actual face/hand drawings do the acting. The folder and feet stay planted.
+ * `attention` is a focus/busy signal only; this component never receives field values.
  */
-export type RemyMotion = 'idle' | 'wave' | 'hop' | 'read' | 'search' | 'cheer' | 'peek' | 'none';
-
-const PERIOD: Record<RemyMotion, number> = { idle: 3200, wave: 2400, hop: 1700, read: 3600, search: 3000, cheer: 2200, peek: 3400, none: 1000 };
-
-/** Pose at loop progress t (0..1), in units scaled by `k` (size / 120). */
-function frame(motion: RemyMotion, t: number, k: number) {
-  'worklet';
-  const p = t * Math.PI * 2;
-  let tx = 0;
-  let ty = 0;
-  let rot = 0;
-  let sx = 1;
-  let sy = 1;
-  let lift = 0;
-  if (motion === 'idle') {
-    ty = -Math.sin(p) * 3 * k;
-    rot = Math.sin(p) * 1.2;
-    sy = 1 + Math.sin(p) * 0.012;
-    lift = (Math.sin(p) + 1) / 2;
-  } else if (motion === 'wave') {
-    ty = -Math.abs(Math.sin(p)) * 5 * k;
-    rot = Math.sin(p * 2) * 3.5;
-    lift = Math.abs(Math.sin(p));
-  } else if (motion === 'hop') {
-    const up = t < 0.5 ? Math.sin(t * 2 * Math.PI) : 0;
-    const land = t >= 0.5 && t < 0.64 ? Math.sin(((t - 0.5) / 0.14) * Math.PI) : 0;
-    ty = -up * 16 * k;
-    sy = 1 + up * 0.04 - land * 0.09;
-    sx = 1 - up * 0.03 + land * 0.07;
-    rot = up * 3 * Math.sin(p);
-    lift = up;
-  } else if (motion === 'read') {
-    rot = Math.sin(p) * 2;
-    ty = -Math.sin(p * 2) * 2 * k;
-    lift = (Math.sin(p * 2) + 1) / 4;
-  } else if (motion === 'search') {
-    tx = Math.sin(p) * 7 * k;
-    rot = Math.sin(p) * 4;
-    ty = -Math.abs(Math.sin(p * 2)) * 2 * k;
-    lift = Math.abs(Math.sin(p * 2)) / 2;
-  } else if (motion === 'cheer') {
-    const up = t < 0.35 ? Math.sin((t / 0.35) * Math.PI) : 0;
-    ty = -up * 12 * k;
-    rot = up * Math.sin(t * 40) * 3;
-    sy = 1 + up * 0.04;
-    lift = up;
-  } else if (motion === 'peek') {
-    const tilt = t < 0.4 ? Math.sin((t / 0.4) * Math.PI) : 0;
-    rot = -tilt * 7;
-    tx = -tilt * 3 * k;
-    ty = -Math.sin(p) * 2 * k;
-    lift = tilt / 2;
-  }
-  return { tx, ty, rot, sx, sy, lift };
-}
-
 export function Remy({
-  pose = 'default',
-  size = 120,
-  motion = 'idle',
-  delay = 0,
-  ground = false,
-  style,
+  pose = 'default', size = 120, motion = 'idle', attention, active = true, delay = 0, ground = false, style,
 }: {
   pose?: RemyPose;
   size?: number;
   motion?: RemyMotion;
+  attention?: RemyAttention;
+  active?: boolean;
   delay?: number;
-  /** Soft shadow that shrinks as Remy rises. */
   ground?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const calm = useCalmMotion();
-  const t = useSharedValue(0);
+  const [foreground, setForeground] = useState(AppState.currentState === 'active');
+  const [readyPose, setReadyPose] = useState<RemyPose | null>(null);
+  const [privacyReady, setPrivacyReady] = useState(false);
+  const [peekReady, setPeekReady] = useState(false);
+  const elapsed = useSharedValue(0);
   const enter = useSharedValue(calm ? 1 : 0);
-  const k = size / 120;
+  const cover = useSharedValue(0);
+  const peek = useSharedValue(0);
+  const entered = useRef(false);
+  const seed = actingSeed(useId());
+  const intent = attention ?? 'idle';
+  const atlas = size >= 44 && motion !== 'none';
+  const ready = atlas && readyPose === pose;
+  const original = fittedSprite(ORIGINAL_BOUNDS[pose], size, 0, 600);
 
   useEffect(() => {
-    cancelAnimation(t);
-    t.value = 0;
-    if (calm) {
-      enter.value = withTiming(1, { duration: 180 });
-      return;
-    }
-    enter.value = 0;
-    enter.value = withDelay(delay, withTiming(1, { duration: 520, easing: Easing.out(Easing.back(1.7)) }));
-    if (motion !== 'none') {
-      t.value = withDelay(delay + 520, withRepeat(withTiming(1, { duration: PERIOD[motion], easing: Easing.linear }), -1, false));
-    }
-    return () => cancelAnimation(t);
-  }, [calm, motion, delay, t, enter]);
+    const sub = AppState.addEventListener('change', (state) => setForeground(state === 'active'));
+    return () => sub.remove();
+  }, []);
 
-  const body = useAnimatedStyle(() => {
-    const f = frame(motion, t.value, k);
-    const e = enter.value;
-    const grow = 0.6 + 0.4 * e;
-    return {
-      opacity: Math.min(1, e * 1.5),
-      transform: [{ translateX: f.tx }, { translateY: f.ty + (1 - e) * 14 * k }, { rotate: `${f.rot}deg` }, { scaleX: f.sx * grow }, { scaleY: f.sy * grow }],
-    };
+  // One entrance per mounted character. Focus, pose, and motion changes never replay a pop-in.
+  useEffect(() => {
+    if (calm) { entered.current = true; cancelAnimation(enter); enter.value = 1; return; }
+    if (entered.current) { enter.value = 1; return; }
+    entered.current = true;
+    enter.value = withDelay(delay, withTiming(1, { duration: 340, easing: Easing.out(Easing.cubic) }));
+    return () => cancelAnimation(enter);
+  }, [calm, delay, enter]);
+
+  useEffect(() => {
+    cancelAnimation(elapsed);
+    elapsed.value = 0;
+    if (!calm && active && foreground && atlas) {
+      elapsed.value = withDelay(delay + 340, withRepeat(withTiming(ACTING_CYCLE_MS, { duration: ACTING_CYCLE_MS, easing: Easing.linear }), -1, false));
+    }
+    return () => cancelAnimation(elapsed);
+  }, [active, foreground, calm, atlas, delay, pose, motion, elapsed]);
+
+  useEffect(() => {
+    const target = (intent === 'private' || intent === 'peek') && active && privacyReady ? 1 : 0;
+    cover.value = withTiming(target, { duration: calm || !foreground || !active ? 0 : 420, easing: Easing.inOut(Easing.cubic) });
+    return () => cancelAnimation(cover);
+  }, [intent, active, foreground, privacyReady, calm, cover]);
+
+  useEffect(() => {
+    const target = intent === 'peek' && active && privacyReady && peekReady ? 1 : 0;
+    peek.value = withTiming(target, { duration: calm || !foreground || !active ? 0 : 320, easing: Easing.inOut(Easing.cubic) });
+    return () => cancelAnimation(peek);
+  }, [intent, active, foreground, privacyReady, peekReady, calm, peek]);
+
+  const body = useAnimatedStyle(() => ({
+    opacity: calm ? 1 : enter.value,
+    transform: [{ translateY: calm ? 0 : (1 - enter.value) * 6 * (size / 120) }],
+  }));
+  const frameIndex = useDerivedValue(() => calm || !active || !foreground ? 0 : minorFrameAt(elapsed.value, pose, motion, intent, seed));
+  const privateIndex = useDerivedValue(() => privacyFrameAt(cover.value));
+  const peekIndex = useDerivedValue(() => privacyFrameAt(peek.value));
+  const frame = useAnimatedStyle(() => {
+    const index = frameIndex.value;
+    const fit = fittedSprite(ATLAS_BOUNDS[pose][index] ?? ATLAS_BOUNDS[pose][0], size);
+    return { transform: [{ translateX: fit.x }, { translateY: fit.y }, { scale: fit.scale * 512 / size }] };
   });
+  const privateFrame = useAnimatedStyle(() => {
+    const index = privateIndex.value;
+    const fit = fittedSprite(ATLAS_BOUNDS.privacy[index] ?? ATLAS_BOUNDS.privacy[0], size);
+    return { transform: [{ translateX: fit.x }, { translateY: fit.y }, { scale: fit.scale * 512 / size }] };
+  });
+  const peekFrame = useAnimatedStyle(() => {
+    const index = peekIndex.value;
+    const fit = fittedSprite(ATLAS_BOUNDS.peek[index] ?? ATLAS_BOUNDS.peek[0], size);
+    return { transform: [{ translateX: fit.x }, { translateY: fit.y }, { scale: fit.scale * 512 / size }] };
+  });
+  const cell = useAnimatedStyle(() => ({ transform: [{ translateX: -(frameIndex.value % 3) * size }, { translateY: -Math.floor(frameIndex.value / 3) * size }] }));
+  const privateCell = useAnimatedStyle(() => ({ transform: [{ translateX: -(privateIndex.value % 3) * size }, { translateY: -Math.floor(privateIndex.value / 3) * size }] }));
+  const peekCell = useAnimatedStyle(() => ({ transform: [{ translateX: -(peekIndex.value % 3) * size }, { translateY: -Math.floor(peekIndex.value / 3) * size }] }));
+  const primaryOpacity = useAnimatedStyle(() => ({ opacity: 1 - Math.min(1, cover.value * 5) }));
+  const privateOpacity = useAnimatedStyle(() => ({ opacity: Math.min(1, cover.value * 5) * (1 - Math.min(1, peek.value * 5)) }));
+  const peekOpacity = useAnimatedStyle(() => ({ opacity: Math.min(1, cover.value * 5) * Math.min(1, peek.value * 5) }));
 
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[{ width: size, height: size, alignItems: 'center' }, style]}>
-      {ground && <Ground t={t} enter={enter} motion={motion} size={size} />}
-      <Animated.View style={[{ width: size, height: size, transformOrigin: 'bottom' }, body]}>
-        <Image source={POSES[pose]} style={{ width: size, height: size }} contentFit="contain" />
+    <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={[{ width: size, height: size, alignItems: 'center' }, style]}>
+      {ground && <Ground enter={enter} size={size} />}
+      <Animated.View style={[{ width: size, height: size }, body]}>
+        <Animated.View style={[StyleSheet.absoluteFill, primaryOpacity]}>
+          <Image source={POSES[pose]} style={{ width: size, height: size, opacity: ready ? 0 : 1, transformOrigin: 'top left', transform: [{ translateX: original.x }, { translateY: original.y }, { scale: original.scale * 600 / size }] }} contentFit="fill" transition={0} />
+          {/* Clip the source cell before fitting it. Clipping the fitted slot cuts off wide hands. */}
+          {atlas && <Animated.View style={[{ position: 'absolute', top: 0, left: 0, width: size, height: size, overflow: 'hidden', transformOrigin: 'top left', opacity: ready ? 1 : 0 }, frame]}>
+            <Animated.View style={[{ width: size * 3, height: size * 2 }, cell]}>
+              <Image source={ATLASES[pose]} onLoad={() => setReadyPose(pose)} style={{ width: size * 3, height: size * 2 }} contentFit="fill" transition={0} />
+            </Animated.View>
+          </Animated.View>}
+        </Animated.View>
+        {attention !== undefined && atlas && <Animated.View style={[StyleSheet.absoluteFill, privateOpacity]}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, width: size, height: size, overflow: 'hidden', transformOrigin: 'top left' }, privateFrame]}>
+            <Animated.View style={[{ width: size * 3, height: size * 2 }, privateCell]}>
+              <Image source={PRIVACY} onLoad={() => setPrivacyReady(true)} style={{ width: size * 3, height: size * 2 }} contentFit="fill" transition={0} />
+            </Animated.View>
+          </Animated.View>
+        </Animated.View>}
+        {attention !== undefined && atlas && <Animated.View style={[StyleSheet.absoluteFill, peekOpacity]}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, width: size, height: size, overflow: 'hidden', transformOrigin: 'top left' }, peekFrame]}>
+            <Animated.View style={[{ width: size * 3, height: size * 2 }, peekCell]}>
+              <Image source={PEEK} onLoad={() => setPeekReady(true)} style={{ width: size * 3, height: size * 2 }} contentFit="fill" transition={0} />
+            </Animated.View>
+          </Animated.View>
+        </Animated.View>}
       </Animated.View>
     </View>
   );
 }
 
-function Ground({ t, enter, motion, size }: { t: SharedValue<number>; enter: SharedValue<number>; motion: RemyMotion; size: number }) {
-  const style = useAnimatedStyle(() => {
-    const f = frame(motion, t.value, size / 120);
-    return { opacity: 0.16 * enter.value * (1 - f.lift * 0.5), transform: [{ scaleX: 1 - f.lift * 0.28 }] };
-  });
+function Ground({ enter, size }: { enter: SharedValue<number>; size: number }) {
+  const style = useAnimatedStyle(() => ({ opacity: 0.13 * enter.value }));
   return <Animated.View style={[{ position: 'absolute', bottom: size * 0.085, width: size * 0.46, height: size * 0.07, borderRadius: size, backgroundColor: '#302238' }, style]} />;
 }
 
