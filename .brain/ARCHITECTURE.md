@@ -2,7 +2,7 @@
 type: architecture
 title: MedRecord_App Architecture
 project: MedRecord_App
-last_updated: 2026-11-03
+last_updated: 2026-11-04
 ---
 
 # MedRec architecture
@@ -23,6 +23,7 @@ The active implementation is `apps/mobile` + `apps/api`. The root legacy `mobile
 - Shared `Field` suppresses iOS automatic generation for secure new-password fields from initial mount, preventing UIKit's stuck yellow cover. Existing-login autofill and Android/web hints are retained; secure fields default to no autocorrect/spellcheck.
 - `src/ui/Remy.tsx` and `remyActing.ts`: clipped 3×2 sprite atlases in `assets/remy/acting`, shared-value frame selection, sparse blinks/glances/gestures, reversible password cover and peek states. `remyGeometry.ts` normalizes visible alpha height and foot position across original art and all frames. Form focus and visibility callbacks supply attention without passing input contents. Auth route focus/background stop decorative acting; reduced motion uses static expressions. `systemMotion.ts` shares a live OS Reduce Motion subscription with async race protection.
 - `src/ui/SocialSignIn.tsx`: disabled Google/Apple custom previews with identical metrics and centered logo/text groups. No provider authentication is activated.
+- `src/ui/motion.tsx`: shared motion primitives: `ease` curves (from `theme.curves`), `colorTransition` (Reanimated CSS colour transitions), `Rise`, and `useSlidingMarker` for tab and filter indicators. `app/_layout.tsx` defines push/sheet/cover route options, all of which fade under calm motion (DD-50).
 - `src/theme.ts`: semantic warm-folio light/dark colors and bundled typography; `src/prefs.ts` combines system/app/scoped reduced-motion preferences.
 - `src/remy/answer.ts`: own-record search, saved AI definitions, labeled glossary, fixed app help. It does not generate personal medical advice.
 

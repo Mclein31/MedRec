@@ -5,10 +5,30 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-11-03
+last_updated: 2026-11-04
 ---
 
 # 📜 MedRecord_App (MedRec) — Changelog
+
+## [Unreleased] — 2026-11-04 — Working profile edit and feature completeness (DD-51)
+
+- Profile tab: tappable avatar with camera badge and a photo sheet (take, choose, remove), an "Edit profile" CTA, and a "Finish your Medical ID" prompt listing missing facts. Sign out is a normal row.
+- Edit profile: fixed silent loss of allergies/conditions/medications typed without tapping Add (now saved with the form); added the user's own mobile number, read-only email, photo, inline validation for name/date/height/weight/phones, and a discard-changes guard. Medical ID's edit opens the same screen titled "Edit Medical ID".
+- Account deletion: `DELETE /api/auth/account` (password required) removes all R2 files and cascades every row. Security & privacy has the confirm flow; sign-in explains a deleted account or a changed password.
+- Records: add a record without a document ("No document? Type it in"); attach pages to an existing record; visible close mark on the full-screen page viewer; clearer Ask Remy affordance.
+- Share and Medical ID "Send" fall back to copying the link where the browser has no share sheet. Shared brand `Toggle` (no teal web thumb). Medical ID card blood type aligns with the name. First-record CTA reads "Add my first record" on web.
+- Mobile 31 tests, API 40 tests, both typechecks and web/iOS/Android exports pass. Web flows checked against a local API with a local-only QA account. Google/Apple sign-in remain disabled previews.
+
+## [Unreleased] — 2026-11-04 — Purposeful motion pass (DD-50)
+
+- Push routes use the platform push. Modal routes present as native sheets instead of cross-fading. Reduced motion fades everything.
+- One sliding persimmon marker for the tab bar and the Records filter tabs. Tab labels now share a baseline.
+- Shared curves (`theme.curves`, `motion.ease`), quicker press feedback, colour transitions on chips, choices and field focus.
+- Sheet enter/exit with a shared scrim, faster exit and interruptible reversal.
+- List row entrances no longer replay on scroll or pagination. The Records header fades in from loading.
+- Choreographed state swaps: outgoing content clears out before incoming content settles in (~310 ms). Add record steps travel sideways, and Back reverses. Record edit mode, access ended, Ask Remy's first question, and the health summary all swap in place.
+- Filtered-out record rows fade while the remaining rows glide together. Banners settle in.
+- iOS page sheets no longer reserve a status-bar gap at the top.
 
 ## [Unreleased] — 2026-11-03 — Two startup stories and a native preview (DD-49)
 

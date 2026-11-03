@@ -7,10 +7,35 @@ tags:
   - architecture
   - backend
   - mobile
-last_updated: 2026-11-03
+last_updated: 2026-11-04
 ---
 
 # 📜 MedRecord_App (MedRec) — Technical Decisions
+
+## 2026-11-04 — Profile editing that saves what people type, and in-app account deletion (DD-51)
+
+The profile edit form dropped list entries (allergies, conditions, medications) that were typed but not confirmed with the small Add link, and saved silently. List drafts are now controlled by the screen and merged on save (`src/listDraft.ts`, unit-tested). The user's own `phone` column was never editable; it now is, with read-only email and photo on the same screen. Medical ID and Profile both open `profile-edit` (`section=medical` changes only the title and hides personal-only fields). Validation runs client-side with the server's limits; server field errors still map to fields.
+
+Account deletion is a store requirement for apps with sign-up. `DELETE /api/auth/account` requires the current password, deletes every R2 object (record files and avatar) first, then the user row; FK cascades remove all owned rows including append-only activity (RI cascades are not blocked by the app role's RLS — verified by test). Sign-out now carries a reason (`passwordChanged`, `deleted`) that sign-in shows as a calm notice. Records can be created without a document and pages can be attached later via the existing attach endpoint; pages added later are not AI-read.
+
+Coordinated with the concurrent motion session (DD-50): it owns core/form/layout/motion/Sheet/theme, the tab and records layouts, root layout and `share/new`; this pass only appended `Toggle` to `form.tsx`. Google/Apple sign-in stay disabled. Not verified here: native camera/photo pickers for avatar and page attachment on device, and the page-attach sheet's iOS present-after-dismiss delay (400 ms).
+
+---
+
+## 2026-11-04 — Purposeful navigation and interaction motion (DD-50)
+
+Motion now says where things live and what changed, and stays off the JS thread.
+
+- **Navigation:** drill-down routes use the platform push (`animation: 'default'`, edge swipe-back). Activity, profile-edit, summary and Ask Remy present as native sheets (previously they inherited the root `fade` and cross-dissolved). Add record and the tour cover from below. Root auth/app swaps keep the 180 ms fade. Under system Reduce Motion or in-app Gentler motion, every route fades.
+- **Tabs:** tab content keeps the short fade (peers never slide). One persimmon marker travels between tabs (`useSlidingMarker` in `src/ui/motion.tsx`, 240 ms ease-in-out, transform only) instead of per-tab underlines fading independently. The Records filter `TextTabs` uses the same marker. All tab-bar items share a 40 pt icon slot, label and 3 pt underline row, so the Add record label shares the baseline.
+- **Curves:** `curves` in `theme.ts` and `ease` in `motion.tsx` replace `Easing.out(cubic)`: strong ease-out for entrances and state changes, ease-in-out for on-screen movement, the iOS sheet curve for sheets. Never ease-in on UI.
+- **Press:** 120 ms press-in, 160 ms release, scale 0.97, `pressRetentionOffset` 16. Reduced/gentler motion swaps scale for opacity. `Tappable transition` opts into 150 ms background/border colour easing (Chip, Choice). Field focus borders use the same CSS transition. Colour still changes under calm motion, which explains state.
+- **Sheet:** Modal `animationType="none"`. Scrim and card share one progress value: 320 ms in on the sheet curve, 220 ms out, unmount after exit, and reversal mid-exit. Calm motion fades only.
+- **Lists:** `Enter` (layout `entering`) runs only for a row's first appearance among the first six rows (max 250 ms stagger). Virtualization remounts and pagination never replay entrances. The Records header crossfades from the loading state.
+- **Choreographed swaps (`Swap` in motion.tsx):** when one region changes state, the outgoing content clears out (110 ms, 6 pt drift back), then the incoming content settles in (200 ms from 10 pt ahead, ease-out), for about 310 ms end to end. `order` makes step flows travel sideways: forward moves left, Back moves right. Each state remounts so it starts at the top. Outgoing content ignores touches, so a second tap can't repeat its action. Mid-exit changes retarget or reverse. Calm motion swaps at once. Used for: Add record steps (pages → reading → review → saved, whole screen incl. header/footer), record view ↔ edit, live share → access ended, Ask Remy intro → conversation, and health summary intro → result / rewrite. Not used for first-load → content where the header is unchanged.
+- **Lists reflow:** Records rows removed by a filter fade out (110 ms). Remaining rows glide into the gap (`itemLayoutAnimation` LinearTransition, 220 ms, native only), and rows newly brought in by the filter enter. The seen-row record resets on filter change, not on focus reloads. Banners settle in from 6 pt above.
+- **Sheet insets:** `useTopInset()` (layout.tsx) drops the status-bar inset for iOS page-sheet routes (`SHEET_ROUTES`, kept in sync with `sheet` in app/_layout.tsx). It reads the screen's own route, so the tab underneath keeps its inset.
+- Not yet verified on a device or simulator: tab-marker travel, sheet exit/reversal, swap timing/interruption, page-sheet top spacing, and push/sheet gestures need a release-build feel check on iPhone and a low-end Android.
 
 ## 2026-11-03 — Distinct first-use and authenticated arrivals, native startup preview (DD-49)
 

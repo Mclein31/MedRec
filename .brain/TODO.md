@@ -11,6 +11,9 @@ last_updated: 2026-10-26
 # 📋 MedRecord_App (MedRec) — TODO & Task Tracker
 
 ## 🔴 High Priority
+- [x] Working profile edit (list drafts saved, phone, photo, validation), in-app account deletion, records without documents, attach pages later (DD-51, 2026-11-04).
+- [ ] Device QA for DD-51: avatar camera/library and page attachment pickers on physical iOS/Android; native-sheet top spacing on profile edit.
+- [ ] Google and Apple sign-in: provider setup and real OAuth (buttons are intentionally disabled previews until configured).
 - [ ] v2 UI (DD-45): device QA of Remy motion, haptics, safe areas, keyboard and VoiceOver/TalkBack on real iOS/Android; dark-mode visual pass (tokens mapped, no dark design exists).
 - [ ] v2: decide whether Ask Remy needs a real conversational backend; today it only searches records, explains saved terms and gives app help.
 - [ ] v2: create Neon project, R2 bucket, Gmail App Password and Gemini key; deploy `apps/api` with `--env production` (steps in apps/README.md).
