@@ -1,106 +1,761 @@
 {
-  "version": 1,
-  "title": "MedRec",
-  "summary": "A mobile medical-records vault: patients scan or enter their records, have documents read by AI, and share time-limited QR links with clinicians or expose an emergency Medical ID page.",
-  "nodes": [
-    {"id": "actor.patient", "label": "Patient", "kind": "actor", "layer": "frontend", "detail": "The account owner who keeps records, shares them and manages security.", "file": ""},
-    {"id": "actor.clinician", "label": "Clinician (share link)", "kind": "actor", "layer": "frontend", "detail": "A doctor or clinic who opens a patient's QR share link in a browser, no account needed.", "file": ""},
-    {"id": "actor.responder", "label": "Emergency responder", "kind": "actor", "layer": "frontend", "detail": "First responder who scans the Medical ID QR to see emergency information.", "file": ""},
-    {"id": "ui.root", "label": "App shell and routing", "kind": "component", "layer": "frontend", "detail": "Root layout: fonts, launch animation, first-use and session routing, app lock.", "file": "apps/mobile/app/_layout.tsx"},
-    {"id": "ui.onboarding", "label": "Onboarding tour", "kind": "screen", "layer": "frontend", "detail": "Five-scene Remy introduction shown on first use.", "file": "apps/mobile/src/screens/Onboarding.tsx"},
-    {"id": "ui.auth", "label": "Auth screens", "kind": "screen", "layer": "frontend", "detail": "Sign in, register, one-time code and forgot password screens.", "file": "apps/mobile/app/(auth)/sign-in.tsx"},
-    {"id": "ui.records", "label": "Records tab", "kind": "screen", "layer": "frontend", "detail": "Home list of records with category filters and search.", "file": "apps/mobile/app/(tabs)/index.tsx"},
-    {"id": "ui.add", "label": "Add record", "kind": "screen", "layer": "frontend", "detail": "Capture or pick pages, scan with AI, review and save a record.", "file": "apps/mobile/app/add.tsx"},
-    {"id": "ui.record", "label": "Record detail", "kind": "screen", "layer": "frontend", "detail": "View a record with its files, edit or delete it, and get an AI explanation.", "file": "apps/mobile/app/record/[id].tsx"},
-    {"id": "ui.medical", "label": "Medical ID tab", "kind": "screen", "layer": "frontend", "detail": "Allergies, conditions, medications and emergency contacts.", "file": "apps/mobile/app/(tabs)/medical.tsx"},
-    {"id": "ui.share", "label": "Share tab", "kind": "screen", "layer": "frontend", "detail": "Create share links with scope and duration, show QR code, list and revoke shares.", "file": "apps/mobile/app/(tabs)/share.tsx"},
-    {"id": "ui.profile", "label": "Profile and security", "kind": "screen", "layer": "frontend", "detail": "Profile, preferences, sessions, trusted devices, export, activity and account deletion.", "file": "apps/mobile/app/(tabs)/profile.tsx"},
-    {"id": "ui.remy", "label": "Remy assistant", "kind": "screen", "layer": "frontend", "detail": "On-device helper answering from the user's own records, a glossary and app help.", "file": "apps/mobile/app/remy.tsx"},
-    {"id": "ui.lock", "label": "App lock", "kind": "component", "layer": "frontend", "detail": "Biometric or passcode gate before showing the vault.", "file": "apps/mobile/src/lock.tsx"},
-    {"id": "ui.session", "label": "Session state", "kind": "component", "layer": "frontend", "detail": "Signed-in user state and single-flight token refresh.", "file": "apps/mobile/src/auth.tsx"},
-    {"id": "ui.client", "label": "API client", "kind": "component", "layer": "frontend", "detail": "Typed fetch layer that discovers the API host and attaches the session token.", "file": "apps/mobile/src/lib/http.ts"},
-    {"id": "store.secure", "label": "SecureStore", "kind": "store", "layer": "frontend", "detail": "Device keychain holding tokens, preferences and the lock setting.", "file": "apps/mobile/src/lib/storage.ts"},
-    {"id": "api.mw", "label": "Worker middleware", "kind": "api", "layer": "backend", "detail": "Hono app: config checks, CORS, no-store headers, uniform errors and hourly cleanup.", "file": "apps/api/src/app.ts"},
-    {"id": "api.auth", "label": "Auth APIs", "kind": "api", "layer": "backend", "detail": "/api/auth register, login, verify, refresh, password, sessions and account deletion.", "file": "apps/api/src/routes/auth.ts"},
-    {"id": "api.profile", "label": "Profile APIs", "kind": "api", "layer": "backend", "detail": "/api/profile profile, emergency Medical ID and avatar.", "file": "apps/api/src/routes/profile.ts"},
-    {"id": "api.records", "label": "Records APIs", "kind": "api", "layer": "backend", "detail": "/api/records list, CRUD, file upload and AI scan.", "file": "apps/api/src/routes/records.ts"},
-    {"id": "api.shares", "label": "Shares APIs", "kind": "api", "layer": "backend", "detail": "/api/shares create, list, revoke and revoke-all.", "file": "apps/api/src/routes/shares.ts"},
-    {"id": "api.vault", "label": "Vault APIs", "kind": "api", "layer": "backend", "detail": "Activity feed, AI history summary and full data export.", "file": "apps/api/src/routes/vault.ts"},
-    {"id": "api.public", "label": "Public pages", "kind": "api", "layer": "backend", "detail": "Unauthenticated /s/:token share view, /e/:slug emergency page and signed /files/:key.", "file": "apps/api/src/routes/public.tsx"},
-    {"id": "svc.auth", "label": "Auth and OTP logic", "kind": "service", "layer": "backend", "detail": "JWT, session and token version checks plus bounded one-time email codes.", "file": "apps/api/src/lib/auth.ts"},
-    {"id": "svc.security", "label": "Security helpers", "kind": "service", "layer": "backend", "detail": "Rate limits, share tokens and HMAC-signed expiring file paths.", "file": "apps/api/src/lib/security.ts"},
-    {"id": "svc.shares", "label": "Share scoping", "kind": "service", "layer": "backend", "detail": "Resolves a token to active, expired or revoked and selects the shared records.", "file": "apps/api/src/lib/shares.ts"},
-    {"id": "svc.ai", "label": "Document AI", "kind": "service", "layer": "backend", "detail": "Reads scanned pages and summarises history with structured output and guardrails.", "file": "apps/api/src/lib/gemini.ts"},
-    {"id": "svc.db", "label": "DB access layer", "kind": "service", "layer": "backend", "detail": "Runs each query with the user's row-level-security context set.", "file": "apps/api/src/lib/db.ts"},
-    {"id": "job.cleanup", "label": "Hourly cleanup", "kind": "job", "layer": "backend", "detail": "Scheduled job removing expired drafts and their stored files.", "file": "apps/api/src/app.ts"},
-    {"id": "store.pg", "label": "Postgres (Neon)", "kind": "store", "layer": "backend", "detail": "Users, sessions, profiles, records, shares, activity and rate limits with forced RLS.", "file": "apps/api/migrations/001_init.sql"},
-    {"id": "store.r2", "label": "R2 vault bucket", "kind": "store", "layer": "backend", "detail": "Private object storage for record pages and avatars.", "file": "apps/api/wrangler.toml"},
-    {"id": "ext.gemini", "label": "Gemini API", "kind": "external", "layer": "external", "detail": "Google model that reads documents and writes summaries.", "file": ""},
-    {"id": "ext.smtp", "label": "Gmail SMTP", "kind": "external", "layer": "external", "detail": "Sends sign-in and password-reset codes by email.", "file": "apps/api/src/lib/smtp.ts"}
-  ],
-  "edges": [
-    {"from": "actor.patient", "to": "ui.root", "label": "opens app"},
-    {"from": "ui.root", "to": "ui.onboarding", "label": "first use"},
-    {"from": "ui.root", "to": "ui.lock", "label": "gates"},
-    {"from": "ui.root", "to": "ui.auth", "label": "signed out"},
-    {"from": "ui.root", "to": "ui.records", "label": "signed in"},
-    {"from": "ui.records", "to": "ui.add", "label": "adds"},
-    {"from": "ui.records", "to": "ui.record", "label": "opens"},
-    {"from": "ui.records", "to": "ui.remy", "label": "asks"},
-    {"from": "ui.records", "to": "ui.medical", "label": "tabs"},
-    {"from": "ui.records", "to": "ui.share", "label": "tabs"},
-    {"from": "ui.records", "to": "ui.profile", "label": "tabs"},
-    {"from": "ui.auth", "to": "ui.session", "label": "stores session"},
-    {"from": "ui.session", "to": "store.secure", "label": "persists tokens"},
-    {"from": "ui.lock", "to": "store.secure", "label": "reads setting"},
-    {"from": "ui.auth", "to": "ui.client", "label": "calls"},
-    {"from": "ui.records", "to": "ui.client", "label": "GET /records"},
-    {"from": "ui.add", "to": "ui.client", "label": "scan and save"},
-    {"from": "ui.record", "to": "ui.client", "label": "edit, delete"},
-    {"from": "ui.medical", "to": "ui.client", "label": "PUT /emergency"},
-    {"from": "ui.share", "to": "ui.client", "label": "POST /shares"},
-    {"from": "ui.profile", "to": "ui.client", "label": "sessions, export"},
-    {"from": "ui.client", "to": "api.mw", "label": "HTTPS"},
-    {"from": "api.mw", "to": "api.auth", "label": "/api/auth"},
-    {"from": "api.mw", "to": "api.profile", "label": "/api/profile"},
-    {"from": "api.mw", "to": "api.records", "label": "/api/records"},
-    {"from": "api.mw", "to": "api.shares", "label": "/api/shares"},
-    {"from": "api.mw", "to": "api.vault", "label": "/api"},
-    {"from": "api.mw", "to": "api.public", "label": "/"},
-    {"from": "api.auth", "to": "svc.auth", "label": "verifies"},
-    {"from": "svc.auth", "to": "ext.smtp", "label": "emails code"},
-    {"from": "ext.smtp", "to": "actor.patient", "label": "delivers code"},
-    {"from": "api.auth", "to": "svc.security", "label": "rate limits"},
-    {"from": "api.records", "to": "svc.ai", "label": "scan"},
-    {"from": "api.vault", "to": "svc.ai", "label": "summary"},
-    {"from": "svc.ai", "to": "ext.gemini", "label": "reads document"},
-    {"from": "api.records", "to": "svc.db", "label": "queries"},
-    {"from": "api.auth", "to": "svc.db", "label": "queries"},
-    {"from": "api.profile", "to": "svc.db", "label": "queries"},
-    {"from": "api.shares", "to": "svc.db", "label": "writes shares"},
-    {"from": "api.vault", "to": "svc.db", "label": "reads"},
-    {"from": "svc.shares", "to": "svc.db", "label": "reads"},
-    {"from": "svc.db", "to": "store.pg", "label": "RLS queries"},
-    {"from": "api.records", "to": "store.r2", "label": "stores pages"},
-    {"from": "api.profile", "to": "store.r2", "label": "stores avatar"},
-    {"from": "api.shares", "to": "svc.security", "label": "mints token"},
-    {"from": "api.public", "to": "svc.shares", "label": "opens share"},
-    {"from": "api.public", "to": "svc.db", "label": "reads profile"},
-    {"from": "api.public", "to": "svc.security", "label": "signs files"},
-    {"from": "api.public", "to": "store.r2", "label": "serves files"},
-    {"from": "job.cleanup", "to": "store.r2", "label": "deletes drafts"},
-    {"from": "api.mw", "to": "job.cleanup", "label": "hourly"},
-    {"from": "api.public", "to": "actor.clinician", "label": "share page"},
-    {"from": "api.public", "to": "actor.responder", "label": "emergency page"},
-    {"from": "ui.share", "to": "actor.clinician", "label": "QR link"},
-    {"from": "ui.medical", "to": "actor.responder", "label": "Medical ID QR"}
-  ],
-  "flows": [
-    {"name": "Sign in with email code", "steps": ["actor.patient", "ui.root", "ui.auth", "ui.client", "api.mw", "api.auth", "svc.auth", "ext.smtp", "actor.patient"]},
-    {"name": "Scan and save a record", "steps": ["actor.patient", "ui.root", "ui.records", "ui.add", "ui.client", "api.mw", "api.records", "svc.ai", "ext.gemini"]},
-    {"name": "Share records by QR", "steps": ["actor.patient", "ui.root", "ui.records", "ui.share", "ui.client", "api.mw", "api.shares", "svc.db", "store.pg"]},
-    {"name": "Clinician opens a share link", "steps": ["actor.clinician", "api.public", "svc.shares", "svc.db", "store.pg"]},
-    {"name": "Emergency Medical ID", "steps": ["actor.patient", "ui.root", "ui.records", "ui.medical", "ui.client", "api.mw", "api.profile", "svc.db", "store.pg"]},
-    {"name": "Responder views Medical ID", "steps": ["actor.responder", "api.public", "svc.db", "store.pg"]}
-  ]
+ "version": 1,
+ "title": "MedRec",
+ "summary": "A mobile medical-records vault: patients scan or enter their records, have documents read by AI, and share time-limited QR links with clinicians or expose an emergency Medical ID page.",
+ "nodes": [
+  {
+   "id": "actor.patient",
+   "label": "Patient",
+   "kind": "actor",
+   "layer": "frontend",
+   "detail": "The account owner who keeps records, shares them and manages security.",
+   "file": ""
+  },
+  {
+   "id": "actor.clinician",
+   "label": "Clinician (share link)",
+   "kind": "actor",
+   "layer": "frontend",
+   "detail": "A doctor or clinic who opens a patient's QR share link in a browser, no account needed.",
+   "file": ""
+  },
+  {
+   "id": "actor.responder",
+   "label": "Emergency responder",
+   "kind": "actor",
+   "layer": "frontend",
+   "detail": "First responder who scans the Medical ID QR to see emergency information.",
+   "file": ""
+  },
+  {
+   "id": "ui.root",
+   "label": "App shell and routing",
+   "kind": "component",
+   "layer": "frontend",
+   "detail": "Root layout: fonts, launch animation, first-use and session routing, app lock.",
+   "file": "apps/mobile/app/_layout.tsx"
+  },
+  {
+   "id": "ui.onboarding",
+   "label": "Onboarding tour",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Five-scene Remy introduction shown on first use.",
+   "file": "apps/mobile/src/screens/Onboarding.tsx"
+  },
+  {
+   "id": "ui.auth",
+   "label": "Auth screens",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Sign in, register, one-time code and forgot password screens.",
+   "file": "apps/mobile/app/(auth)/sign-in.tsx"
+  },
+  {
+   "id": "ui.records",
+   "label": "Records tab",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Home list of records with category filters and search.",
+   "file": "apps/mobile/app/(tabs)/index.tsx"
+  },
+  {
+   "id": "ui.add",
+   "label": "Add record",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Capture or pick pages, scan with AI, review and save a record.",
+   "file": "apps/mobile/app/add.tsx"
+  },
+  {
+   "id": "ui.record",
+   "label": "Record detail",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "View a record with its files, edit or delete it, and get an AI explanation.",
+   "file": "apps/mobile/app/record/[id].tsx"
+  },
+  {
+   "id": "ui.medical",
+   "label": "Medical ID tab",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Allergies, conditions, medications and emergency contacts.",
+   "file": "apps/mobile/app/(tabs)/medical.tsx"
+  },
+  {
+   "id": "ui.share",
+   "label": "Share tab",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Create share links with scope and duration, show QR code, list and revoke shares.",
+   "file": "apps/mobile/app/(tabs)/share.tsx"
+  },
+  {
+   "id": "ui.profile",
+   "label": "Profile and security",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Profile, preferences, sessions, trusted devices, export, activity and account deletion.",
+   "file": "apps/mobile/app/(tabs)/profile.tsx"
+  },
+  {
+   "id": "ui.remy",
+   "label": "Remy assistant",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "On-device helper answering from the user's own records, a glossary and app help.",
+   "file": "apps/mobile/app/remy.tsx"
+  },
+  {
+   "id": "ui.lock",
+   "label": "App lock",
+   "kind": "component",
+   "layer": "frontend",
+   "detail": "Biometric or passcode gate before showing the vault.",
+   "file": "apps/mobile/src/lock.tsx"
+  },
+  {
+   "id": "ui.session",
+   "label": "Session state",
+   "kind": "component",
+   "layer": "frontend",
+   "detail": "Signed-in user state and single-flight token refresh.",
+   "file": "apps/mobile/src/auth.tsx"
+  },
+  {
+   "id": "ui.client",
+   "label": "API client",
+   "kind": "component",
+   "layer": "frontend",
+   "detail": "Typed fetch layer that discovers the API host and attaches the session token.",
+   "file": "apps/mobile/src/lib/http.ts"
+  },
+  {
+   "id": "store.secure",
+   "label": "SecureStore",
+   "kind": "store",
+   "layer": "frontend",
+   "detail": "Device keychain holding tokens, preferences and the lock setting.",
+   "file": "apps/mobile/src/lib/storage.ts"
+  },
+  {
+   "id": "api.mw",
+   "label": "Worker middleware",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "Hono app: config checks, CORS, no-store headers, uniform errors and hourly cleanup.",
+   "file": "apps/api/src/app.ts"
+  },
+  {
+   "id": "api.auth",
+   "label": "Auth APIs",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "/api/auth register, login, verify, refresh, password, sessions and account deletion.",
+   "file": "apps/api/src/routes/auth.ts"
+  },
+  {
+   "id": "api.profile",
+   "label": "Profile APIs",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "/api/profile profile, emergency Medical ID and avatar.",
+   "file": "apps/api/src/routes/profile.ts"
+  },
+  {
+   "id": "api.records",
+   "label": "Records APIs",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "/api/records list, CRUD, file upload and AI scan.",
+   "file": "apps/api/src/routes/records.ts"
+  },
+  {
+   "id": "api.shares",
+   "label": "Shares APIs",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "/api/shares create, list, revoke and revoke-all.",
+   "file": "apps/api/src/routes/shares.ts"
+  },
+  {
+   "id": "api.vault",
+   "label": "Vault APIs",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "Activity feed, AI history summary and full data export.",
+   "file": "apps/api/src/routes/vault.ts"
+  },
+  {
+   "id": "api.public",
+   "label": "Public pages",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "Unauthenticated /s/:token share view, /e/:slug emergency page and signed /files/:key.",
+   "file": "apps/api/src/routes/public.tsx"
+  },
+  {
+   "id": "svc.auth",
+   "label": "Auth and OTP logic",
+   "kind": "service",
+   "layer": "backend",
+   "detail": "JWT, session and token version checks plus bounded one-time email codes.",
+   "file": "apps/api/src/lib/auth.ts"
+  },
+  {
+   "id": "svc.security",
+   "label": "Security helpers",
+   "kind": "service",
+   "layer": "backend",
+   "detail": "Rate limits, share tokens and HMAC-signed expiring file paths.",
+   "file": "apps/api/src/lib/security.ts"
+  },
+  {
+   "id": "svc.shares",
+   "label": "Share scoping",
+   "kind": "service",
+   "layer": "backend",
+   "detail": "Resolves a token to active, expired or revoked and selects the shared records.",
+   "file": "apps/api/src/lib/shares.ts"
+  },
+  {
+   "id": "svc.ai",
+   "label": "Document AI",
+   "kind": "service",
+   "layer": "backend",
+   "detail": "Reads scanned pages and summarises history with structured output and guardrails.",
+   "file": "apps/api/src/lib/gemini.ts"
+  },
+  {
+   "id": "svc.db",
+   "label": "DB access layer",
+   "kind": "service",
+   "layer": "backend",
+   "detail": "Runs each query with the user's row-level-security context set.",
+   "file": "apps/api/src/lib/db.ts"
+  },
+  {
+   "id": "job.cleanup",
+   "label": "Hourly cleanup",
+   "kind": "job",
+   "layer": "backend",
+   "detail": "Scheduled job removing expired drafts and their stored files.",
+   "file": "apps/api/src/app.ts"
+  },
+  {
+   "id": "store.pg",
+   "label": "Postgres (Neon)",
+   "kind": "store",
+   "layer": "backend",
+   "detail": "Users, sessions, profiles, records, shares, activity and rate limits with forced RLS.",
+   "file": "apps/api/migrations/001_init.sql"
+  },
+  {
+   "id": "store.r2",
+   "label": "R2 vault bucket",
+   "kind": "store",
+   "layer": "backend",
+   "detail": "Private object storage for record pages and avatars.",
+   "file": "apps/api/wrangler.toml"
+  },
+  {
+   "id": "ext.gemini",
+   "label": "Gemini API",
+   "kind": "external",
+   "layer": "external",
+   "detail": "Google model that reads documents and writes summaries.",
+   "file": ""
+  },
+  {
+   "id": "ext.smtp",
+   "label": "Gmail SMTP",
+   "kind": "external",
+   "layer": "external",
+   "detail": "Sends sign-in and password-reset codes by email.",
+   "file": "apps/api/src/lib/smtp.ts"
+  },
+  {
+   "id": "dec.pw",
+   "label": "Password correct?",
+   "kind": "decision",
+   "layer": "backend",
+   "detail": "Login rejects unknown emails, locked accounts and wrong passwords (401/423); right ones continue to email verification or a session.",
+   "file": "apps/api/src/routes/auth.ts"
+  },
+  {
+   "id": "dec.otp",
+   "label": "Code valid?",
+   "kind": "decision",
+   "layer": "backend",
+   "detail": "verifyChallenge rejects wrong, used, expired or over-attempted one-time codes.",
+   "file": "apps/api/src/lib/otp.ts"
+  },
+  {
+   "id": "dec.session",
+   "label": "Session valid?",
+   "kind": "decision",
+   "layer": "backend",
+   "detail": "requireAuth checks the access token, an open unexpired session and the token version (401 SESSION_EXPIRED otherwise).",
+   "file": "apps/api/src/lib/auth.ts"
+  },
+  {
+   "id": "dec.share",
+   "label": "Share link active?",
+   "kind": "decision",
+   "layer": "backend",
+   "detail": "openShare returns a share only if the token is valid and not expired or revoked; otherwise the unavailable page (404).",
+   "file": "apps/api/src/lib/shares.ts"
+  },
+  {
+   "id": "dec.emergency",
+   "label": "Medical ID enabled?",
+   "kind": "decision",
+   "layer": "backend",
+   "detail": "The emergency page loads only for a well-formed slug whose owner has the emergency Medical ID turned on.",
+   "file": "apps/api/src/routes/public.tsx"
+  },
+  {
+   "id": "dec.file",
+   "label": "File link valid?",
+   "kind": "decision",
+   "layer": "backend",
+   "detail": "Signed file URLs are served only while the signature and expiry verify (403 LINK_EXPIRED otherwise).",
+   "file": "apps/api/src/routes/public.tsx"
+  }
+ ],
+ "edges": [
+  {
+   "from": "actor.patient",
+   "to": "ui.root",
+   "label": "opens app"
+  },
+  {
+   "from": "ui.root",
+   "to": "ui.onboarding",
+   "label": "first use"
+  },
+  {
+   "from": "ui.root",
+   "to": "ui.lock",
+   "label": "gates"
+  },
+  {
+   "from": "ui.root",
+   "to": "ui.auth",
+   "label": "signed out"
+  },
+  {
+   "from": "ui.root",
+   "to": "ui.records",
+   "label": "signed in"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.add",
+   "label": "adds"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.record",
+   "label": "opens"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.remy",
+   "label": "asks"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.medical",
+   "label": "tabs"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.share",
+   "label": "tabs"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.profile",
+   "label": "tabs"
+  },
+  {
+   "from": "ui.auth",
+   "to": "ui.session",
+   "label": "stores session"
+  },
+  {
+   "from": "ui.session",
+   "to": "store.secure",
+   "label": "persists tokens"
+  },
+  {
+   "from": "ui.lock",
+   "to": "store.secure",
+   "label": "reads setting"
+  },
+  {
+   "from": "ui.auth",
+   "to": "ui.client",
+   "label": "calls"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.client",
+   "label": "GET /records"
+  },
+  {
+   "from": "ui.add",
+   "to": "ui.client",
+   "label": "scan and save"
+  },
+  {
+   "from": "ui.record",
+   "to": "ui.client",
+   "label": "edit, delete"
+  },
+  {
+   "from": "ui.medical",
+   "to": "ui.client",
+   "label": "PUT /emergency"
+  },
+  {
+   "from": "ui.share",
+   "to": "ui.client",
+   "label": "POST /shares"
+  },
+  {
+   "from": "ui.profile",
+   "to": "ui.client",
+   "label": "sessions, export"
+  },
+  {
+   "from": "ui.client",
+   "to": "api.mw",
+   "label": "HTTPS"
+  },
+  {
+   "from": "api.mw",
+   "to": "api.auth",
+   "label": "/api/auth"
+  },
+  {
+   "from": "api.mw",
+   "to": "api.public",
+   "label": "/"
+  },
+  {
+   "from": "svc.auth",
+   "to": "ext.smtp",
+   "label": "emails code"
+  },
+  {
+   "from": "ext.smtp",
+   "to": "actor.patient",
+   "label": "delivers code"
+  },
+  {
+   "from": "api.auth",
+   "to": "svc.security",
+   "label": "rate limits"
+  },
+  {
+   "from": "api.records",
+   "to": "svc.ai",
+   "label": "scan"
+  },
+  {
+   "from": "api.vault",
+   "to": "svc.ai",
+   "label": "summary"
+  },
+  {
+   "from": "svc.ai",
+   "to": "ext.gemini",
+   "label": "reads document"
+  },
+  {
+   "from": "api.records",
+   "to": "svc.db",
+   "label": "queries"
+  },
+  {
+   "from": "api.auth",
+   "to": "svc.db",
+   "label": "queries"
+  },
+  {
+   "from": "api.profile",
+   "to": "svc.db",
+   "label": "queries"
+  },
+  {
+   "from": "api.shares",
+   "to": "svc.db",
+   "label": "writes shares"
+  },
+  {
+   "from": "api.vault",
+   "to": "svc.db",
+   "label": "reads"
+  },
+  {
+   "from": "svc.db",
+   "to": "store.pg",
+   "label": "RLS queries"
+  },
+  {
+   "from": "api.records",
+   "to": "store.r2",
+   "label": "stores pages"
+  },
+  {
+   "from": "api.profile",
+   "to": "store.r2",
+   "label": "stores avatar"
+  },
+  {
+   "from": "api.shares",
+   "to": "svc.security",
+   "label": "mints token"
+  },
+  {
+   "from": "api.public",
+   "to": "svc.shares",
+   "label": "opens share"
+  },
+  {
+   "from": "api.public",
+   "to": "svc.security",
+   "label": "signs files"
+  },
+  {
+   "from": "job.cleanup",
+   "to": "store.r2",
+   "label": "deletes drafts"
+  },
+  {
+   "from": "api.mw",
+   "to": "job.cleanup",
+   "label": "hourly"
+  },
+  {
+   "from": "api.public",
+   "to": "actor.clinician",
+   "label": "share page"
+  },
+  {
+   "from": "api.public",
+   "to": "actor.responder",
+   "label": "emergency page"
+  },
+  {
+   "from": "ui.share",
+   "to": "actor.clinician",
+   "label": "QR link"
+  },
+  {
+   "from": "ui.medical",
+   "to": "actor.responder",
+   "label": "Medical ID QR"
+  },
+  {
+   "from": "api.auth",
+   "to": "dec.pw",
+   "label": "checks login"
+  },
+  {
+   "from": "dec.pw",
+   "to": "svc.auth",
+   "label": "yes: sends code"
+  },
+  {
+   "from": "dec.pw",
+   "to": "ui.auth",
+   "label": "no: rejected"
+  },
+  {
+   "from": "svc.auth",
+   "to": "dec.otp",
+   "label": "verifies code"
+  },
+  {
+   "from": "dec.otp",
+   "to": "svc.db",
+   "label": "yes: opens session"
+  },
+  {
+   "from": "dec.otp",
+   "to": "ui.auth",
+   "label": "no: try again"
+  },
+  {
+   "from": "dec.session",
+   "to": "api.profile",
+   "label": "yes"
+  },
+  {
+   "from": "dec.session",
+   "to": "api.records",
+   "label": "yes"
+  },
+  {
+   "from": "dec.session",
+   "to": "api.shares",
+   "label": "yes"
+  },
+  {
+   "from": "dec.session",
+   "to": "api.vault",
+   "label": "yes"
+  },
+  {
+   "from": "api.mw",
+   "to": "dec.session",
+   "label": "checks token"
+  },
+  {
+   "from": "dec.session",
+   "to": "ui.auth",
+   "label": "no: sign in again"
+  },
+  {
+   "from": "svc.shares",
+   "to": "dec.share",
+   "label": "checks state"
+  },
+  {
+   "from": "dec.share",
+   "to": "svc.db",
+   "label": "yes: reads share"
+  },
+  {
+   "from": "dec.share",
+   "to": "actor.clinician",
+   "label": "no: link unavailable"
+  },
+  {
+   "from": "api.public",
+   "to": "dec.emergency",
+   "label": "emergency page"
+  },
+  {
+   "from": "dec.emergency",
+   "to": "svc.db",
+   "label": "yes: reads profile"
+  },
+  {
+   "from": "dec.emergency",
+   "to": "actor.responder",
+   "label": "no: unavailable page"
+  },
+  {
+   "from": "api.public",
+   "to": "dec.file",
+   "label": "file link"
+  },
+  {
+   "from": "dec.file",
+   "to": "store.r2",
+   "label": "yes: serves file"
+  },
+  {
+   "from": "dec.file",
+   "to": "actor.clinician",
+   "label": "no: link expired"
+  }
+ ],
+ "flows": [
+  {
+   "name": "Sign in with email code",
+   "steps": [
+    "actor.patient",
+    "ui.root",
+    "ui.auth",
+    "ui.client",
+    "api.mw",
+    "api.auth",
+    "dec.pw",
+    "svc.auth",
+    "ext.smtp",
+    "actor.patient",
+    "ui.root",
+    "ui.auth",
+    "ui.client",
+    "api.mw",
+    "api.auth",
+    "dec.pw",
+    "svc.auth",
+    "dec.otp",
+    "svc.db"
+   ]
+  },
+  {
+   "name": "Scan and save a record",
+   "steps": [
+    "actor.patient",
+    "ui.root",
+    "ui.records",
+    "ui.add",
+    "ui.client",
+    "api.mw",
+    "dec.session",
+    "api.records",
+    "svc.ai",
+    "ext.gemini"
+   ]
+  },
+  {
+   "name": "Share records by QR",
+   "steps": [
+    "actor.patient",
+    "ui.root",
+    "ui.records",
+    "ui.share",
+    "ui.client",
+    "api.mw",
+    "dec.session",
+    "api.shares",
+    "svc.db",
+    "store.pg"
+   ]
+  },
+  {
+   "name": "Clinician opens a share link",
+   "steps": [
+    "actor.clinician",
+    "api.public",
+    "svc.shares",
+    "dec.share",
+    "svc.db",
+    "store.pg"
+   ]
+  },
+  {
+   "name": "Emergency Medical ID",
+   "steps": [
+    "actor.patient",
+    "ui.root",
+    "ui.records",
+    "ui.medical",
+    "ui.client",
+    "api.mw",
+    "dec.session",
+    "api.profile",
+    "svc.db",
+    "store.pg"
+   ]
+  },
+  {
+   "name": "Responder views Medical ID",
+   "steps": [
+    "actor.responder",
+    "api.public",
+    "dec.emergency",
+    "svc.db",
+    "store.pg"
+   ]
+  }
+ ]
 }
