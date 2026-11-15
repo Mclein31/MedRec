@@ -12,6 +12,15 @@ last_updated: 2026-11-15
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
 
+## [Unreleased] — 2026-11-15 — Multi-page records, dark mode, Medical ID fixes (DD-53)
+
+- Adding pages to a record now offers AI reading of all pages or manual editing; a page viewer shows every page (DD-53). API AI scan limit 18 → 14 MB (not yet deployed).
+- Dark mode: warm charcoal backgrounds instead of aubergine, and a soft glow behind Remy so his body doesn't blend in.
+- Health details: explicit "No known allergies / conditions / current medications" options.
+- Medical ID Call button: dials a cleaned `tel:` number and explains when the device can't call.
+- Onboarding: progress bar now exposed to VoiceOver; native UI test rewritten for the setup flow (passes on iPhone 16 Pro, Expo Go 58).
+- Sample documents for scan testing in `apps/mobile/validation/samples/`.
+
 ## [Unreleased] — 2026-11-15 — Production live, Expo SDK 58, personalized setup (DD-52)
 
 - Production: Neon migrated, Worker and 6 secrets deployed, `/api/ready` 200.
