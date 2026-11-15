@@ -123,6 +123,7 @@ function Routes() {
           <Stack.Screen name="profile-edit" options={sheet} />
           <Stack.Screen name="security" options={push} />
           <Stack.Screen name="tour" options={cover} />
+          <Stack.Screen name="personalize" options={cover} />
           <Stack.Screen name="summary" options={sheet} />
         </Stack.Protected>
       </Stack>

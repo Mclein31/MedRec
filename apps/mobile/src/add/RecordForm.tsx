@@ -1,5 +1,7 @@
 import { View } from 'react-native';
 import { isCivilDate, todayIso } from '../format';
+import { orderCategories } from '../personal';
+import { usePrefs } from '../prefs';
 import { CATEGORIES, CATEGORY_META, space, useColors } from '../theme';
 import { Tappable, Txt } from '../ui/core';
 import { Chip, Field } from '../ui/form';
@@ -34,6 +36,8 @@ export const toInput = (v: FormValue) => ({
 
 export function RecordForm({ value, onChange, errors, aiFilled }: { value: FormValue; onChange: (v: FormValue) => void; errors: Partial<Record<keyof FormValue, string>>; aiFilled?: boolean }) {
   const c = useColors();
+  // Record types picked during setup come first.
+  const chosen = usePrefs().personal.categories;
   const set = (k: keyof FormValue) => (text: string) => onChange({ ...value, [k]: text });
   return (
     <View style={{ gap: space.lg }}>
@@ -41,7 +45,7 @@ export function RecordForm({ value, onChange, errors, aiFilled }: { value: FormV
       <View style={{ gap: 6 }}>
         <Txt variant="label">Record type</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }} accessibilityRole="radiogroup">
-          {CATEGORIES.map((k) => (
+          {orderCategories(CATEGORIES, chosen).map((k) => (
             <Chip key={k} label={CATEGORY_META[k]!.label} selected={value.category === k} onPress={() => onChange({ ...value, category: k })} />
           ))}
         </View>

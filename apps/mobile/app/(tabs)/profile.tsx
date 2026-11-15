@@ -102,6 +102,7 @@ export default function ProfileTab() {
         <Row inset={false} icon="tray-arrow-down" title="Export my records" subtitle="A printable PDF or a full copy of your data" onPress={() => setSheet('export')} chevron={false} />
         <Row inset={false} icon="bell-outline" title="Activity" subtitle="Sign-ins, shares and who opened your links" value={unread ? `${unread} new` : null} onPress={() => router.push('/activity')} chevron={false} />
         <Row inset={false} icon="text-box-search-outline" title="Health summary" subtitle="Plain-language overview of your records" onPress={() => router.push('/summary')} chevron={false} />
+        <Row inset={false} icon="star-four-points-outline" title="Personalize MedRec" subtitle="Your goal, Records tabs and comfort settings" onPress={() => router.push('/personalize')} chevron={false} />
         <Row inset={false} icon="play-circle-outline" title="How MedRec works" subtitle="Replay the tour" onPress={() => router.push('/tour')} chevron={false} />
         <Row inset={false} icon="logout" title="Sign out" onPress={confirmSignOut} chevron={false} />
       </Group>

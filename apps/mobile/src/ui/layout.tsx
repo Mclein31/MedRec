@@ -1,4 +1,4 @@
-import { NavigationRouteContext } from '@react-navigation/native';
+import { NavigationRouteContext } from 'expo-router/react-navigation';
 import { useContext, useEffect, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeInDown, FadeOut, ReduceMotion } from 'react-native-reanimated';

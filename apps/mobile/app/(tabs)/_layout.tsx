@@ -1,4 +1,4 @@
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 import { router, Tabs } from 'expo-router';
 import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -19,7 +19,7 @@ const TABS: Record<string, { label: string; icon: IconName; active: IconName }> 
   profile: { label: 'Profile', icon: 'account-outline', active: 'account' },
 };
 
-function TabBar({ state, navigation }: BottomTabBarProps) {
+function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const marker = useSlidingMarker(state.routes[state.index]?.key, UNDERLINE);
@@ -34,8 +34,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           accessibilityState={{ selected: focused }}
           accessibilityLabel={meta.label}
           onPress={() => {
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+            const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) navigateToTab(route.key);
           }}
           style={ITEM}
         >

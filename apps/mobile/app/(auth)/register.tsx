@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { View, type TextInput } from 'react-native';
+import { View, type TextInputInstance } from 'react-native';
 import { useAuth } from '../../src/auth';
 import { ApiError } from '../../src/lib/http';
 import { fieldError, messageFor } from '../../src/lib/errors';
 import { setPending } from '../../src/pending';
+import { usePrefs } from '../../src/prefs';
 import { space, useColors } from '../../src/theme';
 import { AuthFrame } from '../../src/ui/AuthFrame';
 import { Banner, Button, Tappable, Txt } from '../../src/ui/core';
@@ -15,7 +16,9 @@ import { formAttention, type RemyAttention } from '../../src/ui/Remy';
 export default function Register() {
   const c = useColors();
   const { register } = useAuth();
-  const [name, setName] = useState('');
+  // Setup already asked what to call them; they can still change it here.
+  const asked = usePrefs().personal.name;
+  const [name, setName] = useState(asked);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<unknown>(null);
@@ -23,8 +26,8 @@ export default function Register() {
   const [attention, setAttention] = useState<RemyAttention>('idle');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const inFlight = useRef(false);
-  const emailRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const submit = async () => {
     if (inFlight.current) return;

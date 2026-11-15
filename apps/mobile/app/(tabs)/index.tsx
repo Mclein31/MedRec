@@ -12,12 +12,13 @@ import { BrandHeader } from '../../src/ui/brand';
 import { Banner, Icon, Tappable, Txt } from '../../src/ui/core';
 import { SearchField, TextTabs } from '../../src/ui/form';
 import { Enter, Rule, TAB_BAR_CLEARANCE } from '../../src/ui/layout';
-import { useCalmMotion } from '../../src/prefs';
+import { GOALS, orderCategories, pinnedCategories } from '../../src/personal';
+import { useCalmMotion, usePrefs } from '../../src/prefs';
 import { ease, Rise } from '../../src/ui/motion';
 import { RecordRow } from '../../src/ui/RecordRow';
 import { Sheet } from '../../src/ui/Sheet';
 
-const PINNED = ['lab', 'prescription'];
+const SHORTCUT_ROUTE = { remy: '/remy', share: '/(tabs)/share', medical: '/(tabs)/medical' } as const;
 
 export default function Records() {
   const c = useColors();
@@ -30,6 +31,10 @@ export default function Records() {
   const seen = useRef(new Set<string>());
   const filterKey = useRef('|');
   const calm = useCalmMotion();
+  // Setup answers: the first two picked record types get their own tab, and the goal adds one shortcut.
+  const { personal } = usePrefs();
+  const PINNED = pinnedCategories(personal.categories, CATEGORIES);
+  const shortcut = personal.goal ? GOALS[personal.goal].shortcut : null;
   const [more, setMore] = useState<{ cursor: string | null; loading: boolean; error: string | null }>({ cursor: null, loading: false, error: null });
 
   useEffect(() => {
@@ -82,7 +87,7 @@ export default function Records() {
         <OpeningRecords />
       ) : empty && !list.error ? (
         <Rise from={6}>
-          <FirstRecord />
+          <FirstRecord goal={personal.goal} />
         </Rise>
       ) : (
         <Rise from={6} style={{ gap: space.lg }}>
@@ -93,13 +98,24 @@ export default function Records() {
             onSelect={(k) => (k === 'more' ? setPicker(true) : setCategory(k === 'all' ? null : k))}
             items={[
               { key: 'all', label: 'All' },
-              { key: 'lab', label: 'Lab results' },
-              { key: 'prescription', label: 'Prescriptions' },
+              ...PINNED.map((k) => ({ key: k, label: CATEGORY_META[k]!.label })),
               { key: 'more', label: otherSelected ? CATEGORY_META[otherSelected]!.label : 'More', selected: !!otherSelected },
             ]}
           />
           {!filtering && (
             <>
+              {shortcut && (
+                <>
+                  <Tappable onPress={() => router.push(SHORTCUT_ROUTE[shortcut.to])} accessibilityLabel={`${shortcut.title}, ${shortcut.subtitle}`} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm }}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Txt variant="headline">{shortcut.title}</Txt>
+                      <Txt variant="caption" color={c.ink3}>{shortcut.subtitle}</Txt>
+                    </View>
+                    <Icon name="arrow-right" size={22} color={c.ink} />
+                  </Tappable>
+                  <Rule />
+                </>
+              )}
               <Tappable onPress={() => router.push('/summary')} accessibilityLabel="Your health summary" style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt variant="headline">Your health summary</Txt>
@@ -135,7 +151,7 @@ export default function Records() {
         )}
         ItemSeparatorComponent={() => <Rule />}
         ListHeaderComponent={header}
-        ListEmptyComponent={!hideRows && filtering && !list.loading && !list.error ? <NoMatch onClear={clear} /> : null}
+        ListEmptyComponent={!hideRows && filtering && !list.loading && !list.error ? <NoMatch onClear={clear} /> : undefined}
         ListFooterComponent={
           more.cursor && !hideRows ? (
             <View style={{ paddingVertical: space.lg }}>
@@ -143,7 +159,7 @@ export default function Records() {
             </View>
           ) : list.data?.length ? (
             <Rule />
-          ) : null
+          ) : undefined
         }
         // Rows that stay glide into the space left by rows a filter removed (native only, DD-44).
         itemLayoutAnimation={Platform.OS !== 'web' && !calm ? LinearTransition.duration(220).easing(ease.inOut) : undefined}
@@ -154,7 +170,7 @@ export default function Records() {
         keyboardShouldPersistTaps="handled"
       />
       <Sheet visible={picker} onClose={() => setPicker(false)} title="Record categories" message="Choose what you're looking for.">
-        {[null, ...CATEGORIES].map((k) => {
+        {[null, ...orderCategories(CATEGORIES, personal.categories)].map((k) => {
           const n = k ? counts?.counts[k] ?? 0 : counts?.total ?? 0;
           const on = category === k;
           return (

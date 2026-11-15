@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { Platform, Pressable, Switch, TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, Pressable, Switch, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useCalmMotion } from '../prefs';
 import { radius, space, type as t, useColors } from '../theme';
@@ -9,9 +9,9 @@ import { colorTransition, useSlidingMarker } from './motion';
 type FieldProps = TextInputProps & { label: string; hint?: string; error?: string | null; secureToggle?: boolean; onVisibilityChange?: (visible: boolean) => void };
 
 /** Always-visible label above the input; errors replace the hint and say what to do. */
-export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, hint, error, secureToggle, onVisibilityChange, style, ...input }, ref) {
+export const Field = forwardRef<TextInputInstance, FieldProps>(function Field({ label, hint, error, secureToggle, onVisibilityChange, style, ...input }, ref) {
   const c = useColors();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   useImperativeHandle(ref, () => inputRef.current!, []);
   const calm = useCalmMotion();
   const [focused, setFocused] = useState(false);
@@ -76,7 +76,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ label, h
 /** Six boxes over one real input, so paste and one-time-code autofill work. */
 export function CodeInput({ value, onChange, error, autoFocus = true }: { value: string; onChange: (v: string) => void; error?: boolean; autoFocus?: boolean }) {
   const c = useColors();
-  const ref = useRef<TextInput>(null);
+  const ref = useRef<TextInputInstance>(null);
   const [focused, setFocused] = useState(false);
   return (
     <Pressable onPress={() => ref.current?.focus()} accessible={false}>

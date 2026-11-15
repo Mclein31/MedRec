@@ -1,5 +1,5 @@
-import { Onboarding } from '../src/screens/Onboarding';
+import { Setup } from '../src/screens/Setup';
 
 export default function OnboardingRoute() {
-  return <Onboarding />;
+  return <Setup />;
 }

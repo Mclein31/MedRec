@@ -2,6 +2,7 @@ import { createContext, useContext, useSyncExternalStore } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 import { AccessibilityInfo } from 'react-native';
 import { KEYS, secure } from './lib/storage';
+import { NO_PERSONAL, sanitizePersonal, type Personal } from './personal';
 import { createSystemMotionSignal } from './ui/systemMotion';
 
 export interface Prefs {
@@ -9,9 +10,11 @@ export interface Prefs {
   /** Gentler motion on top of the system Reduce Motion setting. */
   gentleMotion: boolean;
   largerText: boolean;
+  /** First-use setup answers (name, goal, record types). Device-only. */
+  personal: Personal;
 }
 
-const DEFAULTS: Prefs = { appearance: 'system', gentleMotion: false, largerText: false };
+const DEFAULTS: Prefs = { appearance: 'system', gentleMotion: false, largerText: false, personal: NO_PERSONAL };
 
 let value: Prefs = DEFAULTS;
 const listeners = new Set<() => void>();
@@ -20,7 +23,10 @@ const emit = () => listeners.forEach((l) => l());
 export async function loadPrefs() {
   try {
     const raw = await secure.get(KEYS.prefs);
-    if (raw) value = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Prefs>) };
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Prefs>;
+      value = { ...DEFAULTS, ...parsed, personal: sanitizePersonal(parsed.personal) };
+    }
   } catch {
     value = DEFAULTS;
   }
