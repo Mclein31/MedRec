@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth';
 import { AppLockGate } from '../src/lock';
 import { loadOnboarded, useOnboarded } from '../src/onboarded';
+import { loadPeople, resetPeople } from '../src/people';
 import { loadPrefs, useCalmMotion } from '../src/prefs';
 import { Launch } from '../src/screens/Launch';
 import { useColors } from '../src/theme';
@@ -62,6 +63,8 @@ function Navigator({ splashReady }: { splashReady: boolean }) {
 
   const ready = state.status !== 'loading' && onboarded !== null;
   useEffect(() => { if (userId === null) setEnteredUser(null); }, [userId]);
+  // Family members load with the account and are forgotten on sign-out (DD-55).
+  useEffect(() => { if (userId) void loadPeople(userId); else resetPeople(); }, [userId]);
   const presentation = launchPresentation({ startupComplete: launchGone, completedUser: enteredUser, status: state.status, onboarded, userId });
   const onGone = useCallback(() => { setEnteredUser(userId); setLaunchGone(true); }, [userId]);
   const launch = presentation ? <Launch key={presentation.key} kind={presentation.kind} reason={presentation.reason} done={presentation.done} splashReady={splashReady} onGone={onGone} /> : null;
@@ -124,6 +127,8 @@ function Routes() {
           <Stack.Screen name="security" options={push} />
           <Stack.Screen name="tour" options={cover} />
           <Stack.Screen name="personalize" options={cover} />
+          <Stack.Screen name="family/index" options={push} />
+          <Stack.Screen name="family/[id]" options={sheet} />
           <Stack.Screen name="summary" options={sheet} />
         </Stack.Protected>
       </Stack>

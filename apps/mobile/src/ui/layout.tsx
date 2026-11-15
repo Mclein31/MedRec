@@ -13,7 +13,7 @@ import { Remy, type RemyMotion, type RemyPose } from './Remy';
 export const TAB_BAR_CLEARANCE = 104;
 
 /** Routes presented with the `sheet` options in app/_layout.tsx. Keep the two lists in sync. */
-export const SHEET_ROUTES = new Set(['activity', 'summary', 'profile-edit', 'remy']);
+export const SHEET_ROUTES = new Set(['activity', 'summary', 'profile-edit', 'remy', 'family/[id]']);
 
 /**
  * Top safe-area padding for this screen. An iOS page sheet already starts below the status bar,

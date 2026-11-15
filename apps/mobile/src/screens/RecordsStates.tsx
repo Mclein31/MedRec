@@ -23,9 +23,11 @@ export function OpeningRecords() {
 const SHORTCUT_ROUTE = { remy: '/remy', share: '/(tabs)/share', medical: '/(tabs)/medical' } as const;
 
 /** Empty Records home. The setup goal picks the words and, where it works without records, a first step. */
-export function FirstRecord({ goal = null }: { goal?: Goal | null }) {
+export function FirstRecord({ goal = null, person }: { goal?: Goal | null; person?: string }) {
   const c = useColors();
-  const copy = GOALS[goal ?? 'organize'].home;
+  const copy = person
+    ? { headline: `A home for ${person}'s health history.`, body: `Add ${person}'s results, prescriptions, vaccines and visit notes. They stay separate from your own.` }
+    : GOALS[goal ?? 'organize'].home;
   // Sharing needs a record first, so that shortcut waits until there is one.
   const shortcut = goal && goal !== 'visits' ? GOALS[goal].shortcut : null;
   return (
@@ -41,7 +43,7 @@ export function FirstRecord({ goal = null }: { goal?: Goal | null }) {
       )}
       <Button kind="secondary" label="Upload a PDF" icon="file-upload-outline" onPress={() => router.push({ pathname: '/add', params: { source: 'pdf' } })} />
       {shortcut?.to === 'remy' && <TextLink label={shortcut.title} onPress={() => router.push(SHORTCUT_ROUTE.remy)} />}
-      <Txt variant="caption" color={c.ink3}>Only you can access your records until you choose to share.</Txt>
+      <Txt variant="caption" color={c.ink3}>{person ? `Only you can access ${person}'s records until you choose to share.` : 'Only you can access your records until you choose to share.'}</Txt>
     </View>
   );
 }

@@ -7,6 +7,7 @@ import { PageStrip } from '../src/add/PageStrip';
 import { RecordForm, emptyForm, toInput, validate, type FormValue } from '../src/add/RecordForm';
 import { api, type AiSnapshot, type HealthRecord } from '../src/lib/api';
 import { messageFor } from '../src/lib/errors';
+import { refreshPeople, useActivePerson } from '../src/people';
 import { space, useColors } from '../src/theme';
 import { AiPanel } from '../src/ui/AiPanel';
 import { Banner, Button, Icon, Txt } from '../src/ui/core';
@@ -34,6 +35,9 @@ export default function AddRecord() {
   const failed = pages.filter((p) => p.status === 'failed');
   const uploading = pages.some((p) => p.status === 'uploading');
   const camera = Platform.OS !== 'web';
+  // The record goes to whoever is being viewed. Add covers the whole screen, so that can't change mid-flow.
+  const { personId, person } = useActivePerson();
+  const forName = person ? person.name.split(' ')[0] : null;
 
   const add = async (pick: () => Promise<Page[]>) => {
     setNotice(null);
@@ -101,8 +105,9 @@ export default function AddRecord() {
     setBusy('save');
     setNotice(null);
     try {
-      const { record } = await api.createRecord({ ...toInput(form), ai, fileIds: ready.map((p) => p.fileId!) });
+      const { record } = await api.createRecord({ ...toInput(form), ai, fileIds: ready.map((p) => p.fileId!), personId });
       setSaved(record);
+      if (personId) refreshPeople();
       setStep('saved');
     } catch (err) {
       setNotice({ tone: 'danger', message: `${messageFor(err)} Nothing was saved yet.` });
@@ -159,7 +164,7 @@ export default function AddRecord() {
     return flow(
       <Screen
         tabBar={false}
-        nav={{ title: 'Review details', onBack: () => setStep('pages') }}
+        nav={{ title: forName ? `Review · for ${forName}` : 'Review details', onBack: () => setStep('pages') }}
         title="Almost filed."
         subtitle={ai ? "We've filled in the details. Give them a quick check before saving." : 'Fill in what you know. Only the title is required.'}
         footer={<Button label="Save this record" onPress={save} loading={busy === 'save'} />}
@@ -193,7 +198,7 @@ export default function AddRecord() {
   );
 
   return flow(
-    <Screen tabBar={false} nav={{ title: 'Add a record', back: 'close', onBack: close }} title={'Add a medical\nrecord.'} footer={footer}>
+    <Screen tabBar={false} nav={{ title: forName ? `Add a record for ${forName}` : 'Add a record', back: 'close', onBack: close }} title={forName ? `Add a record\nfor ${forName}.` : 'Add a medical\nrecord.'} footer={footer}>
       {banner}
       {busy === 'scan' ? (
         <Reading pages={ready.length} />

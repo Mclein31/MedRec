@@ -4,6 +4,7 @@ import { requireAuth } from '../lib/auth';
 import { CATEGORIES, scanDocument } from '../lib/gemini';
 import { body } from '../lib/http';
 import { RECORD_COLUMNS, decodeCursor, encodeCursor, filesFor, mapRecord, signedFiles, type FileRow, type RecordRow } from '../lib/records';
+import { PersonId, personFilter, resolvePerson } from '../lib/people';
 import { logActivity, rateLimit } from '../lib/security';
 import { HttpError, asUser, type AppEnv } from '../lib/types';
 import { readUpload } from './uploads';
@@ -52,8 +53,9 @@ records.get('/', async (c) => {
   if (c.req.query('cursor') && !cursor) throw new HttpError(400, 'BAD_CURSOR', 'This list is out of date. Refresh to continue.');
   if (category && !(CATEGORIES as readonly string[]).includes(category)) throw new HttpError(422, 'VALIDATION', 'category: unknown category');
 
-  const params: unknown[] = [userId];
-  const where = ['r.user_id = $1'];
+  const person = await resolvePerson(db, userId, c.req.query('personId'));
+  const params: unknown[] = [userId, person?.id ?? null];
+  const where = ['r.user_id = $1', personFilter('r', 2)];
   if (category) where.push(`r.category = $${params.push(category)}`);
   if (q) {
     // Full-text match, plus prefix matching on title/provider/facility for as-you-type search.
@@ -78,11 +80,12 @@ records.get('/', async (c) => {
 
 records.get('/summary', async (c) => {
   const { db } = c.get('services');
+  const person = await resolvePerson(db, c.get('userId'), c.req.query('personId'));
   const rows = await db.query<{ category: string; n: number; latest: string | null }>(
     asUser(c.get('userId')),
     `SELECT category, count(*)::int AS n, to_char(max(coalesce(event_date, created_at::date)), 'YYYY-MM-DD') AS latest
-       FROM records WHERE user_id = $1 GROUP BY category`,
-    [c.get('userId')],
+       FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 2)} GROUP BY category`,
+    [c.get('userId'), person?.id ?? null],
   );
   const counts = Object.fromEntries(CATEGORIES.map((k) => [k, 0])) as Record<string, number>;
   for (const r of rows) counts[r.category] = r.n;
@@ -165,20 +168,21 @@ records.post('/scan', async (c) => {
 });
 
 records.post('/', async (c) => {
-  const input = await body(c, RecordFields.extend({ fileIds: z.array(Uuid).max(MAX_PAGES).default([]) }));
+  const input = await body(c, RecordFields.extend({ fileIds: z.array(Uuid).max(MAX_PAGES).default([]), personId: PersonId }));
   const { db } = c.get('services');
   const userId = c.get('userId');
+  const person = await resolvePerson(db, userId, input.personId);
   if (input.fileIds.length) await ownedFiles(c, input.fileIds, true);
   const [created] = await db.query<{ id: string; attached: number }>(
     asUser(userId),
     `WITH r AS (
-       INSERT INTO records (user_id, title, category, event_date, provider, facility, notes, ai)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id),
+       INSERT INTO records (user_id, title, category, event_date, provider, facility, notes, ai, person_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $10) RETURNING id),
      f AS (
        UPDATE record_files rf SET record_id = r.id, position = array_position($9::uuid[], rf.id) - 1
          FROM r WHERE rf.id = ANY($9::uuid[]) AND rf.user_id = $1 AND rf.record_id IS NULL RETURNING rf.id)
      SELECT r.id, (SELECT count(*)::int FROM f) AS attached FROM r`,
-    [userId, input.title, input.category, input.eventDate, input.provider, input.facility, input.notes, input.ai ? JSON.stringify(input.ai) : null, input.fileIds],
+    [userId, input.title, input.category, input.eventDate, input.provider, input.facility, input.notes, input.ai ? JSON.stringify(input.ai) : null, input.fileIds, person?.id ?? null],
   );
   await logActivity(db, { userId, kind: 'record_added', title: 'Record added', meta: { recordId: created!.id } });
   const row = await loadOwned(c, created!.id);

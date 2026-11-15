@@ -14,6 +14,8 @@ export interface ShareRow {
   first_view_at: string | null;
   view_count: number;
   created_at: string;
+  /** Family member whose records are shared; null for the account holder (DD-55). */
+  person_id: string | null;
 }
 
 export const DURATIONS_MINUTES = [15, 30, 60, 1440, 10080] as const;
@@ -34,10 +36,10 @@ export async function openShare(db: Db, env: Bindings, token: string, now: Date)
 
 /** The records a share grants, newest first. The whole authorised scope, never a truncated page. */
 export async function sharedRecords(db: Db, share: ShareRow) {
-  const params: unknown[] = [share.user_id];
-  let filter = '';
-  if (share.scope === 'categories') filter = `AND r.category = ANY($${params.push(share.categories)}::text[])`;
-  if (share.scope === 'records') filter = `AND r.id = ANY($${params.push(share.record_ids)}::uuid[])`;
+  const params: unknown[] = [share.user_id, share.person_id ?? null];
+  let filter = 'AND r.person_id IS NOT DISTINCT FROM $2::uuid';
+  if (share.scope === 'categories') filter += ` AND r.category = ANY($${params.push(share.categories)}::text[])`;
+  if (share.scope === 'records') filter += ` AND r.id = ANY($${params.push(share.record_ids)}::uuid[])`;
   return db.query<RecordRow>(
     asUser(share.user_id),
     `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 ${filter}

@@ -4,17 +4,22 @@ import { Alert, Platform, View } from 'react-native';
 import { timeAgo, timeLeft } from '../../src/format';
 import { api } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
+import { useActivePerson } from '../../src/people';
 import { radius, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
 import { useTick } from '../../src/useTick';
 import { Banner, Button, TextLink, Txt } from '../../src/ui/core';
 import { Rule, Screen, Section } from '../../src/ui/layout';
 import { endsAt } from '../../src/ui/ShareCard';
+import { PersonSwitcher } from '../../src/ui/PersonSwitcher';
 
 export default function ShareTab() {
   const c = useColors();
   const { data, error, refreshing, refresh, reload } = useLoad(() => api.shares(), []);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { person, people } = useActivePerson();
+  // Links for family members say whose records they open.
+  const whose = (id?: string | null) => (id ? people.find((x) => x.id === id)?.name.split(' ')[0] ?? 'Family member' : people.length ? 'You' : null);
   const active = (data?.active ?? []).filter((s) => new Date(s.expiresAt).getTime() > Date.now());
   useTick(active.length > 0);
 
@@ -45,11 +50,12 @@ export default function ShareTab() {
 
   return (
     <Screen brand title="Share with your doctor." refreshing={refreshing} onRefresh={refresh}>
+      <PersonSwitcher />
       {(error || actionError) && <Banner message={(actionError ?? error)!} action={{ label: 'Retry', onPress: reload }} />}
 
       <View style={{ backgroundColor: c.panel, borderRadius: radius.lg, padding: space.xl, gap: space.xl, overflow: 'hidden' }}>
         <Txt variant="display" color={c.onPanel}>{'Choose records.\nSet a time limit.'}</Txt>
-        <Button kind="gold" label="Create a share link" onPress={() => router.push('/share/new')} />
+        <Button kind="gold" label={person ? `Share ${person.name.split(' ')[0]}'s records` : 'Create a share link'} onPress={() => router.push('/share/new')} />
       </View>
 
       <Section title="Active access" action={active.length > 1 ? { label: 'End all', onPress: revokeAll } : undefined}>
@@ -60,7 +66,7 @@ export default function ShareTab() {
             <View style={{ flex: 1, gap: 2 }}>
               <Txt variant="headline">{s.label ?? 'Share link'}</Txt>
               <Txt variant="caption" color={c.ink3} accessibilityLiveRegion="polite">
-                {s.scopeLabel} · ends {endsAt(s.expiresAt)}
+                {whose(s.personId) ? `${whose(s.personId)} · ` : ''}{s.scopeLabel} · ends {endsAt(s.expiresAt)}
               </Txt>
               <Txt variant="caption" color={c.ink3}>{timeLeft(s.expiresAt).replace('left', 'remaining')}{s.viewCount ? ` · opened ${s.viewCount}×` : ''}</Txt>
               <TextLink label="Open QR pass" onPress={() => router.push({ pathname: '/share/[id]', params: { id: s.id } })} />
@@ -78,7 +84,7 @@ export default function ShareTab() {
               <View key={s.id} style={{ gap: 2 }}>
                 <Txt variant="headline">{s.label ?? s.scopeLabel}</Txt>
                 <Txt variant="caption" color={c.ink3}>
-                  {s.scopeLabel} · {timeAgo(s.createdAt)} · {s.state === 'revoked' ? 'Ended by you' : 'Expired'} · {s.viewCount ? `opened ${s.viewCount}×` : 'never opened'}
+                  {whose(s.personId) ? `${whose(s.personId)} · ` : ''}{s.scopeLabel} · {timeAgo(s.createdAt)} · {s.state === 'revoked' ? 'Ended by you' : 'Expired'} · {s.viewCount ? `opened ${s.viewCount}×` : 'never opened'}
                 </Txt>
               </View>
             ))}

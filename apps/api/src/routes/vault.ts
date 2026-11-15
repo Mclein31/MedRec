@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../lib/auth';
 import { askRemy, summarizeHistory } from '../lib/gemini';
 import { body } from '../lib/http';
+import { PERSON_COLUMNS, PersonId, personFilter, personProfile, resolvePerson, type PersonRow } from '../lib/people';
 import { RECORD_COLUMNS, mapRecord, type RecordRow } from '../lib/records';
 import { rateLimit } from '../lib/security';
 import { CATEGORY_NAMES } from '../lib/shares';
@@ -45,7 +46,7 @@ vault.post('/activity/seen', async (c) => {
 export const AI_RECORD_LIMIT = 25;
 
 /** Plain-text context for the model: profile facts plus the newest records. Never file URLs. */
-export function historyContext(profile: Awaited<ReturnType<typeof loadProfile>>, rows: RecordRow[]) {
+export function historyContext(profile: Pick<Awaited<ReturnType<typeof loadProfile>>, 'allergies' | 'conditions' | 'medications' | 'bloodType'>, rows: RecordRow[]) {
   const lines = [
     `Allergies: ${profile.allergies.join(', ') || 'none recorded'}`,
     `Conditions: ${profile.conditions.join(', ') || 'none recorded'}`,
@@ -66,12 +67,13 @@ vault.post('/ai/summary', async (c) => {
   const s = c.get('services');
   const userId = c.get('userId');
   await rateLimit(s.db, `summary:user:${userId}`, 10, 3600, s.now());
-  const profile = await loadProfile(c, userId);
+  const person = await resolvePerson(s.db, userId, ((await c.req.json().catch(() => null)) as { personId?: unknown } | null)?.personId);
+  const profile = person ? personProfile(c.env, person) : await loadProfile(c, userId);
   const rows = await s.db.query<RecordRow>(
     asUser(userId),
-    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1
+    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 3)}
       ORDER BY coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
-    [userId, AI_RECORD_LIMIT + 1],
+    [userId, AI_RECORD_LIMIT + 1, person?.id ?? null],
   );
   const used = rows.slice(0, AI_RECORD_LIMIT);
   const summary = await summarizeHistory(c.env, s.fetch, historyContext(profile, used));
@@ -117,6 +119,7 @@ const AskInput = z.object({
   question: z.string().trim().min(1).max(500),
   history: z.array(z.object({ role: z.enum(['user', 'remy']), text: z.string().max(1500) })).max(6).default([]),
   recordId: z.string().uuid().optional(),
+  personId: PersonId,
 });
 
 /** Ask Remy: answers from the person's own records via Gemini. Cited records are returned so the app can link them. */
@@ -125,16 +128,19 @@ vault.post('/ai/ask', async (c) => {
   const s = c.get('services');
   const userId = c.get('userId');
   await rateLimit(s.db, `ask:user:${userId}`, 60, 3600, s.now());
-  const profile = await loadProfile(c, userId);
+  // Remy answers about one person at a time: the account holder or the family member being viewed.
+  const person = await resolvePerson(s.db, userId, input.personId);
+  const profile = person ? personProfile(c.env, person) : await loadProfile(c, userId);
   const rows = await s.db.query<RecordRow>(
     asUser(userId),
-    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1
+    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 4)}
       ORDER BY (r.id = $3::uuid) DESC, coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
-    [userId, ASK_RECORD_LIMIT + 1, input.recordId ?? '00000000-0000-0000-0000-000000000000'],
+    [userId, ASK_RECORD_LIMIT + 1, input.recordId ?? '00000000-0000-0000-0000-000000000000', person?.id ?? null],
   );
   const used = rows.slice(0, ASK_RECORD_LIMIT);
   const labels = new Map<string, RecordRow>();
   const head = [
+    ...(person ? [`These are the records of ${person.name}${person.relation ? ` (the account holder's ${person.relation.toLowerCase()})` : ''}, kept by a family caregiver. Talk about ${person.name} in the third person.`] : []),
     `Name: ${profile.name}${profile.dateOfBirth ? ` · born ${spokenDate(profile.dateOfBirth)}` : ''}${profile.sex ? ` · ${profile.sex}` : ''}`,
     `Blood type: ${profile.bloodType ?? 'unknown'}`,
     `Allergies: ${profile.allergies.join(', ') || 'none recorded'}`,
@@ -174,12 +180,14 @@ vault.get('/export', async (c) => {
     [userId],
   );
   const { avatarUrl: _a, emergency: _e, ...facts } = profile;
+  const family = await s.db.query<PersonRow>(asUser(userId), `SELECT ${PERSON_COLUMNS} FROM people WHERE user_id = $1 ORDER BY created_at`, [userId]);
   c.header('content-disposition', `attachment; filename="medrec-export-${s.now().toISOString().slice(0, 10)}.json"`);
   return c.json({
     format: 'medrec-export',
     version: 2,
     exportedAt: s.now().toISOString(),
     profile: facts,
+    familyMembers: family.map((p) => { const { emergency: _pe, avatarUrl: _pa, email: _pm, phone: _pp, heightCm: _ph, weightKg: _pw, ...rest } = personProfile(c.env, p); return rest; }),
     records: rows.map(mapRecord),
     note: 'Attached page images and PDFs are not included in this file. Open each record in MedRec to download them.',
   });

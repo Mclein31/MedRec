@@ -4,6 +4,7 @@ import { Remy } from '../src/ui/Remy';
 import { formatDate } from '../src/format';
 import { api, type HistorySummary } from '../src/lib/api';
 import { messageFor } from '../src/lib/errors';
+import { possessive, useActivePerson } from '../src/people';
 import { space, useColors } from '../src/theme';
 import { Banner, Button, Txt } from '../src/ui/core';
 import { Screen, Section } from '../src/ui/layout';
@@ -15,12 +16,13 @@ export default function Summary() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
+  const { personId, person } = useActivePerson();
 
   const generate = async () => {
     setBusy(true);
     setError(null);
     try {
-      setResult(await api.aiSummary());
+      setResult(await api.aiSummary(personId));
       setVersion((v) => v + 1);
     } catch (err) {
       setError(messageFor(err));
@@ -39,8 +41,8 @@ export default function Summary() {
   return (
     <Screen
       nav={{ title: 'Health summary', back: 'close' }}
-      title="Your health summary."
-      subtitle="A plain-language overview written from your records and health details."
+      title={`${possessive(person)} health summary.`}
+      subtitle={person ? `A plain-language overview written from ${person.name.split(' ')[0]}'s records and health details.` : 'A plain-language overview written from your records and health details.'}
       tabBar={false}
     >
       {error && <Banner message={error} />}

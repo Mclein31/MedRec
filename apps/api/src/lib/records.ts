@@ -16,6 +16,8 @@ export interface RecordRow {
   /** created_at as exact text; Date objects drop the microseconds Postgres keeps. */
   created_key: string;
   file_count: number;
+  /** Family member the record belongs to; null for the account holder (DD-55). */
+  person_id: string | null;
 }
 
 export interface FileRow {
@@ -29,7 +31,7 @@ export interface FileRow {
 
 export const RECORD_COLUMNS = `r.id, r.title, r.category, to_char(r.event_date, 'YYYY-MM-DD') AS event_date, r.provider, r.facility,
   r.notes, r.ai, r.created_at, r.updated_at, to_char(coalesce(r.event_date, r.created_at::date), 'YYYY-MM-DD') AS sort_date,
-  r.created_at::text AS created_key,
+  r.created_at::text AS created_key, r.person_id,
   (SELECT count(*)::int FROM record_files f WHERE f.record_id = r.id) AS file_count`;
 
 export function mapRecord(r: RecordRow) {
@@ -43,6 +45,7 @@ export function mapRecord(r: RecordRow) {
     notes: r.notes,
     ai: r.ai ?? null,
     fileCount: r.file_count,
+    personId: r.person_id ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

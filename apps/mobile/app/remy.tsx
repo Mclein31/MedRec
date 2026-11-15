@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, type HealthRecord } from '../src/lib/api';
+import { useActivePerson } from '../src/people';
 import { answer, replyText, urgentReply, type Reply, type Search } from '../src/remy/answer';
 import { Answer, Failed, Question, Thinking } from '../src/remy/Messages';
 import { GUTTER, MAX_CONTENT_WIDTH, radius, space, type as t, useColors } from '../src/theme';
@@ -15,13 +16,16 @@ import { Remy, Sparkles } from '../src/ui/Remy';
 type Turn = { id: number; question: string; reply?: Reply; failed?: boolean; limited?: boolean };
 
 const STARTERS = ['Summarize my latest lab results', 'Were any of my results flagged?', 'What medications are in my records?'];
-const search: Search = async (params) => (await api.records(params)).records;
 
 export default function AskRemy() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const top = useTopInset();
   const { recordId } = useLocalSearchParams<{ recordId?: string }>();
+  // Remy talks about one person: the account holder or the family member being viewed (DD-55).
+  const { personId, person } = useActivePerson();
+  const first = person?.name.split(' ')[0];
+  const search: Search = async (params) => (await api.records({ ...params, personId })).records;
   const [context, setContext] = useState<HealthRecord | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
@@ -42,7 +46,7 @@ export default function AskRemy() {
     const history = turns.filter((x) => x.reply && x.id !== id).slice(-3).flatMap((x) => [{ role: 'user' as const, text: x.question }, { role: 'remy' as const, text: replyText(x.reply!).slice(0, 1500) }]);
     try {
       const urgent = urgentReply(q);
-      const ai = urgent ? null : await fromAi(q, history, context?.id);
+      const ai = urgent ? null : await fromAi(q, history, context?.id, personId);
       const reply = urgent ?? ai ?? (await answer(q, search, context));
       setTurns((prev) => prev.map((x) => (x.id === id ? { ...x, reply, failed: false, limited: !urgent && !ai } : x)));
     } catch {
@@ -85,7 +89,7 @@ export default function AskRemy() {
             </Rise>
             <Rise delay={200}>
               <Txt color={c.ink3}>
-                {context ? `Ask me about “${context.title}”, compare it with your other records, or anything about MedRec.` : 'Ask me about your records: results, medicines, dates and doctors. I can explain terms and help you use MedRec.'}
+                {context ? `Ask me about “${context.title}”, compare it with your other records, or anything about MedRec.` : first ? `Ask me about ${first}'s records: results, medicines, vaccines and dates. I can explain terms too.` : 'Ask me about your records: results, medicines, dates and doctors. I can explain terms and help you use MedRec.'}
               </Txt>
             </Rise>
             {starters.map((s, i) => (
@@ -133,9 +137,9 @@ export default function AskRemy() {
  * Asks the AI, grounded in the person's records. Returns null when the AI can't be reached
  * (not configured, overloaded, rate-limited, offline) so the record search can answer instead.
  */
-async function fromAi(question: string, history: { role: 'user' | 'remy'; text: string }[], recordId?: string): Promise<Reply | null> {
+async function fromAi(question: string, history: { role: 'user' | 'remy'; text: string }[], recordId?: string, personId?: string | null): Promise<Reply | null> {
   try {
-    const r = await api.askRemy(question, history, recordId);
+    const r = await api.askRemy(question, history, recordId, personId);
     if (r.kind === 'urgent') return { kind: 'urgent', text: r.answer };
     return { kind: 'ai', tone: r.kind, text: r.answer, records: r.records, followUps: r.followUps };
   } catch {

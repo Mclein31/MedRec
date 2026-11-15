@@ -5,6 +5,7 @@ import { neonDb } from './lib/db';
 import { isLocalDatabase, localDb } from './lib/localDb';
 import { HttpError, SYSTEM, type AppEnv, type Bindings, type Services } from './lib/types';
 import { auth } from './routes/auth';
+import { people } from './routes/people';
 import { profile } from './routes/profile';
 import { pub } from './routes/public';
 import { records } from './routes/records';
@@ -60,6 +61,7 @@ export function createApp(makeServices: ServiceFactory = defaultServices) {
 
   app.route('/api/auth', auth);
   app.route('/api/profile', profile);
+  app.route('/api/people', people);
   app.route('/api/records', records);
   app.route('/api/shares', shares);
   app.route('/api', vault);

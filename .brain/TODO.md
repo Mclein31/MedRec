@@ -14,6 +14,7 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## High priority
 
+- [ ] **Ship caregiver profiles (DD-55):** `npm run migrate:prod` then `npm run deploy:prod` from `apps/api`, then `git push` (waiting on the user's approval). Then try it on the phone: Profile → Family members.
 - [ ] **Physical-device QA on iOS and Android:** Face ID/fingerprint app lock (enrollment, cancellation, background/resume), PDF share sheet, email-code autofill, password-manager AutoFill on registration (DD-47), safe areas, keyboard, haptics and VoiceOver/TalkBack.
 - [ ] **Device QA for DD-51:** avatar camera/library picker on device; native-sheet top spacing on profile edit.
 - [ ] **Motion feel check for DD-50 (release build, iPhone + low-end Android):** tab-marker travel, sheet exit/reversal, `Swap` timing and interruption, page-sheet top spacing, push/sheet gestures, Remy acting.
@@ -30,7 +31,6 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## Future ideas
 
-- [ ] Multi-patient / dependent profile switcher for caregivers.
 - [ ] Lock screen Emergency Medical ID widget for iOS (WidgetKit).
 - [ ] On-device local LLM summarization using llama.rn for offline medical analysis.
 - [ ] Integration with Apple HealthKit and Google Health Connect.

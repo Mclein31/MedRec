@@ -5,7 +5,7 @@ import { radius, space, useColors } from '../theme';
 import { Eyebrow, Txt } from './core';
 
 /** The same identity card is used in Medical ID and the first-use tour. */
-export function MedicalIdCard({ p }: { p: Profile }) {
+export function MedicalIdCard({ p }: { p: Pick<Profile, 'name' | 'bloodType' | 'dateOfBirth' | 'organDonor'> }) {
   const c = useColors();
   const blood = p.bloodType && p.bloodType !== 'unknown' ? p.bloodType : '—';
   return (

@@ -5,8 +5,9 @@ import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { telUrl } from '../../src/format';
 import { saysNone } from '../../src/listDraft';
-import { api } from '../../src/lib/api';
+import { api, type Person, type Profile } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
+import { useActivePerson } from '../../src/people';
 import { shareLink } from '../../src/lib/shareLink';
 import { radius, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
@@ -14,6 +15,7 @@ import { Banner, Button, Eyebrow, Txt } from '../../src/ui/core';
 import { Toggle } from '../../src/ui/form';
 import { Group, Row, Rule, Screen, Section } from '../../src/ui/layout';
 import { Rise } from '../../src/ui/motion';
+import { PersonSwitcher } from '../../src/ui/PersonSwitcher';
 import { MedicalIdCard } from '../../src/ui/MedicalIdCard';
 
 function Fact({ label, value, alert, empty = 'None recorded' }: { label: string; value: string[] | string | null; alert?: boolean; empty?: string }) {
@@ -31,7 +33,13 @@ function Fact({ label, value, alert, empty = 'None recorded' }: { label: string;
 
 export default function MedicalId() {
   const c = useColors();
-  const { data: p, setData, error, refreshing, refresh, reload } = useLoad(() => api.profile().then((r) => r.profile), []);
+  // The account holder's own card, or the family member being viewed (DD-55).
+  const { personId } = useActivePerson();
+  const { data: p, setData, error, refreshing, refresh, reload } = useLoad<Profile | Person>(
+    () => (personId ? api.person(personId).then((r) => r.person) : api.profile().then((r) => r.profile)),
+    [personId],
+  );
+  const first = personId && p ? p.name.split(' ')[0] : null;
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -40,7 +48,7 @@ export default function MedicalId() {
     setBusy(true);
     setActionError(null);
     try {
-      setData((await api.setEmergency(enabled, rotate)).profile);
+      setData(personId ? (await api.setPersonEmergency(personId, enabled, rotate)).person : (await api.setEmergency(enabled, rotate)).profile);
     } catch (err) {
       setActionError(messageFor(err));
     } finally {
@@ -60,7 +68,8 @@ export default function MedicalId() {
   const contact = p?.emergencyContactName || p?.emergencyContactPhone ? [p.emergencyContactName, p.emergencyContactRelation].filter(Boolean).join(' · ') || 'Contact' : null;
 
   return (
-    <Screen brand title="Medical ID" refreshing={refreshing} onRefresh={refresh}>
+    <Screen brand title={first ? `${first}'s Medical ID` : 'Medical ID'} refreshing={refreshing} onRefresh={refresh}>
+      <PersonSwitcher />
       {(error || actionError) && <Banner message={(actionError ?? error)!} action={{ label: 'Retry', onPress: reload }} />}
       {p && (
         <>
@@ -80,14 +89,14 @@ export default function MedicalId() {
             )}
             <Rule />
           </View>
-          <Button kind="secondary" icon="pencil-outline" label="Edit Medical ID" onPress={() => router.push({ pathname: '/profile-edit', params: { section: 'medical' } })} />
+          <Button kind="secondary" icon="pencil-outline" label="Edit Medical ID" onPress={() => (personId ? router.push({ pathname: '/family/[id]', params: { id: personId } }) : router.push({ pathname: '/profile-edit', params: { section: 'medical' } }))} />
 
           <Section title="Emergency page">
             <Group>
               <Row
                 icon="earth"
                 title="Public emergency page"
-                subtitle={p.emergency.enabled ? 'On · anyone with the QR code can see the details above' : 'Off · only you can see this ID'}
+                subtitle={p.emergency.enabled ? 'On · anyone with the QR code can see the details above' : (first ? `Off · only you can see ${first}'s ID` : 'Off · only you can see this ID')}
                 accessory={<Toggle value={p.emergency.enabled} disabled={busy} onValueChange={(v) => void set(v)} accessibilityLabel="Public emergency page" />}
                 chevron={false}
               />
@@ -114,7 +123,7 @@ export default function MedicalId() {
                   icon={copied ? 'check' : 'export-variant'}
                   style={{ flex: 1 }}
                   onPress={async () => {
-                    if ((await shareLink(url, 'My Medical ID')) !== 'copied') return;
+                    if ((await shareLink(url, first ? `${first}'s Medical ID` : 'My Medical ID')) !== 'copied') return;
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}

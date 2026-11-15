@@ -12,9 +12,11 @@ import { BrandHeader } from '../../src/ui/brand';
 import { Banner, Icon, Tappable, Txt } from '../../src/ui/core';
 import { SearchField, TextTabs } from '../../src/ui/form';
 import { Enter, Rule, TAB_BAR_CLEARANCE } from '../../src/ui/layout';
+import { possessive, useActivePerson } from '../../src/people';
 import { GOALS, orderCategories, pinnedCategories } from '../../src/personal';
 import { useCalmMotion, usePrefs } from '../../src/prefs';
 import { ease, Rise } from '../../src/ui/motion';
+import { PersonSwitcher } from '../../src/ui/PersonSwitcher';
 import { RecordRow } from '../../src/ui/RecordRow';
 import { Sheet } from '../../src/ui/Sheet';
 
@@ -42,24 +44,26 @@ export default function Records() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const summary = useLoad(() => api.summary(), []);
+  // Everything on this screen belongs to the person being viewed (DD-55).
+  const { personId, person } = useActivePerson();
+  const summary = useLoad(() => api.summary(personId), [personId]);
   const list = useLoad(async () => {
-    const page = await api.records({ q: debounced, category: category ?? undefined });
+    const page = await api.records({ q: debounced, category: category ?? undefined, personId });
     // A new filter is new content: rows it brings back may enter again. Focus reloads keep the record.
-    const key = `${debounced}|${category ?? ''}`;
+    const key = `${personId ?? 'me'}|${debounced}|${category ?? ''}`;
     if (key !== filterKey.current) {
       filterKey.current = key;
       seen.current.clear();
     }
     setMore({ cursor: page.nextCursor, loading: false, error: null });
     return page.records;
-  }, [debounced, category]);
+  }, [debounced, category, personId]);
 
   const loadMore = async () => {
     if (!more.cursor || more.loading) return;
     setMore((m) => ({ ...m, loading: true, error: null }));
     try {
-      const page = await api.records({ q: debounced, category: category ?? undefined, cursor: more.cursor });
+      const page = await api.records({ q: debounced, category: category ?? undefined, cursor: more.cursor, personId });
       list.setData((prev) => [...(prev ?? []), ...page.records.filter((r) => !prev?.some((p) => p.id === r.id))]);
       setMore({ cursor: page.nextCursor, loading: false, error: null });
     } catch (err) {
@@ -76,18 +80,19 @@ export default function Records() {
     setQuery('');
     setCategory(null);
   };
-  const title = debounced ? 'Search records' : category ? `${CATEGORY_META[category]?.label}.` : 'Your records.';
+  const title = debounced ? 'Search records' : category ? `${CATEGORY_META[category]?.label}.` : `${possessive(person)} records.`;
   const listLabel = debounced ? 'Results' : category ? `${CATEGORY_META[category]?.short ?? 'Record'} history` : 'Recently added';
   const shown = category ? counts?.counts[category] : counts?.total;
 
   const header = (
     <View style={{ gap: space.lg, paddingBottom: space.xs }}>
       <BrandHeader />
+      <PersonSwitcher />
       {firstLoad && !list.error && !summary.error ? (
         <OpeningRecords />
       ) : empty && !list.error ? (
         <Rise from={6}>
-          <FirstRecord goal={personal.goal} />
+          <FirstRecord goal={person ? null : personal.goal} person={person?.name.split(' ')[0]} />
         </Rise>
       ) : (
         <Rise from={6} style={{ gap: space.lg }}>

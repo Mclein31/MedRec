@@ -7,6 +7,7 @@ import { HttpError, SYSTEM, type AppEnv } from '../lib/types';
 import { EmergencyPage } from '../views/emergency';
 import { Notice } from '../views/layout';
 import { SharePage, type SharedRecord } from '../views/share';
+import { PERSON_COLUMNS, personProfile, type PersonRow } from '../lib/people';
 import { loadProfile } from './profile';
 
 export const pub = new Hono<AppEnv>();
@@ -56,7 +57,7 @@ pub.get('/s/:token', async (c) => {
     });
   }
 
-  const profile = await loadProfile(c, share.user_id);
+  const profile = await subjectOf(c, share.user_id, share.person_id);
   const rows = await sharedRecords(s.db, share);
   const files = await filesFor(s.db, share.user_id, rows.map((r) => r.id));
   // File links never outlive the share itself.
@@ -93,7 +94,13 @@ pub.get('/e/:slug', async (c) => {
   await rateLimit(s.db, `emergency:ip:${ip}`, 30, 600, s.now());
   const slug = c.req.param('slug');
   if (!/^[A-Za-z0-9_-]{16,40}$/.test(slug)) return c.html(<Notice {...EMERGENCY_OFF} />, 404);
-  const [row] = await s.db.query<{ user_id: string }>(SYSTEM, 'SELECT user_id FROM profiles WHERE emergency_slug = $1 AND emergency_enabled', [slug]);
+  // The slug can belong to the account holder or to one of their family members (DD-55).
+  const [row] = await s.db.query<{ user_id: string; person_id: string | null; name: string | null }>(
+    SYSTEM,
+    `SELECT user_id, NULL::uuid AS person_id, NULL AS name FROM profiles WHERE emergency_slug = $1 AND emergency_enabled
+     UNION ALL SELECT user_id, id, name FROM people WHERE emergency_slug = $1 AND emergency_enabled LIMIT 1`,
+    [slug],
+  );
   if (!row) return c.html(<Notice {...EMERGENCY_OFF} />, 404);
 
   // Notify the patient, at most once per 10 minutes per viewer.
@@ -101,11 +108,11 @@ pub.get('/e/:slug', async (c) => {
     await logActivity(s.db, {
       userId: row.user_id,
       kind: 'emergency_viewed',
-      title: 'Your Medical ID was viewed',
+      title: row.name ? `${row.name}'s Medical ID was viewed` : 'Your Medical ID was viewed',
       ipHash: await ipHash(ip, c.env.JWT_SECRET),
     });
   }
-  const p = await loadProfile(c, row.user_id);
+  const p = await subjectOf(c, row.user_id, row.person_id);
   return c.html(
     <EmergencyPage
       name={p.name}
@@ -120,6 +127,14 @@ pub.get('/e/:slug', async (c) => {
     />,
   );
 });
+
+/** Whose details a public page shows: the account holder, or the family member it was made for. */
+async function subjectOf(c: Context<AppEnv>, userId: string, personId: string | null) {
+  if (!personId) return loadProfile(c, userId);
+  const [person] = await c.get('services').db.query<PersonRow>(SYSTEM, `SELECT ${PERSON_COLUMNS} FROM people WHERE id = $1 AND user_id = $2`, [personId, userId]);
+  if (!person) throw new HttpError(404, 'NOT_FOUND', 'This link is no longer available.');
+  return personProfile(c.env, person);
+}
 
 const EMERGENCY_OFF = {
   title: 'Medical ID is not available',

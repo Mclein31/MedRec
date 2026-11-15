@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { requireAuth } from '../lib/auth';
 import { CATEGORIES } from '../lib/gemini';
+import { resolvePerson } from '../lib/people';
 import { logActivity, rateLimit, shareToken } from '../lib/security';
 import { CATEGORY_NAMES, DURATIONS_MINUTES, scopeLabel, shareState, type ShareRow } from '../lib/shares';
 import { HttpError, asUser, type AppEnv } from '../lib/types';
@@ -29,6 +30,7 @@ async function present(c: { env: AppEnv['Bindings']; get: (k: 'services') => App
     scopeLabel: scopeLabel(s, CATEGORY_NAMES),
     categories: s.categories,
     recordCount: s.scope === 'records' ? s.record_ids.length : null,
+    personId: s.person_id ?? null,
     expiresAt: s.expires_at,
     createdAt: s.created_at,
     revokedAt: s.revoked_at,
@@ -49,15 +51,16 @@ shares.post('/', async (c) => {
   const { db, now } = c.get('services');
   const userId = c.get('userId');
   await rateLimit(db, `share:user:${userId}`, 30, 3600, now());
+  const person = await resolvePerson(db, userId, (raw as { personId?: unknown } | null)?.personId);
 
   const recordIds = scope.data.scope === 'records' ? [...new Set(scope.data.recordIds)] : [];
   if (recordIds.length) {
-    const [{ n } = { n: 0 }] = await db.query<{ n: number }>(asUser(userId), 'SELECT count(*)::int AS n FROM records WHERE user_id = $1 AND id = ANY($2::uuid[])', [userId, recordIds]);
+    const [{ n } = { n: 0 }] = await db.query<{ n: number }>(asUser(userId), 'SELECT count(*)::int AS n FROM records WHERE user_id = $1 AND id = ANY($2::uuid[]) AND person_id IS NOT DISTINCT FROM $3::uuid', [userId, recordIds, person?.id ?? null]);
     if (n !== recordIds.length) throw new HttpError(422, 'RECORDS_MISSING', 'Some selected records were deleted. Choose again.');
   }
   const [share] = await db.query<ShareRow>(
     asUser(userId),
-    `INSERT INTO shares (user_id, label, scope, categories, record_ids, expires_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    `INSERT INTO shares (user_id, label, scope, categories, record_ids, expires_at, person_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
     [
       userId,
       opts.data.label || null,
@@ -65,9 +68,10 @@ shares.post('/', async (c) => {
       scope.data.scope === 'categories' ? [...new Set(scope.data.categories)] : [],
       recordIds,
       new Date(now().getTime() + opts.data.minutes * 60_000).toISOString(),
+      person?.id ?? null,
     ],
   );
-  await logActivity(db, { userId, kind: 'share_created', title: 'Share link created', detail: scopeLabel(share!, CATEGORY_NAMES), meta: { shareId: share!.id } });
+  await logActivity(db, { userId, kind: 'share_created', title: person ? `Share link created for ${person.name}` : 'Share link created', detail: scopeLabel(share!, CATEGORY_NAMES), meta: { shareId: share!.id } });
   return c.json({ share: await present(c, share!) }, 201);
 });
 

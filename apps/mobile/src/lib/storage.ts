@@ -43,4 +43,5 @@ export const KEYS = {
   onboarded: 'medrec.onboarded.v2',
   appLock: (userId: string) => `medrec.lock.${userId}`,
   prefs: 'medrec.prefs.v1',
+  activePerson: (userId: string) => `medrec.person.${userId}`,
 };

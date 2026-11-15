@@ -14,6 +14,18 @@ last_updated: 2026-11-15
 
 Newest first. This file holds the decisions for the current v2 implementation (`apps/mobile` + `apps/api`, DD-44 onward). Product/design decisions such as DD-01 live in the Obsidian vault (`MedRec/07 - Product Design/Design Decisions.md`).
 
+## 2026-11-15 — Caregiver profiles: family members on one account (DD-55)
+
+At the user's request (chosen because it needs no paid Apple account and keeps Expo Go working): one account can keep records for up to 10 family members.
+
+- **Data:** `migrations/003_people.sql` adds `people` (name, relation, health facts, emergency contact, own emergency slug; RLS owner_rows) and nullable `person_id` on `records` and `shares` (`ON DELETE CASCADE`). NULL means the account holder, so existing data is untouched. Idempotent like 001/002.
+- **API:** `lib/people.ts` (`resolvePerson` turns an optional `personId` into the owner's family member or null; unknown or other-account ids are 404; `personFilter` is NULL-safe; `personProfile` returns the Profile shape). `routes/people.ts`: list (with record counts), create, get, patch, delete (removes their records' R2 pages, then cascades records/shares), emergency on/off/rotate. Records list/summary/create, shares (create validates records belong to that person), Ask Remy, health summary and export are person-scoped. Public `/s/` and `/e/` pages show the family member's details when the share or slug is theirs.
+- **App:** `src/people.ts` store (family list + active person, remembered per account on the device; the saved choice is restored **before** the list request so a record created right after launch isn't misfiled; found and fixed in testing). `PersonSwitcher` ("Whose records?") on Records, Medical ID and Share, hidden until a family member exists. `app/family/index.tsx` and `app/family/[id].tsx` (add/edit/remove, reusing list editors with none options). Add record, sharing, Ask Remy and the summary follow the active person and say whose they are.
+
+Verified: 49 API tests (6 new: separation, cross-account 404s, scoped shares and public page, family emergency page, removal deletes only their data and pages, Remy scoped); web end-to-end (add Mia, auto-switch, add her record, switch back, her Medical ID and share). Not verified: on a device. **Production needs `npm run migrate:prod` before `npm run deploy:prod`.**
+
+---
+
 ## 2026-11-15 — Ask Remy answers from the person's records with Gemini (DD-54)
 
 At the user's request, Ask Remy gets a real model. **Supersedes DD-45's "Ask Remy has no chat model"** and closes the TODO to decide on a conversational backend.

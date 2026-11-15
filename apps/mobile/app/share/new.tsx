@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { formatDate } from '../../src/format';
 import { api, type ShareScope } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
+import { useActivePerson } from '../../src/people';
 import { CATEGORIES, CATEGORY_META, motion, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
 import { Banner, Button, Eyebrow, Txt } from '../../src/ui/core';
@@ -32,7 +33,10 @@ export default function NewShare() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-  const { data, error: loadError, reload } = useLoad(() => Promise.all([api.summary(), api.records({ limit: 100 })]), []);
+  // A share covers one person's records: whoever is being viewed when it's created (DD-55).
+  const { personId, person } = useActivePerson();
+  const first = person?.name.split(' ')[0];
+  const { data, error: loadError, reload } = useLoad(() => Promise.all([api.summary(personId), api.records({ limit: 100, personId })]), [personId]);
   const [summary, page] = data ?? [null, null];
 
   const create = async () => {
@@ -49,7 +53,7 @@ export default function NewShare() {
     setBusy(true);
     setError(null);
     try {
-      const { share } = await api.createShare(scope, minutes, label.trim() || undefined);
+      const { share } = await api.createShare(scope, minutes, label.trim() || undefined, personId);
       router.replace({ pathname: '/share/[id]', params: { id: share.id } });
     } catch (err) {
       setError(messageFor(err));
@@ -62,7 +66,7 @@ export default function NewShare() {
   const available = CATEGORIES.filter((k) => (summary?.counts[k] ?? 0) > 0);
 
   return (
-    <Screen tabBar={false} nav={{ title: 'Create a share link' }} title="Choose what to share." footer={<Button label="Create share link" onPress={create} loading={busy} />}>
+    <Screen tabBar={false} nav={{ title: 'Create a share link' }} title={first ? `Choose what to share of ${first}'s records.` : 'Choose what to share.'} footer={<Button label="Create share link" onPress={create} loading={busy} />}>
       {(error || loadError) && <Banner message={(error ?? loadError)!} action={loadError ? { label: 'Retry', onPress: reload } : undefined} />}
 
       <View style={{ gap: space.md }}>

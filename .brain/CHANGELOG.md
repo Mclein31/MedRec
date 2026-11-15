@@ -12,6 +12,10 @@ last_updated: 2026-11-15
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
 
+## [Unreleased] — 2026-11-15 — Caregiver profiles (DD-55)
+
+- Keep records for up to 10 family members on one account: Profile → Family members, then switch with "Whose records?" on Records, Medical ID and Share. Each person has their own records, Medical ID and emergency page, doctor shares and Ask Remy answers.
+
 ## [Unreleased] — 2026-11-15 — Small fixes after device testing
 
 - "No known allergies / conditions / current medications" now show in neutral text on the Medical ID tab, the public emergency page and the doctor share page instead of the red alert style.

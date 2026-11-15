@@ -22,6 +22,8 @@ export interface RecordFile { id: string; contentType: string; size: number; pos
 export interface HealthRecord {
   id: string; title: string; category: string; eventDate: string | null; provider: string | null; facility: string | null;
   notes: string | null; ai: AiSnapshot | null; fileCount: number; createdAt: string; updatedAt: string; files?: RecordFile[];
+  /** Family member the record belongs to; null for the account holder. */
+  personId?: string | null;
 }
 export type RecordInput = Pick<HealthRecord, 'title' | 'category' | 'eventDate' | 'provider' | 'facility' | 'notes' | 'ai'>;
 
@@ -32,10 +34,20 @@ export interface Profile {
   emergencyContactRelation: string | null; avatarUrl: string | null; emergency: { enabled: boolean; url: string | null };
 }
 
+/** A family member whose records the account holder keeps (DD-55). Same health fields as a Profile. */
+export interface Person extends Omit<Profile, 'email'> {
+  id: string;
+  relation: string | null;
+  email: null;
+  recordCount?: number;
+}
+export type PersonInput = Partial<Pick<Person, 'name' | 'relation' | 'dateOfBirth' | 'sex' | 'bloodType' | 'allergies' | 'conditions' | 'medications' | 'organDonor' | 'emergencyContactName' | 'emergencyContactPhone' | 'emergencyContactRelation'>>;
+
 export interface Share {
   id: string; label: string | null; scope: 'all' | 'categories' | 'records'; scopeLabel: string; categories: string[];
   recordCount: number | null; expiresAt: string; createdAt: string; revokedAt: string | null; firstViewAt: string | null;
   viewCount: number; state: 'active' | 'expired' | 'revoked'; url: string | null;
+  personId?: string | null;
 }
 export type ShareScope = { scope: 'all' } | { scope: 'categories'; categories: string[] } | { scope: 'records'; recordIds: string[] };
 
@@ -76,31 +88,38 @@ export const api = {
   uploadAvatar: (body: Blob) => request<{ profile: Profile }>('/api/profile/avatar', { method: 'PUT', body, timeoutMs: 60_000 }),
   removeAvatar: () => request<{ profile: Profile }>('/api/profile/avatar', { method: 'DELETE' }),
 
-  records: (params: { q?: string; category?: string; cursor?: string; limit?: number } = {}) => {
-    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
+  people: () => request<{ people: Person[] }>('/api/people'),
+  person: (id: string) => request<{ person: Person }>(`/api/people/${id}`),
+  addPerson: (input: PersonInput & { name: string }) => request<{ person: Person }>('/api/people', { method: 'POST', json: input }),
+  updatePerson: (id: string, patch: PersonInput) => request<{ person: Person }>(`/api/people/${id}`, { method: 'PATCH', json: patch }),
+  removePerson: (id: string) => request<{ deleted: true }>(`/api/people/${id}`, { method: 'DELETE' }),
+  setPersonEmergency: (id: string, enabled: boolean, rotate = false) => request<{ person: Person }>(`/api/people/${id}/emergency`, { method: 'PUT', json: { enabled, rotate } }),
+
+  records: (params: { q?: string; category?: string; cursor?: string; limit?: number; personId?: string | null } = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null).map(([k, v]) => [k, String(v)]));
     return request<{ records: HealthRecord[]; nextCursor: string | null }>(`/api/records${qs.size ? `?${qs}` : ''}`);
   },
-  summary: () => request<{ total: number; counts: Record<string, number>; latest: string | null }>('/api/records/summary'),
+  summary: (personId?: string | null) => request<{ total: number; counts: Record<string, number>; latest: string | null }>(`/api/records/summary${personId ? `?personId=${personId}` : ''}`),
   record: (id: string) => request<{ record: HealthRecord & { files: RecordFile[] } }>(`/api/records/${id}`),
   uploadPage: (body: Blob) => request<{ file: { id: string; contentType: string; size: number } }>('/api/records/files', { method: 'POST', body, timeoutMs: 90_000 }),
   discardPage: (id: string) => request(`/api/records/files/${id}`, { method: 'DELETE' }),
   scan: (fileIds: string[]) => request<{ draft: ScanDraft }>('/api/records/scan', { method: 'POST', json: { fileIds }, timeoutMs: 90_000 }),
-  createRecord: (input: RecordInput & { fileIds: string[] }) => request<{ record: HealthRecord }>('/api/records', { method: 'POST', json: input }),
+  createRecord: (input: RecordInput & { fileIds: string[]; personId?: string | null }) => request<{ record: HealthRecord }>('/api/records', { method: 'POST', json: input }),
   updateRecord: (id: string, patch: Partial<RecordInput>) => request<{ record: HealthRecord }>(`/api/records/${id}`, { method: 'PATCH', json: patch }),
   deleteRecord: (id: string) => request(`/api/records/${id}`, { method: 'DELETE' }),
   removePage: (recordId: string, fileId: string) => request(`/api/records/${recordId}/files/${fileId}`, { method: 'DELETE' }),
   attachPages: (recordId: string, fileIds: string[]) => request<{ files: RecordFile[] }>(`/api/records/${recordId}/files`, { method: 'POST', json: { fileIds } }),
 
   shares: () => request<{ active: Share[]; history: Share[] }>('/api/shares'),
-  createShare: (scope: ShareScope, minutes: number, label?: string) => request<{ share: Share }>('/api/shares', { method: 'POST', json: { ...scope, minutes, label } }),
+  createShare: (scope: ShareScope, minutes: number, label?: string, personId?: string | null) => request<{ share: Share }>('/api/shares', { method: 'POST', json: { ...scope, minutes, label, personId: personId ?? undefined } }),
   revokeShare: (id: string) => request<{ share: Share }>(`/api/shares/${id}`, { method: 'DELETE' }),
   revokeAllShares: () => post<{ revoked: number }>('/api/shares/revoke-all'),
 
   activity: (before?: string) => request<{ items: ActivityItem[]; unread: number; nextBefore: string | null }>(`/api/activity${before ? `?before=${before}` : ''}`),
   markSeen: () => post<{ unread: 0 }>('/api/activity/seen'),
-  askRemy: (question: string, history: { role: 'user' | 'remy'; text: string }[], recordId?: string) =>
-    request<RemyReply>('/api/ai/ask', { method: 'POST', json: { question, history, recordId }, timeoutMs: 45_000 }),
-  aiSummary: () => post<{ summary: HistorySummary; basedOn: number; limited: boolean }>('/api/ai/summary'),
+  askRemy: (question: string, history: { role: 'user' | 'remy'; text: string }[], recordId?: string, personId?: string | null) =>
+    request<RemyReply>('/api/ai/ask', { method: 'POST', json: { question, history, recordId, personId: personId ?? undefined }, timeoutMs: 45_000 }),
+  aiSummary: (personId?: string | null) => post<{ summary: HistorySummary; basedOn: number; limited: boolean }>('/api/ai/summary', { personId: personId ?? undefined }),
   exportJson: () => request<Record<string, unknown>>('/api/export'),
 };
 

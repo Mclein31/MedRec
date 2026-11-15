@@ -97,6 +97,7 @@ export default function ProfileTab() {
 
       <Group bare>
         <Row inset={false} icon="heart-pulse" title="Health details" subtitle="Blood type, allergies, medications and emergency contact" onPress={() => router.push({ pathname: '/profile-edit', params: { section: 'medical' } })} chevron={false} />
+        <Row inset={false} icon="account-group-outline" title="Family members" subtitle="Keep records for a child, parent or partner" onPress={() => router.push('/family')} chevron={false} />
         <Row inset={false} icon="format-text" title="Reading & motion" subtitle="Text size, appearance and motion" onPress={() => router.push('/preferences')} chevron={false} />
         <Row inset={false} icon="lock-outline" title="Security & privacy" subtitle="App lock, password, devices and account" onPress={() => router.push('/security')} chevron={false} />
         <Row inset={false} icon="tray-arrow-down" title="Export my records" subtitle="A printable PDF or a full copy of your data" onPress={() => setSheet('export')} chevron={false} />
