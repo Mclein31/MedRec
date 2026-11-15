@@ -12,6 +12,12 @@ last_updated: 2026-11-15
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
 
+## [Unreleased] — 2026-11-15 — Production live, Expo SDK 58, personalized setup (DD-52)
+
+- Production: Neon migrated, Worker and 6 secrets deployed, `/api/ready` 200.
+- Expo SDK 54 → 58 (RN 0.88, React 19.3, TypeScript 6); Device Hub patch script removed; audit 34 → 3 moderate.
+- First use is now a personalized setup (name, goal, record types, comfort) with a rewarding finish; answers drive registration prefill, Records tabs/order and a home shortcut. Profile → "Personalize MedRec" re-runs it. The old tour remains under "How MedRec works".
+
 ## 2026-11-15 — Brain cleanup
 
 - Verified `.brain/` against the code and git history (last code commit 2026-11-04; `apps/mobile` 2.0.0 on Expo SDK 54.0.x / RN 0.81.5 / Expo Router 6; `apps/api` Hono Worker; mobile 31 tests pass; API suite has 40 tests).

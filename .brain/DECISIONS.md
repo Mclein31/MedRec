@@ -14,6 +14,24 @@ last_updated: 2026-11-15
 
 Newest first. This file holds the decisions for the current v2 implementation (`apps/mobile` + `apps/api`, DD-44 onward). Product/design decisions such as DD-01 live in the Obsidian vault (`MedRec/07 - Product Design/Design Decisions.md`).
 
+## 2026-11-15 — First-use setup that personalizes the app (DD-52)
+
+At the user's request, first use is no longer a five-scene feature tour. `src/screens/Setup.tsx` is a welcome, four optional questions and a finish that lists what the answers changed. **This supersedes DD-46's "no progress bar, no Skip" for first use**: setup has a four-segment progress bar and every question can be skipped ("Skip for now" keeps the defaults).
+
+Every answer changes something real (`src/personal.ts`, pure and unit-tested; stored on the device in prefs as `personal`, never sent to the API):
+- **Name** → greets by first name and prefills "Full name" on registration.
+- **Goal** (organize / understand / visits / emergency) → the empty Records headline and body, plus one shortcut row on the Records home (Ask Remy, Share, or Medical ID). Sharing needs a record, so that shortcut is not offered on the empty state.
+- **Record types** (multi-select, order kept) → the first two picks replace Lab results/Prescriptions as the Records tabs; picks lead the category sheet and the record form's type chips.
+- **Comfort** → the existing appearance / larger text / gentler motion prefs, applied live.
+
+Remy replies to each answer in a caption bubble; copy only promises what the app then does. The finish fires a success haptic and reveals the summary lines in sequence. Profile gains "Personalize MedRec" (`/personalize`, the same flow minus welcome and name). The old tour (`src/screens/Onboarding.tsx`) stays as Profile → "How MedRec works" (`/tour`).
+
+Finish calls `router.replace` **before** `markOnboarded()`: marking first removes the route and the navigator's fallback (sign-in) wins over the requested register screen.
+
+Verified: typecheck, 37 mobile tests, and a full web run (answers, skip-all, back, dark switch, finish → register with name prefilled, reload stays onboarded). Not verified: native iOS/Android run of the new flow (keyboard on the name step, haptic), the personalized Records home with a signed-in account, and `validation/onboarding/` native UI tests, which still target the old tour as first use.
+
+---
+
 ## 2026-11-04 — Profile editing that saves what people type, and in-app account deletion (DD-51)
 
 The profile edit form dropped list entries (allergies, conditions, medications) that were typed but not confirmed with the small Add link, and saved silently. List drafts are now controlled by the screen and merged on save (`src/listDraft.ts`, unit-tested). The user's own `phone` column was never editable; it now is, with read-only email and photo on the same screen. Medical ID and Profile both open `profile-edit` (`section=medical` changes only the title and hides personal-only fields). Validation runs client-side with the server's limits; server field errors still map to fields.

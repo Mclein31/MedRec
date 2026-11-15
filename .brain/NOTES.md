@@ -35,10 +35,11 @@ Gotchas and reference for the current v2 app. v1 notes (Express backend, port 40
 
 ## Native preview and Xcode 27
 
-- Expo Go must match SDK 54 and inserts its own app-icon loader, which hides splash/startup work. Review startup with the native Release app (`com.mclein.medrec`, MedRec 2.0.0) on the iPhone 16 Pro simulator; rebuild steps and captures are in `apps/mobile/validation/preload/README.md`.
+- Expo Go must match the project SDK (58; App Store Expo Go only supports the latest SDK) and inserts its own app-icon loader, which hides splash/startup work. Review startup with the native Release app (`com.mclein.medrec`, MedRec 2.0.0) on the iPhone 16 Pro simulator; rebuild steps and captures are in `apps/mobile/validation/preload/README.md`.
 - Generated `ios/` stays ignored. Keep `plugins/withLaunchBackground.cjs` registered BEFORE `expo-splash-screen` in the plugins list.
 - Xcode 27 needs a 15.1 deployment-target override for older pods (`IPHONEOS_DEPLOYMENT_TARGET=15.1`) and local simulator signing (`CODE_SIGN_IDENTITY=-`); the unsigned build stalls reading Keychain state.
-- Xcode 27 ships Device Hub instead of Simulator.app. `apps/mobile/scripts/patchExpoSimulator.cjs` backports Expo PR #46757 (app ID/plist discovery, dual process detection, Device Hub launch fallback); it runs on postinstall/prestart and is guarded to the exact CLI version. Review it on any Expo upgrade.
+- Xcode 27 ships Device Hub instead of Simulator.app. Expo CLI 58 supports it natively; the SDK 54 backport script (`patchExpoSimulator.cjs`) was removed in the SDK 58 upgrade (2026-11-15).
+- SDK 58 upgrade (2026-11-15): React Navigation is vendored by Expo Router; import `BottomTabBarProps` from `expo-router/tabs` and `NavigationRouteContext` from `expo-router/react-navigation`, never `@react-navigation/*`. Custom tab bars get `emitter` + `navigateToTab(route.key)` instead of `navigation`. RN 0.88 refs use `TextInputInstance` / `ScrollViewInstance`. TypeScript 6 needs `"types": ["node"]` in tsconfig for the Node tests.
 - A fresh or erased simulator needs a build installed before pressing `i`; `expo start` alone does not install one.
 - Expo Go can keep an older JS bundle running until a cold restart; refresh the current Metro URL and dismiss its developer tutorial before visual checks.
 - Validation captures: `apps/mobile/validation/onboarding/`, `remy/`, `preload/`.

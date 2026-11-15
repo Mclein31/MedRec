@@ -11,18 +11,19 @@ The active implementation is `apps/mobile` + `apps/api` (verified against the co
 
 ## Repository layout
 
-- `apps/mobile/`: Expo app (`app/` routes, `src/` code, `assets/` fonts/images/Remy, `plugins/`, `scripts/patchExpoSimulator.cjs`, `tests/` Node unit tests, `validation/` native captures). Generated `ios/` is ignored.
+- `apps/mobile/`: Expo app (`app/` routes, `src/` code, `assets/` fonts/images/Remy, `plugins/`, `tests/` Node unit tests, `validation/` native captures). Generated `ios/` is ignored.
 - `apps/api/`: Worker (`src/`, `migrations/`, `scripts/` for migrate/deploy, `test/` Vitest integration tests, `wrangler.toml`).
 - `apps/README.md`: setup, tests and deployment. `apps/.env` (ignored) holds production settings.
 - `design/`: UI/UX handoff package (`medrec-uiux-handoff/` + zip). `promo_video/`: 30-second promo. `MedRec/`: Obsidian vault.
 
 ## Client
 
-`apps/mobile` uses Expo SDK 54, React Native 0.81.5, Expo Router, SecureStore, and Reanimated shared-value motion. `app/_layout.tsx` owns fonts, Launch, first-use/session routing, route presentation (push/sheet/cover) and app lock (`src/lock.tsx`, per-account biometric/passcode gate).
+`apps/mobile` uses Expo SDK 58, React Native 0.88.1, Expo Router, SecureStore, and Reanimated shared-value motion. `app/_layout.tsx` owns fonts, Launch, first-use/session routing, route presentation (push/sheet/cover) and app lock (`src/lock.tsx`, per-account biometric/passcode gate).
 
-Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), medical, share, profile (Add record is the centre tab item opening `add`); `record/[id]`, `record/explain`, `share/new`, `share/[id]`, `remy`, `summary`, `activity`, `profile-edit`, `preferences`, `security`, `onboarding`, `tour`. `src/lib/http.ts` owns API discovery, typed errors, and single-flight session refresh; `src/auth.tsx` owns the session state.
+Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), medical, share, profile (Add record is the centre tab item opening `add`); `record/[id]`, `record/explain`, `share/new`, `share/[id]`, `remy`, `summary`, `activity`, `profile-edit`, `preferences`, `security`, `onboarding` (first-use setup), `personalize` (setup replay), `tour`. `src/lib/http.ts` owns API discovery, typed errors, and single-flight session refresh; `src/auth.tsx` owns the session state.
 
-- `src/screens/Onboarding.tsx`: five-scene Remy introduction. Gesture-tracked shared position, spring settling, button alternatives, foreground/focus/motion preference handling. Captions and actions remain outside the preview scroll area. No progress bar or Skip action.
+- `src/screens/Setup.tsx` + `src/personal.ts`: first-use setup (welcome, name, goal, record types, comfort, finish) and the pure helpers that turn answers into Records tabs, category order, home copy and a shortcut (DD-52). Answers live in prefs (`personal`).
+- `src/screens/Onboarding.tsx`: five-scene Remy tour, now only reached as the replay (`/tour`). Gesture-tracked shared position, spring settling, button alternatives, foreground/focus/motion preference handling. Captions and actions remain outside the preview scroll area. No progress bar or Skip action.
 - `src/screens/OnboardingParts.tsx`: production components filled with labeled example data. Web preview controls are inert; native previews hide their controls from accessibility and cannot navigate.
 - `src/ui/LaunchReady.ts`: readiness context prevents consuming first-use entrances behind the launch overlay.
 - `src/screens/Launch.tsx` and `src/ui/launchFlow.ts`: distinct first-use and returning/session arrival, readiness-driven handoff after a short finite intro, foreground/layout/native-splash gating, reduced-motion fallback and single completion guard. Navigator tracks the acknowledged signed-in user, resets it on logout and plays the session arrival only after authentication. Keep the native navigator outside an accessibility-hidden wrapper; the transient overlay's modal flag caused native controls to remain hidden after exit and was removed.

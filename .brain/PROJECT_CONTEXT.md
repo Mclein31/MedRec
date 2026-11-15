@@ -18,7 +18,7 @@ MedRec is a personal medical-record app with private document storage, AI docume
 
 ## Stack
 
-- `apps/mobile`: Expo SDK 54 (`expo ~54.0.37`), React Native 0.81.5, React 19.1, Expo Router 6, Reanimated 4.1, SecureStore. Warm-folio tokens (ivory, aubergine, persimmon, gold) with bundled DM Sans/Sora/Manrope. Runs on iOS, Android and web.
+- `apps/mobile`: Expo SDK 58 (`expo ~58.0.25`), React Native 0.88.1, React 19.3, Expo Router 58, Reanimated 4.7, Gesture Handler 3, SecureStore. Warm-folio tokens (ivory, aubergine, persimmon, gold) with bundled DM Sans/Sora/Manrope. Runs on iOS, Android and web.
 - `apps/api`: Hono on Cloudflare Workers; Neon Postgres (HTTP driver) with forced RLS as the unprivileged `medrec_app` role; private R2 (`medrec-v2-vault`) served through HMAC-signed paths; Gemini document reading; Gmail SMTP email codes. Server-rendered doctor share page (`/s/:token`) and Medical ID (`/e/:slug`).
 - Structure and module ownership: ARCHITECTURE.md. Configuration and gotchas: NOTES.md.
 
@@ -32,7 +32,7 @@ MedRec is a personal medical-record app with private document storage, AI docume
 
 ## Standing user instructions
 
-- **No progress bar and no Skip intro shortcut** in onboarding. Keep Next/Back, swipe, returning-member sign-in, pause and reduced-motion support.
+- First use is the personalized setup (DD-52): four optional questions with a progress bar; every answer must change something real, and Remy's replies only promise what the app does. The replayable tour (Profile → How MedRec works) keeps DD-46's rules: no progress bar, no Skip.
 - **Google and Apple sign-in stay disabled previews** until the user asks otherwise. Apple stays solid black; no OAuth flow is activated.
 - Sign-in uses basic/default sizing (48-point fields, 16-point input text) with a compact Remy welcome; form actions scroll with content.
 - Only active, focused, foreground decorative motion runs; system Reduce Motion and in-app Gentler motion calm everything.
@@ -44,7 +44,7 @@ MedRec is a personal medical-record app with private document storage, AI docume
 - App: `npm start` from `apps/mobile`; API: `npm run dev` from `apps/api` (port 8787). Full setup and deployment: `apps/README.md`.
 - Checks: `npm test --prefix apps/mobile`, `npm run typecheck --prefix apps/mobile`, `npm test --prefix apps/api`, `npm run typecheck --prefix apps/api` (API tests need local Postgres).
 - Production: `npm run migrate:prod` / `npm run deploy:prod` from `apps/api`; `npm run start:prod` from `apps/mobile`.
-- Native preview: iPhone 16 Pro simulator (85495F80-A293-47AC-8F2C-CE9294F2A266); Expo Go 54.0.7 or the native Release build (see NOTES.md).
+- Native preview: iPhone 16 Pro simulator (85495F80-A293-47AC-8F2C-CE9294F2A266); Expo Go 58 or the native Release build (rebuild after the SDK 58 upgrade) (see NOTES.md).
 
 ## Related
 
