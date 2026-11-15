@@ -46,6 +46,23 @@ const PURPOSE_COPY = {
   reset_password: { subject: 'is your MedRec password reset code', lead: 'Use this code to set a new password for MedRec.' },
 } as const;
 
+/**
+ * Sent instead of a code when someone registers with an address that already has an account,
+ * so the sign-up screen can answer the same way whether or not the address is taken.
+ */
+export function existingAccountEmail() {
+  const text = `Someone tried to create a MedRec account with this email address, but you already have one.\n\nIf this was you, sign in instead, or choose "Forgot password" on the sign-in screen to set a new password.\n\nIf it wasn't you, you don't need to do anything: no new account was created and nothing changed in yours.`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f6f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#14211d">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" style="max-width:440px;background:#ffffff;border-radius:16px;border:1px solid #e3e8e6">
+<tr><td style="padding:28px 28px 8px;font-size:15px;font-weight:600;letter-spacing:-0.01em">MedRec</td></tr>
+<tr><td style="padding:8px 28px 0;font-size:15px;line-height:22px;color:#3d4b47">Someone tried to create a MedRec account with this email address, but you already have one.</td></tr>
+<tr><td style="padding:16px 28px 0;font-size:15px;line-height:22px;color:#3d4b47">If this was you, sign in instead, or choose <b>Forgot password</b> on the sign-in screen to set a new password.</td></tr>
+<tr><td style="padding:16px 28px 28px;font-size:13px;line-height:20px;color:#5b6a66">If it wasn't you, you don't need to do anything: no new account was created and nothing changed in yours.</td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject: 'Someone tried to sign up with your email', text, html };
+}
+
 export function otpEmail(purpose: keyof typeof PURPOSE_COPY, code: string, minutes: number) {
   const copy = PURPOSE_COPY[purpose];
   const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;

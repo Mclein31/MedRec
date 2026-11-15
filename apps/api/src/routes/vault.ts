@@ -5,7 +5,7 @@ import { askRemy, summarizeHistory } from '../lib/gemini';
 import { body } from '../lib/http';
 import { PERSON_COLUMNS, PersonId, personFilter, personProfile, resolvePerson, type PersonRow } from '../lib/people';
 import { RECORD_COLUMNS, mapRecord, type RecordRow } from '../lib/records';
-import { rateLimit } from '../lib/security';
+import { aiBudget, rateLimit } from '../lib/security';
 import { CATEGORY_NAMES } from '../lib/shares';
 import { asUser, type AppEnv } from '../lib/types';
 import { loadProfile } from './profile';
@@ -67,6 +67,7 @@ vault.post('/ai/summary', async (c) => {
   const s = c.get('services');
   const userId = c.get('userId');
   await rateLimit(s.db, `summary:user:${userId}`, 10, 3600, s.now());
+  await aiBudget(s.db, c.env, s.now());
   const person = await resolvePerson(s.db, userId, ((await c.req.json().catch(() => null)) as { personId?: unknown } | null)?.personId);
   const profile = person ? personProfile(c.env, person) : await loadProfile(c, userId);
   const rows = await s.db.query<RecordRow>(
@@ -128,6 +129,7 @@ vault.post('/ai/ask', async (c) => {
   const s = c.get('services');
   const userId = c.get('userId');
   await rateLimit(s.db, `ask:user:${userId}`, 60, 3600, s.now());
+  await aiBudget(s.db, c.env, s.now());
   // Remy answers about one person at a time: the account holder or the family member being viewed.
   const person = await resolvePerson(s.db, userId, input.personId);
   const profile = person ? personProfile(c.env, person) : await loadProfile(c, userId);

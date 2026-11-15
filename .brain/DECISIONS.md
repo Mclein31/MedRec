@@ -14,6 +14,29 @@ last_updated: 2026-11-15
 
 Newest first. This file holds the decisions for the current v2 implementation (`apps/mobile` + `apps/api`, DD-44 onward). Product/design decisions such as DD-01 live in the Obsidian vault (`MedRec/07 - Product Design/Design Decisions.md`).
 
+## 2026-11-16 — Pentest run-2 fixes: signed-out devices, storage quota, bad input (DD-58)
+
+**Context:** the dynamic pentest (run-2, local instance only) found three issues after DD-57; the user asked to fix them. The re-run passed 24/24 checks with no findings.
+**Decision:**
+- **Signing a device out forgets its trust:** `migrations/005_session_device.sql` adds `sessions.trusted_device_id` (FK, `ON DELETE SET NULL`). `signedIn` links the session to the device it trusted or signed in with; refresh carries the link. `endSession` (routes/auth.ts) deletes that trusted device and then revokes the session, for both `DELETE /api/auth/sessions/:id` and `/logout` (two statements: the FK's SET NULL touches the session row). Other trusted devices are untouched. Sessions opened before 005 have no link; "Forget trusted devices" still clears them.
+- **Per-account storage quota:** `STORAGE_QUOTA_BYTES` (2 GiB, drafts and family members' pages included) checked in `POST /api/records/files` → 413 `STORAGE_FULL`.
+- **Bad input is 400, not 500:** `decodeCursor` validates the date, timestamp (Postgres text form) and UUID; search strips NUL; `app.onError` maps Postgres class-22 data exceptions to 400 `INVALID_INPUT`. Don't use `Date.parse` on cursor timestamps: it returns NaN for Postgres's `+08`/microsecond format.
+- **App-switcher privacy with app lock (mobile):** with app lock on, the switcher used to show the open record (title, lab details, notes), verified on the iPhone 14 Plus simulator. `src/lock.tsx` now calls `expo-screen-capture`'s `enableAppSwitcherProtectionAsync` on iOS (native window blur, which also covers native sheets and modals) and renders an opaque Remy cover whenever the app isn't active (the Android fallback, unverified). Re-tested: the switcher card is blurred, and returning within the relock window shows the record with no cover left behind. The UI test lives outside the repo (`~/pentest-runs/MedRecord_App/qa-applock/`).
+**Consequences:** logging out now means that device needs an emailed code at next sign-in (the app re-trusts it when the person ticks "trust"). New dependency `expo-screen-capture` (~58.0.6, in Expo Go). Regression tests in `apps/api/test/hardening.test.ts`.
+
+## 2026-11-16 — Pentest fixes: account recovery, sign-in throttling, share links, AI budget (DD-57)
+
+**Context:** source pentest run-1 (`~/pentest-runs/MedRecord_App/run-1/REPORT.md`, outside the repo) confirmed six issues; the user asked to fix them. Run-2 re-tested them against a local instance.
+**Decision:**
+- **Decoy challenges are real rows** (`migrations/004_decoy_challenges.sql`: `otp_challenges.user_id` nullable + `decoy_email`, check that exactly one is set). `startDecoyChallenge` (lib/otp.ts) is used for password reset of unknown emails and for registering a taken email, so resend cooldown, send cap, attempts and expiry answer exactly like a real challenge. No code is sent for a decoy, so it can never be completed.
+- **Registration never says an email is taken:** it returns the same 201 `verify_email` response and emails the existing owner a notice (`existingAccountEmail`, at most hourly). The app's `EMAIL_ALREADY_EXISTS` banner is now dead code.
+- **Daily cap on wrong codes:** `OTP_DAILY_FAILURES` = 15 per email per purpose per day (`otp-fail:<purpose>:<email>`), checked before comparing so a right guess after the cap is refused (`OTP_DAILY_LIMIT`). Per-purpose so reset guesses can't block sign-in codes. Per-code limits and resend reset are unchanged.
+- **No hard account lock** (restores DD-21 SEC-R01): the `locked_until`/`failed_logins` columns are no longer used. Login is throttled per IP (30/15 min), per email+IP (10/15 min), and per email for untrusted devices (`LOGIN_FAILURES_PER_HOUR` = 100, `LOGIN_PAUSED`), applied identically to unknown emails. Trusted devices and existing sessions are never paused.
+- **Share-page file links are bound to the share:** `signFilePath(..., shareId)` signs `file:key:exp:share:id`; `/files` re-checks the share is active on every request and serves those with `no-store`. The 60 s TTL floor is gone.
+- **Service-wide AI budget:** `aiBudget` (lib/security.ts) caps scan/summary/ask at `AI_HOURLY_LIMIT` per hour across all accounts (default 500, `AI_BUSY`).
+- **Deploy safety:** the default wrangler env is now `medrec-api-dev` with the dev bucket, and `npm run deploy` runs `deploy:prod`, so a bare deploy can't overwrite production with development settings.
+**Consequences:** `npm run migrate:prod` must run before the next production deploy (004). Users under attack may see `LOGIN_PAUSED` or `OTP_DAILY_LIMIT` on new devices; trusted devices keep working. Regression tests: `apps/api/test/hardening.test.ts` plus updated auth/sessions tests. The three issues run-2 found afterwards are fixed in DD-58.
+
 ## 2026-11-15 — Caregiver profiles: family members on one account (DD-55)
 
 At the user's request (chosen because it needs no paid Apple account and keeps Expo Go working): one account can keep records for up to 10 family members.

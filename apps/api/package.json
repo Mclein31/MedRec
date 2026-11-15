@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run deploy:prod",
     "migrate": "node scripts/migrate.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

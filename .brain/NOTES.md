@@ -32,6 +32,9 @@ Gotchas and reference for the current v2 app. v1 notes (Express backend, port 40
 - **Sheet insets:** `SHEET_ROUTES` in `src/ui/layout.tsx` must stay in sync with the `sheet` route options in `app/_layout.tsx`.
 - **Account deletion:** FK cascades remove all owned rows, including append-only activity; RI cascades are not blocked by the app role's RLS (verified by test). R2 objects are deleted first.
 - **Password hashing:** PBKDF2-SHA256 at 100k iterations is the Workers cap; cost is stored per hash.
+- **Account-existence privacy (DD-57):** reset/sign-up for unknown or taken emails must go through `startDecoyChallenge`, never a hand-built response; any new auth error must be identical for real and unknown emails. Don't reintroduce a per-account hard lock (DD-21 SEC-R01).
+- **Deploys (DD-57):** the default wrangler env is `medrec-api-dev`; production is only `npm run deploy:prod` (`npm run deploy` aliases it). Never point the default env back at `medrec-api` or the prod bucket.
+- **Restart Metro after adding a package:** a running Metro keeps its old file map and fails with `Unable to resolve module …` (Expo Go may silently keep the previous bundle). Also note `npm run start:prod` points the app at the production Worker, so don't test against it.
 
 ## Native preview and Xcode 27
 

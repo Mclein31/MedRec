@@ -74,6 +74,10 @@ export function createApp(makeServices: ServiceFactory = defaultServices) {
       return c.json({ error: { code: err.code, message: err.message, ...err.extra } }, err.status as 400);
     }
     const pgCode = (err as { code?: string }).code;
+    // Class 22 is "data exception" (bad timestamp, NUL byte, value out of range): the caller's input, not our fault.
+    if (pgCode && /^22/.test(pgCode)) {
+      return c.json({ error: { code: 'INVALID_INPUT', message: 'Some of that information isn\'t in a format MedRec can use. Check it and try again.' } }, 400);
+    }
     if (pgCode && /^(08|53|57)/.test(pgCode)) {
       return c.json({ error: { code: 'DATABASE_UNAVAILABLE', message: 'MedRec is briefly unavailable. Try again in a moment.' } }, 503);
     }

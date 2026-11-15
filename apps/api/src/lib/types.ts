@@ -30,6 +30,8 @@ export interface Bindings {
   GEMINI_API_KEY?: string;
   GEMINI_MODEL: string;
   GEMINI_FALLBACK_MODEL: string;
+  /** Service-wide cap on Gemini calls per hour (default 500). */
+  AI_HOURLY_LIMIT?: string;
   ENVIRONMENT: 'development' | 'production' | 'test';
   /** Gmail address and App Password used to send sign-in codes. */
   SMTP_USER?: string;

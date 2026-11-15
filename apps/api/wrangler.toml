@@ -1,4 +1,7 @@
-name = "medrec-api"
+# Development defaults. This name and bucket deliberately differ from production, so a bare
+# `wrangler deploy` can never replace the live Worker with development settings.
+# Production deploys only through `npm run deploy:prod` ([env.production] below).
+name = "medrec-api-dev"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
@@ -22,7 +25,7 @@ port = 8787
 [[r2_buckets]]
 binding = "VAULT"
 # Separate from v1's "medrec-vault" so v2 never touches v1 patient files.
-bucket_name = "medrec-v2-vault"
+bucket_name = "medrec-v2-vault-dev"
 preview_bucket_name = "medrec-v2-vault-dev"
 
 # Production values (secrets and URLs) live in one file, apps/.env; `npm run deploy:prod` uploads them.

@@ -12,6 +12,22 @@ last_updated: 2026-11-15
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
 
+## [Unreleased] — 2026-11-16 — More security fixes from the pentest (DD-58)
+
+- Signing a device out (from Security, or by logging out on it) now also forgets it as trusted, so it needs the emailed code again. Migration `005_session_device.sql`.
+- Each account's stored pages are capped at 2 GB.
+- A tampered list cursor or unusable characters now get a clear 400 error instead of a server error.
+- With app lock on, the app switcher no longer shows your records: iOS blurs MedRec's card, and a cover hides the screen whenever the app isn't in front.
+
+## [Unreleased] — 2026-11-16 — Security fixes from the pentest (DD-57)
+
+- Password reset and sign-up no longer reveal which emails have accounts (decoy challenges are real rows; signing up with a taken email emails its owner instead). Migration `004_decoy_challenges.sql`.
+- Wrong one-time codes are capped at 15 per email per day, so reset codes can't be guessed over time.
+- Removed the hard account lock that let anyone keep an email signed out; sign-in is throttled per address instead, and trusted devices are never paused.
+- Turning off a share now stops its page images and PDFs immediately; links never outlive the share.
+- Service-wide hourly cap on AI calls (`AI_HOURLY_LIMIT`, default 500).
+- `npm run deploy` now runs the production deploy script; the default wrangler env is a separate dev Worker.
+
 ## [Unreleased] — 2026-11-15 — Caregiver profiles (DD-55)
 
 - Keep records for up to 10 family members on one account: Profile → Family members, then switch with "Whose records?" on Records, Medical ID and Share. Each person has their own records, Medical ID and emergency page, doctor shares and Ask Remy answers.

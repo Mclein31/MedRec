@@ -1,6 +1,7 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as ScreenCapture from 'expo-screen-capture';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AppState, Platform, View } from 'react-native';
+import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { KEYS, secure } from './lib/storage';
 import { space, useColors } from './theme';
 import { Button, Txt } from './ui/core';
@@ -60,11 +61,22 @@ export function AppLockGate({ userId, children }: { userId: string | null; child
     };
   }, [userId]);
 
+  // With app lock on, the app switcher must not show records (pentest, DD-58). iOS blurs the
+  // whole window natively, which also covers native sheets and modals; the JS cover below is
+  // the fallback elsewhere and hides content while the app is inactive or in the background.
+  const [covered, setCovered] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    const on = enabled && !!userId;
+    void (on ? ScreenCapture.enableAppSwitcherProtectionAsync(1) : ScreenCapture.disableAppSwitcherProtectionAsync()).catch(() => undefined);
+  }, [enabled, userId]);
+
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'background') backgroundedAt.current = Date.now();
       if (next === 'active' && enabled && backgroundedAt.current && Date.now() - backgroundedAt.current > RELOCK_AFTER_MS) setLocked(true);
       if (next === 'active') backgroundedAt.current = null;
+      setCovered(enabled && next !== 'active');
     });
     return () => sub.remove();
   }, [enabled]);
@@ -101,5 +113,19 @@ export function AppLockGate({ userId, children }: { userId: string | null; child
       </View>
     );
   }
-  return <Ctx.Provider value={{ available, enabled, setEnabled }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ available, enabled, setEnabled }}>
+      {children}
+      {covered && (
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[StyleSheet.absoluteFill, { backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }]}
+        >
+          <Remy pose="default" size={120} motion="none" ground />
+        </View>
+      )}
+    </Ctx.Provider>
+  );
 }

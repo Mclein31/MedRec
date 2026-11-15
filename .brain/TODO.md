@@ -20,6 +20,10 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 - [ ] **Motion feel check for DD-50 (release build, iPhone + low-end Android):** tab-marker travel, sheet exit/reversal, `Swap` timing and interruption, page-sheet top spacing, push/sheet gestures, Remy acting.
 - [ ] **Google and Apple sign-in:** provider setup and real OAuth. Buttons are intentionally disabled previews until the user asks to enable them; no client IDs are configured.
 
+- [ ] **Before the next production deploy (DD-57, DD-58):** set a Google Cloud budget/quota cap on the Gemini key (console only; no gcloud CLI here). Then `npm run deploy:prod` to ship the DD-57/58 API code. (`npm run migrate:prod` done 2026-11-16: 004 and 005 applied to Neon and verified; the currently deployed Worker is compatible with the new schema.)
+- [ ] **Remaining security follow-ups:** check the app-lock privacy cover on Android (Recents thumbnail; only the JS cover applies there, untested); decide whether password change should offer "turn off all share and Medical ID links".
+- [ ] **Deep-link navigation errors seen on the simulator (DD-56 native navigation):** opening `/security` or `/record/<id>` by link logs `The action 'REMOVE_ROUTES' … was not handled by any navigator` (red dev toast) and `Linking did not produce an initial navigation state` (expo-router). Screens still open.
+
 ## Medium priority
 
 - [ ] Device check for multi-page records (DD-53): Pages added sheet after the iOS picker, AI read of several phone photos, page viewer swipe and PDF opening.

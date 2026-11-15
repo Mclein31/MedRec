@@ -35,14 +35,16 @@ export async function issueSession(
   c: Context<AppEnv>,
   user: { id: string; token_version: number },
   deviceLabel: string | null,
+  /** The trusted device this session was opened with; signing the session out forgets it (DD-58). */
+  trustedDeviceId: string | null = null,
 ) {
   const { db, now } = c.get('services');
   const refreshToken = randomToken(32);
   const [session] = await db.query<{ id: string }>(
     SYSTEM,
-    `INSERT INTO sessions (user_id, refresh_hash, device_label, expires_at)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
-    [user.id, await sha256(refreshToken), deviceLabel, new Date(now().getTime() + REFRESH_TTL_DAYS * 86400_000).toISOString()],
+    `INSERT INTO sessions (user_id, refresh_hash, device_label, expires_at, trusted_device_id)
+     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    [user.id, await sha256(refreshToken), deviceLabel, new Date(now().getTime() + REFRESH_TTL_DAYS * 86400_000).toISOString(), trustedDeviceId],
   );
   const accessToken = await signJwt({ sub: user.id, tv: user.token_version, sid: session!.id }, c.env.JWT_SECRET, ACCESS_TTL, now());
   return { accessToken, refreshToken, expiresIn: ACCESS_TTL };

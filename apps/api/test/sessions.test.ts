@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
+import { LOGIN_FAILURES_PER_HOUR } from '../src/routes/auth';
 import { SYSTEM } from '../src/lib/types';
 import { PASSWORD, call, db, lastCode, pool, signUp, uniqueEmail } from './helpers';
 
@@ -41,16 +42,40 @@ describe('sessions', () => {
 });
 
 describe('passwords', () => {
-  it('locks the account after ten wrong passwords', async () => {
+  it("doesn't let a stranger's wrong passwords lock the owner out", async () => {
     const { email } = await signUp();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 12; i++) {
       const r = await call('POST', '/api/auth/login', { json: { email, password: 'wrong password!' }, headers: { 'cf-connecting-ip': `10.9.9.${i}` } });
       expect(r.status).toBe(401);
     }
-    const [row] = await db.query<{ locked: boolean }>(SYSTEM, 'SELECT locked_until > now() AS locked FROM users WHERE email = $1', [email]);
-    expect(row?.locked).toBe(true);
-    const locked = await call('POST', '/api/auth/login', { json: { email, password: PASSWORD } });
-    expect(locked.status).toBe(429); // the per-email window (10 / 15 min) is also exhausted
+    // One caller is throttled per email after ten tries…
+    for (let i = 0; i < 10; i++) await call('POST', '/api/auth/login', { json: { email, password: 'wrong password!' }, headers: { 'cf-connecting-ip': '10.9.8.1' } });
+    expect((await call('POST', '/api/auth/login', { json: { email, password: PASSWORD }, headers: { 'cf-connecting-ip': '10.9.8.1' } })).status).toBe(429);
+    // …but the owner, from their own address, still gets the code step.
+    const owner = await call('POST', '/api/auth/login', { json: { email, password: PASSWORD }, headers: { 'cf-connecting-ip': '10.9.7.1' } });
+    expect(owner.status).toBe(202);
+    expect(owner.data.status).toBe('otp_required');
+  });
+
+  it('pauses untrusted sign-in after many wrong passwords, but never a trusted device', async () => {
+    const { email } = await signUp();
+    const first = await call('POST', '/api/auth/login', { json: { email, password: PASSWORD } });
+    const trusted = await call('POST', '/api/auth/verify', {
+      json: { challengeId: first.data.challenge.challengeId, code: lastCode(email), purpose: 'login', trustDevice: true, deviceLabel: 'iPhone' },
+    });
+    const window = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000).toISOString();
+    const pause = async (e: string) =>
+      db.query(SYSTEM, `INSERT INTO rate_limits (key, window_start, hits) VALUES ($1, $2, $3)`, [`login-fail:${e}`, window, LOGIN_FAILURES_PER_HOUR]);
+    await pause(email);
+    const untrusted = await call('POST', '/api/auth/login', { json: { email, password: PASSWORD } });
+    expect(untrusted.status).toBe(429);
+    expect(untrusted.data.error.code).toBe('LOGIN_PAUSED');
+    const fromTrusted = await call('POST', '/api/auth/login', { json: { email, password: PASSWORD, deviceToken: trusted.data.deviceToken } });
+    expect(fromTrusted.status).toBe(200);
+    // Unknown emails pause the same way, so the pause reveals nothing.
+    const nobody = uniqueEmail('nobody');
+    await pause(nobody);
+    expect((await call('POST', '/api/auth/login', { json: { email: nobody, password: PASSWORD } })).data.error.code).toBe('LOGIN_PAUSED');
   });
 
   it('gives the same answer for unknown emails on reset', async () => {

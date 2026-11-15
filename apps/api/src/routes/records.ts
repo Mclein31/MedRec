@@ -5,7 +5,7 @@ import { CATEGORIES, scanDocument } from '../lib/gemini';
 import { body } from '../lib/http';
 import { RECORD_COLUMNS, decodeCursor, encodeCursor, filesFor, mapRecord, signedFiles, type FileRow, type RecordRow } from '../lib/records';
 import { PersonId, personFilter, resolvePerson } from '../lib/people';
-import { logActivity, rateLimit } from '../lib/security';
+import { aiBudget, logActivity, rateLimit } from '../lib/security';
 import { HttpError, asUser, type AppEnv } from '../lib/types';
 import { readUpload } from './uploads';
 
@@ -46,7 +46,8 @@ const PAGE = 30;
 records.get('/', async (c) => {
   const { db } = c.get('services');
   const userId = c.get('userId');
-  const q = (c.req.query('q') ?? '').trim().slice(0, 100);
+  // NUL can't be stored or searched in Postgres text; drop it rather than fail the request.
+  const q = (c.req.query('q') ?? '').replace(/\u0000/g, '').trim().slice(0, 100);
   const category = c.req.query('category');
   const limit = Math.min(Math.max(Number(c.req.query('limit') ?? PAGE) || PAGE, 1), 100);
   const cursor = c.req.query('cursor') ? decodeCursor(c.req.query('cursor')!) : null;
@@ -111,6 +112,8 @@ records.get('/:id', async (c) => {
 
 const MAX_PAGES = 20;
 const MAX_DRAFTS = 40;
+/** Total page storage per account, drafts included (family members' records count toward it). */
+export const STORAGE_QUOTA_BYTES = 2 * 1024 ** 3;
 // Gemini's inline request limit is 20 MB, and pages travel base64-encoded (4/3 larger) inside JSON.
 const SCAN_BYTES = 14 * 1024 * 1024;
 
@@ -125,6 +128,15 @@ records.post('/files', async (c) => {
   );
   if (n >= MAX_DRAFTS) throw new HttpError(429, 'TOO_MANY_DRAFTS', 'Save or discard the pages you already added before adding more.');
   const file = await readUpload(c, { images: true, pdf: true });
+  // The draft cap resets once drafts are saved, so total bytes are capped separately.
+  const [{ used } = { used: 0 }] = await db.query<{ used: number }>(
+    asUser(userId),
+    'SELECT coalesce(sum(size_bytes), 0)::bigint::float8 AS used FROM record_files WHERE user_id = $1',
+    [userId],
+  );
+  if (used + file.size > STORAGE_QUOTA_BYTES) {
+    throw new HttpError(413, 'STORAGE_FULL', 'Your MedRec storage is full. Delete pages or records you no longer need, then try again.');
+  }
   const id = crypto.randomUUID();
   const key = `${userId}/records/${id}`;
   await c.env.VAULT.put(key, file.data, { httpMetadata: { contentType: file.contentType } });
@@ -157,6 +169,7 @@ records.post('/scan', async (c) => {
   if (files.reduce((a, f) => a + f.size_bytes, 0) > SCAN_BYTES) {
     throw new HttpError(413, 'SCAN_TOO_LARGE', 'These pages are too large to read at once. Scan fewer pages, then add the rest.');
   }
+  await aiBudget(s.db, c.env, s.now());
   const parts = await Promise.all(
     files.map(async (f) => {
       const obj = await c.env.VAULT.get(f.object_key);

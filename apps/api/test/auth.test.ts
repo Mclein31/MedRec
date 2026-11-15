@@ -19,11 +19,23 @@ describe('registration', () => {
     expect(mail.find((m) => m.to === email)?.subject).toMatch(/^\d{6} is your MedRec confirmation code$/);
   });
 
-  it('rejects a second account for the same email, ignoring case', async () => {
-    const { email } = await signUp();
+  it('never creates a second account for the same email, and answers as if it were new', async () => {
+    const { email, token } = await signUp();
+    const fresh = await call('POST', '/api/auth/register', { json: { name: 'New', email: uniqueEmail(), password: PASSWORD } });
+    const before = mail.length;
     const again = await call('POST', '/api/auth/register', { json: { name: 'X', email: email.toUpperCase(), password: PASSWORD } });
-    expect(again.status).toBe(409);
-    expect(again.data.error.code).toBe('EMAIL_ALREADY_EXISTS');
+    expect(again.status).toBe(201);
+    expect(again.data.status).toBe('verify_email');
+    expect(Object.keys(again.data.challenge).sort()).toEqual(Object.keys(fresh.data.challenge).sort());
+    // The owner is told someone tried; no code is sent, so the decoy can never be completed.
+    const sent = mail.slice(before);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ to: email, subject: 'Someone tried to sign up with your email' });
+    expect(sent[0]!.text).not.toMatch(/\d{3} \d{3}/);
+    const guess = await call('POST', '/api/auth/verify', { json: { challengeId: again.data.challenge.challengeId, code: '123456', purpose: 'verify_email' } });
+    expect(guess.data.error).toMatchObject({ code: 'OTP_INVALID', attemptsLeft: 4 });
+    // The original account is untouched.
+    expect((await call('GET', '/api/auth/me', { token })).data.user.name).toBe('Ada Patient');
   });
 
   it('asks for a confirmation code again when an unverified account signs in', async () => {

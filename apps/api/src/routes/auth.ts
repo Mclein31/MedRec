@@ -4,8 +4,9 @@ import { requireAuth } from '../lib/auth';
 import { hashPassword, randomToken, sha256, verifyPassword } from '../lib/crypto';
 import { one } from '../lib/db';
 import { body, clientIp, issueSession, loadPublicUser } from '../lib/http';
-import { decoyChallenge, resendChallenge, startChallenge, verifyChallenge } from '../lib/otp';
-import { ipHash, logActivity, rateLimit } from '../lib/security';
+import { existingAccountEmail } from '../lib/email';
+import { resendChallenge, startChallenge, startDecoyChallenge, verifyChallenge } from '../lib/otp';
+import { assertUnderLimit, countHit, firstInWindow, ipHash, logActivity, rateLimit } from '../lib/security';
 import { HttpError, SYSTEM, asUser, type AppEnv } from '../lib/types';
 
 export const auth = new Hono<AppEnv>();
@@ -16,8 +17,13 @@ const DeviceLabel = z.string().trim().max(80).optional();
 const Code = z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code.');
 
 export const TRUST_DAYS = 30;
-const LOCK_AFTER = 10;
-const LOCK_MINUTES = 15;
+/**
+ * Wrong passwords per email per hour before sign-in from untrusted devices pauses.
+ * There is no hard account lock: a stranger who knows an address could otherwise keep
+ * its owner signed out (DD-21 SEC-R01). Trusted devices and existing sessions are never
+ * affected, and every new device still needs the emailed code after a correct password.
+ */
+export const LOGIN_FAILURES_PER_HOUR = 100;
 
 interface UserRow {
   id: string;
@@ -25,7 +31,6 @@ interface UserRow {
   password_hash: string;
   email_verified_at: string | null;
   token_version: number;
-  locked_until: string | null;
 }
 
 const BAD_CREDENTIALS = () => new HttpError(401, 'INVALID_CREDENTIALS', "That email and password don't match. Check both, or reset your password.");
@@ -38,7 +43,7 @@ const findUser = (c: { get: (k: 'services') => AppEnv['Variables']['services'] }
   one<UserRow>(
     c.get('services').db,
     SYSTEM,
-    'SELECT id, email, password_hash, email_verified_at, token_version, locked_until FROM users WHERE lower(email) = $1',
+    'SELECT id, email, password_hash, email_verified_at, token_version FROM users WHERE lower(email) = $1',
     [email],
   );
 
@@ -54,7 +59,13 @@ auth.post('/register', async (c) => {
     [input.email, input.name, hash],
   );
   if (!user) {
-    throw new HttpError(409, 'EMAIL_ALREADY_EXISTS', 'An account already uses this email. Sign in instead, or reset your password.');
+    // Answer exactly as for a new account, so sign-up can't reveal who has one. The owner
+    // gets a notice instead of a code (at most hourly), telling them to sign in or reset.
+    const existing = await findUser(c, input.email);
+    if (existing && (await firstInWindow(s.db, `register-notice:${input.email}`, 3600, s.now()))) {
+      await s.mailer.send({ to: existing.email, ...existingAccountEmail() });
+    }
+    return c.json({ status: 'verify_email', challenge: await startDecoyChallenge(c.env, s, input.email, 'verify_email') }, 201);
   }
   await s.db.query(asUser(user.id), 'INSERT INTO profiles (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
   const challenge = await startChallenge(c.env, s, user, 'verify_email');
@@ -64,60 +75,68 @@ auth.post('/register', async (c) => {
 auth.post('/login', async (c) => {
   const input = await body(c, z.object({ email: Email, password: z.string().min(1).max(128), deviceToken: z.string().max(100).optional() }));
   const s = c.get('services');
-  await rateLimit(s.db, `login:ip:${clientIp(c) ?? 'local'}`, 30, 900, s.now());
-  await rateLimit(s.db, `login:email:${input.email}`, 10, 900, s.now());
+  const ip = clientIp(c) ?? 'local';
+  await rateLimit(s.db, `login:ip:${ip}`, 30, 900, s.now());
+  // Per email *and* address: one caller's wrong guesses never throttle the owner's own attempts.
+  await rateLimit(s.db, `login:email-ip:${input.email}:${ip}`, 10, 900, s.now());
 
   const user = await findUser(c, input.email);
+  // A device that already passed an emailed code is exempt from the per-email limit below.
+  const trusted =
+    user && input.deviceToken
+      ? await one<{ id: string; label: string | null }>(
+          s.db,
+          asUser(user.id),
+          'SELECT id, label FROM trusted_devices WHERE user_id = $1 AND token_hash = $2 AND expires_at > now()',
+          [user.id, await sha256(input.deviceToken)],
+        )
+      : undefined;
+  // Applied the same way to unknown emails, so the limit itself reveals nothing about accounts.
+  const failures = `login-fail:${input.email}`;
+  if (!trusted) {
+    await assertUnderLimit(s.db, failures, LOGIN_FAILURES_PER_HOUR, 3600, s.now(), {
+      code: 'LOGIN_PAUSED',
+      message: (wait) => `Too many incorrect passwords for this email. Try again in ${wait}, or reset your password.`,
+    });
+  }
   if (!user) {
     await burnHash(input.password);
+    await countHit(s.db, failures, 3600, s.now());
     throw BAD_CREDENTIALS();
-  }
-  if (user.locked_until && new Date(user.locked_until) > s.now()) {
-    throw new HttpError(423, 'ACCOUNT_LOCKED', `Too many incorrect passwords. Try again in ${LOCK_MINUTES} minutes, or reset your password.`);
   }
   if (!(await verifyPassword(input.password, user.password_hash))) {
-    await s.db.query(
-      SYSTEM,
-      `UPDATE users SET failed_logins = failed_logins + 1,
-         locked_until = CASE WHEN failed_logins + 1 >= $2 THEN now() + make_interval(mins => $3) ELSE locked_until END
-       WHERE id = $1`,
-      [user.id, LOCK_AFTER, LOCK_MINUTES],
-    );
+    await countHit(s.db, failures, 3600, s.now());
     throw BAD_CREDENTIALS();
   }
-  await s.db.query(SYSTEM, 'UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [user.id]);
 
   if (!user.email_verified_at) {
     return c.json({ status: 'verify_email', challenge: await startChallenge(c.env, s, user, 'verify_email') }, 202);
   }
-  if (input.deviceToken) {
-    const trusted = await one<{ id: string; label: string | null }>(
-      s.db,
-      asUser(user.id),
-      'SELECT id, label FROM trusted_devices WHERE user_id = $1 AND token_hash = $2 AND expires_at > now()',
-      [user.id, await sha256(input.deviceToken)],
-    );
-    // The device was named when it was trusted; reuse that so sessions don't show as unknown.
-    if (trusted) return c.json(await signedIn(c, user, trusted.label, false));
-  }
+  // The device was named when it was trusted; reuse that so sessions don't show as unknown.
+  if (trusted) return c.json(await signedIn(c, user, trusted.label, { existing: trusted.id }));
   return c.json({ status: 'otp_required', challenge: await startChallenge(c.env, s, user, 'login') }, 202);
 });
 
 type Ctx = Context<AppEnv>;
 
-/** Opens a session (and optionally trusts this device) and records the sign-in. */
-async function signedIn(c: Ctx, user: { id: string; token_version: number }, deviceLabel: string | null, trustDevice: boolean) {
+/**
+ * Opens a session and records the sign-in. `device` is 'trust' to trust this device now,
+ * or the trusted device the sign-in came from; either way the session is linked to it.
+ */
+async function signedIn(c: Ctx, user: { id: string; token_version: number }, deviceLabel: string | null, device: 'trust' | { existing: string } | null) {
   const s = c.get('services');
-  const session = await issueSession(c, user, deviceLabel);
   let deviceToken: string | undefined;
-  if (trustDevice) {
+  let trustedDeviceId = device && device !== 'trust' ? device.existing : null;
+  if (device === 'trust') {
     deviceToken = randomToken(32);
-    await s.db.query(
+    const [row] = await s.db.query<{ id: string }>(
       asUser(user.id),
-      'INSERT INTO trusted_devices (user_id, token_hash, label, expires_at) VALUES ($1, $2, $3, $4)',
+      'INSERT INTO trusted_devices (user_id, token_hash, label, expires_at) VALUES ($1, $2, $3, $4) RETURNING id',
       [user.id, await sha256(deviceToken), deviceLabel, new Date(s.now().getTime() + TRUST_DAYS * 86400_000).toISOString()],
     );
+    trustedDeviceId = row!.id;
   }
+  const session = await issueSession(c, user, deviceLabel, trustedDeviceId);
   await logActivity(s.db, {
     userId: user.id,
     kind: 'sign_in',
@@ -150,7 +169,7 @@ auth.post('/verify', async (c) => {
     [userId],
   );
   if (!user) throw new HttpError(401, 'SESSION_EXPIRED', 'Please sign in again.');
-  return c.json(await signedIn(c, user, input.deviceLabel ?? null, input.trustDevice));
+  return c.json(await signedIn(c, user, input.deviceLabel ?? null, input.trustDevice ? 'trust' : null));
 });
 
 auth.post('/resend', async (c) => {
@@ -166,9 +185,9 @@ auth.post('/refresh', async (c) => {
   const s = c.get('services');
   await rateLimit(s.db, `refresh:ip:${clientIp(c) ?? 'local'}`, 120, 900, s.now());
   const hash = await sha256(refreshToken);
-  const [row] = await s.db.query<{ id: string; user_id: string; token_version: number; device_label: string | null; usable: boolean }>(
+  const [row] = await s.db.query<{ id: string; user_id: string; token_version: number; device_label: string | null; trusted_device_id: string | null; usable: boolean }>(
     SYSTEM,
-    `SELECT s.id, s.user_id, u.token_version, s.device_label, (s.revoked_at IS NULL AND s.expires_at > now()) AS usable
+    `SELECT s.id, s.user_id, u.token_version, s.device_label, s.trusted_device_id, (s.revoked_at IS NULL AND s.expires_at > now()) AS usable
        FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.refresh_hash = $1`,
     [hash],
   );
@@ -176,7 +195,7 @@ auth.post('/refresh', async (c) => {
   // Conditional revoke: of two concurrent refreshes with one token, only one wins.
   const [claimed] = await s.db.query(SYSTEM, 'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL RETURNING id', [row.id]);
   if (!claimed) throw new HttpError(401, 'SESSION_EXPIRED', 'Your session ended. Please sign in again.');
-  const session = await issueSession(c, { id: row.user_id, token_version: row.token_version }, row.device_label);
+  const session = await issueSession(c, { id: row.user_id, token_version: row.token_version }, row.device_label, row.trusted_device_id);
   return c.json({ session });
 });
 
@@ -187,7 +206,7 @@ auth.post('/password/forgot', async (c) => {
   await rateLimit(s.db, `forgot:email:${email}`, 5, 3600, s.now());
   const user = await findUser(c, email);
   // Same response either way, so this can't be used to discover accounts.
-  const challenge = user ? await startChallenge(c.env, s, user, 'reset_password') : decoyChallenge(email, 'reset_password');
+  const challenge = user ? await startChallenge(c.env, s, user, 'reset_password') : await startDecoyChallenge(c.env, s, email, 'reset_password');
   return c.json({ challenge }, 202);
 });
 
@@ -224,9 +243,24 @@ auth.use('/trusted-devices', requireAuth);
 
 auth.get('/me', async (c) => c.json({ user: await loadPublicUser(c.get('services').db, c.get('userId')) }));
 
+/**
+ * Signs one session out and forgets the trusted device it was opened with, so that device
+ * needs an emailed code again (DD-58). The device is removed first: its ON DELETE SET NULL
+ * touches the session row, which must not also be updated in the same statement.
+ */
+async function endSession(db: AppEnv['Variables']['services']['db'], userId: string, sessionId: string) {
+  const ctx = asUser(userId);
+  await db.query(
+    ctx,
+    `DELETE FROM trusted_devices WHERE user_id = $2
+       AND id = (SELECT trusted_device_id FROM sessions WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL)`,
+    [sessionId, userId],
+  );
+  await db.query(ctx, 'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL', [sessionId, userId]);
+}
+
 auth.post('/logout', async (c) => {
-  const { db } = c.get('services');
-  await db.query(asUser(c.get('userId')), 'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [c.get('sessionId')]);
+  await endSession(c.get('services').db, c.get('userId'), c.get('sessionId'));
   return c.json({ signedOut: true });
 });
 
@@ -261,7 +295,7 @@ auth.delete('/sessions/:id', async (c) => {
   const { db } = c.get('services');
   const id = c.req.param('id');
   if (!z.string().uuid().safeParse(id).success) throw new HttpError(404, 'NOT_FOUND', 'That session no longer exists.');
-  await db.query(asUser(c.get('userId')), 'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL', [id, c.get('userId')]);
+  await endSession(db, c.get('userId'), id);
   return c.json({ revoked: true });
 });
 

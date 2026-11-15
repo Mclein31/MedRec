@@ -51,15 +51,18 @@ export function mapRecord(r: RecordRow) {
   };
 }
 
-/** Signed, short-lived URLs for a record's pages. URLs are never stored or exported. */
-export async function signedFiles(env: Bindings, files: FileRow[], now: Date, ttlSeconds = 900) {
+/**
+ * Signed, short-lived URLs for a record's pages. URLs are never stored or exported.
+ * Pass `shareId` for links shown on a share page; they stop working when that share does.
+ */
+export async function signedFiles(env: Bindings, files: FileRow[], now: Date, ttlSeconds = 900, shareId?: string) {
   return Promise.all(
     files.map(async (f) => ({
       id: f.id,
       contentType: f.content_type,
       size: f.size_bytes,
       position: f.position,
-      url: env.PUBLIC_URL + (await signFilePath(f.object_key, env.FILE_SIGNING_SECRET, ttlSeconds, now)),
+      url: env.PUBLIC_URL + (await signFilePath(f.object_key, env.FILE_SIGNING_SECRET, ttlSeconds, now, shareId)),
     })),
   );
 }
@@ -82,11 +85,19 @@ export function encodeCursor(r: RecordRow) {
   return btoa(JSON.stringify([r.sort_date, r.created_key, r.id])).replace(/=+$/, '');
 }
 
+const CURSOR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+// Postgres timestamptz text, e.g. "2026-11-16 00:41:38.146492+08".
+const CURSOR_TIMESTAMP = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?([+-]\d{2}(:?\d{2})?|Z)?$/;
+const CURSOR_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Every part is checked so a tampered cursor is a 400, never a database error. */
 export function decodeCursor(cursor: string): [string, string, string] | null {
   try {
-    const v = JSON.parse(atob(cursor));
-    if (Array.isArray(v) && v.length === 3 && v.every((x) => typeof x === 'string') && /^\d{4}-\d{2}-\d{2}$/.test(String(v[0]))) {
-      return v as [string, string, string];
+    const v: unknown = JSON.parse(atob(cursor));
+    if (!Array.isArray(v) || v.length !== 3) return null;
+    const [date, created, id] = v as unknown[];
+    if (typeof date === 'string' && typeof created === 'string' && typeof id === 'string' && CURSOR_DATE.test(date) && CURSOR_TIMESTAMP.test(created) && CURSOR_ID.test(id)) {
+      return [date, created, id];
     }
   } catch {
     // fall through

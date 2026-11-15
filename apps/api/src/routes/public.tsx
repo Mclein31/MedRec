@@ -2,7 +2,7 @@ import { Hono, type Context } from 'hono';
 import { randomToken } from '../lib/crypto';
 import { filesFor, signedFiles } from '../lib/records';
 import { firstInWindow, ipHash, logActivity, rateLimit, verifyFileSignature } from '../lib/security';
-import { CATEGORY_NAMES, openShare, scopeLabel, sharedRecords } from '../lib/shares';
+import { CATEGORY_NAMES, openShare, scopeLabel, sharedRecords, shareState, type ShareRow } from '../lib/shares';
 import { HttpError, SYSTEM, type AppEnv } from '../lib/types';
 import { EmergencyPage } from '../views/emergency';
 import { Notice } from '../views/layout';
@@ -60,8 +60,8 @@ pub.get('/s/:token', async (c) => {
   const profile = await subjectOf(c, share.user_id, share.person_id);
   const rows = await sharedRecords(s.db, share);
   const files = await filesFor(s.db, share.user_id, rows.map((r) => r.id));
-  // File links never outlive the share itself.
-  const ttl = Math.max(60, Math.min(900, Math.floor((new Date(share.expires_at).getTime() - s.now().getTime()) / 1000)));
+  // File links never outlive the share: they expire with it, and /files re-checks the share on every request.
+  const ttl = Math.max(1, Math.min(900, Math.floor((new Date(share.expires_at).getTime() - s.now().getTime()) / 1000)));
   const records: SharedRecord[] = await Promise.all(
     rows.map(async (r) => ({
       id: r.id,
@@ -72,7 +72,7 @@ pub.get('/s/:token', async (c) => {
       facility: r.facility,
       notes: r.notes,
       ai: r.ai as SharedRecord['ai'],
-      files: await signedFiles(c.env, files.get(r.id) ?? [], s.now(), ttl),
+      files: await signedFiles(c.env, files.get(r.id) ?? [], s.now(), ttl, share.id),
     })),
   );
   return c.html(
@@ -141,19 +141,30 @@ const EMERGENCY_OFF = {
   message: 'The person has turned this Medical ID off or replaced the link. In an emergency, call your local emergency number.',
 };
 
-/** Streams a private R2 object for a valid, unexpired signature. */
+/**
+ * Streams a private R2 object for a valid, unexpired signature. Links issued on a share
+ * page are bound to that share and stop working the moment it is revoked or expires.
+ */
 pub.get('/files/:key', async (c) => {
   const s = c.get('services');
   const key = c.req.param('key');
-  const ok = await verifyFileSignature(key, c.req.query('exp') ?? '', c.req.query('sig') ?? '', c.env.FILE_SIGNING_SECRET, s.now());
-  if (!ok) throw new HttpError(403, 'LINK_EXPIRED', 'This file link expired. Reopen the record to get a new one.');
+  const shareId = c.req.query('share');
+  const expired = () => new HttpError(403, 'LINK_EXPIRED', 'This file link expired. Reopen the record to get a new one.');
+  if (shareId !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(shareId)) throw expired();
+  const ok = await verifyFileSignature(key, c.req.query('exp') ?? '', c.req.query('sig') ?? '', c.env.FILE_SIGNING_SECRET, s.now(), shareId);
+  if (!ok) throw expired();
+  if (shareId) {
+    const [share] = await s.db.query<ShareRow>(SYSTEM, 'SELECT * FROM shares WHERE id = $1', [shareId]);
+    if (!share || shareState(share, s.now()) !== 'active') throw expired();
+  }
   const obj = await c.env.VAULT.get(key);
   if (!obj) throw new HttpError(404, 'NOT_FOUND', 'This file was deleted.');
   return new Response(obj.body, {
     headers: {
       'content-type': obj.httpMetadata?.contentType ?? 'application/octet-stream',
       'content-length': String(obj.size),
-      'cache-control': 'private, max-age=600',
+      // A shared page must not stay readable from cache after the patient turns the link off.
+      'cache-control': shareId ? 'no-store' : 'private, max-age=600',
       'content-disposition': 'inline',
       'x-content-type-options': 'nosniff',
       'content-security-policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
