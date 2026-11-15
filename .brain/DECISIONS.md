@@ -21,7 +21,7 @@ Reported by the user: adding pages to a saved record offered no AI or manual fil
 - `src/ui/PageViewer.tsx`: full-screen pager over every page (swipe, Previous/Next, "Page n of N"). A single PDF still opens in the system viewer, which shows all of its internal pages; a PDF inside a mixed record opens from its page card. Used by the record screen and Explain.
 - API: `SCAN_BYTES` 18 → 14 MB. Pages travel base64-encoded (+33%), so 18 MB of pages exceeded Gemini's 20 MB inline request and failed as a generic AI error instead of the clear "too large" message.
 
-Verified: web run of attach → sheet → viewer (2 pages) → AI action error path; a real Gemini read of a 2-page record on a temporary local API returned page-1 lab values and page-2 medications; 40 API tests. Not verified: the flow on a device; the API limit change is **not deployed** yet.
+Verified: web run of attach → sheet → viewer (2 pages) → AI action error path; a real Gemini read of a 2-page record on a temporary local API returned page-1 lab values and page-2 medications; 40 API tests. Not verified: the flow on a device; the API limit change was deployed to production on 2026-11-15 (version 08e5b70d).
 
 ---
 

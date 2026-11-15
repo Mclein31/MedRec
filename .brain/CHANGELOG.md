@@ -14,7 +14,7 @@ Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is arch
 
 ## [Unreleased] — 2026-11-15 — Multi-page records, dark mode, Medical ID fixes (DD-53)
 
-- Adding pages to a record now offers AI reading of all pages or manual editing; a page viewer shows every page (DD-53). API AI scan limit 18 → 14 MB (not yet deployed).
+- Adding pages to a record now offers AI reading of all pages or manual editing; a page viewer shows every page (DD-53). API AI scan limit 18 → 14 MB (deployed).
 - Dark mode: warm charcoal backgrounds instead of aubergine, and a soft glow behind Remy so his body doesn't blend in.
 - Health details: explicit "No known allergies / conditions / current medications" options.
 - Medical ID Call button: dials a cleaned `tel:` number and explains when the device can't call.

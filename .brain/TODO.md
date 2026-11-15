@@ -21,7 +21,6 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## Medium priority
 
-- [ ] **Deploy the API scan-size fix (DD-53)**: `npm run deploy:prod` from `apps/api` (blocked by a permission check on 2026-11-15; needs the user's go-ahead).
 - [ ] Device check for multi-page records (DD-53): Pages added sheet after the iOS picker, AI read of several phone photos, page viewer swipe and PDF opening.
 - [ ] Device check for the new setup flow (DD-52): name-step keyboard, finish haptic, personalized Records home when signed in. (Native UI test updated and passing on the simulator.)
 - [ ] Decide whether Ask Remy needs a real conversational backend; today it only searches records, explains saved terms, uses a labeled glossary and gives app help (DD-45).
