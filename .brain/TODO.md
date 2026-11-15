@@ -14,8 +14,9 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## High priority
 
-- [ ] **Physical-device QA on iOS and Android:** camera capture, Face ID/fingerprint app lock (enrollment, cancellation, background/resume), PDF share sheet, email-code autofill, password-manager AutoFill on registration (DD-47), safe areas, keyboard, haptics and VoiceOver/TalkBack.
-- [ ] **Device QA for DD-51:** avatar camera/library and page-attachment pickers on device; the page-attach sheet's 400 ms iOS present-after-dismiss delay; native-sheet top spacing on profile edit.
+- [ ] **Deploy Ask Remy (DD-54) and push**: `npm run deploy:prod` from `apps/api`, then `git push` (both waiting on the user's approval; commit 985c7e5 is local only).
+- [ ] **Physical-device QA on iOS and Android:** Face ID/fingerprint app lock (enrollment, cancellation, background/resume), PDF share sheet, email-code autofill, password-manager AutoFill on registration (DD-47), safe areas, keyboard, haptics and VoiceOver/TalkBack.
+- [ ] **Device QA for DD-51:** avatar camera/library picker on device; native-sheet top spacing on profile edit.
 - [ ] **Motion feel check for DD-50 (release build, iPhone + low-end Android):** tab-marker travel, sheet exit/reversal, `Swap` timing and interruption, page-sheet top spacing, push/sheet gestures, Remy acting.
 - [ ] **Google and Apple sign-in:** provider setup and real OAuth. Buttons are intentionally disabled previews until the user asks to enable them; no client IDs are configured.
 
@@ -37,6 +38,7 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## Done (v2)
 
+- [x] On the user's iPhone (2026-11-15): camera scanning, photo upload and PDF upload work, including attaching pages to a record.
 - [x] Expo SDK 54 → 58 upgrade (RN 0.88, React 19.3, TS 6): audit 34 findings (6 high) → 3 moderate (dev-only `minimatch`, npm's fix would downgrade Expo); Device Hub patch removed; typecheck, 31 tests, web/iOS/Android export and Expo Go 58 simulator launch pass (2026-11-15). Native Release build not yet rebuilt.
 - [x] Production deployment: `npm run migrate:prod` (001_init, 002_rls, medrec_app password) and `npm run deploy:prod` (Worker + 6 secrets) on Neon `ap-southeast-1`; `/api/ready` returns 200 (2026-11-15). `ALLOWED_ORIGINS` intentionally empty until a web origin exists.
 - [x] v2 rebuild in `apps/` on Workers, Neon, R2, Gemini and emailed codes, including password reset by email code (DD-44, 2026-10-24).
