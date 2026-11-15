@@ -4,6 +4,7 @@ import { Alert, Linking, Platform, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { telUrl } from '../../src/format';
+import { saysNone } from '../../src/listDraft';
 import { api } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
 import { shareLink } from '../../src/lib/shareLink';
@@ -18,10 +19,12 @@ import { MedicalIdCard } from '../../src/ui/MedicalIdCard';
 function Fact({ label, value, alert, empty = 'None recorded' }: { label: string; value: string[] | string | null; alert?: boolean; empty?: string }) {
   const c = useColors();
   const text = Array.isArray(value) ? value.join(', ') : value;
+  // "No known allergies" is good news, not a warning.
+  const warn = alert && !(Array.isArray(value) && saysNone(value));
   return (
     <View style={{ gap: 4, paddingVertical: space.md }}>
       <Eyebrow color={c.ink2}>{label}</Eyebrow>
-      <Txt variant="headline" color={text ? (alert ? c.danger : c.ink) : c.ink3}>{text || empty}</Txt>
+      <Txt variant="headline" color={text ? (warn ? c.danger : c.ink) : c.ink3}>{text || empty}</Txt>
     </View>
   );
 }

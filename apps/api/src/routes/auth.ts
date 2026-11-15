@@ -91,13 +91,14 @@ auth.post('/login', async (c) => {
     return c.json({ status: 'verify_email', challenge: await startChallenge(c.env, s, user, 'verify_email') }, 202);
   }
   if (input.deviceToken) {
-    const trusted = await one(
+    const trusted = await one<{ id: string; label: string | null }>(
       s.db,
       asUser(user.id),
-      'SELECT id FROM trusted_devices WHERE user_id = $1 AND token_hash = $2 AND expires_at > now()',
+      'SELECT id, label FROM trusted_devices WHERE user_id = $1 AND token_hash = $2 AND expires_at > now()',
       [user.id, await sha256(input.deviceToken)],
     );
-    if (trusted) return c.json(await signedIn(c, user, null, false));
+    // The device was named when it was trusted; reuse that so sessions don't show as unknown.
+    if (trusted) return c.json(await signedIn(c, user, trusted.label, false));
   }
   return c.json({ status: 'otp_required', challenge: await startChallenge(c.env, s, user, 'login') }, 202);
 });

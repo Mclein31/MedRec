@@ -2,10 +2,11 @@ import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { radius, space, useColors } from '../theme';
 import { Icon, Tappable, Txt } from './core';
+import { decorative } from './a11y';
 
 function GoogleMark() {
   return (
-    <Svg width={20} height={20} viewBox="0 0 48 48" accessibilityElementsHidden>
+    <Svg width={20} height={20} viewBox="0 0 48 48" {...decorative}>
       <Path fill="#4285F4" d="M43.6 24.46c0-1.36-.12-2.66-.35-3.92H24v7.42h10.99a9.39 9.39 0 0 1-4.08 6.16v5h6.6c3.86-3.55 6.09-8.77 6.09-14.66Z" />
       <Path fill="#34A853" d="M24 44c5.51 0 10.13-1.83 13.51-4.88l-6.6-5c-1.83 1.23-4.17 1.96-6.91 1.96-5.3 0-9.79-3.58-11.39-8.4H5.8v5.16A20 20 0 0 0 24 44Z" />
       <Path fill="#FBBC05" d="M12.61 27.68a12.1 12.1 0 0 1 0-7.36v-5.16H5.8a20 20 0 0 0 0 17.68l6.81-5.16Z" />

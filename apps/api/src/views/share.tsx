@@ -1,4 +1,5 @@
 import { Page } from './layout';
+import { saysNone } from '../lib/none';
 
 export interface SharedFile {
   id: string;
@@ -54,10 +55,12 @@ export function age(dob: string | null, now: Date) {
 
 function Chips(props: { items: string[]; alert?: boolean; empty: string }) {
   if (!props.items.length) return <p class="muted small">{props.empty}</p>;
+  // An explicit "No known allergies" answer is reassuring, so it never gets the alert style.
+  const alert = props.alert && !saysNone(props.items);
   return (
     <div class="chips">
       {props.items.map((i) => (
-        <span class={props.alert ? 'chip alert' : 'chip'}>{i}</span>
+        <span class={alert ? 'chip alert' : 'chip'}>{i}</span>
       ))}
     </div>
   );

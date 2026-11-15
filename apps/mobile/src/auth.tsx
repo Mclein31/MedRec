@@ -21,7 +21,13 @@ interface AuthApi {
 
 const Ctx = createContext<AuthApi | null>(null);
 
-export const deviceLabel = () => (Platform.OS === 'ios' ? 'iPhone or iPad' : Platform.OS === 'android' ? 'Android device' : 'Web browser');
+/** A recognisable name for Security & privacy: "iPhone", "iPad", the Android model, or "Web browser". */
+export const deviceLabel = () => {
+  const k = Platform.constants as { interfaceIdiom?: string; Model?: string; Brand?: string };
+  if (Platform.OS === 'ios') return k.interfaceIdiom === 'pad' ? 'iPad' : 'iPhone';
+  if (Platform.OS === 'android') return k.Model ? `${k.Brand && !k.Model.toLowerCase().startsWith(k.Brand.toLowerCase()) ? `${k.Brand[0]!.toUpperCase()}${k.Brand.slice(1)} ` : ''}${k.Model}`.slice(0, 80) : 'Android device';
+  return 'Web browser';
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ status: 'loading' });

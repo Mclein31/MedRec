@@ -8,6 +8,7 @@ import { Icon, Txt, type IconName } from '../ui/core';
 import { LAUNCH_DURATION, type LaunchKind } from '../ui/launchFlow';
 import { RecordSkeleton } from '../ui/RecordRow';
 import { Remy } from '../ui/Remy';
+import { decorative } from '../ui/a11y';
 
 const PLUM = '#492D48';
 const IVORY = '#FFF9EF';
@@ -91,7 +92,7 @@ export function Launch({ kind, reason = 'startup', done, splashReady = true, onG
       accessible accessibilityRole="progressbar" accessibilityLabel={kind === 'first-use' ? 'Welcome to MedRec. Getting ready.' : reason === 'sign-in' && done ? 'Signed in. Opening MedRec.' : 'Opening MedRec.'}
     >
       <Txt color={color} style={{ fontFamily: font.wordmark, fontSize: 27, lineHeight: 34, letterSpacing: -0.6 }}>MedRec</Txt>
-      <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ alignItems: 'center', width: '100%', maxWidth: 360, gap: compact ? 14 : 24 }}>
+      <View pointerEvents="none" {...decorative} style={{ alignItems: 'center', width: '100%', maxWidth: 360, gap: compact ? 14 : 24 }}>
         <View style={{ width: stageSize, height: first ? compact ? 244 : 282 : 240, alignItems: 'center', justifyContent: 'center' }}>
           {first ? <>
             <Animated.View style={[{ position: 'absolute', width: 214, height: 214, borderRadius: 107, backgroundColor: GOLD, top: compact ? 21 : 42 }, halo]} />

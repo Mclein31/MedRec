@@ -11,14 +11,13 @@ import { Banner, Button, Tappable, Txt } from '../src/ui/core';
 import { Chip, Field } from '../src/ui/form';
 import { Screen, Section } from '../src/ui/layout';
 import { ListEditor, withDraft } from '../src/ui/ListEditor';
+import { NONE } from '../src/listDraft';
 import { PhotoSheet } from '../src/ui/PhotoSheet';
 import { Remy } from '../src/ui/Remy';
 
 const BLOOD = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'];
 const SEX = [['female', 'Female'], ['male', 'Male'], ['intersex', 'Intersex'], ['unspecified', 'Prefer not to say']] as const;
 const LISTS = ['allergies', 'conditions', 'medications'] as const;
-/** Explicit "none" answers. Saved as the list's only item so Medical ID and shared pages show them. */
-const NONE = { allergies: 'No known allergies', conditions: 'No known conditions', medications: 'No current medications' } as const;
 type ListKey = (typeof LISTS)[number];
 
 type Draft = Omit<Profile, 'email' | 'avatarUrl' | 'emergency' | 'heightCm' | 'weightKg'> & { heightCm: string; weightKg: string };

@@ -11,7 +11,8 @@ import { useTopInset } from '../src/ui/layout';
 import { Rise, Swap } from '../src/ui/motion';
 import { Remy, Sparkles } from '../src/ui/Remy';
 
-type Turn = { id: number; question: string; reply?: Reply; failed?: boolean };
+/** `limited`: the AI couldn't be reached, so the reply came from the on-device search instead. */
+type Turn = { id: number; question: string; reply?: Reply; failed?: boolean; limited?: boolean };
 
 const STARTERS = ['Summarize my latest lab results', 'Were any of my results flagged?', 'What medications are in my records?'];
 const search: Search = async (params) => (await api.records(params)).records;
@@ -40,8 +41,10 @@ export default function AskRemy() {
     // Earlier turns go with the question so follow-ups like "and the one before?" make sense.
     const history = turns.filter((x) => x.reply && x.id !== id).slice(-3).flatMap((x) => [{ role: 'user' as const, text: x.question }, { role: 'remy' as const, text: replyText(x.reply!).slice(0, 1500) }]);
     try {
-      const reply = urgentReply(q) ?? (await fromAi(q, history, context?.id)) ?? (await answer(q, search, context));
-      setTurns((prev) => prev.map((x) => (x.id === id ? { ...x, reply, failed: false } : x)));
+      const urgent = urgentReply(q);
+      const ai = urgent ? null : await fromAi(q, history, context?.id);
+      const reply = urgent ?? ai ?? (await answer(q, search, context));
+      setTurns((prev) => prev.map((x) => (x.id === id ? { ...x, reply, failed: false, limited: !urgent && !ai } : x)));
     } catch {
       // The draft stays cleared but the question is kept so Retry can resend it.
       setTurns((prev) => prev.map((x) => (x.id === id ? { ...x, failed: true } : x)));
@@ -96,7 +99,7 @@ export default function AskRemy() {
           turns.map((x) => (
             <View key={x.id} style={{ gap: space.lg }}>
               <Question text={x.question} />
-              {x.reply ? <Answer reply={x.reply} onAsk={x.id === turns[turns.length - 1]?.id && !pending ? (q) => void ask(q) : undefined} /> : x.failed ? <Failed onRetry={() => void ask(x.question, x.id)} /> : <Thinking />}
+              {x.reply ? <Answer reply={x.reply} limited={x.limited} onAsk={x.id === turns[turns.length - 1]?.id && !pending ? (q) => void ask(q) : undefined} /> : x.failed ? <Failed onRetry={() => void ask(x.question, x.id)} /> : <Thinking />}
             </View>
           ))
         )}

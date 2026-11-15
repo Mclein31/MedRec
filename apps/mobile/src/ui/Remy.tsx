@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
 import { useEffect, useId, useRef, useState } from 'react';
-import { AppState, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AppState, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useDerivedValue, useSharedValue, withDelay, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
 import { useCalmMotion } from '../prefs';
 import { useColors } from '../theme';
 import { ACTING_CYCLE_MS, actingSeed, minorFrameAt, privacyFrameAt, type RemyAttention, type RemyMotion, type RemyPose } from './remyActing';
 import { ATLAS_BOUNDS, fittedSprite, ORIGINAL_BOUNDS } from './remyGeometry';
+import { decorative } from './a11y';
 
 export type { RemyAttention, RemyMotion, RemyPose } from './remyActing';
 export { formAttention } from './remyActing';
@@ -127,7 +128,7 @@ export function Remy({
   const peekOpacity = useAnimatedStyle(() => ({ opacity: Math.min(1, cover.value * 5) * Math.min(1, peek.value * 5) }));
 
   return (
-    <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={[{ width: size, height: size, alignItems: 'center' }, style]}>
+    <View aria-hidden {...(Platform.OS === 'web' ? {} : { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const })} pointerEvents="none" style={[{ width: size, height: size, alignItems: 'center' }, style]}>
       {!!glow && size >= 40 && <Glow enter={enter} size={size} color={glow} />}
       {ground && <Ground enter={enter} size={size} />}
       <Animated.View style={[{ width: size, height: size }, body]}>
@@ -184,7 +185,7 @@ export function Sparkles({ width, height, delay = 0 }: { width: number; height: 
   const calm = useCalmMotion();
   if (calm) return null;
   return (
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', left: 0, top: 0, width, height }}>
+    <View pointerEvents="none" {...decorative} style={{ position: 'absolute', left: 0, top: 0, width, height }}>
       {SPARKS.map((s, i) => (
         <Spark key={i} left={s.x * width} top={s.y * height} size={s.s} color={s.c} delay={delay + s.d} />
       ))}

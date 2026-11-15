@@ -50,7 +50,7 @@ function SourceCard({ r }: { r: CitedRecord }) {
   );
 }
 
-export function Answer({ reply, showCaution = true, onAsk }: { reply: Reply; showCaution?: boolean; onAsk?: (question: string) => void }) {
+export function Answer({ reply, showCaution = true, onAsk, limited = false }: { reply: Reply; showCaution?: boolean; onAsk?: (question: string) => void; limited?: boolean }) {
   const c = useColors();
   return (
     <Rise from={10} style={{ gap: space.md }}>
@@ -96,6 +96,12 @@ export function Answer({ reply, showCaution = true, onAsk }: { reply: Reply; sho
           )}
           {showCaution && <Txt variant="caption" color={c.ink3}>{reply.records.length ? 'From your saved records. ' : ''}AI can make mistakes. Check the original document and ask your clinician about medical decisions.</Txt>}
         </>
+      )}
+      {limited && (
+        <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' }}>
+          <Icon name="information-outline" size={16} color={c.ink3} />
+          <Txt variant="caption" color={c.ink3} style={{ flex: 1 }}>My full answers aren't available right now, so this is a quick search of your records. Try again in a little while.</Txt>
+        </View>
       )}
       {reply.kind === 'help' && reply.link && <TextLink label={reply.link.label} onPress={() => router.push(reply.link!.href as Href)} />}
     </Rise>

@@ -12,6 +12,13 @@ last_updated: 2026-11-15
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
 
+## [Unreleased] — 2026-11-15 — Small fixes after device testing
+
+- "No known allergies / conditions / current medications" now show in neutral text on the Medical ID tab, the public emergency page and the doctor share page instead of the red alert style.
+- Sessions signed in on a trusted device keep that device's name (no more "Unknown device"); new sign-ins are named "iPhone", "iPad", the Android model, or "Web browser".
+- Ask Remy says when it's answering from the quick record search because the AI is unavailable.
+- Web: decorative views use `aria-hidden` (`src/ui/a11y.ts`) instead of native-only props that React warned about.
+
 ## [Unreleased] — 2026-11-15 — Ask Remy reads your records (DD-54)
 
 - Ask Remy now answers with Gemini from the person's own records (lab values, flags, medicines, dates, notes), cites the records it used and suggests follow-up questions; it still refuses diagnosis and medication decisions and falls back to search when the AI is unavailable.

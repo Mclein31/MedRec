@@ -37,7 +37,7 @@ const SHARE: Share = {
 function Example({ label, children }: { label: string; children: ReactNode }) {
   return (
     <View accessible accessibilityLabel={label}>
-      <View {...(Platform.OS === 'web' ? { inert: true } : {})} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{children}</View>
+      <View {...(Platform.OS === 'web' ? { inert: true } : { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const })} pointerEvents="none">{children}</View>
     </View>
   );
 }

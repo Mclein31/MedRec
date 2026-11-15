@@ -1,4 +1,5 @@
 import { Page } from './layout';
+import { saysNone } from '../lib/none';
 import { age, formatDate } from './share';
 
 export interface EmergencyProps {
@@ -15,10 +16,12 @@ export interface EmergencyProps {
 
 function List(props: { items: string[]; empty: string; alert?: boolean }) {
   if (!props.items.length) return <p class="muted">{props.empty}</p>;
+  // An explicit "No known allergies" answer is reassuring, so it never gets the alert style.
+  const alert = props.alert && !saysNone(props.items);
   return (
     <div class="chips">
       {props.items.map((i) => (
-        <span class={props.alert ? 'chip alert' : 'chip'}>{i}</span>
+        <span class={alert ? 'chip alert' : 'chip'}>{i}</span>
       ))}
     </div>
   );

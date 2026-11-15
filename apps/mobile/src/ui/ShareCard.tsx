@@ -10,6 +10,7 @@ import { font, space } from '../theme';
 import { Button, Txt } from './core';
 import { Rule } from './layout';
 import { Remy } from './Remy';
+import { decorative } from './a11y';
 
 const TEETH = 28;
 const DEPTH = 6;
@@ -41,7 +42,7 @@ export function ShareReceipt({ share, example = false, compact = false }: { shar
       style={{ width: '100%', maxWidth: 342, alignSelf: 'center', paddingHorizontal: space.xl, paddingTop: (compact ? space.lg : space.xl) + DEPTH, paddingBottom: (compact ? space.lg : space.xl) + DEPTH, gap: compact ? space.sm : space.lg }}
     >
       {size.w > 0 && (
-        <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', left: 0, top: 0 }}>
+        <View pointerEvents="none" {...decorative} style={{ position: 'absolute', left: 0, top: 0 }}>
           <Svg width={size.w} height={size.h}>
             <Path d={paperPath(size.w, size.h)} fill={PAPER.bg} stroke={PAPER.line} strokeWidth={1} />
           </Svg>

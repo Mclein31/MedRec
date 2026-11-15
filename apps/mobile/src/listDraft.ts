@@ -12,3 +12,12 @@ export function withDraft(items: string[], draft: string, none?: string) {
 export function isNone(items: string[], none: string) {
   return items.length === 1 && items[0] === none;
 }
+
+/** Explicit "nothing to list" answers, saved as a list's only item. Shared by the editor and every place lists are shown. */
+export const NONE = { allergies: 'No known allergies', conditions: 'No known conditions', medications: 'No current medications' } as const;
+const NONE_VALUES: string[] = Object.values(NONE);
+
+/** True when a list holds only an explicit "none" answer, so it shouldn't be styled as an alert. */
+export function saysNone(items: string[]) {
+  return items.length === 1 && NONE_VALUES.includes(items[0]!);
+}
