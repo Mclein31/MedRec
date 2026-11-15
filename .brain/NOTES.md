@@ -5,164 +5,59 @@ project: MedRecord_App
 tags:
   - notes
   - reference
-last_updated: 2026-10-26
+last_updated: 2026-11-15
 ---
 
-# 📋 MedRecord_App (MedRec) — Technical Notes
+# MedRecord_App (MedRec) — Technical Notes
 
-## 2026-10-26 — Reviewable Figma redesign
+Gotchas and reference for the current v2 app. v1 notes (Express backend, port 4000, drawer/notification center, teal design tokens, Google SSO) are archived verbatim in [archive/NOTES_ARCHIVE.md](archive/NOTES_ARCHIVE.md).
+
+## Configuration (v2)
+
+- API: `apps/api` on port 8787 (`wrangler dev` listens on 0.0.0.0). Local secrets in ignored `apps/api/.dev.vars` (template `.dev.vars.example`): `DATABASE_URL`, `JWT_SECRET`, `FILE_SIGNING_SECRET`, `GEMINI_API_KEY`, `SMTP_USER`, `SMTP_PASSWORD`. Empty SMTP values print sign-in codes to the terminal in development only.
+- Production: one ignored file, `apps/.env` (template `apps/.env.example`). `npm run deploy:prod` uploads Worker secrets plus `PUBLIC_URL`/`ALLOWED_ORIGINS`; `MIGRATION_DATABASE_URL`/`APP_DB_PASSWORD` are used only by `npm run migrate:prod`; `EXPO_PUBLIC_API_URL` reaches the app via `npm run start:prod`/`export:prod`.
+- R2 bucket `medrec-v2-vault` (preview `medrec-v2-vault-dev`) is deliberately separate from v1's `medrec-vault`.
+- Gemini: `gemini-3.5-flash-lite` with `gemini-3.1-flash-lite` fallback (`wrangler.toml`).
+- Mobile: leave `EXPO_PUBLIC_API_URL` unset in development; `src/lib/apiBase.ts` derives port 8787 from Metro's host so phones on the same Wi-Fi work. Never restore the old port-4000 or pinned-LAN-IP assumptions (a stale pinned IP caused the 2026-10-14 sign-in outage; see archive/AUTH_AUDIT.md).
+- API tests create a fresh local Postgres database and run as `medrec_test`, a member of the unprivileged `medrec_app` role, so RLS is enforced in tests.
+
+## Gotchas
+
+- **Reanimated layout `entering` crashes on web unmount.** Use shared-value motion (`Rise`, `Swap` in `src/ui/motion.tsx`). The list `Enter` in `src/ui/layout.tsx` uses `entering` on native only and renders a plain view on web.
+- **Reanimated `AnimatedPressable` drops Pressable style callbacks** (learned in v1, DD-41): pass a static style array/object and move pressed opacity/scale into `useAnimatedStyle`, or buttons render without backgrounds.
+- **iOS strong-password cover (DD-48):** secure new-password fields must opt out of automatic generation from the first render (`textContentType="none"`, `autoComplete="off"` in shared `Field`). Changing hints after reveal does not clear an existing cover. Saved-login autofill and Android/web hints stay on.
+- **Remy atlases:** clip each atlas source cell before applying the size/foot-alignment transform; the outer display slot must allow overflow so the waving hand is not cut. `remyGeometry.ts` normalizes height and foot center. Only focus/visibility/busy signals reach Remy, never field contents.
+- **Onboarding layout:** keep captions outside the preview scroll region so actions can't cut them off; Remy gets his own space rather than covering record text.
+- **Accessibility and overlays (DD-49):** do not wrap the native navigator in a dynamically accessibility-hidden view, and do not leave `accessibilityViewIsModal` on the transient launch overlay; both left native controls hidden after exit.
+- **Sheet insets:** `SHEET_ROUTES` in `src/ui/layout.tsx` must stay in sync with the `sheet` route options in `app/_layout.tsx`.
+- **Account deletion:** FK cascades remove all owned rows, including append-only activity; RI cascades are not blocked by the app role's RLS (verified by test). R2 objects are deleted first.
+- **Password hashing:** PBKDF2-SHA256 at 100k iterations is the Workers cap; cost is stored per hash.
+
+## Native preview and Xcode 27
+
+- Expo Go must match SDK 54 and inserts its own app-icon loader, which hides splash/startup work. Review startup with the native Release app (`com.mclein.medrec`, MedRec 2.0.0) on the iPhone 16 Pro simulator; rebuild steps and captures are in `apps/mobile/validation/preload/README.md`.
+- Generated `ios/` stays ignored. Keep `plugins/withLaunchBackground.cjs` registered BEFORE `expo-splash-screen` in the plugins list.
+- Xcode 27 needs a 15.1 deployment-target override for older pods (`IPHONEOS_DEPLOYMENT_TARGET=15.1`) and local simulator signing (`CODE_SIGN_IDENTITY=-`); the unsigned build stalls reading Keychain state.
+- Xcode 27 ships Device Hub instead of Simulator.app. `apps/mobile/scripts/patchExpoSimulator.cjs` backports Expo PR #46757 (app ID/plist discovery, dual process detection, Device Hub launch fallback); it runs on postinstall/prestart and is guarded to the exact CLI version. Review it on any Expo upgrade.
+- A fresh or erased simulator needs a build installed before pressing `i`; `expo start` alone does not install one.
+- Expo Go can keep an older JS bundle running until a cold restart; refresh the current Metro URL and dismiss its developer tutorial before visual checks.
+- Validation captures: `apps/mobile/validation/onboarding/`, `remy/`, `preload/`.
+
+## Design source: Figma and handoff (2026-10-26)
+
+> Paths updated 2026-11-15: the external design workspace moved from `~/Documents/ChatGPT/MedRec/` to `/Users/mclein/projects/MedRec/Design_Handoff/`. The warm folio direction was implemented in production by DD-45.
 
 - **Complete UI/UX implementation handoff (2026-10-26):** `design/medrec-uiux-handoff/` contains all 52 current PNG/SVG screen references, three boards, 2,737 layer nodes, semantic/raw tokens, 221 prototype-linked nodes, selected Remy assets, gallery, route map and `CLAUDE_PROMPT.md`. Target is v2 `apps/mobile` + `apps/api` per DD-44. The snapshot includes 40px header Remy and the white welcome panel. This packaging changed no production code; Figma remains the editable source.
-
-- **Figma organization:** latest MedRec screens, components/states and brand/Remy assets moved to the dedicated **MedRec · App design** page (`77:3066`) in the existing file. Current section IDs remain `71:15559`, `71:15560`, `71:18177`. The old rejected sections `69:746` and `69:747` were deleted at user request; SERVIO's 76 unrelated top-level nodes and three flows were unchanged. Five current MedRec flows moved; destination validation found no broken links. Local page ledger: `/Users/mclein/Documents/ChatGPT/MedRec/design-output/MedRec-page-organization.json`.
-
+- **Figma organization:** latest MedRec screens, components/states and brand/Remy assets moved to the dedicated **MedRec · App design** page (`77:3066`) in the existing file. Current section IDs remain `71:15559`, `71:15560`, `71:18177`. The old rejected sections `69:746` and `69:747` were deleted at user request; SERVIO's 76 unrelated top-level nodes and three flows were unchanged. Five current MedRec flows moved; destination validation found no broken links. Local page ledger: `/Users/mclein/projects/MedRec/Design_Handoff/design-output/MedRec-page-organization.json`.
 - **Current reviewable direction:** [Warm folio](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15559), replacing the rejected mint theme and folded-M logo. Ivory, aubergine, persimmon, golden/peach; 29 main screens include launch/loading and [Ask Remy](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=75-2656). User calls the selected organizer mascot Remy and intends him as the chatbot. Four expression variants and a page-by-page placement plan are on the [brand board](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-18177). Chat is a fixed synthetic Figma demo, not live AI. Full rationale: [[07 - Product Design/UI Concepts#2026-10-26 — Warm folio and Remy assistant]]. This does not approve or implement production changes.
-- **Review-file preference:** user objected to filling Downloads. All 24 exact session-created exports were moved into `/Users/mclein/Documents/ChatGPT/MedRec/design-output/review-exports/`. Keep future review files inside the workspace and use live Figma views for routine checking.
+- **Review-file preference:** user objected to filling Downloads. All 24 exact session-created exports were moved into `/Users/mclein/projects/MedRec/Design_Handoff/design-output/review-exports/`. Keep future review files inside the workspace and use live Figma views for routine checking.
 - **Rejected category treatment:** oversized folder-shaped record cards were rejected. Current Figma records use compact text filters and a roomier document list; the onboarding preview uses document rows. Remy's selected character and the logo are unaffected. Do not restore the bulky category folders.
-- **Latest Figma refinement:** five-item navbar with Add record centered; plain MedRec header name, Remy beside Ask Remy at top right. Launch and all five QR receipt headers use Remy; QR cards have top/bottom zigzag tear edges. Magnifying-glass Remy is on search-empty, and the app icon is a new Remy close-up. Current visual rules and asset/prompt paths: `/Users/mclein/Documents/ChatGPT/MedRec/DESIGN.md`. These are Figma concepts, not production changes.
-
+- **Latest Figma refinement:** five-item navbar with Add record centered; plain MedRec header name, Remy beside Ask Remy at top right. Launch and all five QR receipt headers use Remy; QR cards have top/bottom zigzag tear edges. Magnifying-glass Remy is on search-empty, and the app icon is a new Remy close-up. Current visual rules and asset/prompt paths: `/Users/mclein/projects/MedRec/Design_Handoff/DESIGN.md`. These are Figma concepts, not production changes.
 - **Superseded direction 04:** the first teal draft was rejected. The subsequent [iris, mint and coral proposal](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=71-15559) contained 24 main screens and the selected organizer. Mint and the M logo were subsequently rejected. The orange/serif journal concept, conventional clinical-blue palette, and paper mascot were also rejected. See [[07 - Product Design/UI Concepts#2026-10-26 — Iris, mint and coral brand direction]].
-
-- Draft created beside SERVIO in the existing [Personal Projects file](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=69-746), same page, section `69:746`; components and supporting states in `69:747`.
+- First (rejected teal) draft was created beside SERVIO in the existing [Personal Projects file](https://www.figma.com/design/ejP1MZ0Bzaqxzc31vgo5Bi/Personal-Projects?node-id=69-746), same page, section `69:746`; components and supporting states in `69:747` (both sections since deleted at user request).
 - 20 main screens, supporting variants/sheets, reusable components and 203 linked prototype actions. Lexend Deca, restrained teal, bare icons, larger controls, explicit share scopes. Production source was not changed; this does not supersede existing design decisions until reviewed.
-- Rationale, source references, validation and limitations: [[07 - Product Design/UI Concepts#2026-10-26 — Figma redesign draft]]. Builder and exported state/overview are under `/Users/mclein/Documents/ChatGPT/MedRec/`.
+- Rationale, source references, validation and limitations: [[07 - Product Design/UI Concepts#2026-10-26 — Figma redesign draft]]. Builder and exported state/overview are under `/Users/mclein/projects/MedRec/Design_Handoff/`.
 
-## 📂 MedRec Obsidian Vault Integration
-The `MedRecord_App/MedRec/` folder is an existing Obsidian vault with detailed notes across:
-- `01 - Vision & Goals/`
-- `02 - Problem Space/` (Data silos, lost records, patient ownership)
-- `03 - Research/` & `04 - Users/` (Patient and doctor workflows)
-- `08 - Technical Architecture/` & `09 - Database/`
-- `10 - Security & Privacy/` (Threat models, token revocation, encryption)
+## MedRec Obsidian vault
 
-## 🔑 Environment Variables Required (`backend/.env`)
-- `PORT`: Server port (default `4000`)
-- `DATABASE_URL`: PostgreSQL connection URI (`postgresql://user:pass@localhost:5432/medrec`)
-- `PGSSL`: PostgreSQL SSL mode (`true` for managed cloud, `false` for local)
-- `JWT_SECRET`: High-entropy string (32+ chars) for signing user session tokens
-- `JWT_EXPIRES_IN`: JWT expiration (default `7d`)
-- `GOOGLE_WEB_CLIENT_ID`: Google OAuth 2.0 Web Client ID for verifying mobile ID tokens
-- `R2_ACCOUNT_ID`: Cloudflare Account ID
-- `R2_ACCESS_KEY_ID`: Cloudflare R2 API Token Access Key ID
-- `R2_SECRET_ACCESS_KEY`: Cloudflare R2 API Token Secret Access Key
-- `R2_BUCKET_NAME`: Target R2 bucket name (`medrec-vault`)
-- `R2_ENDPOINT`: `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`
-- `OPENAI_API_KEY`: API key for medical summarization and explanations (quarantined / future milestone)
-
-## 🔑 Mobile Environment Variables Required (`mobile/.env`)
-- `EXPO_PUBLIC_API_URL`: Leave blank for local development so API port 4000 follows the current Metro/browser host. Set an explicit `/api` base URL for a separate backend or production. Avoid pinned Wi-Fi IPs.
-- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`: Web Client ID matching backend `GOOGLE_WEB_CLIENT_ID` for ID token audience
-- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`: iOS Client ID from Google Cloud Console for native iOS sign-in dialog
-
-## 📷 Document Camera & Gallery Ingestion
-- `expo-camera` (`CameraView`) is configured with `facing="back"`, `enableTorch`, and unmounts cleanly on view transitions.
-- `expo-image-picker` provides gallery import via `launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })`.
-- Captured and imported images reside strictly within the application's sandboxed local cache and are never saved to the public camera roll.
-- All form inputs in `add.tsx` are managed at the top-level parent component to prevent data loss when switching between form, camera, and preview view modes.
-- The Scan Health Document hero card uses signature AI blue (`#1976D2`) for visual cohesion with AI insights, while record metadata chips and save CTAs maintain the core healthcare green palette (`#159A83`).
-
-## 🧭 Drawer Menu Architecture
-- The menu is rendered as an overlay Modal (`SideMenuModal`) with hardware-accelerated translation (`useNativeDriver: true`) rather than a full React Navigation drawer container, avoiding gesture conflicts with iOS screen pops and bottom tab switching.
-- Menu rows (`SideMenuItem`) are strictly text-only, utilizing typography (`Lexend Deca`) and padding to maintain visual hierarchy.
-- Header branding directly reuses the existing official asset `assets/logo/logo.png`.
-
-## 🔔 Notification Center Architecture
-- **Event Sources**: Server controllers trigger automatic notification creation on record logging, temporary QR token generation/revocation, security/emergency edits, and AI summaries.
-- **Privacy Standard**: Two-tier model ensures notification summaries contain actionable context while completely omitting sensitive clinical values, drug dosages, or diagnoses.
-- **Modal Affordance**: Rendered as a slide-up sheet (`presentationStyle="pageSheet"`) with a centered grey drag handle (`#D1D5DB`, `38×4px`, `borderRadius: 2`) integrated into the header card with compact vertical spacing to indicate downward swipe dismissal.
-- **State & Deep Linking**: Optimistic read-state handling via `NotificationContext` with automatic routing to relevant records (`/record/[id]`), shares (`/(tabs)/share`), or profile screens (`/(tabs)/profile`).
-
-## 👤 Profile Tab & Avatar Ingestion
-- **Inset Grouped Architecture**: Designed without heavy card borders or saturated background highlights. Utilizes clean white containers (`#FFFFFF`, `borderRadius: 16`, `borderColor: '#E5F0EE'`) with `#F0F5F4` hairline dividers.
-- **Avatar Selection & Cropping**: Uses `expo-image-picker` (`launchImageLibraryAsync`) with `aspect: [1, 1]`, `allowsEditing: true`, and `quality: 0.7`. Directly invokes native iOS `PHPickerViewController` without requiring pre-flight permissions.
-- **Database Persistence & Session Sync**: Stores image payload in `user_profiles.avatar_url` (PostgreSQL `TEXT` column) and propagates into `AuthContext` on launch via parallel `api.getMe()` and `api.getProfile()` calls.
-- **Native Linkage**: CocoaPods dependency `ExpoImagePicker (17.0.11)` linked in `mobile.xcworkspace` with iOS `NSPhotoLibraryUsageDescription` in `Info.plist`. Express JSON parser configured with `limit: '10mb'`.
-- **Bottom Navigation State**: Tab layout (`_layout.tsx`) renders the circular user avatar (`28×28px`, `cover`, `borderRadius: 14`, with 1.5px `#159A83` teal border when active) whenever `user?.avatarUrl` exists, and seamlessly falls back to default `profile-active.png` and `profile-inactive.png` icons when no photo is uploaded.
-- **Input Placeholder Sizing**: All profile edit and password input fields use conditional `fontSize: 12.5` for empty placeholder states to comfortably accommodate lengthy clinical examples (e.g. penicillin allergies, asthma medications, address lines) without clipping, switching to standard `14px` when populated with user text.
-
-## 🪟 Sliding Sheet & Drag Handle Architecture
-- **Standard Dimensions**: All pageSheet and slide-up modals (`NotificationCenterModal`, `ProfileEditModal`, `ChangePasswordModal`, `EmergencyIdModal`, `add.tsx`, `scan.tsx`, `index.tsx`) utilize a standardized drag handle (`width: 38`, `height: 4`, `borderRadius: 2`, `backgroundColor: '#D1D5DB'`).
-- **Header Layout**: Integrated at the top of modal headers with `paddingTop: 10, paddingBottom: 14` to communicate swipe-down dismissibility without adding dead vertical space.
-- **Drawer Exception**: The side menu drawer (`SideMenuModal`) slides horizontally from the left edge and is intentionally excluded from vertical downward drag handles.
-
-## 📱 Adaptive Share Hero & Cardless Flat Access History
-- **Screen Architecture**: `mobile/app/(tabs)/share.tsx` is organized into three distinct tiers:
-  - **Tier 1 (Adaptive Hero)**: Focuses 75% of visual weight on sharing. Transitions between the default `#1976D2` blue generation card and a white living QR preview card with 142px SVG QR code, live clean countdown status (`#159A83`), and immediate access revocation.
-  - **Tier 2 (Active Shares)**: Secondary list for active doctor access sessions when not actively previewing a QR code.
-  - **Tier 3 (Past Sessions)**: Quiet, borderless activity log sitting directly on `#F4FAF9` canvas with 1px hairline dividers (`#E5F0EE`).
-- **Typography-Driven Hierarchy**: Removes repetitive leading icons and pill badges from past sessions; status is communicated with clean right-aligned typography (`Revoked` in `#D92D20`, `Expired` in `#64748B`).
-- **Progressive Disclosure**: Automatically shows the 3 most recent sessions, with an expandable `"Show full history"` button when history exceeds 3 items.
-
-## 🎨 Universal AI Card Design System & Record Type Carousel
-- **Unified Visual Language**: All AI-powered feature cards (`aiBanner` in `(tabs)/index.tsx`, `generateCard` in `(tabs)/share.tsx`, `aiCard` in `record/[id].tsx`, and `scanHeroCard` in `record/add.tsx`) share a consistent design system:
-  - Container: Signature rich blue (`#1976D2`), `borderRadius: 16`, `padding: 16`, `gap: 12`, elevation shadow (`shadowColor: '#1976D2'`, `elevation: 3`).
-  - Top Row: Icon (`34×34px` or `36×36px`, direct `#FFFFFF` rendering without highlight background pills) beside bold title (`16px`, `#FFFFFF`) and subtitle (`11px`, `rgba(255,255,255,0.88)`).
-  - Primary Action: Clean white CTA button (`backgroundColor: '#FFFFFF'`, `borderRadius: 10`, bold `#111827` typography).
-- **Horizontal Record Type Carousel**: Category selection in `mobile/app/record/add.tsx` uses a single-line horizontal `ScrollView` (`showsHorizontalScrollIndicator={false}`) with full-bleed negative margins (`marginHorizontal: -20, paddingHorizontal: 20`), preserving immediate visibility for form fields above the fold while maintaining smooth edge-to-edge swiping.
-
-## 📐 Centralized Design Tokens & Reusable UI Component Suite
-- **Canonical Design System (`mobile/constants/theme.ts`)**:
-  - `Colors`: Central source of truth for `teal` (`#159A83`), `ink` (`#12343B`), `bg` (`#F4FAF9`), `tealLight` (`#DDF5EE`), `cardBg` (`#FFFFFF`), `border` (`#E5F0EE`), `blue` (`#1976D2`), `red` (`#D92D20`), `dragHandle` (`#CBD5E1`), and `backdrop` (`rgba(18, 52, 59, 0.45)`).
-  - `Typography`: Pre-configured `LexendDeca` typography styles (`display`, `title1`, `title2`, `sectionHeader`, `body`, `caption`, `button`).
-  - `Spacing`: Enforces `screenPadding: 20` (20px standard horizontal gutters) and `tabBarClearance: 110` (110px bottom clearance preventing tab bar overlap).
-  - `Radii`: Standard corner radii (`card: 16`, `button: 12`, `pill: 10`, `sheet: 24`).
-- **Reusable Component Suite (`mobile/components/ui/`)**:
-  - `ScreenHeader.tsx`: Universal top toolbar for tab screens with Burger Menu, dynamic Notification Bell with unread dot, 28px `LexendDeca-Bold` title, and subtitle.
-  - `DragHandle.tsx`: Standalone 38×4px `#CBD5E1` pill for all modal sheets.
-  - `Button.tsx`: Unified button with haptics, spinner loading, and variant styling (primary, secondary, blue, outline, destructive).
-  - `Card.tsx`: Standardized 16px radius container with `#E5F0EE` hairline border.
-
-## 🗂️ Records Screen Layout & Quick Category Carousel
-- **Full-Width Search Bar (`mobile/components/records/RecordSearchBar.tsx`)**: Replaces cramped inline inputs with an edge-to-edge search bar featuring live keyword filtering across record titles, notes, and medical categories, complete with a 1-tap clear button.
-- **Category Quick Chips Carousel**: Direct single-tap horizontal filter bar (`[ All (14) ] [ Labs (5) ] [ Prescriptions (3) ] ...`) with real-time record distribution counts, eliminating redundant sorting modals and providing instant zero-friction navigation.
-- **Classic Card Preservation & De-cluttering**: Retains signature medical cards with category badge, 44px squircle icon box, clinical event date, and folder creation footer, while removing the circular background highlight on the chevron arrow for a clean, cohesive visual hierarchy.
-
-## 👤 Continuous Scrollable Profile Architecture
-- **Single Scroll Hierarchy (`mobile/app/(tabs)/profile.tsx`)**: The Profile title (28px `LexendDeca-Bold`) and subtitle are located inside the top-level `<ScrollView>`, scrolling away naturally as the user scrolls through their health profile.
-- **Fixed Global Navigation Header**: Keeps a compact top toolbar (`insets.top + 12`) outside the scroll area for persistent access to the Burger Menu drawer and Notification Bell unread indicator dot, avoiding unnecessary viewport occupation while ensuring global navigation remains accessible at all times.
-
-## 📝 Record Edit Modal Architecture
-- **`RecordEditModal.tsx`**: Sliding modal presenting document capture / attachment (`AttachedDocumentCard` or `scanHeroCard` with `DocumentCamera` and `DocumentPreview`), title input, horizontal category carousel (pill chips, `borderRadius: 20`, TEAL active, MUTED inactive), event date input with "Set Today" shortcut, and clinical notes textarea.
-- **Attachment Handling**: Supports viewing, inspecting, retaking, replacing, and removing document scan attachments matching `add.tsx` UI without AI summary banners or delete options. When a new image is selected, it uploads to Cloudflare R2 on save; when detached, passes `null` to clear the DB field and clean up the old R2 object.
-- **API**: `PUT /records/:id` and `PATCH /records/:id` both accepted. Dynamic SQL updates only the fields present in the payload.
-- **Presigned URL Guard**: Both `recordController.js` and `recordModel.js` guard against persisting `http(s)://` values as `attachment_url`. If a presigned URL is echoed back by the client, it is silently dropped and the existing DB key preserved.
-
-## 🤝 Shared Records — Doctor Scanner Architecture (`scan.tsx`)
-- **QR Scan → Token Validation**: `CameraView` with `barcodeScanningEnabled` → hits `GET /share/:token` → returns patient name, expiry, scoped records with pre-signed attachment URLs.
-- **AI Clinical Summary**: `POST /share/:token/summarize` → structured JSON (`summary`, `currentMedications`, `diagnoses`, `keyNotes`). Falls back to deterministic extraction when OpenAI unavailable.
-- **Per-Record Download**: `GET /share/:token/download/:recordId` → returns 15-min presigned R2 URL → `downloadFileDirectly` → native `Sharing.shareAsync` save sheet.
-- **ZIP Bundle Download**: `GET /share/:token/zip` → streams ZIP archive → saved to `FileSystem.documentDirectory` → `Sharing.shareAsync`. ZIP contains `README_CLINICAL_SUMMARY.txt`, `records_metadata.json`, `attachments/` folder.
-- **Terminate Session**: `POST /share/:token/terminate` → sets `revoked_at` → creates `share_revoked` notification for patient.
-- **`downloadFileDirectly`**: Module-level function supporting `forcedExt` / `forcedMime` parameters. On web: blob download via anchor click. On native: `FileSystem.downloadAsync` + `Sharing.shareAsync`.
-
-## ☁️ R2 Upload Error Handling
-- **Record Add (`add.tsx`)**: Upload failure aborts record creation. Shows `Alert("Upload Failed", …)` and calls `setSaving(false)` before returning. Never falls back to `file://` URI.
-- **Profile Avatar (`profile.tsx`)**: Upload failure reverts the optimistic avatar preview (restores `profile.avatarUrl`), shows `Alert("Upload Failed", …)`, and returns without calling `api.updateProfile`. Never falls back to base64 data URI.
-
-## 🔐 Security Implementation Notes
-- **Password Change**: `PUT /profile/password` requires `currentPassword` in body. Backend calls `userModel.findById` then `bcrypt.compare(currentPassword, user.password_hash)`. Returns `400` if missing, `401` if wrong.
-- **Logout Invalidation**: `POST /auth/logout` calls `userModel.incrementTokenVersion(req.user.id)`. The `requireAuth` middleware compares JWT's `tokenVersion` claim against `users.token_version` from DB, immediately rejecting all previously-issued tokens for that user.
-- **`tokenModel.js`**: Deleted. The `revoked_tokens` table never existed; the file was dead code. Token invalidation is handled entirely via `token_version`.
-- **Google SSO & Takeover Defense**: `POST /auth/google` accepts client `idToken` from `@react-native-google-signin/google-signin` and verifies it cryptographically via `google-auth-library`. Requires `email_verified === true`. If the user already exists under `auth_provider = 'local'`, the Google account is atomically linked (`linkGoogleAccount`), `users.token_version` is incremented to sanitize rogue sessions, and a `security_alert` notification is created. If `password_hash` is NULL (Google-only user), local password login and password changes are cleanly rejected with clear 401/400 responses.
-- **Share Session Cap**: Max 5 active sessions per patient. `pruneExcessActiveShares(userId, 4)` auto-revokes oldest before inserting new token.
-
-## 🔔 Notification Card Icons
-- `record_added` → `folder-outline`
-- `share_created`, `share_expired`, `share_revoked`, `qr_generated`, `qr_terminated` (Doctor QR Access) → `share-inactive.png` (matching navigation bar Share/QR icon)
-- `security_alert` → `shield-checkmark-outline`
-- `emergency_updated` → `medical-outline`
-- `ai_summary_ready` → `sparkles-outline`
-- Default → `notifications-outline`
-
-
-## Local auth diagnostics
-- `/api/ready` verifies database readiness; `/health` is process liveness only.
-- `cd backend && npm run check:local-auth` verifies running-server registration, login, protected routes, logout, token revocation, and re-login. It removes its exact disposable audit account.
-- `PG_CONNECTION_TIMEOUT_MS` defaults to 5000 and `PG_QUERY_TIMEOUT_MS` defaults to 10000; both require finite positive integers.
-- Backend environment loading is independent of shell cwd. JWT signing and verification use the same required private secret.
-
-## Xcode 27 / Expo SDK 54 launcher (2026-10-14)
-- `xcode-select` correctly selects `/Applications/Xcode.app/Contents/Developer`; `simctl` works. Xcode 27.0 ships Device Hub at `Contents/Applications/DeviceHub.app` (`com.apple.dt.Devices`), while CLI 54.0.27 only knows Simulator.app.
-- `mobile/scripts/patchExpoSimulator.cjs` backports upstream Expo PR #46757: app ID/plist discovery, dual process detection, Device Hub device URL launch fallback, and dual app activation. Applied automatically by postinstall/prestart/preios; exact CLI version and source shapes are guarded. Remove/review during an Expo upgrade.
-- Seven mocked launcher regression checks pass; all 34 mobile test entries and TypeScript pass. The real installed prerequisite also passes using only plist reads and `simctl help`, without AppleScript/UI automation. Live interactive launch remains unverified because computer-use access was denied earlier.
-- Follow-up: launcher progressed to "No development build (com.mclein.medrec) ... installed". Confirmed missing simulator container, then installed the previously successful Debug simulator build from `/private/tmp/medrec-polish-build/Build/Products/Debug-iphonesimulator/mobile.app` on iPhone 14 Plus `ED566BB8-60AB-48FC-A49F-436F400D10B4`. Expo's own installed-app check now finds it, including `EXDevLauncher.bundle`; Metro remains available on 8081. Device Hub computer-use access was again rejected, so UI launch/runtime verification remains pending. A fresh/erased simulator needs a development build installed before pressing `i`; `expo start` alone does not install one.
+`MedRecord_App/MedRec/` is the Obsidian vault for long-form knowledge: `01 - Vision & Goals/`, `02 - Problem Space/` (data silos, lost records, patient ownership), `03 - Research/` and `04 - Users/` (patient and doctor workflows), `07 - Product Design/` (design decisions such as DD-01, UI concepts), `08 - Technical Architecture/`, `09 - Database/`, `10 - Security & Privacy/` (threat models, token revocation, encryption).

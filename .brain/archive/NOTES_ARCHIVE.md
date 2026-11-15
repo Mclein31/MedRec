@@ -1,0 +1,142 @@
+---
+type: notes-archive
+title: MedRecord_App Notes Archive (v1)
+project: MedRecord_App
+last_updated: 2026-11-15
+---
+
+# MedRecord_App — archived technical notes (v1 stack)
+
+Moved verbatim from `../NOTES.md` on 2026-11-15. These notes describe the v1 implementation (root `mobile/` and `backend/`, Express, port 4000, OpenAI, Google SSO, teal/Lexend Deca UI), which was deleted on 2026-11-03 (DD-46). Paths such as `mobile/...` and `backend/...` no longer exist. Current gotchas live in `../NOTES.md`.
+
+## 🔑 Environment Variables Required (`backend/.env`)
+- `PORT`: Server port (default `4000`)
+- `DATABASE_URL`: PostgreSQL connection URI (`postgresql://user:pass@localhost:5432/medrec`)
+- `PGSSL`: PostgreSQL SSL mode (`true` for managed cloud, `false` for local)
+- `JWT_SECRET`: High-entropy string (32+ chars) for signing user session tokens
+- `JWT_EXPIRES_IN`: JWT expiration (default `7d`)
+- `GOOGLE_WEB_CLIENT_ID`: Google OAuth 2.0 Web Client ID for verifying mobile ID tokens
+- `R2_ACCOUNT_ID`: Cloudflare Account ID
+- `R2_ACCESS_KEY_ID`: Cloudflare R2 API Token Access Key ID
+- `R2_SECRET_ACCESS_KEY`: Cloudflare R2 API Token Secret Access Key
+- `R2_BUCKET_NAME`: Target R2 bucket name (`medrec-vault`)
+- `R2_ENDPOINT`: `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`
+- `OPENAI_API_KEY`: API key for medical summarization and explanations (quarantined / future milestone)
+
+## 🔑 Mobile Environment Variables Required (`mobile/.env`)
+- `EXPO_PUBLIC_API_URL`: Leave blank for local development so API port 4000 follows the current Metro/browser host. Set an explicit `/api` base URL for a separate backend or production. Avoid pinned Wi-Fi IPs.
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`: Web Client ID matching backend `GOOGLE_WEB_CLIENT_ID` for ID token audience
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`: iOS Client ID from Google Cloud Console for native iOS sign-in dialog
+
+## 📷 Document Camera & Gallery Ingestion
+- `expo-camera` (`CameraView`) is configured with `facing="back"`, `enableTorch`, and unmounts cleanly on view transitions.
+- `expo-image-picker` provides gallery import via `launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })`.
+- Captured and imported images reside strictly within the application's sandboxed local cache and are never saved to the public camera roll.
+- All form inputs in `add.tsx` are managed at the top-level parent component to prevent data loss when switching between form, camera, and preview view modes.
+- The Scan Health Document hero card uses signature AI blue (`#1976D2`) for visual cohesion with AI insights, while record metadata chips and save CTAs maintain the core healthcare green palette (`#159A83`).
+
+## 🧭 Drawer Menu Architecture
+- The menu is rendered as an overlay Modal (`SideMenuModal`) with hardware-accelerated translation (`useNativeDriver: true`) rather than a full React Navigation drawer container, avoiding gesture conflicts with iOS screen pops and bottom tab switching.
+- Menu rows (`SideMenuItem`) are strictly text-only, utilizing typography (`Lexend Deca`) and padding to maintain visual hierarchy.
+- Header branding directly reuses the existing official asset `assets/logo/logo.png`.
+
+## 🔔 Notification Center Architecture
+- **Event Sources**: Server controllers trigger automatic notification creation on record logging, temporary QR token generation/revocation, security/emergency edits, and AI summaries.
+- **Privacy Standard**: Two-tier model ensures notification summaries contain actionable context while completely omitting sensitive clinical values, drug dosages, or diagnoses.
+- **Modal Affordance**: Rendered as a slide-up sheet (`presentationStyle="pageSheet"`) with a centered grey drag handle (`#D1D5DB`, `38×4px`, `borderRadius: 2`) integrated into the header card with compact vertical spacing to indicate downward swipe dismissal.
+- **State & Deep Linking**: Optimistic read-state handling via `NotificationContext` with automatic routing to relevant records (`/record/[id]`), shares (`/(tabs)/share`), or profile screens (`/(tabs)/profile`).
+
+## 👤 Profile Tab & Avatar Ingestion
+- **Inset Grouped Architecture**: Designed without heavy card borders or saturated background highlights. Utilizes clean white containers (`#FFFFFF`, `borderRadius: 16`, `borderColor: '#E5F0EE'`) with `#F0F5F4` hairline dividers.
+- **Avatar Selection & Cropping**: Uses `expo-image-picker` (`launchImageLibraryAsync`) with `aspect: [1, 1]`, `allowsEditing: true`, and `quality: 0.7`. Directly invokes native iOS `PHPickerViewController` without requiring pre-flight permissions.
+- **Database Persistence & Session Sync**: Stores image payload in `user_profiles.avatar_url` (PostgreSQL `TEXT` column) and propagates into `AuthContext` on launch via parallel `api.getMe()` and `api.getProfile()` calls.
+- **Native Linkage**: CocoaPods dependency `ExpoImagePicker (17.0.11)` linked in `mobile.xcworkspace` with iOS `NSPhotoLibraryUsageDescription` in `Info.plist`. Express JSON parser configured with `limit: '10mb'`.
+- **Bottom Navigation State**: Tab layout (`_layout.tsx`) renders the circular user avatar (`28×28px`, `cover`, `borderRadius: 14`, with 1.5px `#159A83` teal border when active) whenever `user?.avatarUrl` exists, and seamlessly falls back to default `profile-active.png` and `profile-inactive.png` icons when no photo is uploaded.
+- **Input Placeholder Sizing**: All profile edit and password input fields use conditional `fontSize: 12.5` for empty placeholder states to comfortably accommodate lengthy clinical examples (e.g. penicillin allergies, asthma medications, address lines) without clipping, switching to standard `14px` when populated with user text.
+
+## 🪟 Sliding Sheet & Drag Handle Architecture
+- **Standard Dimensions**: All pageSheet and slide-up modals (`NotificationCenterModal`, `ProfileEditModal`, `ChangePasswordModal`, `EmergencyIdModal`, `add.tsx`, `scan.tsx`, `index.tsx`) utilize a standardized drag handle (`width: 38`, `height: 4`, `borderRadius: 2`, `backgroundColor: '#D1D5DB'`).
+- **Header Layout**: Integrated at the top of modal headers with `paddingTop: 10, paddingBottom: 14` to communicate swipe-down dismissibility without adding dead vertical space.
+- **Drawer Exception**: The side menu drawer (`SideMenuModal`) slides horizontally from the left edge and is intentionally excluded from vertical downward drag handles.
+
+## 📱 Adaptive Share Hero & Cardless Flat Access History
+- **Screen Architecture**: `mobile/app/(tabs)/share.tsx` is organized into three distinct tiers:
+  - **Tier 1 (Adaptive Hero)**: Focuses 75% of visual weight on sharing. Transitions between the default `#1976D2` blue generation card and a white living QR preview card with 142px SVG QR code, live clean countdown status (`#159A83`), and immediate access revocation.
+  - **Tier 2 (Active Shares)**: Secondary list for active doctor access sessions when not actively previewing a QR code.
+  - **Tier 3 (Past Sessions)**: Quiet, borderless activity log sitting directly on `#F4FAF9` canvas with 1px hairline dividers (`#E5F0EE`).
+- **Typography-Driven Hierarchy**: Removes repetitive leading icons and pill badges from past sessions; status is communicated with clean right-aligned typography (`Revoked` in `#D92D20`, `Expired` in `#64748B`).
+- **Progressive Disclosure**: Automatically shows the 3 most recent sessions, with an expandable `"Show full history"` button when history exceeds 3 items.
+
+## 🎨 Universal AI Card Design System & Record Type Carousel
+- **Unified Visual Language**: All AI-powered feature cards (`aiBanner` in `(tabs)/index.tsx`, `generateCard` in `(tabs)/share.tsx`, `aiCard` in `record/[id].tsx`, and `scanHeroCard` in `record/add.tsx`) share a consistent design system:
+  - Container: Signature rich blue (`#1976D2`), `borderRadius: 16`, `padding: 16`, `gap: 12`, elevation shadow (`shadowColor: '#1976D2'`, `elevation: 3`).
+  - Top Row: Icon (`34×34px` or `36×36px`, direct `#FFFFFF` rendering without highlight background pills) beside bold title (`16px`, `#FFFFFF`) and subtitle (`11px`, `rgba(255,255,255,0.88)`).
+  - Primary Action: Clean white CTA button (`backgroundColor: '#FFFFFF'`, `borderRadius: 10`, bold `#111827` typography).
+- **Horizontal Record Type Carousel**: Category selection in `mobile/app/record/add.tsx` uses a single-line horizontal `ScrollView` (`showsHorizontalScrollIndicator={false}`) with full-bleed negative margins (`marginHorizontal: -20, paddingHorizontal: 20`), preserving immediate visibility for form fields above the fold while maintaining smooth edge-to-edge swiping.
+
+## 📐 Centralized Design Tokens & Reusable UI Component Suite
+- **Canonical Design System (`mobile/constants/theme.ts`)**:
+  - `Colors`: Central source of truth for `teal` (`#159A83`), `ink` (`#12343B`), `bg` (`#F4FAF9`), `tealLight` (`#DDF5EE`), `cardBg` (`#FFFFFF`), `border` (`#E5F0EE`), `blue` (`#1976D2`), `red` (`#D92D20`), `dragHandle` (`#CBD5E1`), and `backdrop` (`rgba(18, 52, 59, 0.45)`).
+  - `Typography`: Pre-configured `LexendDeca` typography styles (`display`, `title1`, `title2`, `sectionHeader`, `body`, `caption`, `button`).
+  - `Spacing`: Enforces `screenPadding: 20` (20px standard horizontal gutters) and `tabBarClearance: 110` (110px bottom clearance preventing tab bar overlap).
+  - `Radii`: Standard corner radii (`card: 16`, `button: 12`, `pill: 10`, `sheet: 24`).
+- **Reusable Component Suite (`mobile/components/ui/`)**:
+  - `ScreenHeader.tsx`: Universal top toolbar for tab screens with Burger Menu, dynamic Notification Bell with unread dot, 28px `LexendDeca-Bold` title, and subtitle.
+  - `DragHandle.tsx`: Standalone 38×4px `#CBD5E1` pill for all modal sheets.
+  - `Button.tsx`: Unified button with haptics, spinner loading, and variant styling (primary, secondary, blue, outline, destructive).
+  - `Card.tsx`: Standardized 16px radius container with `#E5F0EE` hairline border.
+
+## 🗂️ Records Screen Layout & Quick Category Carousel
+- **Full-Width Search Bar (`mobile/components/records/RecordSearchBar.tsx`)**: Replaces cramped inline inputs with an edge-to-edge search bar featuring live keyword filtering across record titles, notes, and medical categories, complete with a 1-tap clear button.
+- **Category Quick Chips Carousel**: Direct single-tap horizontal filter bar (`[ All (14) ] [ Labs (5) ] [ Prescriptions (3) ] ...`) with real-time record distribution counts, eliminating redundant sorting modals and providing instant zero-friction navigation.
+- **Classic Card Preservation & De-cluttering**: Retains signature medical cards with category badge, 44px squircle icon box, clinical event date, and folder creation footer, while removing the circular background highlight on the chevron arrow for a clean, cohesive visual hierarchy.
+
+## 👤 Continuous Scrollable Profile Architecture
+- **Single Scroll Hierarchy (`mobile/app/(tabs)/profile.tsx`)**: The Profile title (28px `LexendDeca-Bold`) and subtitle are located inside the top-level `<ScrollView>`, scrolling away naturally as the user scrolls through their health profile.
+- **Fixed Global Navigation Header**: Keeps a compact top toolbar (`insets.top + 12`) outside the scroll area for persistent access to the Burger Menu drawer and Notification Bell unread indicator dot, avoiding unnecessary viewport occupation while ensuring global navigation remains accessible at all times.
+
+## 📝 Record Edit Modal Architecture
+- **`RecordEditModal.tsx`**: Sliding modal presenting document capture / attachment (`AttachedDocumentCard` or `scanHeroCard` with `DocumentCamera` and `DocumentPreview`), title input, horizontal category carousel (pill chips, `borderRadius: 20`, TEAL active, MUTED inactive), event date input with "Set Today" shortcut, and clinical notes textarea.
+- **Attachment Handling**: Supports viewing, inspecting, retaking, replacing, and removing document scan attachments matching `add.tsx` UI without AI summary banners or delete options. When a new image is selected, it uploads to Cloudflare R2 on save; when detached, passes `null` to clear the DB field and clean up the old R2 object.
+- **API**: `PUT /records/:id` and `PATCH /records/:id` both accepted. Dynamic SQL updates only the fields present in the payload.
+- **Presigned URL Guard**: Both `recordController.js` and `recordModel.js` guard against persisting `http(s)://` values as `attachment_url`. If a presigned URL is echoed back by the client, it is silently dropped and the existing DB key preserved.
+
+## 🤝 Shared Records — Doctor Scanner Architecture (`scan.tsx`)
+- **QR Scan → Token Validation**: `CameraView` with `barcodeScanningEnabled` → hits `GET /share/:token` → returns patient name, expiry, scoped records with pre-signed attachment URLs.
+- **AI Clinical Summary**: `POST /share/:token/summarize` → structured JSON (`summary`, `currentMedications`, `diagnoses`, `keyNotes`). Falls back to deterministic extraction when OpenAI unavailable.
+- **Per-Record Download**: `GET /share/:token/download/:recordId` → returns 15-min presigned R2 URL → `downloadFileDirectly` → native `Sharing.shareAsync` save sheet.
+- **ZIP Bundle Download**: `GET /share/:token/zip` → streams ZIP archive → saved to `FileSystem.documentDirectory` → `Sharing.shareAsync`. ZIP contains `README_CLINICAL_SUMMARY.txt`, `records_metadata.json`, `attachments/` folder.
+- **Terminate Session**: `POST /share/:token/terminate` → sets `revoked_at` → creates `share_revoked` notification for patient.
+- **`downloadFileDirectly`**: Module-level function supporting `forcedExt` / `forcedMime` parameters. On web: blob download via anchor click. On native: `FileSystem.downloadAsync` + `Sharing.shareAsync`.
+
+## ☁️ R2 Upload Error Handling
+- **Record Add (`add.tsx`)**: Upload failure aborts record creation. Shows `Alert("Upload Failed", …)` and calls `setSaving(false)` before returning. Never falls back to `file://` URI.
+- **Profile Avatar (`profile.tsx`)**: Upload failure reverts the optimistic avatar preview (restores `profile.avatarUrl`), shows `Alert("Upload Failed", …)`, and returns without calling `api.updateProfile`. Never falls back to base64 data URI.
+
+## 🔐 Security Implementation Notes
+- **Password Change**: `PUT /profile/password` requires `currentPassword` in body. Backend calls `userModel.findById` then `bcrypt.compare(currentPassword, user.password_hash)`. Returns `400` if missing, `401` if wrong.
+- **Logout Invalidation**: `POST /auth/logout` calls `userModel.incrementTokenVersion(req.user.id)`. The `requireAuth` middleware compares JWT's `tokenVersion` claim against `users.token_version` from DB, immediately rejecting all previously-issued tokens for that user.
+- **`tokenModel.js`**: Deleted. The `revoked_tokens` table never existed; the file was dead code. Token invalidation is handled entirely via `token_version`.
+- **Google SSO & Takeover Defense**: `POST /auth/google` accepts client `idToken` from `@react-native-google-signin/google-signin` and verifies it cryptographically via `google-auth-library`. Requires `email_verified === true`. If the user already exists under `auth_provider = 'local'`, the Google account is atomically linked (`linkGoogleAccount`), `users.token_version` is incremented to sanitize rogue sessions, and a `security_alert` notification is created. If `password_hash` is NULL (Google-only user), local password login and password changes are cleanly rejected with clear 401/400 responses.
+- **Share Session Cap**: Max 5 active sessions per patient. `pruneExcessActiveShares(userId, 4)` auto-revokes oldest before inserting new token.
+
+## 🔔 Notification Card Icons
+- `record_added` → `folder-outline`
+- `share_created`, `share_expired`, `share_revoked`, `qr_generated`, `qr_terminated` (Doctor QR Access) → `share-inactive.png` (matching navigation bar Share/QR icon)
+- `security_alert` → `shield-checkmark-outline`
+- `emergency_updated` → `medical-outline`
+- `ai_summary_ready` → `sparkles-outline`
+- Default → `notifications-outline`
+
+
+## Local auth diagnostics
+- `/api/ready` verifies database readiness; `/health` is process liveness only.
+- `cd backend && npm run check:local-auth` verifies running-server registration, login, protected routes, logout, token revocation, and re-login. It removes its exact disposable audit account.
+- `PG_CONNECTION_TIMEOUT_MS` defaults to 5000 and `PG_QUERY_TIMEOUT_MS` defaults to 10000; both require finite positive integers.
+- Backend environment loading is independent of shell cwd. JWT signing and verification use the same required private secret.
+
+## Xcode 27 / Expo SDK 54 launcher (2026-10-14)
+- `xcode-select` correctly selects `/Applications/Xcode.app/Contents/Developer`; `simctl` works. Xcode 27.0 ships Device Hub at `Contents/Applications/DeviceHub.app` (`com.apple.dt.Devices`), while CLI 54.0.27 only knows Simulator.app.
+- `mobile/scripts/patchExpoSimulator.cjs` backports upstream Expo PR #46757: app ID/plist discovery, dual process detection, Device Hub device URL launch fallback, and dual app activation. Applied automatically by postinstall/prestart/preios; exact CLI version and source shapes are guarded. Remove/review during an Expo upgrade.
+- Seven mocked launcher regression checks pass; all 34 mobile test entries and TypeScript pass. The real installed prerequisite also passes using only plist reads and `simctl help`, without AppleScript/UI automation. Live interactive launch remains unverified because computer-use access was denied earlier.
+- Follow-up: launcher progressed to "No development build (com.mclein.medrec) ... installed". Confirmed missing simulator container, then installed the previously successful Debug simulator build from `/private/tmp/medrec-polish-build/Build/Products/Debug-iphonesimulator/mobile.app` on iPhone 14 Plus `ED566BB8-60AB-48FC-A49F-436F400D10B4`. Expo's own installed-app check now finds it, including `EXDevLauncher.bundle`; Metro remains available on 8081. Device Hub computer-use access was again rejected, so UI launch/runtime verification remains pending. A fresh/erased simulator needs a development build installed before pressing `i`; `expo start` alone does not install one.

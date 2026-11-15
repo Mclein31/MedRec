@@ -5,67 +5,42 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-10-26
+last_updated: 2026-11-15
 ---
 
-# 📋 MedRecord_App (MedRec) — TODO & Task Tracker
+# MedRecord_App (MedRec) — TODO
 
-## 🔴 High Priority
-- [x] Working profile edit (list drafts saved, phone, photo, validation), in-app account deletion, records without documents, attach pages later (DD-51, 2026-11-04).
-- [ ] Device QA for DD-51: avatar camera/library and page attachment pickers on physical iOS/Android; native-sheet top spacing on profile edit.
-- [ ] Google and Apple sign-in: provider setup and real OAuth (buttons are intentionally disabled previews until configured).
-- [ ] v2 UI (DD-45): device QA of Remy motion, haptics, safe areas, keyboard and VoiceOver/TalkBack on real iOS/Android; dark-mode visual pass (tokens mapped, no dark design exists).
-- [ ] v2: decide whether Ask Remy needs a real conversational backend; today it only searches records, explains saved terms and gives app help.
-- [ ] v2: create Neon project, R2 bucket, Gmail App Password and Gemini key; deploy `apps/api` with `--env production` (steps in apps/README.md).
-- [ ] v2: QA `apps/mobile` on physical iOS/Android (camera capture, Face ID/fingerprint lock, PDF share sheet, code autofill).
-- [ ] v2: decide cut-over — retire `backend/` + `mobile/` once v2 is deployed and verified; there is no v1→v2 data migration yet.
-- [x] Redesign animated onboarding, responsive authentication, records dashboard, labeled navigation, and sharing duration/scope controls.
-- [x] Fix first-page truncation, civil-date validation, temporary web attachment persistence, missing storage false success, and session-expiry races.
-- [ ] Implement real password recovery tokens and email delivery; current endpoints deliberately return 503.
-- [ ] Complete browser and native visual/touch QA; computer-use approval was denied during the implementation pass.
-- [ ] Resolve remaining dependency advisories through a compatible SDK/tooling upgrade.
-- [x] Connect React Native mobile client (`lib/api.ts`) to live Express server endpoints for Profile and User data.
-- [x] Implement complete Profile Tab (`(tabs)/profile.tsx`) with Inset Grouped layout, Emergency Medical ID, Demographics, and Data Export.
-- [x] Implement interactive Profile Photo upload (`expo-image-picker`) and Cloudflare R2 `avatar_url` persistence.
-- [x] Complete UI screen in `app/record/add.tsx` for capturing/uploading prescriptions and lab result images (Document Camera, 3:4 Viewfinder, Quality Review, and In-Form Attachment Card).
-- [x] Implement full backend and mobile attachment pipeline (`medical_records.attachment_url` in PostgreSQL schema, API endpoints, and display in `record/[id].tsx`).
-- [x] Implement app-wide responsive UI across compact phones, standard phones, and tablets with stepped typography and tablet 2-column bento grids.
-- [x] Implement approved Tablet & iPad UI redesign with persistent left sidebar on landscape, master-detail workspaces on dashboard and doctor scanner, centered single-column intake studio, centered single-column living QR sharing hub, centered single-column record details, and 100% phone UI isolation.
-- [x] Implement functional app drawer/menu navigation (`SideMenuModal`) with dual-coded iconography and MedRec logo branding.
-- [x] Implement in-app notification center (`NotificationCenterModal`) and dynamic bell trigger with backend persistence and drag affordance.
-- [x] Implement AI subsystem guardrails, delimiter isolation, 2,000-char input ceiling, token completion limits, and user-keyed rate limiting.
-- [x] Complete Full Backend Implementation with Node.js + Express 5, Direct PostgreSQL, Backend-Owned JWT/Bcrypt, Cloudflare R2, and 63 automated tests.
-- [x] Implement shared records expanded API: AI summary, terminate session, per-record download, ZIP bundle export.
-- [x] Implement Record Metadata Edit (PUT/PATCH endpoint + RecordEditModal.tsx).
-- [x] Implement active share session cap (max 5 sessions, auto-prune oldest).
-- [x] Complete security audit remediation: bcrypt password verify, presigned URL DB guard, R2 orphan cleanup, logout invalidation, silent upload fallback removal.
-- [x] Implement Pre-SignIn Patient Onboarding Flow (4-step carousel, first-launch persistent storage guard, flicker-free bootstrap, profile replay guide).
-- [x] Automatic First-Launch Onboarding Entry & Login Screen Decoupling (root stack priority, preload-to-onboarding pipeline, removed manual login buttons).
-- [ ] **NEXT PHASE**: Production PostgreSQL & Cloudflare R2 Credentials Deployment & Real Device QA.
+Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks are in [archive/TODO_ARCHIVE.md](archive/TODO_ARCHIVE.md).
 
-## 🟡 Medium Priority
-- [x] Implement camera QR scanning library (`expo-camera`) in `app/(tabs)/scan.tsx`.
-- [x] Declare `expo-camera` and `cameraPermission` in `mobile/app.json` for Apple App Store ingestion compliance (ITMS-90683).
-- [x] Fix profile partial upsert isolation to prevent demographic edits from overwriting medical ID baselines.
-- [x] Add physical metrics persistence (`height` and `weight`) in `user_profiles` schema and controllers.
-- [x] Implement session invalidation via `users.token_version` on password update and logout.
-- [x] Implement atomic SQL record ownership verification (`recordModel.verifyOwnership`) in share creation.
-- [x] Apply user-keyed and IP-keyed rate limiting across authentication, password reset, AI, and sharing endpoints.
-- [x] Notification sidebar redesign matching BurgerNav design language; unread/read state distinction; enlarged centered icons.
-- [x] Instant record detail expand animation (0ms timing).
-- [x] Category carousel in RecordEditModal matching add.tsx design.
-- [ ] **Google SSO (Single Sign-On)**: Native library temporarily decoupled ahead of future reimplementation; backend verification pipeline and token linking remain intact.
-- [x] Implement native biometric/passcode app lock on cold start/resume, per-account preference, and protected modal suppression.
-- [ ] Verify biometric enrollment/cancellation/background behavior on physical iOS and Android devices.
+## High priority
 
-## 🟢 Low Priority
-- [x] Implement JSON export of consolidated patient medical history and profile data.
-- [x] Implement ZIP bundle export of shared records for doctor download.
-- [x] Implement printable PDF history and actual JSON file export, with complete pagination and sanitized access paths.
-- [ ] Dark/Light mode theme parity with system settings across mobile UI components.
+- [ ] **Production deployment.** A Worker already answers at the production `workers.dev` URL set in `apps/.env`, but `/api/ready` returned `503 MISCONFIGURED` on 2026-11-15. Finish the Neon project, Gmail App Password and Gemini key in `apps/.env` (R2 bucket `medrec-v2-vault` already exists), then `npm run migrate:prod` and `npm run deploy:prod` from `apps/api` and confirm `/api/ready` returns 200 (steps in `apps/README.md`). Review `PUBLIC_URL`/`ALLOWED_ORIGINS` for the real origins.
+- [ ] **Physical-device QA on iOS and Android:** camera capture, Face ID/fingerprint app lock (enrollment, cancellation, background/resume), PDF share sheet, email-code autofill, password-manager AutoFill on registration (DD-47), safe areas, keyboard, haptics and VoiceOver/TalkBack.
+- [ ] **Device QA for DD-51:** avatar camera/library and page-attachment pickers on device; the page-attach sheet's 400 ms iOS present-after-dismiss delay; native-sheet top spacing on profile edit.
+- [ ] **Motion feel check for DD-50 (release build, iPhone + low-end Android):** tab-marker travel, sheet exit/reversal, `Swap` timing and interruption, page-sheet top spacing, push/sheet gestures, Remy acting.
+- [ ] **Google and Apple sign-in:** provider setup and real OAuth. Buttons are intentionally disabled previews until the user asks to enable them; no client IDs are configured.
+- [ ] **Dependency advisories:** 34 pre-existing audit findings (6 high) as of DD-46; resolve through a compatible SDK/tooling upgrade.
 
-## 💡 Future Ideas
+## Medium priority
+
+- [ ] Decide whether Ask Remy needs a real conversational backend; today it only searches records, explains saved terms, uses a labeled glossary and gives app help (DD-45).
+- [ ] Dark-mode visual pass: tokens are mapped, but no dark design exists; verify parity with system settings across screens.
+- [ ] Release signing and store submission (none performed; account deletion required by stores is in place per DD-51).
+- [ ] On the next Expo upgrade, review/remove `apps/mobile/scripts/patchExpoSimulator.cjs` (Xcode 27 Device Hub launcher backport).
+- [ ] Revisit iOS automatic strong-password generation once a reliable native integration is verified (currently disabled on new-password fields, DD-48).
+
+## Future ideas
+
 - [ ] Multi-patient / dependent profile switcher for caregivers.
 - [ ] Lock screen Emergency Medical ID widget for iOS (WidgetKit).
 - [ ] On-device local LLM summarization using llama.rn for offline medical analysis.
 - [ ] Integration with Apple HealthKit and Google Health Connect.
+
+## Done (v2)
+
+- [x] v2 rebuild in `apps/` on Workers, Neon, R2, Gemini and emailed codes, including password reset by email code (DD-44, 2026-10-24).
+- [x] Warm folio redesign with Remy and bounded Ask Remy (DD-45, 2026-10-26).
+- [x] Remy-led onboarding, standard-size sign-in; legacy root `mobile/` and `backend/` deleted (cut-over, no v1 data migrated) (DD-46, 2026-11-03).
+- [x] Remy acting and password reactions; iOS strong-password cover fix; two startup stories with native Release preview (DD-47–DD-49, 2026-11-03).
+- [x] Purposeful navigation and interaction motion (DD-50, 2026-11-04).
+- [x] Working profile edit (list drafts saved, phone, photo, validation), in-app account deletion, records without documents, attach pages later (DD-51, 2026-11-04).

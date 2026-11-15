@@ -1,5 +1,6 @@
 ---
 type: operational-audit
+status: archived (v1 backend removed 2026-11-03)
 project: MedRecord_App
 last_updated: 2026-10-14
 ---

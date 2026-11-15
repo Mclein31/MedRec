@@ -3,48 +3,50 @@ type: project-brain
 title: MedRecord_App Project Context
 project: MedRecord_App
 status: active
-last_updated: 2026-11-03
+last_updated: 2026-11-15
 ---
 
 # MedRec — project context
 
-MedRec is a personal medical-record app with private document storage, AI document reading, temporary doctor sharing, and a separate Medical ID. The only active implementation is **`apps/mobile` + `apps/api`**. The user explicitly requested deletion of the root legacy `mobile/` and `backend/` applications on 2026-11-03; both were removed, and the installed MedRec 1.0.0 build was uninstalled from the iPhone 14 Plus simulator. Historical implementation decisions remain in Git and DECISIONS.md.
+MedRec is a personal medical-record app with private document storage, AI document reading, temporary view-only doctor sharing by QR, and a separate public Medical ID. Remy, an organizer mascot, guides the app and answers bounded questions.
 
-## Current product and stack
+## Status (verified 2026-11-15)
 
-- `apps/mobile`: Expo SDK 54 / React Native 0.81.5 / Expo Router. Shared warm-folio tokens: ivory, aubergine, persimmon, DM Sans/Sora/Manrope. Original Remy poses live in `assets/remy`.
-- `apps/api`: Hono Cloudflare Worker, Neon Postgres with forced RLS, private Cloudflare R2, Gemini document reading, Gmail SMTP email codes. See ARCHITECTURE.md and `apps/README.md`.
-- Sign-in uses password + emailed OTP; trusted devices skip the code for 30 days. Refresh tokens rotate. Password reset/change revoke existing devices.
-- Remy is deliberately bounded: own-record search, terms from saved AI readings, a labeled general glossary, and fixed app help. No free-form chat model or personal medical advice.
-- Sharing is view-only with 15/30/60-minute UI choices and revocation. Public Medical ID is separate and off until enabled.
+- **Active implementation:** `apps/mobile` + `apps/api` only (v2, app version 2.0.0, bundle/package `com.mclein.medrec`). The legacy root `mobile/` and `backend/` apps were deleted at the user's request on 2026-11-03 (DD-46); their history is in Git and `archive/`.
+- **Last code change:** 2026-11-04 (profile/Medical ID/sharing updates DD-51, motion pass DD-50). Mobile: 31 unit tests pass; API suite has 40 integration tests.
+- **Not in production yet.** A Worker exists at the production `workers.dev` URL configured in `apps/.env`, but `/api/ready` returned `503 MISCONFIGURED` on 2026-11-15: secrets/database are not fully configured. No release signing or store submission has been done. Physical-device QA is outstanding. See TODO.md.
 
-## Latest UI work (2026-11-03)
+## Stack
 
-- Remy-led introduction: welcome, actual record rows, actual Ask Remy messages, actual QR receipt, shared Medical ID component. Examples are labeled and the sample QR grants no access.
-- The user requested **no progress bar and no Skip intro shortcut**. Keep clear Next/Back actions, swipe gestures, returning-member sign-in, and motion pause/reduced-motion support.
-- First-use entrances wait until Launch has left. Scene movement follows the swipe and settles with a spring. Only active/focused/foreground decorative motion runs.
-- Keep captions outside the preview scroll region so the action area cannot cut them off. Remy must have its own space rather than cover record text.
-- Sign-in: engaging, compact Remy welcome with **basic/default sizing** (48-point fields, 16-point input text). Form actions scroll with content, including when the keyboard is open.
-- **Google and Apple sign-in must remain disabled for now**, per the user's latest instruction. Both previews use the same custom 48-point layout, 16-point label, 20-point icon, 24-point icon slot and 10-point gap, with the logo/text group centered as a whole. Apple stays solid black. The actual registration Create account CTA uses white text on a deeper orange and sits directly below the fields; sign-in keeps a simple registration link. No OAuth endpoint/session flow was activated.
-- Remy now uses six-frame transparent atlases for minor blinks, glances and wrist gestures across the six main poses, replacing the repeating whole-body bounce. Password focus covers his eyes; showing the password reveals a playful one-eye peek; hiding it covers again, and blur lowers the hand. Only focus/visibility/busy signals reach Remy, never field contents. Auth routes use a 200 ms fade with no directional form entrance. See `apps/mobile/validation/remy/` for actual native captures and the interaction recording.
-- `remyGeometry.ts` fits measured alpha bounds to the same visible height and foot center across every pose/frame and original fallback; both auth screens use an 88-point Remy slot. Password eye icon reflects current state: crossed out when hidden, open when revealed.
-- Clip each Remy atlas source cell **before** applying the size/foot alignment transform. The final display slot must allow overflow so the waving hand remains complete; source-cell clipping still excludes neighboring atlas sprites.
-- Two startup experiences: first-use pages gather around Remy before onboarding (1640 ms + 240 ms exit); returning/confirmed-login folio opens to the real RecordSkeleton (720 ms + 180 ms exit). Motion begins after splash/layout/foreground readiness, pauses in background, and skips travel/minimum duration for reduced motion. Real auth/readiness still gates handoff. Keyboard dismisses on authentication completion.
-- Startup review now uses the installed **MedRec 2.0.0 native Release app** (`com.mclein.medrec`) on iPhone 16 Pro. Its native first frame is plum with no app-icon image; Expo Go inserts a separate icon loader that obscures splash review. Rebuild commands and actual recordings: `apps/mobile/validation/preload/README.md`. Simulator builds need local signing enabled for Keychain and a 15.1 pod deployment-target override on Xcode 27. Generated `ios/` stays ignored; keep `withLaunchBackground.cjs` BEFORE `expo-splash-screen` in plugins.
+- `apps/mobile`: Expo SDK 54 (`expo ~54.0.37`), React Native 0.81.5, React 19.1, Expo Router 6, Reanimated 4.1, SecureStore. Warm-folio tokens (ivory, aubergine, persimmon, gold) with bundled DM Sans/Sora/Manrope. Runs on iOS, Android and web.
+- `apps/api`: Hono on Cloudflare Workers; Neon Postgres (HTTP driver) with forced RLS as the unprivileged `medrec_app` role; private R2 (`medrec-v2-vault`) served through HMAC-signed paths; Gemini document reading; Gmail SMTP email codes. Server-rendered doctor share page (`/s/:token`) and Medical ID (`/e/:slug`).
+- Structure and module ownership: ARCHITECTURE.md. Configuration and gotchas: NOTES.md.
 
-## Commands and configuration
+## Product behavior
 
-- App: `npm start` from `apps/mobile`; API: `npm run dev` from `apps/api` (8787).
-- App finds the current Metro host when EXPO_PUBLIC_API_URL is unset. Never restore old port-4000 assumptions.
-- Production configuration: ignored `apps/.env`; template `apps/.env.example`. API local config: ignored `apps/api/.dev.vars`.
-- Mobile: `npm test --prefix apps/mobile`, `npm run typecheck --prefix apps/mobile`.
-- API: `npm test --prefix apps/api`, `npm run typecheck --prefix apps/api`. Tests create a separate local Postgres database and use the unprivileged medrec_test role.
-- Expo Go must match SDK 54. Native preview uses the iPhone 16 Pro simulator (85495F80-A293-47AC-8F2C-CE9294F2A266) with Expo Go 54.0.7; Xcode 27's app is Device Hub.
+- Sign-in: password + emailed 6-digit code; trusted devices skip the code for 30 days. Refresh tokens rotate. Password reset/change and account deletion revoke devices. Users can delete their account in-app (password required).
+- Records: AI-read document intake (pages → reading → review → saved), records without documents, pages attached later (not AI-read), search and category filters.
+- Sharing is view-only with 15/30/60-minute UI choices, scoped to all/categories/records, revocable. The public Medical ID is separate and off until enabled.
+- Ask Remy is deliberately bounded: own-record search, terms from saved AI readings, a labeled general glossary and fixed app help. No free-form chat model and no personal medical advice.
+- First use: two startup stories (first-use and signed-in arrival, DD-49) and a five-scene Remy-led introduction built from real components with labeled example data; the sample QR grants no access.
 
-## Open work and limits
+## Standing user instructions
 
-- Google/Apple developer configuration and real provider authentication are deferred. No client IDs were configured in checked project env files.
-- Production services, Gmail delivery, live Neon/R2/Gemini behavior, native biometrics, release signing, and store submission require their own verification. UI work does not establish store approval.
-- Reanimated layout entering animations previously crashed on web unmount. Use shared-value motion as in `src/ui/motion.tsx`.
-- Fixed the iOS new-password yellow cover by opting out of automatic generation **from the first render** in shared `Field` when `secureToggle` uses `newPassword`/`new-password`. Changing hints only after revealing was insufficient. iOS sign-up/reset/change-password fields use `textContentType="none"` and `autoComplete="off"`; saved-login autofill and Android/web hints remain intact. Native checks now verify full masked registration typing, revealed editing and repeated visibility toggles without text loss. Automatic generation can be revisited after native platform integration is verified.
-- Keep `.brain/` operational, `MedRec/` for long-form product/research, and the existing `_BRAIN/` ecosystem system. Do not introduce another knowledge system.
+- **No progress bar and no Skip intro shortcut** in onboarding. Keep Next/Back, swipe, returning-member sign-in, pause and reduced-motion support.
+- **Google and Apple sign-in stay disabled previews** until the user asks otherwise. Apple stays solid black; no OAuth flow is activated.
+- Sign-in uses basic/default sizing (48-point fields, 16-point input text) with a compact Remy welcome; form actions scroll with content.
+- Only active, focused, foreground decorative motion runs; system Reduce Motion and in-app Gentler motion calm everything.
+- Do not put review exports in Downloads; keep them in the workspace/design folder.
+- Keep `.brain/` operational, `MedRec/` (Obsidian vault) for long-form product/research, and `_BRAIN/` for the ecosystem. Do not add another knowledge system.
+
+## Commands
+
+- App: `npm start` from `apps/mobile`; API: `npm run dev` from `apps/api` (port 8787). Full setup and deployment: `apps/README.md`.
+- Checks: `npm test --prefix apps/mobile`, `npm run typecheck --prefix apps/mobile`, `npm test --prefix apps/api`, `npm run typecheck --prefix apps/api` (API tests need local Postgres).
+- Production: `npm run migrate:prod` / `npm run deploy:prod` from `apps/api`; `npm run start:prod` from `apps/mobile`.
+- Native preview: iPhone 16 Pro simulator (85495F80-A293-47AC-8F2C-CE9294F2A266); Expo Go 54.0.7 or the native Release build (see NOTES.md).
+
+## Related
+
+- Email-code sign-in reuses the AdvanCare pattern (Gmail SMTP App Password over `cloudflare:sockets`).
+- Figma designs live in the shared "Personal Projects" Figma file alongside SERVIO (dedicated "MedRec · App design" page). Handoff package: `design/medrec-uiux-handoff/`.
