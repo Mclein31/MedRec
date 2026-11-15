@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { requireAuth } from '../lib/auth';
-import { summarizeHistory } from '../lib/gemini';
+import { askRemy, summarizeHistory } from '../lib/gemini';
+import { body } from '../lib/http';
 import { RECORD_COLUMNS, mapRecord, type RecordRow } from '../lib/records';
 import { rateLimit } from '../lib/security';
 import { CATEGORY_NAMES } from '../lib/shares';
@@ -75,6 +77,90 @@ vault.post('/ai/summary', async (c) => {
   const summary = await summarizeHistory(c.env, s.fetch, historyContext(profile, used));
   // Disclose the cap rather than implying the summary covers everything.
   return c.json({ summary, basedOn: used.length, limited: rows.length > AI_RECORD_LIMIT });
+});
+
+export const ASK_RECORD_LIMIT = 60;
+const ASK_CONTEXT_CHARS = 60_000;
+
+type Snapshot = {
+  summary?: string; findings?: string[]; terms?: { term: string; meaning: string }[];
+  medications?: { name: string; dosage: string | null; frequency: string | null }[];
+  labValues?: { name: string; value: string; unit: string | null; range: string | null; flag: string }[];
+};
+
+/** "May 20, 2026": written out on the server so the model copies dates instead of converting them (it got years wrong). */
+export function spokenDate(value: string | Date | null) {
+  if (!value) return 'undated';
+  const iso = typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10);
+  const d = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? 'undated' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+/** One record as model material, labelled R1, R2… so answers can cite it without seeing database ids. */
+function recordMaterial(label: string, r: RecordRow, focused: boolean) {
+  const ai = (r.ai ?? {}) as Snapshot;
+  const lines = [
+    `${label}${focused ? ' (the record the person is looking at)' : ''}: ${r.title} · ${CATEGORY_NAMES[r.category] ?? r.category} · ${spokenDate(r.event_date)}` +
+      `${r.provider ? ` · ${r.provider}` : ''}${r.facility ? ` · ${r.facility}` : ''}`,
+  ];
+  if (ai.summary) lines.push(`  Summary: ${ai.summary.slice(0, 700)}`);
+  if (ai.labValues?.length) lines.push(...ai.labValues.slice(0, 40).map((v) => `  Lab: ${v.name} = ${v.value}${v.unit ? ` ${v.unit}` : ''}${v.range ? ` (range ${v.range})` : ''}${v.flag && v.flag !== 'normal' && v.flag !== 'unknown' ? ` [${v.flag.toUpperCase()}]` : ''}`));
+  if (ai.medications?.length) lines.push(...ai.medications.slice(0, 20).map((m) => `  Medication: ${m.name}${m.dosage ? `, ${m.dosage}` : ''}${m.frequency ? `, ${m.frequency}` : ''}`));
+  if (ai.findings?.length) lines.push(...ai.findings.slice(0, 10).map((f) => `  Finding: ${f.slice(0, 300)}`));
+  if (ai.terms?.length) lines.push(`  Terms explained: ${ai.terms.slice(0, 12).map((t) => `${t.term} = ${t.meaning.slice(0, 200)}`).join('; ')}`);
+  if (r.notes) lines.push(`  Person's notes: ${r.notes.slice(0, 500)}`);
+  if (!r.ai) lines.push('  (No AI reading saved for this record; only the details above are known.)');
+  return lines.join('\n');
+}
+
+const AskInput = z.object({
+  question: z.string().trim().min(1).max(500),
+  history: z.array(z.object({ role: z.enum(['user', 'remy']), text: z.string().max(1500) })).max(6).default([]),
+  recordId: z.string().uuid().optional(),
+});
+
+/** Ask Remy: answers from the person's own records via Gemini. Cited records are returned so the app can link them. */
+vault.post('/ai/ask', async (c) => {
+  const input = await body(c, AskInput);
+  const s = c.get('services');
+  const userId = c.get('userId');
+  await rateLimit(s.db, `ask:user:${userId}`, 60, 3600, s.now());
+  const profile = await loadProfile(c, userId);
+  const rows = await s.db.query<RecordRow>(
+    asUser(userId),
+    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1
+      ORDER BY (r.id = $3::uuid) DESC, coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
+    [userId, ASK_RECORD_LIMIT + 1, input.recordId ?? '00000000-0000-0000-0000-000000000000'],
+  );
+  const used = rows.slice(0, ASK_RECORD_LIMIT);
+  const labels = new Map<string, RecordRow>();
+  const head = [
+    `Name: ${profile.name}${profile.dateOfBirth ? ` · born ${spokenDate(profile.dateOfBirth)}` : ''}${profile.sex ? ` · ${profile.sex}` : ''}`,
+    `Blood type: ${profile.bloodType ?? 'unknown'}`,
+    `Allergies: ${profile.allergies.join(', ') || 'none recorded'}`,
+    `Conditions: ${profile.conditions.join(', ') || 'none recorded'}`,
+    `Medications (health details): ${profile.medications.join(', ') || 'none recorded'}`,
+    `Saved records: ${rows.length > ASK_RECORD_LIMIT ? `the newest ${ASK_RECORD_LIMIT} are below (more exist)` : used.length || 'none yet'}`,
+  ];
+  let material = head.join('\n');
+  for (const [i, r] of used.entries()) {
+    const label = `R${i + 1}`;
+    const block = recordMaterial(label, r, r.id === input.recordId);
+    if (material.length + block.length > ASK_CONTEXT_CHARS) break;
+    labels.set(label, r);
+    material += '\n\n' + block;
+  }
+  const reply = await askRemy(c.env, s.fetch, material, input.history, input.question);
+  // Only records that were actually in the material can be cited.
+  const cited = [...new Set(reply.recordIds.map((x) => x.trim().toUpperCase()))].map((l) => labels.get(l)).filter((r): r is RecordRow => !!r).slice(0, 4);
+  return c.json({
+    kind: reply.kind,
+    answer: reply.answer.trim(),
+    records: cited.map((r) => ({ id: r.id, title: r.title, category: r.category, eventDate: r.event_date, provider: r.provider, facility: r.facility })),
+    followUps: reply.followUps.map((f) => f.trim()).filter(Boolean).slice(0, 3),
+    basedOn: labels.size,
+    model: reply.model,
+  });
 });
 
 /** Everything the patient owns as JSON. Files are listed, not embedded; no signed URLs are included. */

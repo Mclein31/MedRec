@@ -14,6 +14,19 @@ last_updated: 2026-11-15
 
 Newest first. This file holds the decisions for the current v2 implementation (`apps/mobile` + `apps/api`, DD-44 onward). Product/design decisions such as DD-01 live in the Obsidian vault (`MedRec/07 - Product Design/Design Decisions.md`).
 
+## 2026-11-15 — Ask Remy answers from the person's records with Gemini (DD-54)
+
+At the user's request, Ask Remy gets a real model. **Supersedes DD-45's "Ask Remy has no chat model"** and closes the TODO to decide on a conversational backend.
+
+- `POST /api/ai/ask` (`routes/vault.ts`) builds plain-text material from the person's profile facts and their newest 60 records (60k-char cap): title, type, date, doctor, clinic, notes and the saved AI reading (summary, lab values with ranges and flags, medications, findings, explained terms). Records are labelled R1, R2…; database ids never reach the model. A record opened from its screen (`recordId`) comes first. The last 3 turns go along as history. Rate limit 60/hour.
+- `askRemy` (`lib/gemini.ts`) uses its own system prompt (REMY_SYSTEM): only state what the material says; compare values and name lab flags, but never diagnose or decide medication/treatment (kind `advice`, with the relevant facts to take to a clinician); `notFound` when the records don't say; `urgent` for emergencies; injection in documents or messages is content. JSON schema returns kind, answer, cited R-labels and up to 3 follow-ups. The server maps labels back to the person's own records only, and `tidyAnswer` strips any leaked labels/brackets.
+- **Dates are written out on the server** ("May 20, 2026") and the model is told to copy them: when it converted ISO dates itself it got a year wrong in live testing.
+- App: urgent questions still get the fixed on-device reply before any network call. Answers show cited records as cards and follow-ups as tappable questions. If the AI can't be reached (not configured, overloaded, rate-limited, offline), the previous search/glossary answers are used. The intro discloses that records are read with Google Gemini.
+
+Verified: 43 API tests (grounding, citation filtering, no cross-account data, tidy-up); live Gemini runs on a temporary local API covering trends, flagged values, a medication decision (refused, facts given), a missing record, a follow-up using history, a prompt-injection attempt and date accuracy; web UI with citations and follow-ups. Not verified: on a device.
+
+---
+
 ## 2026-11-15 — Multi-page records: read added pages, view every page (DD-53)
 
 Reported by the user: adding pages to a saved record offered no AI or manual fill, and "Open original" showed only the first page.

@@ -23,7 +23,7 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 - [ ] Device check for multi-page records (DD-53): Pages added sheet after the iOS picker, AI read of several phone photos, page viewer swipe and PDF opening.
 - [ ] Device check for the new setup flow (DD-52): name-step keyboard, finish haptic, personalized Records home when signed in. (Native UI test updated and passing on the simulator.)
-- [ ] Decide whether Ask Remy needs a real conversational backend; today it only searches records, explains saved terms, uses a labeled glossary and gives app help (DD-45).
+- [ ] Ask Remy on device (DD-54): answer quality on the user's real records, follow-up chips, fallback when offline.
 - [ ] Dark mode on device: web review of every main screen done 2026-11-15 (charcoal backgrounds, Remy glow); check on iPhone/Android, including system switching.
 - [ ] Release signing and store submission (none performed; account deletion required by stores is in place per DD-51).
 - [ ] Revisit iOS automatic strong-password generation once a reliable native integration is verified (currently disabled on new-password fields, DD-48).

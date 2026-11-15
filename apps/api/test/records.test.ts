@@ -110,3 +110,53 @@ describe('records', () => {
     expect(calls).toHaveLength(2);
   });
 });
+
+describe('ask remy', () => {
+  it('answers from the person’s own records and only cites records it was given', async () => {
+    const { token } = await signUp();
+    const ai = { summary: 'Cholesterol panel.', findings: [], medications: [], terms: [], model: 'test', labValues: [{ name: 'LDL cholesterol', value: '138', unit: 'mg/dL', range: '< 100', flag: 'high' }] };
+    const lipid = await call('POST', '/api/records', { token, json: { ...base, title: 'Lipid panel', ai } });
+    await call('POST', '/api/records', { token, json: { ...base, title: 'Annual checkup', category: 'consultation' } });
+    let sent = '';
+    setFetch(async (_input, init) => {
+      sent = String(init?.body ?? '');
+      const reply = { kind: 'answer', answer: 'Your LDL cholesterol was 138 mg/dL on 14 Mar 2026, flagged high.', recordIds: ['R2', 'R9', 'r2'], followUps: ['What was my HDL?'] };
+      return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify(reply) }] } }] });
+    });
+    const res = await call('POST', '/api/ai/ask', { token, json: { question: 'What was my LDL?', history: [{ role: 'user', text: 'hi' }, { role: 'remy', text: 'Hello!' }], recordId: lipid.data.record.id } });
+    expect(res.status).toBe(200);
+    // The focused record comes first, with its lab values and flags.
+    expect(sent).toContain('R1 (the record the person is looking at): Lipid panel · Lab results · Mar 14, 2026');
+    expect(sent).toContain('LDL cholesterol = 138 mg/dL (range < 100) [HIGH]');
+    expect(sent).toContain('Earlier in this conversation');
+    expect(res.data.answer).toContain('138');
+    // R9 does not exist and R2 is deduplicated.
+    expect(res.data.records.map((r: { title: string }) => r.title)).toEqual(['Annual checkup']);
+    expect(res.data.followUps).toEqual(['What was my HDL?']);
+  });
+
+  it('never sends another person’s records', async () => {
+    const other = await signUp();
+    await call('POST', '/api/records', { token: other.token, json: { ...base, title: 'Someone else’s biopsy' } });
+    const { token } = await signUp();
+    let sent = '';
+    setFetch(async (_input, init) => {
+      sent = String(init?.body ?? '');
+      return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify({ kind: 'notFound', answer: 'No records yet.', recordIds: [], followUps: [] }) }] } }] });
+    });
+    const res = await call('POST', '/api/ai/ask', { token, json: { question: 'What records do I have?' } });
+    expect(res.status).toBe(200);
+    expect(sent).not.toContain('biopsy');
+    expect(sent).toContain('Saved records: none yet');
+  });
+});
+
+describe('tidyAnswer', () => {
+  it('removes material markers and keeps one bullet per line', async () => {
+    const { tidyAnswer } = await import('../src/lib/gemini');
+    expect(tidyAnswer('Your prescription (R1) lists atorvastatin.')).toBe('Your prescription lists atorvastatin.');
+    expect(tidyAnswer('LDL was 138 mg/dL [HIGH].')).toBe('LDL was 138 mg/dL (flagged high).');
+    expect(tidyAnswer('It went down. • May: 151 • Nov: 138')).toBe('It went down.\n• May: 151\n• Nov: 138');
+    expect(tidyAnswer('See R2 and R3.')).toBe('See your record and your record.');
+  });
+});

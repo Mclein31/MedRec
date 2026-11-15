@@ -35,7 +35,7 @@ Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), 
 - `src/ui/SocialSignIn.tsx`: disabled Google/Apple custom previews with identical metrics and centered logo/text groups. No provider authentication is activated.
 - `src/ui/motion.tsx`: shared motion primitives: `ease` curves (from `theme.curves`), `colorTransition` (Reanimated CSS colour transitions), `Rise`, and `useSlidingMarker` for tab and filter indicators. `app/_layout.tsx` defines push/sheet/cover route options, all of which fade under calm motion (DD-50).
 - `src/theme.ts`: semantic warm-folio light/dark colors and bundled typography; `src/prefs.ts` combines system/app/scoped reduced-motion preferences.
-- `src/remy/answer.ts`: own-record search, saved AI definitions, labeled glossary, fixed app help. It does not generate personal medical advice.
+- Ask Remy (DD-54): `app/remy.tsx` checks urgent wording on-device, then calls `POST /api/ai/ask` (Gemini over the person's own records, with citations and follow-ups). `src/remy/answer.ts` (record search, saved AI definitions, glossary, app help) is the fallback when the AI is unavailable. Neither gives personal medical advice.
 - `src/add/` (`RecordForm`, `PageStrip`, `pages.ts`): intake steps and attaching pages to existing records. `src/listDraft.ts` merges unconfirmed list entries on profile save (DD-51). `src/lib/api.ts` typed API client; `src/lib/storage.ts` SecureStore wrapper; `avatar.ts`, `exports.ts`, `shareLink.ts` support profile photo, exports and share links.
 
 ## API and data

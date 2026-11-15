@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, type HealthRecord } from '../src/lib/api';
-import { answer, type Reply, type Search } from '../src/remy/answer';
+import { answer, replyText, urgentReply, type Reply, type Search } from '../src/remy/answer';
 import { Answer, Failed, Question, Thinking } from '../src/remy/Messages';
 import { GUTTER, MAX_CONTENT_WIDTH, radius, space, type as t, useColors } from '../src/theme';
 import { Button, Icon, Tappable, Txt } from '../src/ui/core';
@@ -13,7 +13,7 @@ import { Remy, Sparkles } from '../src/ui/Remy';
 
 type Turn = { id: number; question: string; reply?: Reply; failed?: boolean };
 
-const STARTERS = ['Find my latest blood test', 'What does reference range mean?', 'How does sharing work?'];
+const STARTERS = ['Summarize my latest lab results', 'Were any of my results flagged?', 'What medications are in my records?'];
 const search: Search = async (params) => (await api.records(params)).records;
 
 export default function AskRemy() {
@@ -37,8 +37,10 @@ export default function AskRemy() {
     if (!q || pending) return;
     setPending(true);
     setTurns((prev) => [...prev.filter((x) => x.id !== id), { id, question: q }]);
+    // Earlier turns go with the question so follow-ups like "and the one before?" make sense.
+    const history = turns.filter((x) => x.reply && x.id !== id).slice(-3).flatMap((x) => [{ role: 'user' as const, text: x.question }, { role: 'remy' as const, text: replyText(x.reply!).slice(0, 1500) }]);
     try {
-      const reply = await answer(q, search, context);
+      const reply = urgentReply(q) ?? (await fromAi(q, history, context?.id)) ?? (await answer(q, search, context));
       setTurns((prev) => prev.map((x) => (x.id === id ? { ...x, reply, failed: false } : x)));
     } catch {
       // The draft stays cleared but the question is kept so Retry can resend it.
@@ -55,7 +57,7 @@ export default function AskRemy() {
     void ask(q);
   };
 
-  const starters = context?.ai?.terms.length ? [...context.ai.terms.slice(0, 2).map((x) => `What does ${x.term} mean?`), 'How does sharing work?'] : STARTERS;
+  const starters = context ? ['What does this record say?', context.ai?.labValues.some((v) => v.flag === 'high' || v.flag === 'low') ? 'Which values were flagged?' : 'What should I ask my doctor about this?', ...(context.ai?.terms[0] ? [`What does ${context.ai.terms[0].term} mean?`] : ['How does sharing work?'])] : STARTERS;
   const column = { width: '100%' as const, maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' as const, paddingHorizontal: GUTTER };
 
   return (
@@ -80,7 +82,7 @@ export default function AskRemy() {
             </Rise>
             <Rise delay={200}>
               <Txt color={c.ink3}>
-                {context ? `Ask about “${context.title}”, find other records or learn how MedRec works.` : 'I can help you find records, use MedRec and understand medical terms.'}
+                {context ? `Ask me about “${context.title}”, compare it with your other records, or anything about MedRec.` : 'Ask me about your records: results, medicines, dates and doctors. I can explain terms and help you use MedRec.'}
               </Txt>
             </Rise>
             {starters.map((s, i) => (
@@ -88,13 +90,13 @@ export default function AskRemy() {
                 <Button kind="secondary" label={s} onPress={() => void ask(s)} />
               </Rise>
             ))}
-            <Txt variant="caption" color={c.ink3}>General information, not medical advice.{'\n'}For urgent symptoms, seek medical care.</Txt>
+            <Txt variant="caption" color={c.ink3}>Remy reads your saved records with Google Gemini to answer. General information, not medical advice. For urgent symptoms, seek medical care.</Txt>
           </View>
         ) : (
           turns.map((x) => (
             <View key={x.id} style={{ gap: space.lg }}>
               <Question text={x.question} />
-              {x.reply ? <Answer reply={x.reply} /> : x.failed ? <Failed onRetry={() => void ask(x.question, x.id)} /> : <Thinking />}
+              {x.reply ? <Answer reply={x.reply} onAsk={x.id === turns[turns.length - 1]?.id && !pending ? (q) => void ask(q) : undefined} /> : x.failed ? <Failed onRetry={() => void ask(x.question, x.id)} /> : <Thinking />}
             </View>
           ))
         )}
@@ -122,4 +124,18 @@ export default function AskRemy() {
       </View>
     </KeyboardAvoidingView>
   );
+}
+
+/**
+ * Asks the AI, grounded in the person's records. Returns null when the AI can't be reached
+ * (not configured, overloaded, rate-limited, offline) so the record search can answer instead.
+ */
+async function fromAi(question: string, history: { role: 'user' | 'remy'; text: string }[], recordId?: string): Promise<Reply | null> {
+  try {
+    const r = await api.askRemy(question, history, recordId);
+    if (r.kind === 'urgent') return { kind: 'urgent', text: r.answer };
+    return { kind: 'ai', tone: r.kind, text: r.answer, records: r.records, followUps: r.followUps };
+  } catch {
+    return null;
+  }
 }

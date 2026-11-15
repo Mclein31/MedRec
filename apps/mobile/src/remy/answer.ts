@@ -1,5 +1,5 @@
 import { formatDate } from '../format.ts';
-import type { HealthRecord } from '../lib/api';
+import type { CitedRecord, HealthRecord } from '../lib/api';
 
 /**
  * Ask Remy without a chat model. Every answer comes from one of three honest sources:
@@ -14,9 +14,11 @@ export type Reply =
   | { kind: 'term'; term: string; text: string; source: HealthRecord | null; general: boolean }
   | { kind: 'help'; text: string; link?: { label: string; href: string } }
   | { kind: 'urgent'; text: string }
-  | { kind: 'unsupported'; text: string };
+  | { kind: 'unsupported'; text: string }
+  /** From the AI, grounded in the person's records. `tone` mirrors the server's kind. */
+  | { kind: 'ai'; tone: 'answer' | 'advice' | 'notFound'; text: string; records: CitedRecord[]; followUps: string[] };
 
-const URGENT = /\b(chest pain|can'?t breathe|cannot breathe|short of breath|overdose|suicid|kill myself|stroke|unconscious|severe bleeding|emergency)\b/i;
+export const URGENT = /\b(chest pain|can'?t breathe|cannot breathe|short of breath|overdose|suicid|kill myself|stroke|unconscious|severe bleeding|emergency)\b/i;
 
 /** Requests for personal medical decisions; Remy never answers these. */
 const ADVICE = /\b(should i|is it safe|is it normal|is this normal|am i|do i have|can i (stop|start|take|skip|double)|stop taking|dose|dosage|diagnos|treat(ment)?|cure)\b/i;
@@ -104,6 +106,16 @@ function findTerm(term: string, records: HealthRecord[]) {
 }
 
 const label = (r: HealthRecord) => `“${r.title}”${r.facility ? ` from ${r.facility}` : r.provider ? ` with ${r.provider}` : ''}`;
+
+/** Instant, offline-safe check that runs before any network call. */
+export function urgentReply(question: string): Reply | null {
+  return URGENT.test(question) ? { kind: 'urgent', text: "I can't help with urgent symptoms. If this is an emergency, call your local emergency number or go to the nearest emergency department now. For anything else that worries you, contact a clinician." } : null;
+}
+
+/** The plain-text version of a reply, for the conversation history sent with the next question. */
+export function replyText(reply: Reply) {
+  return reply.kind === 'term' ? `${reply.term}: ${reply.text}` : reply.text;
+}
 
 export async function answer(question: string, search: Search, context?: HealthRecord | null): Promise<Reply> {
   const q = question.trim();

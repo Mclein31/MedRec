@@ -44,6 +44,16 @@ export interface HistorySummary { overview: string; conditions: string[]; medica
 
 const post = <T>(path: string, json?: unknown, auth = true) => request<T>(path, { method: 'POST', json: json ?? {}, auth });
 
+/** A record Remy cited: enough to show and open it. */
+export type CitedRecord = Pick<HealthRecord, 'id' | 'title' | 'category' | 'eventDate' | 'provider' | 'facility'>;
+export interface RemyReply {
+  kind: 'answer' | 'urgent' | 'advice' | 'notFound';
+  answer: string;
+  records: CitedRecord[];
+  followUps: string[];
+  basedOn: number;
+}
+
 export const api = {
   register: (name: string, email: string, password: string) => post<AuthStep>('/api/auth/register', { name, email, password }, false),
   login: (email: string, password: string, deviceToken?: string) => post<AuthStep>('/api/auth/login', { email, password, deviceToken }, false),
@@ -88,6 +98,8 @@ export const api = {
 
   activity: (before?: string) => request<{ items: ActivityItem[]; unread: number; nextBefore: string | null }>(`/api/activity${before ? `?before=${before}` : ''}`),
   markSeen: () => post<{ unread: 0 }>('/api/activity/seen'),
+  askRemy: (question: string, history: { role: 'user' | 'remy'; text: string }[], recordId?: string) =>
+    request<RemyReply>('/api/ai/ask', { method: 'POST', json: { question, history, recordId }, timeoutMs: 45_000 }),
   aiSummary: () => post<{ summary: HistorySummary; basedOn: number; limited: boolean }>('/api/ai/summary'),
   exportJson: () => request<Record<string, unknown>>('/api/export'),
 };

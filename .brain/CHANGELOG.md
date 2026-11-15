@@ -12,6 +12,10 @@ last_updated: 2026-11-15
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
 
+## [Unreleased] — 2026-11-15 — Ask Remy reads your records (DD-54)
+
+- Ask Remy now answers with Gemini from the person's own records (lab values, flags, medicines, dates, notes), cites the records it used and suggests follow-up questions; it still refuses diagnosis and medication decisions and falls back to search when the AI is unavailable.
+
 ## [Unreleased] — 2026-11-15 — Multi-page records, dark mode, Medical ID fixes (DD-53)
 
 - Adding pages to a record now offers AI reading of all pages or manual editing; a page viewer shows every page (DD-53). API AI scan limit 18 → 14 MB (deployed).

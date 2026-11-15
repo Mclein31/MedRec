@@ -27,7 +27,7 @@ MedRec is a personal medical-record app with private document storage, AI docume
 - Sign-in: password + emailed 6-digit code; trusted devices skip the code for 30 days. Refresh tokens rotate. Password reset/change and account deletion revoke devices. Users can delete their account in-app (password required).
 - Records: AI-read document intake (pages → reading → review → saved), records without documents, pages attached later (not AI-read), search and category filters.
 - Sharing is view-only with 15/30/60-minute UI choices, scoped to all/categories/records, revocable. The public Medical ID is separate and off until enabled.
-- Ask Remy is deliberately bounded: own-record search, terms from saved AI readings, a labeled general glossary and fixed app help. No free-form chat model and no personal medical advice.
+- Ask Remy answers with Gemini from the person's own records (DD-54): grounded, cites records, no diagnosis or medication decisions, urgent questions answered on-device; falls back to record search when the AI is unavailable.
 - First use: two startup stories (first-use and signed-in arrival, DD-49) and a five-scene Remy-led introduction built from real components with labeled example data; the sample QR grants no access.
 
 ## Standing user instructions

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { formatDate } from '../format';
-import type { HealthRecord } from '../lib/api';
+import type { CitedRecord } from '../lib/api';
 import { useCalmMotion } from '../prefs';
 import { CATEGORY_META, radius, space, useColors } from '../theme';
 import { Button, Icon, Tappable, TextLink, Txt } from '../ui/core';
@@ -31,7 +31,7 @@ function Speaker({ thinking = false }: { thinking?: boolean }) {
   );
 }
 
-function SourceCard({ r }: { r: HealthRecord }) {
+function SourceCard({ r }: { r: CitedRecord }) {
   const c = useColors();
   return (
     <Tappable
@@ -50,7 +50,7 @@ function SourceCard({ r }: { r: HealthRecord }) {
   );
 }
 
-export function Answer({ reply, showCaution = true }: { reply: Reply; showCaution?: boolean }) {
+export function Answer({ reply, showCaution = true, onAsk }: { reply: Reply; showCaution?: boolean; onAsk?: (question: string) => void }) {
   const c = useColors();
   return (
     <Rise from={10} style={{ gap: space.md }}>
@@ -79,6 +79,22 @@ export function Answer({ reply, showCaution = true }: { reply: Reply; showCautio
             {reply.general ? 'General information, not about your results. ' : 'From the AI reading saved with this record. '}
             AI can make mistakes. Confirm medical decisions with your clinician.
           </Txt>}
+        </>
+      )}
+      {reply.kind === 'ai' && (
+        <>
+          {reply.records.map((r) => <SourceCard key={r.id} r={r} />)}
+          {onAsk && reply.followUps.length > 0 && (
+            <View style={{ gap: space.sm }}>
+              {reply.followUps.map((f) => (
+                <Tappable key={f} onPress={() => onAsk(f)} accessibilityLabel={`Ask: ${f}`} style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, minHeight: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface }}>
+                  <Icon name="chat-question-outline" size={16} color={c.ink2} />
+                  <Txt variant="caption" color={c.ink} style={{ flexShrink: 1 }}>{f}</Txt>
+                </Tappable>
+              ))}
+            </View>
+          )}
+          {showCaution && <Txt variant="caption" color={c.ink3}>{reply.records.length ? 'From your saved records. ' : ''}AI can make mistakes. Check the original document and ask your clinician about medical decisions.</Txt>}
         </>
       )}
       {reply.kind === 'help' && reply.link && <TextLink label={reply.link.label} onPress={() => router.push(reply.link!.href as Href)} />}
