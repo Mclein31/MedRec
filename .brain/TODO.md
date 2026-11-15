@@ -14,6 +14,8 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## High priority
 
+- [ ] **Device QA for DD-56 (native navigation/controls) on iPhone and Android:** tab-bar insets (top/bottom, scroll-to-top), header actions on record details, sheets with long content, discard-confirm screens vs swipe-back, share slider/segmented control, dark mode tint colours, iPad sidebar.
+
 - [ ] Try caregiver profiles on the phone (DD-55): Profile → Family members, switching, a record, Medical ID and a share for a family member.
 - [ ] **Physical-device QA on iOS and Android:** Face ID/fingerprint app lock (enrollment, cancellation, background/resume), PDF share sheet, email-code autofill, password-manager AutoFill on registration (DD-47), safe areas, keyboard, haptics and VoiceOver/TalkBack.
 - [ ] **Device QA for DD-51:** avatar camera/library picker on device; native-sheet top spacing on profile edit.

@@ -31,6 +31,16 @@ export function AskRemy({ recordId }: { recordId?: string }) {
   );
 }
 
+/** Records header action: opens the add-record flow now that the tab bar holds only real tabs. */
+export function AddRecordButton() {
+  const c = useColors();
+  return (
+    <Tappable onPress={() => router.push('/add')} haptic accessibilityLabel="Add record" style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.persimmon, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name="plus" size={26} color={c.onPersimmon} />
+    </Tappable>
+  );
+}
+
 /** Main tab header: wordmark left, Ask Remy right. */
 export function BrandHeader({ right }: { right?: ReactNode }) {
   return (

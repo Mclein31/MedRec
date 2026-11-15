@@ -37,6 +37,12 @@ Newest first. This file holds the decisions for the current v2 implementation (`
 - **Deploy safety:** the default wrangler env is now `medrec-api-dev` with the dev bucket, and `npm run deploy` runs `deploy:prod`, so a bare deploy can't overwrite production with development settings.
 **Consequences:** `npm run migrate:prod` must run before the next production deploy (004). Users under attack may see `LOGIN_PAUSED` or `OTP_DAILY_LIMIT` on new devices; trusted devices keep working. Regression tests: `apps/api/test/hardening.test.ts` plus updated auth/sessions tests. The three issues run-2 found afterwards are fixed in DD-58.
 
+## 2026-11-16 — Native navigation and controls on iOS and Android (DD-56)
+
+**Decision:** use system components for navigation chrome and standard controls, each platform in its own idiom, instead of custom JS look-alikes. `NativeTabs` (expo-router) replaces the custom tab bar; `Screen`'s `nav` prop renders a native Stack header via `src/ui/NativeHeader.tsx`; `Sheet` presents `@expo/ui` BottomSheet; `DurationSlider` and `Segmented` (`.ios`/`.android`/web files) use `@expo/ui` controls. Web keeps the old components.
+**Why:** smoother, familiar behaviour (swipe back, sheet detents, glass bars, system press feedback and accessibility) for free. User asked for it and for the platforms to feel native each.
+**Consequences:** the centre "Add record" tab item cannot exist in a native tab bar, so Add moved to the Records header (user chose this). Tab screens no longer pad for a custom bar (`TAB_BAR_CLEARANCE` removed); iOS relies on automatic content insets, Android pads the top itself. Auth screens still use the custom `AuthFrame` header. Needs device QA: tab insets, sheet sizing with long content, custom-back screens (discard confirmations) vs swipe-back.
+
 ## 2026-11-15 — Caregiver profiles: family members on one account (DD-55)
 
 At the user's request (chosen because it needs no paid Apple account and keeps Expo Go working): one account can keep records for up to 10 family members.

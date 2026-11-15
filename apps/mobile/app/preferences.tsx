@@ -3,7 +3,8 @@ import { View } from 'react-native';
 import { setPrefs, usePrefs, type Prefs } from '../src/prefs';
 import { radius, space, useColors } from '../src/theme';
 import { Button, Eyebrow, Txt } from '../src/ui/core';
-import { Chip, Toggle } from '../src/ui/form';
+import { Toggle } from '../src/ui/form';
+import { Segmented } from '../src/ui/Segmented';
 import { Group, Row, Screen } from '../src/ui/layout';
 import { Remy } from '../src/ui/Remy';
 
@@ -41,13 +42,7 @@ export default function Preferences() {
           <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'center' }}>
             <Txt variant="headline" style={{ flex: 1 }}>Appearance</Txt>
           </View>
-          <View style={{ flexDirection: 'row', gap: space.sm }} accessibilityRole="radiogroup">
-            {APPEARANCE.map((a) => (
-              <View key={a.key} style={{ flex: 1 }}>
-                <Chip label={a.label} selected={prefs.appearance === a.key} onPress={() => void setPrefs({ appearance: a.key })} />
-              </View>
-            ))}
-          </View>
+          <Segmented label="Appearance" items={APPEARANCE} value={prefs.appearance} onChange={(k) => void setPrefs({ appearance: k })} />
           <Txt variant="caption" color={c.ink3}>Device follows your light or dark setting.</Txt>
         </View>
         <Row

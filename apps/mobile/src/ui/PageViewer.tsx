@@ -16,7 +16,7 @@ export function openOriginal(files: RecordFile[], show: (index: number) => void)
  * Every page of a record, full screen, swiped left and right. Photos show in place; a PDF page
  * (which can hold several pages of its own) opens in the system viewer. Always dark, like a photo viewer.
  */
-export function PageViewer({ files, index, onClose }: { files: RecordFile[]; index: number | null; onClose: () => void }) {
+export function PageViewer({ files, index, onClose, onRemove }: { files: RecordFile[]; index: number | null; onClose: () => void; onRemove?: (file: RecordFile, index: number) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scroller = useRef<ScrollViewInstance>(null);
@@ -68,9 +68,16 @@ export function PageViewer({ files, index, onClose }: { files: RecordFile[]; ind
 
         <View style={{ position: 'absolute', top: insets.top + space.sm, left: space.lg, right: space.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Txt variant="label" color="#FFFFFF" accessibilityLiveRegion="polite">{many ? `Page ${current + 1} of ${files.length}` : file?.contentType === 'application/pdf' ? 'PDF' : 'Original'}</Txt>
-          <Tappable onPress={onClose} accessibilityLabel="Close pages" style={round}>
-            <Icon name="close" size={24} color="#FFFFFF" />
-          </Tappable>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            {onRemove && file && (
+              <Tappable onPress={() => onRemove(file, current)} accessibilityLabel={`Remove page ${current + 1}`} style={round}>
+                <Icon name="trash-can-outline" size={22} color="#FFB4BC" />
+              </Tappable>
+            )}
+            <Tappable onPress={onClose} accessibilityLabel="Close pages" style={round}>
+              <Icon name="close" size={24} color="#FFFFFF" />
+            </Tappable>
+          </View>
         </View>
 
         {many && (

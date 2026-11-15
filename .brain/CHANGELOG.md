@@ -28,6 +28,13 @@ Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is arch
 - Service-wide hourly cap on AI calls (`AI_HOURLY_LIMIT`, default 500).
 - `npm run deploy` now runs the production deploy script; the default wrangler env is a separate dev Worker.
 
+## [Unreleased] — 2026-11-16 — Native navigation and controls (DD-56)
+
+- Tab bar is now the system one (UITabBarController / Liquid Glass on iOS, Material 3 navigation bar on Android). Add record moved to a + button in the Records header.
+- Pushed and presented screens use the system navigation bar (iOS: chevron + centred title; Android: Material top app bar, left-aligned title). Record details Edit/Share are native toolbar buttons.
+- Bottom sheets are the system sheets (drag indicator, swipe to dismiss). Share length is a native slider with three stops; Appearance is a native segmented control (UISegmentedControl / Material segmented buttons). Web keeps the previous custom versions.
+- Added `@expo/ui` and `expo-symbols` (SDK 58). Not yet seen on a device.
+
 ## [Unreleased] — 2026-11-15 — Caregiver profiles (DD-55)
 
 - Keep records for up to 10 family members on one account: Profile → Family members, then switch with "Whose records?" on Records, Medical ID and Share. Each person has their own records, Medical ID and emergency page, doctor shares and Ask Remy answers.

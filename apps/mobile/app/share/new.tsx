@@ -2,25 +2,71 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { formatDate } from '../../src/format';
-import { api, type ShareScope } from '../../src/lib/api';
+import { api, type HealthRecord, type ShareScope } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
 import { useActivePerson } from '../../src/people';
-import { CATEGORIES, CATEGORY_META, motion, space, useColors } from '../../src/theme';
+import { CATEGORIES, CATEGORY_META, motion, radius, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
-import { Banner, Button, Eyebrow, Txt } from '../../src/ui/core';
-import { Chip, Choice, Field } from '../../src/ui/form';
+import { Banner, Button, Eyebrow, Icon, Tappable, Txt } from '../../src/ui/core';
+import { Choice, Field, SearchField } from '../../src/ui/form';
+import { DurationSlider } from '../../src/ui/DurationSlider';
 import { Screen } from '../../src/ui/layout';
 import { Rise } from '../../src/ui/motion';
-
-const DURATIONS = [
-  { minutes: 15, label: '15 min' },
-  { minutes: 30, label: '30 min' },
-  { minutes: 60, label: '1 hour' },
-];
 
 type Mode = 'all' | 'categories' | 'records';
 const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 const plural = (n: number) => `${n} ${n === 1 ? 'record' : 'records'}`;
+
+const PREVIEW = 6;
+
+/** Compact multi-select for a long list: search, a running count, and one grouped list that expands on request. */
+function RecordPicker({ records, selected, onToggle, onClear }: { records: HealthRecord[]; selected: string[]; onToggle: (id: string) => void; onClear: () => void }) {
+  const c = useColors();
+  const [q, setQ] = useState('');
+  const [all, setAll] = useState(false);
+  const needle = q.trim().toLowerCase();
+  const matches = needle ? records.filter((r) => `${r.title} ${CATEGORY_META[r.category]?.short ?? ''}`.toLowerCase().includes(needle)) : records;
+  const shown = all || needle ? matches : matches.slice(0, PREVIEW);
+  return (
+    <View style={{ gap: space.md }}>
+      {records.length > PREVIEW && <SearchField value={q} onChangeText={setQ} placeholder="Find a record to share" label="Search records to share" />}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 }}>
+        <Txt variant="caption" color={c.ink3} accessibilityLiveRegion="polite">{selected.length ? `${plural(selected.length)} chosen` : `${records.length} to choose from`}</Txt>
+        {selected.length > 0 && (
+          <Tappable onPress={onClear} accessibilityLabel="Clear chosen records" hitSlop={10}>
+            <Txt variant="label" color={c.ink2} style={{ textDecorationLine: 'underline' }}>Clear</Txt>
+          </Tappable>
+        )}
+      </View>
+      <View style={{ backgroundColor: c.surface, borderRadius: radius.md, borderWidth: 1, borderColor: c.line, overflow: 'hidden' }}>
+        {shown.map((r, i) => {
+          const on = selected.includes(r.id);
+          return (
+            <Tappable
+              key={r.id}
+              onPress={() => onToggle(r.id)}
+              haptic
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={`${r.title}, ${CATEGORY_META[r.category]?.short}, ${formatDate(r.eventDate)}`}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 60, paddingHorizontal: space.lg, paddingVertical: space.sm, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }}
+            >
+              <Icon name={on ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color={on ? c.accent : c.ink3} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Txt variant="headline" numberOfLines={1}>{r.title}</Txt>
+                <Txt variant="caption" color={c.ink3} numberOfLines={1}>{CATEGORY_META[r.category]?.short} · {formatDate(r.eventDate)}</Txt>
+              </View>
+            </Tappable>
+          );
+        })}
+        {!shown.length && <Txt color={c.ink3} style={{ padding: space.lg }}>No records match "{q.trim()}".</Txt>}
+      </View>
+      {!all && !needle && matches.length > PREVIEW && (
+        <Button kind="ghost" label={`Show all ${matches.length} records`} onPress={() => setAll(true)} style={{ minHeight: 44 }} />
+      )}
+    </View>
+  );
+}
 
 export default function NewShare() {
   const c = useColors();
@@ -74,7 +120,7 @@ export default function NewShare() {
         <Choice title="All records" subtitle={summary ? `${plural(summary.total)} + health details` : 'Every record + health details'} selected={mode === 'all'} onPress={() => setMode('all')} />
         <Choice title="Some types" subtitle={categories.length ? categories.map((k) => CATEGORY_META[k]?.label).join(', ') : 'For example, only lab results · view only'} selected={mode === 'categories'} onPress={() => setMode('categories')} />
         {mode === 'categories' && (
-          <Rise from={-6} duration={motion.routine} style={{ gap: space.sm, paddingLeft: space.lg }}>
+          <Rise from={-6} duration={motion.routine} style={{ gap: space.sm }}>
             {available.map((k) => (
               <Choice key={k} multi title={CATEGORY_META[k]!.label} subtitle={`${plural(summary?.counts[k] ?? 0)} · view only`} selected={categories.includes(k)} onPress={() => setCategories((l) => toggle(l, k))} />
             ))}
@@ -82,23 +128,15 @@ export default function NewShare() {
         )}
         <Choice title="Specific records" subtitle={selected.length ? `${plural(selected.length)} chosen · view only` : 'Pick them one by one'} selected={mode === 'records'} onPress={() => setMode('records')} />
         {mode === 'records' && page && (
-          <Rise from={-6} duration={motion.routine} style={{ gap: space.sm, paddingLeft: space.lg }}>
-            {page.records.map((r) => (
-              <Choice key={r.id} multi title={r.title} subtitle={`${CATEGORY_META[r.category]?.short} · ${formatDate(r.eventDate)}`} selected={selected.includes(r.id)} onPress={() => setSelected((l) => toggle(l, r.id))} />
-            ))}
+          <Rise from={-6} duration={motion.routine}>
+            <RecordPicker records={page.records} selected={selected} onToggle={(id) => setSelected((l) => toggle(l, id))} onClear={() => setSelected([])} />
           </Rise>
         )}
       </View>
 
       <View style={{ gap: space.md }}>
         <Eyebrow>02  How long?</Eyebrow>
-        <View style={{ flexDirection: 'row', gap: space.sm }} accessibilityRole="radiogroup">
-          {DURATIONS.map((d) => (
-            <View key={d.minutes} style={{ flex: 1 }}>
-              <Chip label={d.label} selected={minutes === d.minutes} onPress={() => setMinutes(d.minutes)} />
-            </View>
-          ))}
-        </View>
+        <DurationSlider minutes={minutes} onChange={setMinutes} />
         <Txt variant="caption" color={c.ink3}>Access ends automatically. You can stop it earlier, too.</Txt>
       </View>
 

@@ -6,10 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCalmMotion } from '../prefs';
 import { GUTTER, MAX_CONTENT_WIDTH, motion, radius, space, useColors } from '../theme';
 import { BrandHeader, NavHeader } from './brand';
+import { NativeHeader, type HeaderAction } from './NativeHeader';
 import { Icon, Tappable, Txt, type IconName } from './core';
 import { ease } from './motion';
 import { Remy, type RemyMotion, type RemyPose } from './Remy';
 
+/** Space the floating native tab bar covers at the bottom of tab screens (plus the home-indicator inset). */
 export const TAB_BAR_CLEARANCE = 104;
 
 /** Routes presented with the `sheet` options in app/_layout.tsx. Keep the two lists in sync. */
@@ -23,10 +25,11 @@ export const SHEET_ROUTES = new Set(['activity', 'summary', 'profile-edit', 'rem
 export function useTopInset() {
   const insets = useSafeAreaInsets();
   const route = useContext(NavigationRouteContext);
-  return Platform.OS === 'ios' && route && SHEET_ROUTES.has(route.name) ? space.sm : insets.top;
+  if (Platform.OS !== 'ios' || !route) return insets.top;
+  return SHEET_ROUTES.has(route.name) ? space.sm : insets.top;
 }
 
-type Nav = { title?: string; onBack?: () => void; back?: 'arrow-left' | 'close'; right?: ReactNode };
+type Nav = { title?: string; onBack?: () => void; back?: 'arrow-left' | 'close'; right?: ReactNode; actions?: HeaderAction[] };
 
 export function Screen({
   title,
@@ -65,11 +68,13 @@ export function Screen({
 }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  // Pushed screens use the system navigation bar on iOS and Android; web keeps the in-page header.
+  const nativeHeader = !!nav && Platform.OS !== 'web';
   const column = { width: '100%' as const, maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' as const, paddingHorizontal: GUTTER };
   const inner = (
     <View style={[column, { gap: space.xl }, contentStyle]}>
       {brand && <BrandHeader />}
-      {nav && <NavHeader {...nav} />}
+      {nav && !nativeHeader && <NavHeader {...nav} right={nav.right ?? <WebActions actions={nav.actions} />} />}
       {(title || eyebrow) && (
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.md }}>
           <View style={{ flex: 1, gap: space.sm }}>
@@ -91,8 +96,10 @@ export function Screen({
       {children}
     </View>
   );
+  // Tab screens turn off the tab host's automatic insets, so they pad for the bar and home indicator themselves.
   const bottom = footer ? space.xl : insets.bottom + (tabBar ? TAB_BAR_CLEARANCE : space.xxl);
-  const top = useTopInset();
+  const inset = useTopInset();
+  const top = nativeHeader ? 0 : inset;
   const pad = { paddingTop: top + space.sm, paddingBottom: bottom };
   const body = scroll ? (
     <ScrollView
@@ -108,9 +115,24 @@ export function Screen({
   );
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: tint ?? c.bg }}>
+      {nativeHeader && nav && <NativeHeader {...nav} />}
       {body}
       {footer && <View style={[column, { gap: space.md, paddingTop: space.sm, paddingBottom: insets.bottom + space.lg }]}>{footer}</View>}
     </KeyboardAvoidingView>
+  );
+}
+
+function WebActions({ actions }: { actions?: HeaderAction[] }) {
+  const c = useColors();
+  if (!actions?.length) return null;
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      {actions.map((a) => (
+        <Tappable key={a.label} onPress={a.onPress} accessibilityLabel={a.label} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={a.icon} size={22} color={c.ink} />
+        </Tappable>
+      ))}
+    </View>
   );
 }
 

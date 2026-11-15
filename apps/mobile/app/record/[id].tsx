@@ -120,6 +120,25 @@ export default function RecordDetail() {
   };
   const camera = Platform.OS !== 'web';
 
+  /** Removes one uploaded page from the record (and from storage) after a confirmation. */
+  const removePage = (f: RecordFile, index: number) => {
+    const go = async () => {
+      setActionError(null);
+      try {
+        await api.removePage(r.id, f.id);
+        const rest = r.files.filter((x) => x.id !== f.id);
+        setData({ ...r, files: rest, fileCount: rest.length });
+      } catch (err) {
+        setActionError(messageFor(err));
+      }
+    };
+    if (Platform.OS === 'web') return void go();
+    Alert.alert(`Remove page ${index + 1}?`, r.files.length === 1 ? 'This is the only page. The record stays, without its document.' : 'The page is deleted from this record. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => void go() },
+    ]);
+  };
+
   const remove = () => {
     const go = async () => {
       try {
@@ -160,21 +179,15 @@ export default function RecordDetail() {
     );
   }
 
-  const headerActions = (
-    <View style={{ flexDirection: 'row' }}>
-      <Tappable onPress={startEdit} accessibilityLabel="Edit record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name="pencil-outline" size={22} color={c.ink} />
-      </Tappable>
-      <Tappable onPress={() => router.push({ pathname: '/share/new', params: { recordId: r.id } })} accessibilityLabel="Share this record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name="share-variant-outline" size={22} color={c.ink} />
-      </Tappable>
-    </View>
-  );
+  const headerActions = [
+    { label: 'Edit record', sf: 'pencil' as const, icon: 'pencil-outline' as const, onPress: startEdit },
+    { label: 'Share this record', sf: 'square.and.arrow.up' as const, icon: 'share-variant-outline' as const, onPress: () => router.push({ pathname: '/share/new', params: { recordId: r.id } }) },
+  ];
 
   return flow(
     <Screen
       tabBar={false}
-      nav={{ title: 'Record details', right: headerActions }}
+      nav={{ title: 'Record details', actions: headerActions }}
       eyebrow={<Eyebrow>{`${CATEGORY_META[r.category]?.short ?? 'Record'}  /  ${r.eventDate ? formatDate(r.eventDate, { year: true }) : 'Undated'}`}</Eyebrow>}
       title={r.title}
       subtitle={[r.facility, r.provider].filter(Boolean).join(' · ') || undefined}
@@ -192,7 +205,7 @@ export default function RecordDetail() {
       <Rise scale={0.97}>
         <DocCard record={r} pages={r.files.length} kind={kind} />
       </Rise>
-      <PageThumbs files={r.files} onOpen={open} />
+      <PageThumbs files={r.files} onOpen={open} onRemove={removePage} />
       {files.length > 0 && <Button kind="secondary" icon={files.length > 1 ? 'book-open-page-variant-outline' : 'file-document-outline'} label={files.length > 1 ? `View all ${files.length} pages` : `Open original ${kind === 'PDF' ? 'PDF' : 'document'}`} onPress={() => openOriginal(files, setViewer)} />}
       {r.files.length < MAX_PAGES && (
         <Button
@@ -242,7 +255,7 @@ export default function RecordDetail() {
         </View>
       </Sheet>
 
-      <PageViewer files={files} index={viewer} onClose={() => setViewer(null)} />
+      <PageViewer files={files} index={viewer} onClose={() => setViewer(null)} onRemove={(f, i) => { setViewer(null); setTimeout(() => removePage(f, i), Platform.OS === 'ios' ? 400 : 0); }} />
     </Screen>
   );
 }

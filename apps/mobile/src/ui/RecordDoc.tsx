@@ -33,14 +33,14 @@ export function DocCard({ record, pages, kind }: { record: Pick<HealthRecord, 't
 }
 
 /** Horizontal strip of the record's original pages. */
-export function PageThumbs({ files, onOpen }: { files: RecordFile[]; onOpen: (f: RecordFile) => void }) {
+export function PageThumbs({ files, onOpen, onRemove }: { files: RecordFile[]; onOpen: (f: RecordFile) => void; onRemove?: (f: RecordFile, index: number) => void }) {
   const c = useColors();
   if (!files.length) return null;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md }}>
       {files.map((f, i) => (
+        <View key={f.id} style={{ paddingTop: 8, paddingRight: 8 }}>
         <Tappable
-          key={f.id}
           onPress={() => onOpen(f)}
           accessibilityLabel={`Open original page ${i + 1}`}
           style={{ width: 96, height: 124, borderRadius: radius.sm, overflow: 'hidden', borderWidth: 1, borderColor: c.line, backgroundColor: c.surfaceSunken }}
@@ -54,6 +54,17 @@ export function PageThumbs({ files, onOpen }: { files: RecordFile[]; onOpen: (f:
             </View>
           )}
         </Tappable>
+        {onRemove && (
+          <Tappable
+            onPress={() => onRemove(f, i)}
+            accessibilityLabel={`Remove page ${i + 1}`}
+            hitSlop={10}
+            style={{ position: 'absolute', top: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Icon name="close" size={14} color={c.bg} />
+          </Tappable>
+        )}
+        </View>
       ))}
     </ScrollView>
   );

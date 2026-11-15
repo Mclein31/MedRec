@@ -4,14 +4,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Appearance, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth';
 import { AppLockGate } from '../src/lock';
 import { loadOnboarded, useOnboarded } from '../src/onboarded';
 import { loadPeople, resetPeople } from '../src/people';
-import { loadPrefs, useCalmMotion } from '../src/prefs';
+import { loadPrefs, useCalmMotion, usePrefs } from '../src/prefs';
 import { Launch } from '../src/screens/Launch';
 import { useColors } from '../src/theme';
 import { Button, Txt } from '../src/ui/core';
@@ -48,6 +48,7 @@ function Navigator({ splashReady }: { splashReady: boolean }) {
   const c = useColors();
   const { state } = useAuth();
   const onboarded = useOnboarded();
+  const { appearance } = usePrefs();
 
   const [launchGone, setLaunchGone] = useState(false);
   const [enteredUser, setEnteredUser] = useState<string | null>(null);
@@ -57,6 +58,10 @@ function Navigator({ splashReady }: { splashReady: boolean }) {
     void loadOnboarded();
     void loadPrefs();
   }, []);
+  // Native bars, sheets and controls follow the window's scheme, so it must match the in-app Appearance choice.
+  useEffect(() => {
+    Appearance.setColorScheme(appearance === 'system' ? 'unspecified' : appearance);
+  }, [appearance]);
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(c.bg);
   }, [c.bg]);
@@ -114,7 +119,7 @@ function Routes() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn}>
-          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(tabs)" options={{ title: 'Records' }} />
           <Stack.Screen name="add" options={cover} />
           <Stack.Screen name="record/[id]" options={push} />
           <Stack.Screen name="record/explain" options={push} />

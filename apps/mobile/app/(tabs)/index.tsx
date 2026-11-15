@@ -8,10 +8,10 @@ import { messageFor } from '../../src/lib/errors';
 import { FirstRecord, NoMatch, OpeningRecords } from '../../src/screens/RecordsStates';
 import { CATEGORIES, CATEGORY_META, GUTTER, MAX_CONTENT_WIDTH, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
-import { BrandHeader } from '../../src/ui/brand';
+import { AddRecordButton, AskRemy, BrandHeader } from '../../src/ui/brand';
 import { Banner, Icon, Tappable, Txt } from '../../src/ui/core';
 import { SearchField, TextTabs } from '../../src/ui/form';
-import { Enter, Rule, TAB_BAR_CLEARANCE } from '../../src/ui/layout';
+import { Enter, Rule, TAB_BAR_CLEARANCE, useTopInset } from '../../src/ui/layout';
 import { possessive, useActivePerson } from '../../src/people';
 import { GOALS, orderCategories, pinnedCategories } from '../../src/personal';
 import { useCalmMotion, usePrefs } from '../../src/prefs';
@@ -24,6 +24,7 @@ const SHORTCUT_ROUTE = { remy: '/remy', share: '/(tabs)/share', medical: '/(tabs
 
 export default function Records() {
   const c = useColors();
+  const top = useTopInset();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -86,7 +87,7 @@ export default function Records() {
 
   const header = (
     <View style={{ gap: space.lg, paddingBottom: space.xs }}>
-      <BrandHeader />
+      <BrandHeader right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}><AskRemy /><AddRecordButton /></View>} />
       <PersonSwitcher />
       {firstLoad && !list.error && !summary.error ? (
         <OpeningRecords />
@@ -171,7 +172,7 @@ export default function Records() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
         refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={() => { void list.refresh(); void summary.refresh(); }} tintColor={c.ink3} />}
-        contentContainerStyle={{ paddingTop: insets.top + space.sm, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE, paddingHorizontal: GUTTER, width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' }}
+        contentContainerStyle={{ paddingTop: top + space.sm, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE, paddingHorizontal: GUTTER, width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' }}
         keyboardShouldPersistTaps="handled"
       />
       <Sheet visible={picker} onClose={() => setPicker(false)} title="Record categories" message="Choose what you're looking for.">
