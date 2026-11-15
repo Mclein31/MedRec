@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { AppState, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useDerivedValue, useSharedValue, withDelay, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
 import { useCalmMotion } from '../prefs';
+import { useColors } from '../theme';
 import { ACTING_CYCLE_MS, actingSeed, minorFrameAt, privacyFrameAt, type RemyAttention, type RemyMotion, type RemyPose } from './remyActing';
 import { ATLAS_BOUNDS, fittedSprite, ORIGINAL_BOUNDS } from './remyGeometry';
 
@@ -45,6 +46,7 @@ export function Remy({
   style?: StyleProp<ViewStyle>;
 }) {
   const calm = useCalmMotion();
+  const glow = useColors().remyGlow;
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [readyPose, setReadyPose] = useState<RemyPose | null>(null);
   const [privacyReady, setPrivacyReady] = useState(false);
@@ -126,6 +128,7 @@ export function Remy({
 
   return (
     <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={[{ width: size, height: size, alignItems: 'center' }, style]}>
+      {!!glow && size >= 40 && <Glow enter={enter} size={size} color={glow} />}
       {ground && <Ground enter={enter} size={size} />}
       <Animated.View style={[{ width: size, height: size }, body]}>
         <Animated.View style={[StyleSheet.absoluteFill, primaryOpacity]}>
@@ -154,6 +157,13 @@ export function Remy({
       </Animated.View>
     </View>
   );
+}
+
+/** Dark mode only: a warm pool of light so the plum body separates from a dark page. */
+function Glow({ enter, size, color }: { enter: SharedValue<number>; size: number; color: string }) {
+  const style = useAnimatedStyle(() => ({ opacity: enter.value }));
+  const d = size * 0.6;
+  return <Animated.View style={[{ position: 'absolute', top: size * 0.2, width: d, height: d, borderRadius: d, backgroundColor: color, boxShadow: `0 0 ${Math.round(size * 0.22)}px ${Math.round(size * 0.14)}px ${color}` }, style]} />;
 }
 
 function Ground({ enter, size }: { enter: SharedValue<number>; size: number }) {

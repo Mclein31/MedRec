@@ -1,21 +1,24 @@
 import { View } from 'react-native';
 import { radius, space, useColors } from '../theme';
 import { Icon, Tappable, Txt } from './core';
-import { Field } from './form';
+import { Chip, Field } from './form';
 
 export { withDraft } from '../listDraft';
-import { withDraft } from '../listDraft';
+import { isNone, withDraft } from '../listDraft';
 
 /**
  * Tag-style list input. The draft is controlled by the parent so typed-but-not-added text
- * can be saved with the form instead of being lost.
+ * can be saved with the form instead of being lost. `none` is the explicit "nothing to list" answer:
+ * it is stored as the list's only item, so it shows wherever the list is shown, and adding a real item replaces it.
  */
-export function ListEditor({ label, items, onChange, draft, onDraft, placeholder }: { label: string; items: string[]; onChange: (v: string[]) => void; draft: string; onDraft: (v: string) => void; placeholder: string }) {
+export function ListEditor({ label, items, onChange, draft, onDraft, placeholder, none }: { label: string; items: string[]; onChange: (v: string[]) => void; draft: string; onDraft: (v: string) => void; placeholder: string; none?: string }) {
   const c = useColors();
   const add = () => {
-    onChange(withDraft(items, draft));
+    onChange(withDraft(items, draft, none));
     onDraft('');
   };
+  const noneOn = !!none && isNone(items, none);
+  const listed = none ? items.filter((i) => i !== none) : items;
   return (
     <View style={{ gap: space.sm }}>
       <Field label={label} value={draft} onChangeText={onDraft} placeholder={placeholder} onSubmitEditing={add} returnKeyType="done" submitBehavior="submit" hint={draft.trim() ? undefined : 'Add one at a time.'} />
@@ -25,9 +28,14 @@ export function ListEditor({ label, items, onChange, draft, onDraft, placeholder
           <Txt variant="label" color={c.accent}>Add “{draft.trim()}”</Txt>
         </Tappable>
       )}
-      {items.length > 0 && (
+      {none && (
+        <View style={{ alignSelf: 'flex-start' }}>
+          <Chip label={none} selected={noneOn} onPress={() => { onChange(noneOn ? [] : [none]); if (!noneOn) onDraft(''); }} />
+        </View>
+      )}
+      {listed.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-          {items.map((i) => (
+          {listed.map((i) => (
             <Tappable key={i} onPress={() => onChange(items.filter((x) => x !== i))} accessibilityLabel={`Remove ${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 12, paddingRight: 10, minHeight: 36, borderRadius: radius.pill, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line }}>
               <Txt variant="label">{i}</Txt>
               <Icon name="close" size={14} />

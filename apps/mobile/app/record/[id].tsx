@@ -1,17 +1,20 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Alert, Linking, Modal, Platform, Pressable, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
+import { Reading } from '../../src/add/AddParts';
 import { MAX_PAGES, pickFromCamera, pickFromLibrary, pickPdf, uploadPage, type Page } from '../../src/add/pages';
 import { RecordForm, toInput, validate, type FormValue } from '../../src/add/RecordForm';
 import { formatDate } from '../../src/format';
-import { api, type RecordFile } from '../../src/lib/api';
+import { api, type AiSnapshot, type RecordFile } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
 import { CATEGORY_META, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
+import { AiPanel } from '../../src/ui/AiPanel';
 import { Banner, Button, Eyebrow, Icon, Tappable, Txt } from '../../src/ui/core';
 import { Screen } from '../../src/ui/layout';
 import { Rise, Swap } from '../../src/ui/motion';
+import { openOriginal, PageViewer } from '../../src/ui/PageViewer';
 import { DocCard, PageThumbs } from '../../src/ui/RecordDoc';
 import { Remy } from '../../src/ui/Remy';
 import { Sheet } from '../../src/ui/Sheet';
@@ -24,8 +27,12 @@ export default function RecordDetail() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormValue, string>>>({});
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<RecordFile | null>(null);
-  const [adding, setAdding] = useState<'sheet' | 'uploading' | null>(null);
+  const [viewer, setViewer] = useState<number | null>(null);
+  const [adding, setAdding] = useState<'sheet' | 'uploading' | 'added' | null>(null);
+  /** AI reading to save with the edit: undefined keeps the record's current one. */
+  const [editAi, setEditAi] = useState<AiSnapshot | null | undefined>(undefined);
+  const [reading, setReading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Editing is a mode of the same record: the view clears out, the form settles into its place.
   const flow = (screen: ReactNode) => <Swap id={editing ? 'edit' : 'view'} style={{ flex: 1 }}>{screen}</Swap>;
@@ -39,7 +46,30 @@ export default function RecordDetail() {
   }
 
   const r = data;
-  const open = (f: RecordFile) => (f.contentType.startsWith('image/') ? setViewing(f) : void Linking.openURL(f.url));
+  const files = r.files ?? [];
+  const open = (f: RecordFile) => setViewer(Math.max(0, files.findIndex((x) => x.id === f.id)));
+  const fields = (): FormValue => ({ title: r.title, category: r.category, eventDate: r.eventDate ?? '', provider: r.provider ?? '', facility: r.facility ?? '', notes: r.notes ?? '' });
+  const startEdit = () => { setEditAi(undefined); setNotice(null); setErrors({}); setEditing(fields()); };
+  const stopEdit = () => { setEditing(null); setEditAi(undefined); setNotice(null); };
+
+  /** Reads every page of the record with AI and opens the edit form with what it found, for the person to check. */
+  const readWithAi = async () => {
+    setAdding(null);
+    setActionError(null);
+    setReading(true);
+    try {
+      const { draft } = await api.scan(files.map((f) => f.id));
+      const { title, category, eventDate, provider, facility, legible, ...snapshot } = draft;
+      setErrors({});
+      setEditing({ title: title || r.title, category, eventDate: eventDate ?? r.eventDate ?? '', provider: provider ?? r.provider ?? '', facility: facility ?? r.facility ?? '', notes: r.notes ?? '' });
+      setEditAi(snapshot);
+      setNotice(legible ? null : 'Parts of a page were hard to read. Check each field, or retake a sharper photo.');
+    } catch (err) {
+      setActionError(`${messageFor(err)} You can still edit the details yourself.`);
+    } finally {
+      setReading(false);
+    }
+  };
   const kind = r.files.length ? (r.files.every((f) => f.contentType === 'application/pdf') ? 'PDF' : r.files.every((f) => f.contentType.startsWith('image/')) ? 'Photo' : 'Mixed') : undefined;
 
   const saveEdit = async () => {
@@ -49,9 +79,9 @@ export default function RecordDetail() {
     if (Object.keys(found).length) return;
     setBusy(true);
     try {
-      const { record } = await api.updateRecord(r.id, toInput(editing));
+      const { record } = await api.updateRecord(r.id, { ...toInput(editing), ...(editAi !== undefined ? { ai: editAi } : {}) });
       setData({ ...r, ...record, files: record.files ?? r.files });
-      setEditing(null);
+      stopEdit();
     } catch (err) {
       setActionError(messageFor(err));
     } finally {
@@ -69,12 +99,14 @@ export default function RecordDetail() {
       const done = await Promise.all(picked.map(uploadPage));
       const ok = done.filter((p) => p.status === 'ready' && p.fileId).map((p) => p.fileId!);
       if (ok.length) {
-        const { files } = await api.attachPages(r.id, ok);
-        setData({ ...r, files, fileCount: files.length });
+        const { files: all } = await api.attachPages(r.id, ok);
+        setData({ ...r, files: all, fileCount: all.length });
       }
       const failed = done.length - ok.length;
       if (failed) setActionError(`${failed === 1 ? "One page didn't" : `${failed} pages didn't`} upload. Check your connection and try again.`);
-      setAdding(null);
+      // New pages can change what the record says: offer to read them, edit by hand, or leave it.
+      if (ok.length) setTimeout(() => setAdding('added'), Platform.OS === 'ios' ? 400 : 0);
+      else setAdding(null);
     } catch (err) {
       setActionError((err as Error).message === 'CAMERA_DENIED' ? 'MedRec needs camera access to photograph pages. Allow it in Settings, or choose photos instead.' : messageFor(err));
       setAdding(null);
@@ -104,22 +136,33 @@ export default function RecordDetail() {
     ]);
   };
 
+  if (reading) {
+    return flow(
+      <Screen tabBar={false} nav={{ title: 'Record details' }}>
+        <Reading pages={files.length} />
+      </Screen>
+    );
+  }
+
   if (editing) {
     return flow(
       <Screen
         tabBar={false}
-        nav={{ title: 'Edit record', back: 'close', onBack: () => setEditing(null) }}
+        nav={{ title: editAi ? 'Review details' : 'Edit record', back: 'close', onBack: stopEdit }}
+        subtitle={editAi ? `Read from all ${files.length} ${files.length === 1 ? 'page' : 'pages'}. Give the details a quick check before saving.` : undefined}
         footer={<Button label="Save changes" onPress={saveEdit} loading={busy} />}
       >
         {actionError && <Banner message={actionError} />}
-        <RecordForm value={editing} onChange={setEditing} errors={errors} />
+        {notice && <Banner tone="warn" message={notice} />}
+        <RecordForm value={editing} onChange={setEditing} errors={errors} aiFilled={!!editAi} />
+        {editAi && <AiPanel ai={editAi} />}
       </Screen>
     );
   }
 
   const headerActions = (
     <View style={{ flexDirection: 'row' }}>
-      <Tappable onPress={() => setEditing({ title: r.title, category: r.category, eventDate: r.eventDate ?? '', provider: r.provider ?? '', facility: r.facility ?? '', notes: r.notes ?? '' })} accessibilityLabel="Edit record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+      <Tappable onPress={startEdit} accessibilityLabel="Edit record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name="pencil-outline" size={22} color={c.ink} />
       </Tappable>
       <Tappable onPress={() => router.push({ pathname: '/share/new', params: { recordId: r.id } })} accessibilityLabel="Share this record" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
@@ -138,6 +181,8 @@ export default function RecordDetail() {
       footer={
         r.ai ? (
           <Button kind="dark" label="Explain this record" onPress={() => router.push({ pathname: '/record/explain', params: { id: r.id } })} />
+        ) : files.length ? (
+          <Button kind="dark" icon="text-box-search-outline" label={files.length > 1 ? `Read all ${files.length} pages with AI` : 'Read this page with AI'} onPress={() => void readWithAi()} />
         ) : (
           <Txt variant="caption" color={c.ink3} style={{ textAlign: 'center' }}>No AI reading was saved with this record, so there's nothing to explain yet.</Txt>
         )
@@ -148,7 +193,7 @@ export default function RecordDetail() {
         <DocCard record={r} pages={r.files.length} kind={kind} />
       </Rise>
       <PageThumbs files={r.files} onOpen={open} />
-      {r.files[0] && <Button kind="secondary" label={`Open original ${kind === 'PDF' ? 'PDF' : 'document'}`} onPress={() => open(r.files[0]!)} />}
+      {files.length > 0 && <Button kind="secondary" icon={files.length > 1 ? 'book-open-page-variant-outline' : 'file-document-outline'} label={files.length > 1 ? `View all ${files.length} pages` : `Open original ${kind === 'PDF' ? 'PDF' : 'document'}`} onPress={() => openOriginal(files, setViewer)} />}
       {r.files.length < MAX_PAGES && (
         <Button
           kind={r.files.length ? 'ghost' : 'secondary'}
@@ -181,7 +226,7 @@ export default function RecordDetail() {
         <Txt variant="label" color={c.danger}>Delete record</Txt>
       </Tappable>
 
-      <Sheet visible={adding === 'sheet'} onClose={() => setAdding(null)} title="Add pages" message="New pages go after the ones already saved. They aren't read by AI.">
+      <Sheet visible={adding === 'sheet'} onClose={() => setAdding(null)} title="Add pages" message="New pages go after the ones already saved. Next, you can have AI read them or update the details yourself.">
         <View style={{ gap: space.md, paddingBottom: space.xs }}>
           {camera && <Button kind="secondary" icon="camera-outline" label="Take a photo" onPress={() => choose(pickFromCamera)} />}
           <Button kind="secondary" icon="image-outline" label="Choose from photos" onPress={() => choose(() => pickFromLibrary(MAX_PAGES - r.files.length))} />
@@ -189,14 +234,15 @@ export default function RecordDetail() {
         </View>
       </Sheet>
 
-      <Modal visible={!!viewing} animationType="fade" onRequestClose={() => setViewing(null)} presentationStyle="fullScreen">
-        <Pressable onPress={() => setViewing(null)} style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }} accessibilityLabel="Close page" accessibilityRole="button">
-          {viewing && <Image source={{ uri: viewing.url }} style={{ width: '100%', height: '100%' }} contentFit="contain" />}
-          <View pointerEvents="none" style={{ position: 'absolute', top: 56, right: space.lg, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="close" size={24} color="#FFFFFF" />
-          </View>
-        </Pressable>
-      </Modal>
+      <Sheet visible={adding === 'added'} onClose={() => setAdding(null)} title="Pages added" message={`This record now has ${files.length} ${files.length === 1 ? 'page' : 'pages'}. Update its details from them?`}>
+        <View style={{ gap: space.md, paddingBottom: space.xs }}>
+          <Button icon="text-box-search-outline" label={`Read all ${files.length} pages with AI`} onPress={() => void readWithAi()} />
+          <Button kind="secondary" icon="pencil-outline" label="Edit details myself" onPress={() => { setAdding(null); startEdit(); }} />
+          <Button kind="ghost" label="Keep details as they are" onPress={() => setAdding(null)} />
+        </View>
+      </Sheet>
+
+      <PageViewer files={files} index={viewer} onClose={() => setViewer(null)} />
     </Screen>
   );
 }

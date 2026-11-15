@@ -17,6 +17,8 @@ import { Remy } from '../src/ui/Remy';
 const BLOOD = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'];
 const SEX = [['female', 'Female'], ['male', 'Male'], ['intersex', 'Intersex'], ['unspecified', 'Prefer not to say']] as const;
 const LISTS = ['allergies', 'conditions', 'medications'] as const;
+/** Explicit "none" answers. Saved as the list's only item so Medical ID and shared pages show them. */
+const NONE = { allergies: 'No known allergies', conditions: 'No known conditions', medications: 'No current medications' } as const;
 type ListKey = (typeof LISTS)[number];
 
 type Draft = Omit<Profile, 'email' | 'avatarUrl' | 'emergency' | 'heightCm' | 'weightKg'> & { heightCm: string; weightKg: string };
@@ -74,7 +76,7 @@ export default function ProfileEdit() {
   const save = async () => {
     if (!d || busy) return;
     // Text typed into a list but not yet added is saved too.
-    const merged: Draft = { ...d, allergies: withDraft(d.allergies, lists.allergies), conditions: withDraft(d.conditions, lists.conditions), medications: withDraft(d.medications, lists.medications) };
+    const merged: Draft = { ...d, allergies: withDraft(d.allergies, lists.allergies, NONE.allergies), conditions: withDraft(d.conditions, lists.conditions, NONE.conditions), medications: withDraft(d.medications, lists.medications, NONE.medications) };
     const found = check(merged);
     setErrors(found);
     if (Object.keys(found).length) return setError('Check the highlighted fields.');
@@ -168,9 +170,9 @@ export default function ProfileEdit() {
             <View style={chipRow}>
               {BLOOD.map((b) => <Chip key={b} label={b === 'unknown' ? "Don't know" : b} selected={d.bloodType === b} onPress={() => set('bloodType', d.bloodType === b ? null : b)} />)}
             </View>
-            <ListEditor label="Allergies" items={d.allergies} onChange={(v) => set('allergies', v)} draft={lists.allergies} onDraft={(v) => setLists((l) => ({ ...l, allergies: v }))} placeholder="e.g. Penicillin" />
-            <ListEditor label="Conditions" items={d.conditions} onChange={(v) => set('conditions', v)} draft={lists.conditions} onDraft={(v) => setLists((l) => ({ ...l, conditions: v }))} placeholder="e.g. Asthma" />
-            <ListEditor label="Current medications" items={d.medications} onChange={(v) => set('medications', v)} draft={lists.medications} onDraft={(v) => setLists((l) => ({ ...l, medications: v }))} placeholder="e.g. Metformin 500 mg twice daily" />
+            <ListEditor label="Allergies" items={d.allergies} onChange={(v) => set('allergies', v)} draft={lists.allergies} onDraft={(v) => setLists((l) => ({ ...l, allergies: v }))} placeholder="e.g. Penicillin" none={NONE.allergies} />
+            <ListEditor label="Conditions" items={d.conditions} onChange={(v) => set('conditions', v)} draft={lists.conditions} onDraft={(v) => setLists((l) => ({ ...l, conditions: v }))} placeholder="e.g. Asthma" none={NONE.conditions} />
+            <ListEditor label="Current medications" items={d.medications} onChange={(v) => set('medications', v)} draft={lists.medications} onDraft={(v) => setLists((l) => ({ ...l, medications: v }))} placeholder="e.g. Metformin 500 mg twice daily" none={NONE.medications} />
             <Txt variant="label">Organ donor</Txt>
             <View style={chipRow}>
               <Chip label="Yes" selected={d.organDonor === true} onPress={() => set('organDonor', d.organDonor === true ? null : true)} />

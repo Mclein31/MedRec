@@ -37,3 +37,9 @@ export function isCivilDate(v: string) {
   const d = new Date(`${v}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }
+
+/** A dialable `tel:` URL: keeps digits and a leading +, drops spaces, brackets and dashes. Null if nothing dialable. */
+export function telUrl(phone: string | null | undefined) {
+  const digits = (phone ?? '').replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+  return /\d{3,}/.test(digits) ? `tel:${digits}` : null;
+}

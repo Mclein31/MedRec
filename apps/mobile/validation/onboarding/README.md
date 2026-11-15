@@ -1,4 +1,8 @@
-# Native onboarding and sign-in verification — 2026-11-03
+# Native onboarding and sign-in verification
+
+**2026-11-15 (DD-52):** first use is now the setup flow. `testSetupAnswersCarryIntoTheApp` answers every question, checks Remy's replies, the VoiceOver progress label ("Step 1 of 4"), Back, the finish summary and the registration name prefill. It passes on iPhone 16 Pro with Expo Go 58 (load the app fresh: `xcrun simctl keychain <udid> reset`, then open the Metro URL). The tour tests below were removed; the tour is now only Profile → How MedRec works. The screenshots below are from the old tour.
+
+## 2026-11-03
 
 [All six screens](screenshots/overview.jpg)
 
@@ -25,7 +29,7 @@ These are screenshots of the actual native Expo app, with labeled fictional onbo
 
 ## Repeat native checks
 
-Start Metro from `apps/mobile` and load its `exp://` URL in a simulator with Expo Go for SDK 54. Dismiss Expo Go's own first-run tutorial. For the complete suite, use a first-use app state and leave it on the welcome scene. The last test follows the returning-member action to sign-in and sets the normal local first-use marker; it does not submit credentials or create an account.
+Start Metro from `apps/mobile` and load its `exp://` URL in a simulator with Expo Go for SDK 58. Dismiss Expo Go's own first-run tutorial. For the complete suite, use a first-use app state and leave it on the welcome scene. The last test follows the returning-member action to sign-in and sets the normal local first-use marker; it does not submit credentials or create an account.
 
 ```sh
 xcrun xcodebuild \

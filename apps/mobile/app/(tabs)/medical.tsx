@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, Platform, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
+import { telUrl } from '../../src/format';
 import { api } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
 import { shareLink } from '../../src/lib/shareLink';
@@ -71,7 +73,7 @@ export default function MedicalId() {
             <Rule />
             <Fact label="Emergency contact" value={contact} empty="Not set — add one so responders can call" />
             {p.emergencyContactPhone && (
-              <Button kind="secondary" icon="phone-outline" label={`Call ${p.emergencyContactPhone}`} onPress={() => void Linking.openURL(`tel:${p.emergencyContactPhone}`)} style={{ marginBottom: space.md }} />
+              <Button kind="secondary" icon="phone-outline" label={`Call ${p.emergencyContactPhone}`} onPress={() => void callNumber(p.emergencyContactPhone!)} style={{ marginBottom: space.md }} />
             )}
             <Rule />
           </View>
@@ -122,4 +124,21 @@ export default function MedicalId() {
       )}
     </Screen>
   );
+}
+
+/** Opens the phone app. Simulators and devices without calling (iPad, some tablets) get the number to copy instead. */
+async function callNumber(phone: string) {
+  const url = telUrl(phone);
+  const cannot = () =>
+    Alert.alert(
+      "Can't start a call here",
+      url ? `This device can't make phone calls. Call ${phone} from a phone.` : `"${phone}" isn't a number that can be dialled. Check it in Edit Medical ID.`,
+      url ? [{ text: 'Copy number', onPress: () => void Clipboard.setStringAsync(phone) }, { text: 'OK', style: 'cancel' }] : [{ text: 'OK' }],
+    );
+  if (!url) return cannot();
+  try {
+    await Linking.openURL(url);
+  } catch {
+    cannot();
+  }
 }

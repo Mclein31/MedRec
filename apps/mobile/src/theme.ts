@@ -33,19 +33,22 @@ const light = {
   warn: '#8A5A00',
   warnSoft: '#FDF3DC',
   scrim: 'rgba(48,34,56,0.92)',
+  /** Soft light behind Remy. None on light backgrounds, where his plum body already stands out. */
+  remyGlow: '',
 };
 
+// Backgrounds are a near-black warm charcoal, not aubergine: Remy's plum body has to stand out from the page.
 const dark: typeof light = {
-  bg: '#1E1624',
-  surface: '#2A2031',
-  surfaceSunken: '#33283A',
+  bg: '#121013',
+  surface: '#1E1B20',
+  surfaceSunken: '#28242B',
   ink: '#FBF3EA',
   ink2: '#E3D5DA',
   ink3: '#BBA9B4',
-  line: '#4A3C50',
+  line: '#3F3943',
   accent: '#F4CD63',
   accentPressed: '#E6BD52',
-  accentSoft: '#33283A',
+  accentSoft: '#28242B',
   onAccent: '#302238',
   persimmon: '#EE8466',
   persimmonStrong: '#B9432E',
@@ -53,13 +56,14 @@ const dark: typeof light = {
   gold: '#F4CD63',
   onGold: '#302238',
   peach: '#F4B89A',
-  panel: '#3A2A40',
+  panel: '#2B2530',
   onPanel: '#FFFFFF',
   danger: '#FF9AA6',
   dangerSoft: '#3E1F27',
   warn: '#F2C46B',
   warnSoft: '#352A12',
   scrim: 'rgba(10,6,12,0.85)',
+  remyGlow: 'rgba(244,205,99,0.22)',
 };
 
 export type Colors = typeof light;

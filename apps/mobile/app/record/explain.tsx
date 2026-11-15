@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Linking, View } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 import { api } from '../../src/lib/api';
 import { space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
@@ -7,6 +8,7 @@ import { AiPanel } from '../../src/ui/AiPanel';
 import { Banner, Button, Eyebrow, TextLink, Txt } from '../../src/ui/core';
 import { Rule, Screen } from '../../src/ui/layout';
 import { Rise } from '../../src/ui/motion';
+import { openOriginal, PageViewer } from '../../src/ui/PageViewer';
 import { Remy } from '../../src/ui/Remy';
 
 /** General questions only: they help a conversation with a clinician and never interpret the result. */
@@ -16,6 +18,7 @@ export default function Explain() {
   const c = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: r, error, reload } = useLoad(() => api.record(id).then((x) => x.record), [id]);
+  const [viewer, setViewer] = useState<number | null>(null);
   const back = () => (router.canGoBack() ? router.back() : router.replace({ pathname: '/record/[id]', params: { id } }));
 
   return (
@@ -53,7 +56,8 @@ export default function Explain() {
             ))}
           </View>
           <Txt variant="caption" color={c.ink3}>AI can make mistakes. Check the original and ask your clinician about medical decisions.</Txt>
-          {r.files[0] && <TextLink label="Open the original document" onPress={() => void Linking.openURL(r.files[0]!.url)} />}
+          {!!r.files?.length && <TextLink label={r.files.length > 1 ? `View all ${r.files.length} original pages` : 'Open the original document'} onPress={() => openOriginal(r.files!, setViewer)} />}
+          {r.files && <PageViewer files={r.files} index={viewer} onClose={() => setViewer(null)} />}
         </>
       )}
     </Screen>

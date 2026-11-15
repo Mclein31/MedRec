@@ -309,7 +309,7 @@ function Preview({ label, children }: { label: string; children: ReactNode }) {
 /** One segment per question; each fills as its step is reached. */
 function Progress({ total, done }: { total: number; done: number }) {
   return (
-    <View accessibilityRole="progressbar" accessibilityLabel={`Step ${Math.min(done, total)} of ${total}`} accessibilityValue={{ min: 0, max: total, now: done }} style={{ flexDirection: 'row', gap: 6 }}>
+    <View accessible accessibilityRole="progressbar" accessibilityLabel={`Step ${Math.min(done, total)} of ${total}`} accessibilityValue={{ min: 0, max: total, now: done }} style={{ flexDirection: 'row', gap: 6 }}>
       {Array.from({ length: total }, (_, i) => <Segment key={i} on={i < done} />)}
     </View>
   );

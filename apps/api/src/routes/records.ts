@@ -108,7 +108,8 @@ records.get('/:id', async (c) => {
 
 const MAX_PAGES = 20;
 const MAX_DRAFTS = 40;
-const SCAN_BYTES = 18 * 1024 * 1024; // Gemini's inline request limit is 20 MB.
+// Gemini's inline request limit is 20 MB, and pages travel base64-encoded (4/3 larger) inside JSON.
+const SCAN_BYTES = 14 * 1024 * 1024;
 
 /** Uploads one page as a draft (not yet attached to a record). */
 records.post('/files', async (c) => {

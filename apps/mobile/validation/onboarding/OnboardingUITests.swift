@@ -22,43 +22,66 @@ final class MedRecUITests: XCTestCase {
         _ = app.buttons["Continue"].waitForExistence(timeout: 4)
         dismissExpoTip()
     }
-    func testOnboardingScenesAndNavigation() {
+    /** Any element by its accessibility label: chips and choices surface as different XCUI types per iOS version. */
+    func el(_ label: String) -> XCUIElement { app.descendants(matching: .any)[label].firstMatch }
+    func text(containing s: String) -> XCUIElement { app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", s)).firstMatch }
+
+    /** First-use setup (DD-52): every answer, Remy's replies, progress, Back, the finish summary and the register prefill. */
+    func testSetupAnswersCarryIntoTheApp() {
         openPreview()
-        XCTAssertTrue(app.buttons["Meet Remy"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Set up my MedRec"].waitForExistence(timeout: 30))
         dismissExpoTip()
-        XCTAssertFalse(app.buttons["Skip intro"].exists)
-        let next = ["Meet Remy", "See how Remy helps", "Ready for your next visit?", "Keep the essentials close", "Start my MedRec"]
-        let names = ["01-welcome", "02-records", "03-remy", "04-sharing", "05-medical-id"]
-        app.buttons["Pause animations"].tap()
-        for i in 0..<next.count {
-            let action = app.buttons[next[i]]
-            XCTAssertTrue(action.waitForExistence(timeout: 5))
-            XCTAssertTrue(action.isHittable)
-            XCTAssertFalse(app.progressIndicators.firstMatch.exists)
-            capture(names[i])
-            if i < next.count - 1 { action.tap() }
-        }
-        app.buttons["Previous scene"].tap()
-        XCTAssertTrue(app.buttons[next[3]].waitForExistence(timeout: 3))
-        if app.buttons["Play animations"].exists { app.buttons["Play animations"].tap() }
-        app.swipeRight()
-        XCTAssertTrue(app.buttons[next[2]].waitForExistence(timeout: 3))
-        // Restore the welcome screen for a first-use preview.
-        app.buttons["Previous scene"].tap()
-        app.buttons["Previous scene"].tap()
-        XCTAssertTrue(app.buttons[next[0]].waitForExistence(timeout: 3))
-    }
-    func testMotionControlsAndRestoreWelcome() {
-        continueAfterFailure = false
-        app.activate()
-        dismissExpoTip()
-        if app.buttons["Play animations"].exists { app.buttons["Play animations"].tap() }
-        app.buttons["Pause animations"].tap()
-        XCTAssertTrue(app.buttons["Play animations"].waitForExistence(timeout: 3))
-        app.buttons["Play animations"].tap()
-        XCTAssertTrue(app.buttons["Pause animations"].waitForExistence(timeout: 3))
-        for _ in 0..<4 { if app.buttons["Previous scene"].exists { app.buttons["Previous scene"].tap() } }
-        XCTAssertTrue(app.buttons["Meet Remy"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.progressIndicators.firstMatch.exists)
+        capture("01-welcome")
+        app.buttons["Set up my MedRec"].tap()
+
+        let name = app.textFields["Your name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Skip for now"].exists)
+        name.tap()
+        name.typeText("Alex Morgan")
+        XCTAssertTrue(text(containing: "Nice to meet you, Alex.").waitForExistence(timeout: 3))
+        XCTAssertTrue(el("Step 1 of 4").exists)
+        capture("02-name")
+        app.buttons["Continue"].tap()
+
+        let visits = el("Be ready for doctor visits, Show a doctor your records with a temporary QR code")
+        XCTAssertTrue(visits.waitForExistence(timeout: 5))
+        visits.tap()
+        XCTAssertTrue(text(containing: "keep sharing close").waitForExistence(timeout: 3))
+        capture("03-goal")
+        app.buttons["Continue"].tap()
+
+        XCTAssertTrue(el("Imaging").waitForExistence(timeout: 5))
+        el("Imaging").tap()
+        el("Vaccinations").tap()
+        XCTAssertTrue(text(containing: "Imaging and Vaccinations get their own tabs.").waitForExistence(timeout: 3))
+        capture("04-records")
+        app.buttons["Continue"].tap()
+
+        XCTAssertTrue(app.buttons["Looks good"].waitForExistence(timeout: 5))
+        capture("05-comfort")
+        app.buttons["Looks good"].tap()
+
+        XCTAssertTrue(app.buttons["Create my account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(text(containing: "All set, Alex").exists)
+        XCTAssertTrue(text(containing: "Share shortcut on your home").exists)
+        XCTAssertTrue(text(containing: "Imaging and Vaccinations on your Records tabs").waitForExistence(timeout: 3))
+        Thread.sleep(forTimeInterval: 1.2)
+        capture("06-ready")
+
+        // Back keeps the answers.
+        app.buttons["Previous question"].tap()
+        app.buttons["Previous question"].tap()
+        XCTAssertTrue(text(containing: "Imaging and Vaccinations get their own tabs.").waitForExistence(timeout: 3))
+        app.buttons["Continue"].tap()
+        app.buttons["Looks good"].tap()
+
+        app.buttons["Create my account"].tap()
+        let fullName = app.textFields["Full name"]
+        XCTAssertTrue(fullName.waitForExistence(timeout: 10))
+        XCTAssertEqual(fullName.value as? String, "Alex Morgan")
+        capture("07-create-account")
     }
     func testSignInStandardSizingAndDisabledProviders() {
         openPreview()
