@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { requireAuth } from '../lib/auth';
-import { CATEGORIES, scanDocument } from '../lib/gemini';
+import { CATEGORIES, EXTRACTION_CONFIDENCES, MEAL_TIMINGS, SCHEDULE_KINDS, scanDocument } from '../lib/gemini';
 import { body } from '../lib/http';
 import { RECORD_COLUMNS, decodeCursor, encodeCursor, filesFor, mapRecord, signedFiles, type FileRow, type RecordRow } from '../lib/records';
 import { PersonId, personFilter, resolvePerson } from '../lib/people';
@@ -16,13 +16,33 @@ const Uuid = z.string().uuid();
 const CivilDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD.')
-  .refine((v) => new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, 'Enter a real calendar date.');
+  .refine((v) => {
+    const d = new Date(`${v}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+  }, 'Enter a real calendar date.');
+const Time24 = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM.');
+
+const AiMedication = z.object({
+  name: z.string().max(200),
+  dosage: z.string().max(200).nullable().optional().transform((v) => v ?? null),
+  frequency: z.string().max(200).nullable().optional().transform((v) => v ?? null),
+  strength: z.string().max(200).nullable().optional(),
+  dose: z.string().max(200).nullable().optional(),
+  scheduleKind: z.enum(SCHEDULE_KINDS).nullable().optional(),
+  times: z.array(Time24).max(12).optional(),
+  intervalHours: z.number().int().min(1).max(24).nullable().optional(),
+  mealTiming: z.enum(MEAL_TIMINGS).nullable().optional(),
+  durationDays: z.number().int().min(1).max(365).nullable().optional(),
+  endDate: CivilDate.nullable().optional(),
+  instructions: z.string().max(1000).nullable().optional(),
+  confidence: z.enum(EXTRACTION_CONFIDENCES).optional(),
+});
 
 const AiSnapshot = z
   .object({
     summary: z.string().max(4000),
     findings: z.array(z.string().max(500)).max(50),
-    medications: z.array(z.object({ name: z.string().max(200), dosage: z.string().max(200).nullable(), frequency: z.string().max(200).nullable() })).max(50),
+    medications: z.array(AiMedication).max(50),
     labValues: z
       .array(z.object({ name: z.string().max(200), value: z.string().max(100), unit: z.string().max(50).nullable(), range: z.string().max(100).nullable(), flag: z.enum(['low', 'normal', 'high', 'unknown']) }))
       .max(200),
