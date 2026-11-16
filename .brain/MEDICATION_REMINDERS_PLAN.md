@@ -2,7 +2,7 @@
 type: implementation-plan
 title: MedRecord_App Medication Reminders Plan
 project: MedRecord_App
-status: proposed
+status: implemented
 last_updated: 2026-11-16
 ---
 
@@ -662,13 +662,13 @@ export type NotificationPermissionState = 'undetermined' | 'granted' | 'denied' 
 
 ---
 
-## 8. Open Questions for the Owner & What Not to Build in v1
+## 8. Open Questions (Decided in Section 9 / DD-59) & What Not to Build in v1
 
-### Open Questions (Short)
+### Open Questions (Decided 2026-11-16)
 
-1. **Medical ID & Doctor Share Sync:** When a user confirms an active medication for reminders, should MedRec automatically include it on their Medical ID / Doctor Share "Current medications" list (while it remains active), or offer a checkbox on the review screen (*"Also list on Medical ID"*), or keep the Medical ID medication list manually curated in Profile?
-2. **Navigation Placement:** This plan keeps the existing 4-tab native bar (`Records`, `Share`, `Medical ID`, `Profile`) and places a prominent **Medications & reminders** status row on the Records home screen (plus Profile, post-scan Saved, and Record detail). Would you prefer keeping the 4 tabs, or adding a 5th `Medications` tab to `NativeTabs`?
-3. **Default Meal Anchor Times:** When a prescription specifies `"3 times daily with meals"` without exact clock hours, should the review screen pre-suggest editable standard times (`08:00 AM`, `01:00 PM`, `07:00 PM`) marked as **"Suggested times — please check"**, or leave the time chips unselected until the user taps them?
+1. **Medical ID & Doctor Share Sync — Decided:** v1 does **not** sync confirmed medications to Medical ID or doctor shares; the Medical ID medication list stays manually curated in Profile.
+2. **Navigation Placement — Decided:** keep the existing 4-tab native bar (`Records`, `Share`, `Medical ID`, `Profile`) and place **Medications & reminders** on Records home, Profile, post-scan `Saved`, and `RecordDetail`.
+3. **Default Meal Anchor Times — Decided:** **no suggested times.** When a prescription gives no explicit clock times, time chips stay empty and the schedule field is flagged until the user fills them in.
 
 ### What We Will NOT Build in v1 (Intentional Scope Guardrails)
 

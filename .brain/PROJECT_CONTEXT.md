@@ -3,17 +3,17 @@ type: project-brain
 title: MedRecord_App Project Context
 project: MedRecord_App
 status: active
-last_updated: 2026-11-15
+last_updated: 2026-11-16
 ---
 
 # MedRec — project context
 
 MedRec is a personal medical-record app with private document storage, AI document reading, temporary view-only doctor sharing by QR, and a separate public Medical ID. Remy, an organizer mascot, guides the app and answers bounded questions.
 
-## Status (verified 2026-11-15)
+## Status (verified 2026-11-16)
 
 - **Active implementation:** `apps/mobile` + `apps/api` only (v2, app version 2.0.0, bundle/package `com.mclein.medrec`). The legacy root `mobile/` and `backend/` apps were deleted at the user's request on 2026-11-03 (DD-46); their history is in Git and `archive/`.
-- **Last code change:** 2026-11-04 (profile/Medical ID/sharing updates DD-51, motion pass DD-50). Mobile: 31 unit tests pass; API suite has 40 integration tests.
+- **Last code change:** 2026-11-16 (Medication reminders DD-59, plus DD-56–DD-58). Mobile: 56 unit tests pass; API suite has 74 integration tests (typechecks pass; API tests require local Postgres).
 - **Not in production yet.** A Worker exists at the production `workers.dev` URL configured in `apps/.env`, but `/api/ready` returned `503 MISCONFIGURED` on 2026-11-15: secrets/database are not fully configured. No release signing or store submission has been done. Physical-device QA is outstanding. See TODO.md.
 
 ## Stack
@@ -26,8 +26,9 @@ MedRec is a personal medical-record app with private document storage, AI docume
 
 - Sign-in: password + emailed 6-digit code; trusted devices skip the code for 30 days. Refresh tokens rotate. Password reset/change and account deletion revoke devices. Users can delete their account in-app (password required).
 - Records: AI-read document intake (pages → reading → review → saved), records without documents, pages attached later (not AI-read), search and category filters.
+- Medication reminders (DD-59): prescription scans extract structured medication lines without inventing missing doses, clock times, or durations. Nothing is active until the user checks and confirms each medication on `/medications/review` (manual add/edit/stop/delete also supported, person-scoped via caregiver profiles). Today's doses support Taken, Snooze 15m, Skip, and Undo with offline cache/outbox; local reminders via `expo-notifications` cap at 48 slots across the account, hide medication names on the lock screen by default, and keep the 4-tab bar. Medical ID medications remain manually curated.
 - Sharing is view-only with 15/30/60-minute UI choices, scoped to all/categories/records, revocable. The public Medical ID is separate and off until enabled.
-- Ask Remy answers with Gemini from the person's own records (DD-54): grounded, cites records, no diagnosis or medication decisions, urgent questions answered on-device; falls back to record search when the AI is unavailable.
+- Ask Remy answers with Gemini from the person's own records and active medications (DD-54, DD-59): grounded, cites records, refuses diagnosis and medication/missed-dose decisions (with a server-side refusal backstop), urgent questions answered on-device; falls back to record search when the AI is unavailable.
 - First use: two startup stories (first-use and signed-in arrival, DD-49) and a five-scene Remy-led introduction built from real components with labeled example data; the sample QR grants no access.
 
 ## Standing user instructions

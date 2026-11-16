@@ -5,7 +5,7 @@ project: MedRecord_App
 tags:
   - todo
   - backlog
-last_updated: 2026-11-15
+last_updated: 2026-11-16
 ---
 
 # MedRecord_App (MedRec) — TODO
@@ -14,6 +14,7 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## High priority
 
+- [ ] **Device QA for Medication Reminders (DD-59) on a real iPhone and Android:** notification permission prompt (allow, deny, Settings link), lock-screen notification text both ways (default generic copy vs. showing medication names), 15-minute snooze firing and clearing on log, timezone change rescheduling on foreground, and app reinstall / cleared notification queue recovery.
 - [ ] **Device QA for DD-56 (native navigation/controls) on iPhone and Android:** tab-bar insets (top/bottom, scroll-to-top), header actions on record details, sheets with long content, discard-confirm screens vs swipe-back, share slider/segmented control, dark mode tint colours, iPad sidebar.
 
 - [ ] Try caregiver profiles on the phone (DD-55): Profile → Family members, switching, a record, Medical ID and a share for a family member.
@@ -22,7 +23,7 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 - [ ] **Motion feel check for DD-50 (release build, iPhone + low-end Android):** tab-marker travel, sheet exit/reversal, `Swap` timing and interruption, page-sheet top spacing, push/sheet gestures, Remy acting.
 - [ ] **Google and Apple sign-in:** provider setup and real OAuth. Buttons are intentionally disabled previews until the user asks to enable them; no client IDs are configured.
 
-- [ ] **Before the next production deploy (DD-57, DD-58):** set a Google Cloud budget/quota cap on the Gemini key (console only; no gcloud CLI here). Then `npm run deploy:prod` to ship the DD-57/58 API code. (`npm run migrate:prod` done 2026-11-16: 004 and 005 applied to Neon and verified; the currently deployed Worker is compatible with the new schema.)
+- [ ] **Before the next production deploy (DD-57, DD-58, DD-59):** run `npm run migrate:prod` to apply `006_medications.sql` to Neon (004 and 005 were applied and verified on 2026-11-16), and set a Google Cloud budget/quota cap on the Gemini key (console only; no gcloud CLI here). Then `npm run deploy:prod` to ship the DD-57/58/59 API code.
 - [ ] **Remaining security follow-ups:** check the app-lock privacy cover on Android (Recents thumbnail; only the JS cover applies there, untested); decide whether password change should offer "turn off all share and Medical ID links".
 - [ ] **Deep-link navigation errors seen on the simulator (DD-56 native navigation):** opening `/security` or `/record/<id>` by link logs `The action 'REMOVE_ROUTES' … was not handled by any navigator` (red dev toast) and `Linking did not produce an initial navigation state` (expo-router). Screens still open.
 
@@ -43,6 +44,7 @@ Scope: the v2 app (`apps/mobile` + `apps/api`). Completed and obsolete v1 tasks 
 
 ## Done (v2)
 
+- [x] Medication reminders implemented (DD-59, 2026-11-16): prescription extraction, mandatory per-medication confirmation gate, manual add/edit/stop/delete, dose logs with offline outbox, local notifications (48-slot cap, quiet lock screen by default), caregiver profile scoping, and Remy/summary/export integration; plan's open questions decided (no Medical ID sync, 4 tabs kept, no invented meal anchor times).
 - [x] Caregiver profiles live in production (DD-55): migration 003 applied to Neon, Worker version 107b8069 (2026-11-15).
 - [x] Ask Remy with Gemini deployed to production (DD-54, Worker version 917b8154, 2026-11-15).
 - [x] On the user's iPhone (2026-11-15): camera scanning, photo upload and PDF upload work, including attaching pages to a record.

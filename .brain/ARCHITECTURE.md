@@ -2,12 +2,12 @@
 type: architecture
 title: MedRecord_App Architecture
 project: MedRecord_App
-last_updated: 2026-11-15
+last_updated: 2026-11-16
 ---
 
 # MedRec architecture
 
-The active implementation is `apps/mobile` + `apps/api` (verified against the code on 2026-11-15). The root legacy `mobile/` and `backend/` implementations were deleted at the user's request on 2026-11-03 (DD-46); their architecture is in Git and `archive/DECISIONS_ARCHIVE.md`.
+The active implementation is `apps/mobile` + `apps/api` (verified against the code on 2026-11-16). The root legacy `mobile/` and `backend/` implementations were deleted at the user's request on 2026-11-03 (DD-46); their architecture is in Git and `archive/DECISIONS_ARCHIVE.md`.
 
 ## Repository layout
 
@@ -20,7 +20,7 @@ The active implementation is `apps/mobile` + `apps/api` (verified against the co
 
 `apps/mobile` uses Expo SDK 58, React Native 0.88.1, Expo Router, SecureStore, and Reanimated shared-value motion. `app/_layout.tsx` owns fonts, Launch, first-use/session routing, route presentation (push/sheet/cover) and app lock (`src/lock.tsx`, per-account biometric/passcode gate).
 
-Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), medical, share, profile (Add record is the centre tab item opening `add`); `record/[id]`, `record/explain`, `share/new`, `share/[id]`, `remy`, `summary`, `activity`, `profile-edit`, `preferences`, `security`, `onboarding` (first-use setup), `personalize` (setup replay), `tour`, `family/index` and `family/[id]` (caregiver profiles, DD-55). Person-scoped screens read `useActivePerson()` from `src/people.ts`. `src/lib/http.ts` owns API discovery, typed errors, and single-flight session refresh; `src/auth.tsx` owns the session state.
+Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), medical, share, profile (Add record is in the Records header); `record/[id]`, `record/explain`, `medications/index`, `medications/[id]` (`new` for manual add), `medications/review` (sheet), `share/new`, `share/[id]`, `remy`, `summary`, `activity`, `profile-edit`, `preferences`, `security`, `onboarding` (first-use setup), `personalize` (setup replay), `tour`, `family/index` and `family/[id]` (caregiver profiles, DD-55). Person-scoped screens read `useActivePerson()` from `src/people.ts`. `src/lib/http.ts` owns API discovery, typed errors, and single-flight session refresh; `src/auth.tsx` owns the session state.
 
 - `src/screens/Setup.tsx` + `src/personal.ts`: first-use setup (welcome, name, goal, record types, comfort, finish) and the pure helpers that turn answers into Records tabs, category order, home copy and a shortcut (DD-52). Answers live in prefs (`personal`).
 - `src/screens/Onboarding.tsx`: five-scene Remy tour, now only reached as the replay (`/tour`). Gesture-tracked shared position, spring settling, button alternatives, foreground/focus/motion preference handling. Captions and actions remain outside the preview scroll area. No progress bar or Skip action.
@@ -35,7 +35,8 @@ Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), 
 - `src/ui/SocialSignIn.tsx`: disabled Google/Apple custom previews with identical metrics and centered logo/text groups. No provider authentication is activated.
 - `src/ui/motion.tsx`: shared motion primitives: `ease` curves (from `theme.curves`), `colorTransition` (Reanimated CSS colour transitions), `Rise`, and `useSlidingMarker` for tab and filter indicators. `app/_layout.tsx` defines push/sheet/cover route options, all of which fade under calm motion (DD-50).
 - `src/theme.ts`: semantic warm-folio light/dark colors and bundled typography; `src/prefs.ts` combines system/app/scoped reduced-motion preferences.
-- Ask Remy (DD-54): `app/remy.tsx` checks urgent wording on-device, then calls `POST /api/ai/ask` (Gemini over the person's own records, with citations and follow-ups). `src/remy/answer.ts` (record search, saved AI definitions, glossary, app help) is the fallback when the AI is unavailable. Neither gives personal medical advice.
+- Ask Remy (DD-54): `app/remy.tsx` checks urgent wording on-device, then calls `POST /api/ai/ask` (Gemini over the person's own records and active medications, with citations and follow-ups). `src/remy/answer.ts` (record search, saved AI definitions, glossary, reminder app help, and missed-dose/interaction refusal quoting saved prescriptions) is the fallback when the AI is unavailable. Neither gives personal medical advice.
+- Medication reminders (DD-59): `src/medications/` holds `types.ts` (shared API/draft/slot types), `schedule.ts` (pure civil-date course helpers, `interval_hours` expansion, 48-slot `buildRollingNotificationPlan`, `formatNotificationCopy`, snooze & timezone checks), `extract.ts` (pure `prepareReviewDrafts`, `validateReviewDraft`, `draftToMedicationInput`), `notifications.ts` (`expo-notifications` rolling scheduler, SecureStore ledger/snooze map, lock-screen privacy, channel setup), `store.ts` (`useMedications`, account-wide load/sync, offline SecureStore cache & dose-log outbox), and `MedicationCard.tsx` (`MedicationFormFields`, `DoseSlotCard`, `MedicationCard`, `MedicationDisclaimer`). Entry points: `app/(tabs)/index.tsx`, `app/(tabs)/profile.tsx`, `src/add/AddParts.tsx` (`Saved`), `app/record/[id].tsx`, `app/preferences.tsx` (`showMedicationNamesOnLockScreen` in `src/prefs.ts`), and foreground/tap wiring in `app/_layout.tsx`.
 - `src/add/` (`RecordForm`, `PageStrip`, `pages.ts`): intake steps and attaching pages to existing records. `src/listDraft.ts` merges unconfirmed list entries on profile save (DD-51). `src/lib/api.ts` typed API client; `src/lib/storage.ts` SecureStore wrapper; `avatar.ts`, `exports.ts`, `shareLink.ts` support profile photo, exports and share links.
 
 ## API and data
@@ -44,12 +45,12 @@ Routes: `(auth)/` sign-in, register, code, forgot; `(tabs)/` records (`index`), 
 
 - `lib/db.ts`: Neon HTTP, one statement/transaction with the RLS context set. `lib/localDb.ts` supplies development-only local Postgres access.
 - `lib/auth.ts`: JWT, open session, token version. `lib/otp.ts` owns bounded one-time email codes; `lib/email.ts`/`smtp.ts` send them through Gmail.
-- `lib/security.ts`: rate limits, sharing tokens, signed file paths. `lib/records.ts`: keyset pagination. `lib/shares.ts`: scoped, expiring, revocable access.
-- `lib/gemini.ts`: document reading with structured output and guardrails.
+- `lib/security.ts`: rate limits, sharing tokens, signed file paths. `lib/records.ts`: keyset pagination. `lib/shares.ts`: scoped, expiring, revocable access. `lib/medications.ts`: Zod validators, civil-date end-date normalization, and `completeExpiredMedications` (one-day UTC grace).
+- `lib/gemini.ts`: document reading with structured prescription extraction (`SCAN_SCHEMA` / `sanitizeMedication`, never inventing missing values) and guardrails, plus `askRemy` with a server-side medication-decision refusal backstop (`isMedicationDecisionQuestion`).
 - `lib/crypto.ts` (PBKDF2 password hashing, HMAC, base64url, random bytes), `lib/http.ts` (request validation, session issuing, token TTLs), `lib/types.ts`.
-- Routes (`src/routes/`): auth (register, login, verify, resend, refresh, password forgot/reset/change, sessions, trusted devices, `DELETE /api/auth/account`), profile/Medical ID/avatar, records/drafts/scan/pages, uploads, shares, vault/activity/export, public `/s/:token`, `/e/:slug`, signed files. Public views (`src/views/`) use hono/jsx.
-- `src/index.ts` also exports the hourly `scheduled` handler (cron `17 * * * *`): purges unsaved drafts older than 24 h, expired codes, sessions and rate-limit windows.
-- `migrations/001_init.sql`: users, profiles, records/files, sharing/activity, sessions/devices, OTP and rate limits. `002_rls.sql`: forced RLS and the non-bypass medrec_app role.
+- Routes (`src/routes/`): auth (register, login, verify, resend, refresh, password forgot/reset/change, sessions, trusted devices, `DELETE /api/auth/account`), profile/Medical ID/avatar, people, records/drafts/scan/pages, medications (`/api/medications`: list with `includeAllPersons` & date-filtered dose logs, `/batch` confirm, CRUD, `PUT`/`DELETE /:id/logs`), uploads, shares, vault (`/activity`, `/ai/summary`, `/ai/ask`, `/export` including medications & logs), public `/s/:token`, `/e/:slug`, signed files. Public views (`src/views/`) use hono/jsx.
+- `src/index.ts` also exports the hourly `scheduled` handler (cron `17 * * * *`): purges unsaved drafts older than 24 h, expired codes, sessions and rate-limit windows, and marks expired medication courses completed after the one-day UTC grace period.
+- `migrations/001_init.sql`: users, profiles, records/files, sharing/activity, sessions/devices, OTP and rate limits. `002_rls.sql`: forced RLS and the non-bypass medrec_app role. `003_people.sql`: caregiver `people` and `person_id` on records/shares. `004_decoy_challenges.sql`, `005_session_device.sql`: security hardening (DD-57, DD-58). `006_medications.sql`: `medications` and `medication_logs` with forced RLS for `medrec_app`.
 - Documents remain in private R2. The Worker serves HMAC-signed file paths; URLs expire and shared-file access cannot outlive its share.
 
 ## Configuration and verification

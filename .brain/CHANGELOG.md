@@ -5,12 +5,20 @@ project: MedRecord_App
 tags:
   - changelog
   - history
-last_updated: 2026-11-15
+last_updated: 2026-11-16
 ---
 
 # MedRecord_App (MedRec) — Changelog
 
 Newest first. v1 history (0.1.0 – 1.4.27, root `mobile/` + `backend/`) is archived verbatim in [archive/CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).
+
+## [Unreleased] — 2026-11-16 — Medication reminders and prescription review (DD-59)
+
+- **Prescription extraction & mandatory review:** scanning a prescription extracts structured medication fields (`strength`, `dose`, `frequency`, `scheduleKind`, `times`, `intervalHours`, `mealTiming`, `durationDays`, `endDate`, `instructions`, `confidence`) without inventing missing doses or clock times. Saving a record activates nothing automatically; `Saved` and `RecordDetail` offer **Review & set reminders** (`/medications/review`), where each medication must be checked and confirmed before saving.
+- **Medications list, dose logging & manual entry:** added `/medications` (today's doses with **Taken**, **Snooze 15m**, **Skip**, **Undo**, active courses, and completed/stopped courses, scoped by `PersonSwitcher`) and `/medications/[id]` (manual add at `new`, edit, stop, resume, delete), reachable from Records home and Profile while keeping the 4-tab bar.
+- **Offline-capable local notifications:** `expo-notifications` (`~58.1.9`) schedules up to 48 rolling local reminders across all people on the account (with slot 48 reserved for renewal when needed), reschedules on foreground and timezone changes, and hides medication names on the lock screen by default (toggle in Reading & motion).
+- **Backend & Remy integration:** added `migrations/006_medications.sql` (`medications`, `medication_logs` with forced RLS), `/api/medications` CRUD/batch/dose-log routes, server-side course auto-completion with a one-day UTC grace period, active medications in Ask Remy, Health summary, and JSON export, and stronger missed-dose/interaction refusal in Ask Remy (both on-device and server-side). Medical ID medications remain manually curated.
+- **Verification:** mobile typecheck + 56 unit tests pass; API typecheck passes; API suite has 74 integration tests (`medications.test.ts`, `prescriptionScan.test.ts`). Not yet QA'd on a physical device or deployed with migration 006.
 
 ## [Unreleased] — 2026-11-16 — More security fixes from the pentest (DD-58)
 
