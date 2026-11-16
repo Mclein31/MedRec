@@ -3,11 +3,20 @@ import { z } from 'zod';
 import { requireAuth } from '../lib/auth';
 import { askRemy, summarizeHistory } from '../lib/gemini';
 import { body } from '../lib/http';
+import {
+  graceCutoffDate,
+  mapMedication,
+  mapMedicationLog,
+  MEDICATION_COLUMNS,
+  MEDICATION_LOG_COLUMNS,
+  type MedicationLogRow,
+  type MedicationRow,
+} from '../lib/medications';
 import { PERSON_COLUMNS, PersonId, personFilter, personProfile, resolvePerson, type PersonRow } from '../lib/people';
 import { RECORD_COLUMNS, mapRecord, type RecordRow } from '../lib/records';
 import { aiBudget, rateLimit } from '../lib/security';
 import { CATEGORY_NAMES } from '../lib/shares';
-import { asUser, type AppEnv } from '../lib/types';
+import { asUser, type AppEnv, type Db } from '../lib/types';
 import { loadProfile } from './profile';
 
 /** Activity feed, AI history summary and full export. */
@@ -45,12 +54,57 @@ vault.post('/activity/seen', async (c) => {
 
 export const AI_RECORD_LIMIT = 25;
 
+const MEAL_LABEL: Record<string, string> = {
+  before_meal: 'before meal',
+  with_meal: 'with food',
+  after_meal: 'after meal',
+};
+
+function cleanInline(value: string) {
+  return value.replace(/[\r\n]+/g, ' ').trim();
+}
+
+export function formatActiveMedicationLine(m: MedicationRow): string {
+  const base = `${cleanInline(m.name)}${m.strength ? ` ${cleanInline(m.strength)}` : ''}`;
+  const details: string[] = [];
+  if (m.dose) details.push(cleanInline(m.dose));
+  if (m.schedule_kind === 'daily_times' && m.times.length) {
+    details.push(m.times.join(', '));
+  } else if (m.schedule_kind === 'interval_hours' && m.interval_hours) {
+    details.push(`every ${m.interval_hours} hours${m.times[0] ? ` from ${m.times[0]}` : ''}`);
+  } else if (m.schedule_kind === 'as_needed') {
+    details.push('as needed');
+  }
+  if (m.meal_timing && MEAL_LABEL[m.meal_timing]) {
+    details.push(MEAL_LABEL[m.meal_timing]!);
+  }
+  if (m.end_date) details.push(`until ${spokenDate(m.end_date)}`);
+  if (m.instructions) details.push(cleanInline(m.instructions).slice(0, 200));
+  return details.length ? `${base} (${details.join(', ')})` : base;
+}
+
+async function loadActiveMedications(db: Db, userId: string, personId: string | null, now: Date) {
+  return db.query<MedicationRow>(
+    asUser(userId),
+    `SELECT ${MEDICATION_COLUMNS} FROM medications m
+      WHERE m.user_id = $1 AND ${personFilter('m', 2)}
+        AND m.status = 'active' AND (m.end_date IS NULL OR m.end_date >= $3::date)
+      ORDER BY m.created_at DESC LIMIT 50`,
+    [userId, personId, graceCutoffDate(now)],
+  );
+}
+
 /** Plain-text context for the model: profile facts plus the newest records. Never file URLs. */
-export function historyContext(profile: Pick<Awaited<ReturnType<typeof loadProfile>>, 'allergies' | 'conditions' | 'medications' | 'bloodType'>, rows: RecordRow[]) {
+export function historyContext(
+  profile: Pick<Awaited<ReturnType<typeof loadProfile>>, 'allergies' | 'conditions' | 'medications' | 'bloodType'>,
+  rows: RecordRow[],
+  activeMedications: MedicationRow[] = [],
+) {
   const lines = [
     `Allergies: ${profile.allergies.join(', ') || 'none recorded'}`,
     `Conditions: ${profile.conditions.join(', ') || 'none recorded'}`,
     `Medications: ${profile.medications.join(', ') || 'none recorded'}`,
+    ...(activeMedications.length ? [`Active prescribed medications: ${activeMedications.map(formatActiveMedicationLine).join('; ')}`] : []),
     `Blood type: ${profile.bloodType ?? 'unknown'}`,
     '',
     ...rows.map((r) => {
@@ -70,14 +124,17 @@ vault.post('/ai/summary', async (c) => {
   await aiBudget(s.db, c.env, s.now());
   const person = await resolvePerson(s.db, userId, ((await c.req.json().catch(() => null)) as { personId?: unknown } | null)?.personId);
   const profile = person ? personProfile(c.env, person) : await loadProfile(c, userId);
-  const rows = await s.db.query<RecordRow>(
-    asUser(userId),
-    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 3)}
-      ORDER BY coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
-    [userId, AI_RECORD_LIMIT + 1, person?.id ?? null],
-  );
+  const [rows, activeMeds] = await Promise.all([
+    s.db.query<RecordRow>(
+      asUser(userId),
+      `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 3)}
+        ORDER BY coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
+      [userId, AI_RECORD_LIMIT + 1, person?.id ?? null],
+    ),
+    loadActiveMedications(s.db, userId, person?.id ?? null, s.now()),
+  ]);
   const used = rows.slice(0, AI_RECORD_LIMIT);
-  const summary = await summarizeHistory(c.env, s.fetch, historyContext(profile, used));
+  const summary = await summarizeHistory(c.env, s.fetch, historyContext(profile, used, activeMeds));
   // Disclose the cap rather than implying the summary covers everything.
   return c.json({ summary, basedOn: used.length, limited: rows.length > AI_RECORD_LIMIT });
 });
@@ -133,12 +190,15 @@ vault.post('/ai/ask', async (c) => {
   // Remy answers about one person at a time: the account holder or the family member being viewed.
   const person = await resolvePerson(s.db, userId, input.personId);
   const profile = person ? personProfile(c.env, person) : await loadProfile(c, userId);
-  const rows = await s.db.query<RecordRow>(
-    asUser(userId),
-    `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 4)}
-      ORDER BY (r.id = $3::uuid) DESC, coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
-    [userId, ASK_RECORD_LIMIT + 1, input.recordId ?? '00000000-0000-0000-0000-000000000000', person?.id ?? null],
-  );
+  const [rows, activeMeds] = await Promise.all([
+    s.db.query<RecordRow>(
+      asUser(userId),
+      `SELECT ${RECORD_COLUMNS} FROM records r WHERE r.user_id = $1 AND ${personFilter('r', 4)}
+        ORDER BY (r.id = $3::uuid) DESC, coalesce(r.event_date, r.created_at::date) DESC, r.created_at DESC LIMIT $2`,
+      [userId, ASK_RECORD_LIMIT + 1, input.recordId ?? '00000000-0000-0000-0000-000000000000', person?.id ?? null],
+    ),
+    loadActiveMedications(s.db, userId, person?.id ?? null, s.now()),
+  ]);
   const used = rows.slice(0, ASK_RECORD_LIMIT);
   const labels = new Map<string, RecordRow>();
   const head = [
@@ -148,6 +208,7 @@ vault.post('/ai/ask', async (c) => {
     `Allergies: ${profile.allergies.join(', ') || 'none recorded'}`,
     `Conditions: ${profile.conditions.join(', ') || 'none recorded'}`,
     `Medications (health details): ${profile.medications.join(', ') || 'none recorded'}`,
+    `Active prescribed medications: ${activeMeds.length ? activeMeds.map(formatActiveMedicationLine).join('; ') : 'none recorded'}`,
     `Saved records: ${rows.length > ASK_RECORD_LIMIT ? `the newest ${ASK_RECORD_LIMIT} are below (more exist)` : used.length || 'none yet'}`,
   ];
   let material = head.join('\n');
@@ -183,6 +244,16 @@ vault.get('/export', async (c) => {
   );
   const { avatarUrl: _a, emergency: _e, ...facts } = profile;
   const family = await s.db.query<PersonRow>(asUser(userId), `SELECT ${PERSON_COLUMNS} FROM people WHERE user_id = $1 ORDER BY created_at`, [userId]);
+  const medRows = await s.db.query<MedicationRow>(
+    asUser(userId),
+    `SELECT ${MEDICATION_COLUMNS} FROM medications m WHERE m.user_id = $1 ORDER BY m.created_at DESC`,
+    [userId],
+  );
+  const logRows = await s.db.query<MedicationLogRow>(
+    asUser(userId),
+    `SELECT ${MEDICATION_LOG_COLUMNS} FROM medication_logs l WHERE l.user_id = $1 ORDER BY l.scheduled_date DESC, l.scheduled_time DESC, l.acted_at DESC`,
+    [userId],
+  );
   c.header('content-disposition', `attachment; filename="medrec-export-${s.now().toISOString().slice(0, 10)}.json"`);
   return c.json({
     format: 'medrec-export',
@@ -191,6 +262,8 @@ vault.get('/export', async (c) => {
     profile: facts,
     familyMembers: family.map((p) => { const { emergency: _pe, avatarUrl: _pa, email: _pm, phone: _pp, heightCm: _ph, weightKg: _pw, ...rest } = personProfile(c.env, p); return rest; }),
     records: rows.map(mapRecord),
+    medications: medRows.map(mapMedication),
+    medicationLogs: logRows.map(mapMedicationLog),
     note: 'Attached page images and PDFs are not included in this file. Open each record in MedRec to download them.',
   });
 });

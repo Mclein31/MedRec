@@ -3,8 +3,10 @@ import { cors } from 'hono/cors';
 import { createMailer } from './lib/email';
 import { neonDb } from './lib/db';
 import { isLocalDatabase, localDb } from './lib/localDb';
+import { completeExpiredMedications } from './lib/medications';
 import { HttpError, SYSTEM, type AppEnv, type Bindings, type Services } from './lib/types';
 import { auth } from './routes/auth';
+import { medications } from './routes/medications';
 import { people } from './routes/people';
 import { profile } from './routes/profile';
 import { pub } from './routes/public';
@@ -64,6 +66,7 @@ export function createApp(makeServices: ServiceFactory = defaultServices) {
   app.route('/api/people', people);
   app.route('/api/records', records);
   app.route('/api/shares', shares);
+  app.route('/api/medications', medications);
   app.route('/api', vault);
   app.route('/', pub);
 
@@ -88,9 +91,9 @@ export function createApp(makeServices: ServiceFactory = defaultServices) {
   return app;
 }
 
-/** Hourly housekeeping: abandoned draft pages, expired codes, sessions and rate-limit windows. */
+/** Hourly housekeeping: abandoned draft pages, expired codes, sessions, rate-limit windows and completed courses. */
 export async function cleanup(env: Bindings, services: Services) {
-  const { db } = services;
+  const { db, now } = services;
   const drafts = await db.query<{ object_key: string }>(
     SYSTEM,
     `DELETE FROM record_files WHERE record_id IS NULL AND created_at < now() - interval '24 hours' RETURNING object_key`,
@@ -100,5 +103,6 @@ export async function cleanup(env: Bindings, services: Services) {
   await db.query(SYSTEM, `DELETE FROM sessions WHERE expires_at < now() OR revoked_at < now() - interval '7 days'`);
   await db.query(SYSTEM, `DELETE FROM trusted_devices WHERE expires_at < now()`);
   await db.query(SYSTEM, `DELETE FROM rate_limits WHERE window_start < now() - interval '1 day'`);
-  return { draftsRemoved: drafts.length };
+  const medicationsCompleted = await completeExpiredMedications(db, SYSTEM, now());
+  return { draftsRemoved: drafts.length, medicationsCompleted };
 }
