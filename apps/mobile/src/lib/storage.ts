@@ -44,4 +44,8 @@ export const KEYS = {
   appLock: (userId: string) => `medrec.lock.${userId}`,
   prefs: 'medrec.prefs.v1',
   activePerson: (userId: string) => `medrec.person.${userId}`,
+  medsCache: (userId: string) => `medrec.meds.cache.${userId}`,
+  medsOutbox: (userId: string) => `medrec.meds.outbox.${userId}`,
+  medsNotifMap: (userId: string) => `medrec.meds.notif.${userId}`,
+  medsSnooze: (userId: string) => `medrec.meds.snooze.${userId}`,
 };

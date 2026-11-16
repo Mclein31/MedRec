@@ -1,4 +1,7 @@
 import { request, type Session } from './http';
+import type { DoseLogInput, ExtractedMedicationLine, Medication, MedicationInput, MedicationLog, MedicationPatch } from '../medications/types';
+
+export type { DoseLogInput, ExtractedMedicationLine, Medication, MedicationInput, MedicationLog, MedicationPatch };
 
 export interface User { id: string; name: string; email: string; emailVerified: boolean }
 export interface Challenge { challengeId: string; purpose: 'login' | 'verify_email' | 'reset_password'; maskedEmail: string; expiresIn: number; resendIn: number }
@@ -10,7 +13,7 @@ export interface LabValue { name: string; value: string; unit: string | null; ra
 export interface AiSnapshot {
   summary: string;
   findings: string[];
-  medications: { name: string; dosage: string | null; frequency: string | null }[];
+  medications: ExtractedMedicationLine[];
   labValues: LabValue[];
   terms: { term: string; meaning: string }[];
   model: string;
@@ -121,6 +124,23 @@ export const api = {
     request<RemyReply>('/api/ai/ask', { method: 'POST', json: { question, history, recordId, personId: personId ?? undefined }, timeoutMs: 45_000 }),
   aiSummary: (personId?: string | null) => post<{ summary: HistorySummary; basedOn: number; limited: boolean }>('/api/ai/summary', { personId: personId ?? undefined }),
   exportJson: () => request<Record<string, unknown>>('/api/export'),
+
+  medications: (params: { personId?: string | null; includeAllPersons?: boolean; date?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.personId) qs.set('personId', params.personId);
+    if (params.includeAllPersons) qs.set('includeAllPersons', '1');
+    if (params.date) qs.set('date', params.date);
+    return request<{ medications: Medication[]; logs: MedicationLog[] }>(`/api/medications${qs.size ? `?${qs}` : ''}`);
+  },
+  medication: (id: string) => request<{ medication: Medication; logs: MedicationLog[] }>(`/api/medications/${id}`),
+  createMedication: (input: MedicationInput) => request<{ medication: Medication }>('/api/medications', { method: 'POST', json: input }),
+  createMedicationsBatch: (input: { personId?: string | null; sourceRecordId?: string | null; items: MedicationInput[] }) =>
+    request<{ medications: Medication[] }>('/api/medications/batch', { method: 'POST', json: input }),
+  updateMedication: (id: string, patch: MedicationPatch) => request<{ medication: Medication }>(`/api/medications/${id}`, { method: 'PATCH', json: patch }),
+  deleteMedication: (id: string) => request<{ deleted: true }>(`/api/medications/${id}`, { method: 'DELETE' }),
+  logMedicationDose: (id: string, input: DoseLogInput) => request<{ log: MedicationLog }>(`/api/medications/${id}/logs`, { method: 'PUT', json: input }),
+  undoMedicationDose: (id: string, scheduledDate: string, scheduledTime: string) =>
+    request<{ deleted: boolean }>(`/api/medications/${id}/logs?scheduledDate=${encodeURIComponent(scheduledDate)}&scheduledTime=${encodeURIComponent(scheduledTime)}`, { method: 'DELETE' }),
 };
 
 /** Every record, following cursors to the end (exports must never be truncated). */

@@ -12,9 +12,11 @@ export interface Prefs {
   largerText: boolean;
   /** First-use setup answers (name, goal, record types). Device-only. */
   personal: Personal;
+  /** Off by default so lock-screen notifications never reveal medication names unless opted in. */
+  showMedicationNamesOnLockScreen: boolean;
 }
 
-const DEFAULTS: Prefs = { appearance: 'system', gentleMotion: false, largerText: false, personal: NO_PERSONAL };
+const DEFAULTS: Prefs = { appearance: 'system', gentleMotion: false, largerText: false, personal: NO_PERSONAL, showMedicationNamesOnLockScreen: false };
 
 let value: Prefs = DEFAULTS;
 const listeners = new Set<() => void>();
