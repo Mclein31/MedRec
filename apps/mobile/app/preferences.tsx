@@ -1,5 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
+import { useAuth } from '../src/auth';
+import { loadAccountMedications } from '../src/medications/store';
 import { setPrefs, usePrefs, type Prefs } from '../src/prefs';
 import { radius, space, useColors } from '../src/theme';
 import { Button, Eyebrow, Txt } from '../src/ui/core';
@@ -17,6 +19,11 @@ const APPEARANCE: { key: Prefs['appearance']; label: string }[] = [
 export default function Preferences() {
   const c = useColors();
   const prefs = usePrefs();
+  const { state } = useAuth();
+  const toggleLockScreenNames = async (v: boolean) => {
+    await setPrefs({ showMedicationNamesOnLockScreen: v });
+    if (state.status === 'signedIn') void loadAccountMedications(state.user.id);
+  };
   return (
     <Screen tabBar={false} nav={{ title: 'Reading & motion' }} title={'Reading &\nmotion'} footer={<Button kind="dark" label="Done" onPress={() => router.back()} />}>
       <View style={{ gap: space.md }}>
@@ -52,6 +59,14 @@ export default function Preferences() {
           subtitle="Remy and screens move less. Your device's Reduce Motion is always respected."
           chevron={false}
           accessory={<Toggle value={prefs.gentleMotion} onValueChange={(v) => void setPrefs({ gentleMotion: v })} accessibilityLabel="Gentler motion" />}
+        />
+        <Row
+          inset={false}
+          icon="lock-outline"
+          title="Show medication names on lock screen"
+          subtitle="Off by default for privacy. When off, reminders say 'Time for your scheduled medication'."
+          chevron={false}
+          accessory={<Toggle value={prefs.showMedicationNamesOnLockScreen} onValueChange={(v) => void toggleLockScreenNames(v)} accessibilityLabel="Show medication names on lock screen" />}
         />
       </Group>
       <Txt variant="caption" color={c.ink3}>Every action stays available, with less movement.</Txt>

@@ -21,7 +21,13 @@ export type Reply =
 export const URGENT = /\b(chest pain|can'?t breathe|cannot breathe|short of breath|overdose|suicid|kill myself|stroke|unconscious|severe bleeding|emergency)\b/i;
 
 /** Requests for personal medical decisions; Remy never answers these. */
-const ADVICE = /\b(should i|is it safe|is it normal|is this normal|am i|do i have|can i (stop|start|take|skip|double)|stop taking|dose|dosage|diagnos|treat(ment)?|cure)\b/i;
+const ADVICE = /\b(should i|is it safe|is it normal|is this normal|am i|do i have|can i (stop|start|take|skip|double|change|mix|combine)|stop taking|stop (my|this|the) (medication|medicine|course|antibiotic|pill)s?|miss(ed)? (a )?(dose|pill|medication|medicine)|forgot (to take |a |my )?(dose|pill|medication|medicine)|double up|extra (dose|pill)|finish early|change (my |the )?(dose|dosage|timing|time|schedule)|drug interaction|interact(s|ion)?( with)?|take .{1,30} together|dose|dosage|diagnos|treat(ment)?|cure)\b/i;
+
+/** Subset of advice questions specifically about medication decisions (missed doses, doubling up, stopping early, timing, interactions). */
+const MED_DECISION = /\b(miss(ed)? (a )?(dose|pill|medication|medicine)|forgot (to take |a |my )?(dose|pill|medication|medicine)|double up|take (two|2|an extra)|extra (dose|pill)|stop (taking|early|my|this|the) (medication|medicine|course|antibiotic|pill)?|finish early|change (my |the )?(dose|dosage|timing|time|schedule)|drug interaction|interact(s|ion)?( with)?|take .{1,30} together|(medication|medicine|pill|dose|dosage|prescription|antibiotic)s?)\b/i;
+
+/** App-help queries about logging or managing reminders in MedRec (not clinical dosing advice). */
+const REMINDER_APP_HELP = /\b(how (do|can|to)|where (do|can|is))\b.*\b(reminders?|snooze|log (a )?dose|mark (a )?dose|lock ?screen|medication names)\b/i;
 
 const CATEGORY_WORDS: [RegExp, string][] = [
   [/\b(blood ?test|lab|labs|laboratory|results?|cbc|glucose|cholesterol|lipid|urinalysis)\b/i, 'lab'],
@@ -71,6 +77,11 @@ const HELP: { match: RegExp; text: string; link?: { label: string; href: string 
     link: { label: 'Open Profile', href: '/(tabs)/profile' },
   },
   {
+    match: /\b(reminders?|snooze|log (a )?dose|mark (a )?dose|medication schedule|medication privacy|medication names|lock ?screen)\b/i,
+    text: 'After scanning a prescription, tap Review & set reminders to check every medication and confirm your schedule before reminders start. You can also add medications manually or mark doses Taken, Snooze, or Skipped in Medications & reminders. Lock-screen notifications hide medication names by default; you can change that in Reading & motion.',
+    link: { label: 'Open Medications', href: '/medications' },
+  },
+  {
     match: /\b(lock|face ?id|fingerprint|password|secur|privacy|sign ?in|code)\b/i,
     text: 'Every new sign-in needs your password and a 6-digit code sent to your email. You can add app lock with Face ID, a fingerprint or your device passcode in Security & privacy.',
     link: { label: 'Security & privacy', href: '/security' },
@@ -107,6 +118,28 @@ function findTerm(term: string, records: HealthRecord[]) {
 
 const label = (r: HealthRecord) => `“${r.title}”${r.facility ? ` from ${r.facility}` : r.provider ? ` with ${r.provider}` : ''}`;
 
+async function prescriptionQuote(question: string, search: Search, context?: HealthRecord | null): Promise<string | null> {
+  let records: HealthRecord[] = context?.ai?.medications?.length ? [context] : [];
+  if (!records.length) {
+    try {
+      records = await search({ category: 'prescription', limit: 5 });
+    } catch {
+      return null;
+    }
+  }
+  const words = keywords(question);
+  for (const r of records) {
+    const meds = r.ai?.medications ?? [];
+    if (!meds.length) continue;
+    const hit = meds.find((m) => words.some((w) => norm(m.name).includes(w))) ?? meds[0]!;
+    const details = [hit.strength || hit.dose || hit.dosage, hit.frequency, hit.instructions ? `“${hit.instructions}”` : null]
+      .filter(Boolean)
+      .join(' · ');
+    if (details) return `On ${label(r)}, your prescription says: ${hit.name} (${details}).`;
+  }
+  return null;
+}
+
 /** Instant, offline-safe check that runs before any network call. */
 export function urgentReply(question: string): Reply | null {
   return URGENT.test(question) ? { kind: 'urgent', text: "I can't help with urgent symptoms. If this is an emergency, call your local emergency number or go to the nearest emergency department now. For anything else that worries you, contact a clinician." } : null;
@@ -123,7 +156,14 @@ export async function answer(question: string, search: Search, context?: HealthR
     return { kind: 'urgent', text: "I can't help with urgent symptoms. If this is an emergency, call your local emergency number or go to the nearest emergency department now. For anything else that worries you, contact a clinician." };
   }
 
-  if (ADVICE.test(q) && (!extractTerm(q) || /\b(should|for me|safe)\b/i.test(q))) {
+  if (!REMINDER_APP_HELP.test(q) && ADVICE.test(q) && (!extractTerm(q) || /\b(should|for me|safe)\b/i.test(q))) {
+    if (MED_DECISION.test(q)) {
+      const quote = await prescriptionQuote(q, search, context);
+      return {
+        kind: 'unsupported',
+        text: `${quote ? `${quote} ` : ''}I can't advise on missed doses, doubling up, stopping early, changing timing, or drug interactions. Please ask your prescribing doctor or pharmacist.`,
+      };
+    }
     return { kind: 'unsupported', text: "I can't give personal medical advice, like whether to change a medication or what a result means for you. Please ask your clinician or pharmacist. I can find the related records so you have them ready." };
   }
 

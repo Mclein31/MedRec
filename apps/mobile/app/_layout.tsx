@@ -1,14 +1,16 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { router, Stack, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useCallback, useEffect, useState } from 'react';
-import { Appearance, Platform, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Appearance, AppState, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/auth';
 import { AppLockGate } from '../src/lock';
+import { loadAccountMedications, resetMedications } from '../src/medications/store';
 import { loadOnboarded, useOnboarded } from '../src/onboarded';
 import { loadPeople, resetPeople } from '../src/people';
 import { loadPrefs, useCalmMotion, usePrefs } from '../src/prefs';
@@ -68,8 +70,21 @@ function Navigator({ splashReady }: { splashReady: boolean }) {
 
   const ready = state.status !== 'loading' && onboarded !== null;
   useEffect(() => { if (userId === null) setEnteredUser(null); }, [userId]);
-  // Family members load with the account and are forgotten on sign-out (DD-55).
+  // Family members and medications load with the account and are forgotten on sign-out (DD-55, DD-59).
   useEffect(() => { if (userId) void loadPeople(userId); else resetPeople(); }, [userId]);
+  useEffect(() => { if (userId) void loadAccountMedications(userId); else resetMedications(); }, [userId]);
+
+  const appState = useRef(AppState.currentState);
+  useEffect(() => {
+    if (!userId) return;
+    const sub = AppState.addEventListener('change', (next) => {
+      const prev = appState.current;
+      appState.current = next;
+      // Re-sync on foreground to catch timezone/DST shifts or an OS-cleared notification queue.
+      if (prev !== 'active' && next === 'active') void loadAccountMedications(userId);
+    });
+    return () => sub.remove();
+  }, [userId]);
   const presentation = launchPresentation({ startupComplete: launchGone, completedUser: enteredUser, status: state.status, onboarded, userId });
   const onGone = useCallback(() => { setEnteredUser(userId); setLaunchGone(true); }, [userId]);
   const launch = presentation ? <Launch key={presentation.key} kind={presentation.kind} reason={presentation.reason} done={presentation.done} splashReady={splashReady} onGone={onGone} /> : null;
@@ -111,6 +126,7 @@ function Routes() {
   const cover = { presentation: 'fullScreenModal' as const, ...(calm ? fade : ({ animation: 'slide_from_bottom' } as const)) };
   return (
     <AppLockGate userId={signedIn ? state.user.id : null}>
+      {signedIn && <MedicationNotificationHandler />}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'fade', animationDuration: 180 }}>
         <Stack.Protected guard={!signedIn && !onboarded}>
           <Stack.Screen name="onboarding" />
@@ -135,8 +151,30 @@ function Routes() {
           <Stack.Screen name="family/index" options={push} />
           <Stack.Screen name="family/[id]" options={sheet} />
           <Stack.Screen name="summary" options={sheet} />
+          <Stack.Screen name="medications/index" options={push} />
+          <Stack.Screen name="medications/[id]" options={push} />
+          <Stack.Screen name="medications/review" options={sheet} />
         </Stack.Protected>
       </Stack>
     </AppLockGate>
   );
+}
+
+/** Opens /medications when a reminder notification is tapped (mounted inside AppLockGate so lock runs first). */
+function MedicationNotificationHandler() {
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const openFromResponse = (response: Notifications.NotificationResponse | null | undefined) => {
+      if (!response) return;
+      const data = response.notification.request.content.data as { kind?: unknown; slotKey?: unknown } | undefined;
+      if (typeof data?.kind === 'string' && data.kind !== 'medication_reminder' && data.kind !== 'medication_renewal') return;
+      Notifications.clearLastNotificationResponse();
+      const slotKey = typeof data?.slotKey === 'string' ? data.slotKey : undefined;
+      router.push((slotKey ? { pathname: '/medications', params: { slotKey } } : '/medications') as Href);
+    };
+    openFromResponse(Notifications.getLastNotificationResponse());
+    const sub = Notifications.addNotificationResponseReceivedListener(openFromResponse);
+    return () => sub.remove();
+  }, []);
+  return null;
 }

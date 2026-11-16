@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Alert, Platform, View } from 'react-native';
 import { Reading } from '../../src/add/AddParts';
@@ -215,6 +215,14 @@ export default function RecordDetail() {
           loading={adding === 'uploading'}
           onPress={() => setAdding('sheet')}
           style={r.files.length ? { minHeight: 44, marginTop: -space.sm } : undefined}
+        />
+      )}
+      {!!r.ai?.medications?.length && (
+        <Button
+          kind="secondary"
+          icon="pill"
+          label="Review medications for reminders"
+          onPress={() => router.push({ pathname: '/medications/review', params: { recordId: r.id } } as unknown as Href)}
         />
       )}
 

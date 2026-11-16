@@ -1,9 +1,9 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
 import { formatDate } from '../format';
 import type { HealthRecord } from '../lib/api';
 import { CATEGORY_META, radius, space, useColors } from '../theme';
-import { Button, Icon, Tappable, TextLink, Txt } from '../ui/core';
+import { Button, Eyebrow, Icon, Tappable, TextLink, Txt } from '../ui/core';
 import { Rule } from '../ui/layout';
 import { Rise } from '../ui/motion';
 import { DateBlock } from '../ui/RecordRow';
@@ -66,6 +66,7 @@ export function UploadIncomplete({ failed, onRetry, onRemove }: { failed: number
 
 export function Saved({ record, onAnother }: { record: HealthRecord; onAnother: () => void }) {
   const c = useColors();
+  const medCount = record.ai?.medications?.length ?? 0;
   return (
     <View style={{ gap: space.xl }}>
       <Rise scale={0.8} from={20} style={{ alignSelf: 'center' }}>
@@ -93,6 +94,24 @@ export function Saved({ record, onAnother }: { record: HealthRecord; onAnother: 
           </View>
         </View>
       </Rise>
+      {medCount > 0 && (
+        <View style={{ backgroundColor: c.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: c.line, padding: space.lg, gap: space.md }}>
+          <View style={{ gap: space.xs }}>
+            <Eyebrow>Prescription medications</Eyebrow>
+            <Txt variant="headline">
+              {medCount} {medCount === 1 ? 'medication' : 'medications'} read from this record
+            </Txt>
+            <Txt variant="caption" color={c.ink3}>
+              Review each medication and confirm the schedule before turning on reminders.
+            </Txt>
+          </View>
+          <Button
+            icon="pill"
+            label="Review & set reminders"
+            onPress={() => router.push({ pathname: '/medications/review', params: { recordId: record.id } } as unknown as Href)}
+          />
+        </View>
+      )}
       <TextLink label="View this record" onPress={() => router.replace({ pathname: '/record/[id]', params: { id: record.id } })} />
       <Button kind="secondary" label="Add another record" onPress={onAnother} />
     </View>

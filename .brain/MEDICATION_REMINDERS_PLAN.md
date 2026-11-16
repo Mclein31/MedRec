@@ -692,3 +692,12 @@ Plan approved with these decisions and corrections. Where they differ from secti
 6. **Waves:** Package 1 is built first by one agent. Packages 2, 3, 4, 5, 6 then run in parallel. Packages 5 and 6 code against the Package 4 signatures in section 7.D; their final `typecheck` must be re-run after Package 4 is finished (the orchestrator tells them).
 7. **Docs:** the DD-59 entry in `.brain/DECISIONS.md`, CHANGELOG and TODO updates are written once at the end by the Package 1 agent, from what was actually built. Builders do not edit `.brain/` files except ticking nothing; they report in their final message.
 8. **Out of bounds for all packages:** no deploy, no `migrate:prod`, no package installs beyond Package 1's `expo-notifications`, no git writes.
+
+## 10. Builder rules (every Wave 2 agent)
+
+- Read this whole plan first: your package in section 7, the shared contracts in 7.A–7.D, and section 9, which is binding. Package 1 is already built and committed (`ee34158`): import from it, never edit it.
+- Read `.brain/PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `NOTES.md` and the code next to your files; match the existing style (warm-folio tokens and UI primitives on mobile; Hono + `asUser` + forced RLS in the API).
+- Edit ONLY the files your package owns (section 7 table). The other packages are being built in this repo at the same time; if you need a change in a file you do not own, describe it in your final message instead.
+- Section 4 safety rules are non-negotiable. No git writes, no deploy, no `migrate:prod`, no package installs.
+- Run your package's acceptance checks and report exact pass/fail counts (API tests need the local Postgres from NOTES.md / apps/README.md; if unavailable, say so and still typecheck).
+- Finish with a message starting `PACKAGE <n> DONE`: files changed, checks with results, anything you could not do.

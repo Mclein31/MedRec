@@ -1,10 +1,13 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, type HealthRecord } from '../../src/lib/api';
 import { messageFor } from '../../src/lib/errors';
+import { formatTime12 } from '../../src/medications/schedule';
+import { useMedications } from '../../src/medications/store';
+import type { ScheduledSlot } from '../../src/medications/types';
 import { FirstRecord, NoMatch, OpeningRecords } from '../../src/screens/RecordsStates';
 import { CATEGORIES, CATEGORY_META, GUTTER, MAX_CONTENT_WIDTH, space, useColors } from '../../src/theme';
 import { useLoad } from '../../src/useLoad';
@@ -47,6 +50,16 @@ export default function Records() {
 
   // Everything on this screen belongs to the person being viewed (DD-55).
   const { personId, person } = useActivePerson();
+  const meds = useMedications(personId);
+  const pendingSlots = (meds.todaySlots as ScheduledSlot[]).filter((s) => s.outcome === null);
+  const nextSlot = pendingSlots.find((s) => s.triggerAt.getTime() >= Date.now()) ?? pendingSlots[0];
+  const medSubtitle = meds.active.length
+    ? nextSlot
+      ? `${meds.active.length} active · Next dose at ${formatTime12(nextSlot.scheduledTime)}`
+      : meds.todaySlots.length > 0
+        ? `${meds.active.length} active · All doses logged for today`
+        : `${meds.active.length} active`
+    : 'Track prescribed courses and dose times';
   const summary = useLoad(() => api.summary(personId), [personId]);
   const list = useLoad(async () => {
     const page = await api.records({ q: debounced, category: category ?? undefined, personId });
@@ -122,6 +135,19 @@ export default function Records() {
                   <Rule />
                 </>
               )}
+              <Tappable
+                onPress={() => router.push('/medications' as Href)}
+                accessibilityLabel={`Medications & reminders, ${medSubtitle}`}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm }}
+              >
+                <Icon name="pill" size={22} color={c.ink} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt variant="headline">Medications & reminders</Txt>
+                  <Txt variant="caption" color={c.ink3}>{medSubtitle}</Txt>
+                </View>
+                <Icon name="arrow-right" size={22} color={c.ink} />
+              </Tappable>
+              <Rule />
               <Tappable onPress={() => router.push('/summary')} accessibilityLabel="Your health summary" style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt variant="headline">Your health summary</Txt>
@@ -171,7 +197,7 @@ export default function Records() {
         itemLayoutAnimation={Platform.OS !== 'web' && !calm ? LinearTransition.duration(220).easing(ease.inOut) : undefined}
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
-        refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={() => { void list.refresh(); void summary.refresh(); }} tintColor={c.ink3} />}
+        refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={() => { void list.refresh(); void summary.refresh(); void meds.refresh(); }} tintColor={c.ink3} />}
         contentContainerStyle={{ paddingTop: top + space.sm, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE, paddingHorizontal: GUTTER, width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' }}
         keyboardShouldPersistTaps="handled"
       />
