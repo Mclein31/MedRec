@@ -1,7 +1,7 @@
 {
  "version": 1,
  "title": "MedRec",
- "summary": "A mobile medical-records vault: patients scan or enter their records, have documents read by AI, and share time-limited QR links with clinicians or expose an emergency Medical ID page.",
+ "summary": "A mobile medical-records vault: patients scan or enter their records, have documents read by AI, manage confirmed medication reminders, and share time-limited QR links with clinicians or expose an emergency Medical ID page.",
  "nodes": [
   {
    "id": "actor.patient",
@@ -32,7 +32,7 @@
    "label": "App shell and routing",
    "kind": "component",
    "layer": "frontend",
-   "detail": "Root layout: fonts, launch animation, first-use and session routing, app lock.",
+   "detail": "Root layout: fonts, launch animation, first-use and session routing, app lock and medication sync.",
    "file": "apps/mobile/app/_layout.tsx"
   },
   {
@@ -56,7 +56,7 @@
    "label": "Records tab",
    "kind": "screen",
    "layer": "frontend",
-   "detail": "Home list of records with category filters and search.",
+   "detail": "Home list of records with category filters, search and medication summary.",
    "file": "apps/mobile/app/(tabs)/index.tsx"
   },
   {
@@ -72,8 +72,32 @@
    "label": "Record detail",
    "kind": "screen",
    "layer": "frontend",
-   "detail": "View a record with its files, edit or delete it, and get an AI explanation.",
+   "detail": "View a record with its files, edit or delete it, review extracted medications and get an AI explanation.",
    "file": "apps/mobile/app/record/[id].tsx"
+  },
+  {
+   "id": "ui.medications",
+   "label": "Medications",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Today's dose schedule (taken, snooze, skip, undo) and active or past medication courses.",
+   "file": "apps/mobile/app/medications/index.tsx"
+  },
+  {
+   "id": "ui.med_review",
+   "label": "Medication review",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Review AI-extracted prescription lines and confirm schedules before reminders start.",
+   "file": "apps/mobile/app/medications/review.tsx"
+  },
+  {
+   "id": "ui.med_detail",
+   "label": "Medication detail",
+   "kind": "screen",
+   "layer": "frontend",
+   "detail": "Add a medication manually or edit, stop, resume or delete an existing course.",
+   "file": "apps/mobile/app/medications/[id].tsx"
   },
   {
    "id": "ui.medical",
@@ -96,7 +120,7 @@
    "label": "Profile and security",
    "kind": "screen",
    "layer": "frontend",
-   "detail": "Profile, preferences, sessions, trusted devices, export, activity and account deletion.",
+   "detail": "Profile, preferences, medications, sessions, trusted devices, export, activity and account deletion.",
    "file": "apps/mobile/app/(tabs)/profile.tsx"
   },
   {
@@ -104,7 +128,7 @@
    "label": "Remy assistant",
    "kind": "screen",
    "layer": "frontend",
-   "detail": "On-device helper answering from the user's own records, a glossary and app help.",
+   "detail": "Helper answering from the user's records and active medications, a glossary and app help.",
    "file": "apps/mobile/app/remy.tsx"
   },
   {
@@ -124,6 +148,22 @@
    "file": "apps/mobile/src/auth.tsx"
   },
   {
+   "id": "ui.med_store",
+   "label": "Medication store",
+   "kind": "component",
+   "layer": "frontend",
+   "detail": "Holds medications, dose logs and offline outbox; syncs with API and schedules reminders.",
+   "file": "apps/mobile/src/medications/store.ts"
+  },
+  {
+   "id": "svc.notifications",
+   "label": "Local notifications",
+   "kind": "service",
+   "layer": "frontend",
+   "detail": "Schedules up to 48 Expo local dose and snooze reminders with lock-screen privacy.",
+   "file": "apps/mobile/src/medications/notifications.ts"
+  },
+  {
    "id": "ui.client",
    "label": "API client",
    "kind": "component",
@@ -136,7 +176,7 @@
    "label": "SecureStore",
    "kind": "store",
    "layer": "frontend",
-   "detail": "Device keychain holding tokens, preferences and the lock setting.",
+   "detail": "Device keychain holding tokens, preferences, lock setting and medication cache/outbox.",
    "file": "apps/mobile/src/lib/storage.ts"
   },
   {
@@ -172,6 +212,14 @@
    "file": "apps/api/src/routes/records.ts"
   },
   {
+   "id": "api.medications",
+   "label": "Medications APIs",
+   "kind": "api",
+   "layer": "backend",
+   "detail": "/api/medications batch confirm, CRUD and dose adherence logs.",
+   "file": "apps/api/src/routes/medications.ts"
+  },
+  {
    "id": "api.shares",
    "label": "Shares APIs",
    "kind": "api",
@@ -184,7 +232,7 @@
    "label": "Vault APIs",
    "kind": "api",
    "layer": "backend",
-   "detail": "Activity feed, AI history summary and full data export.",
+   "detail": "Activity feed, AI history summary, Ask Remy and full data export.",
    "file": "apps/api/src/routes/vault.ts"
   },
   {
@@ -220,11 +268,19 @@
    "file": "apps/api/src/lib/shares.ts"
   },
   {
+   "id": "svc.medications",
+   "label": "Medication helpers",
+   "kind": "service",
+   "layer": "backend",
+   "detail": "Normalizes schedules, computes end dates and auto-completes expired courses.",
+   "file": "apps/api/src/lib/medications.ts"
+  },
+  {
    "id": "svc.ai",
    "label": "Document AI",
    "kind": "service",
    "layer": "backend",
-   "detail": "Reads scanned pages and summarises history with structured output and guardrails.",
+   "detail": "Reads scanned pages and prescriptions, answers Remy and summarises history with guardrails.",
    "file": "apps/api/src/lib/gemini.ts"
   },
   {
@@ -240,7 +296,7 @@
    "label": "Hourly cleanup",
    "kind": "job",
    "layer": "backend",
-   "detail": "Scheduled job removing expired drafts and their stored files.",
+   "detail": "Scheduled job removing expired drafts, stored files and completing expired medication courses.",
    "file": "apps/api/src/app.ts"
   },
   {
@@ -248,7 +304,7 @@
    "label": "Postgres (Neon)",
    "kind": "store",
    "layer": "backend",
-   "detail": "Users, sessions, profiles, records, shares, activity and rate limits with forced RLS.",
+   "detail": "Users, sessions, profiles, records, medications, shares, activity and rate limits with forced RLS.",
    "file": "apps/api/migrations/001_init.sql"
   },
   {
@@ -298,6 +354,14 @@
    "layer": "backend",
    "detail": "requireAuth checks the access token, an open unexpired session and the token version (401 SESSION_EXPIRED otherwise).",
    "file": "apps/api/src/lib/auth.ts"
+  },
+  {
+   "id": "dec.notif_perm",
+   "label": "Notifications allowed?",
+   "kind": "decision",
+   "layer": "frontend",
+   "detail": "Checks OS notification permission before scheduling local dose and snooze reminders.",
+   "file": "apps/mobile/src/medications/notifications.ts"
   },
   {
    "id": "dec.share",
@@ -351,6 +415,11 @@
    "label": "signed in"
   },
   {
+   "from": "ui.root",
+   "to": "ui.med_store",
+   "label": "loads on start"
+  },
+  {
    "from": "ui.records",
    "to": "ui.add",
    "label": "adds"
@@ -359,6 +428,11 @@
    "from": "ui.records",
    "to": "ui.record",
    "label": "opens"
+  },
+  {
+   "from": "ui.records",
+   "to": "ui.medications",
+   "label": "opens meds"
   },
   {
    "from": "ui.records",
@@ -379,6 +453,71 @@
    "from": "ui.records",
    "to": "ui.profile",
    "label": "tabs"
+  },
+  {
+   "from": "ui.profile",
+   "to": "ui.medications",
+   "label": "opens meds"
+  },
+  {
+   "from": "ui.add",
+   "to": "ui.med_review",
+   "label": "review meds"
+  },
+  {
+   "from": "ui.record",
+   "to": "ui.med_review",
+   "label": "review meds"
+  },
+  {
+   "from": "ui.medications",
+   "to": "ui.med_detail",
+   "label": "add or edit"
+  },
+  {
+   "from": "ui.med_review",
+   "to": "ui.med_store",
+   "label": "confirms"
+  },
+  {
+   "from": "ui.medications",
+   "to": "ui.med_store",
+   "label": "logs dose"
+  },
+  {
+   "from": "ui.med_detail",
+   "to": "ui.med_store",
+   "label": "saves"
+  },
+  {
+   "from": "ui.med_store",
+   "to": "store.secure",
+   "label": "caches outbox"
+  },
+  {
+   "from": "ui.med_store",
+   "to": "ui.client",
+   "label": "syncs /medications"
+  },
+  {
+   "from": "ui.med_store",
+   "to": "dec.notif_perm",
+   "label": "schedules"
+  },
+  {
+   "from": "dec.notif_perm",
+   "to": "svc.notifications",
+   "label": "yes: schedules"
+  },
+  {
+   "from": "dec.notif_perm",
+   "to": "ui.medications",
+   "label": "no: prompts settings"
+  },
+  {
+   "from": "svc.notifications",
+   "to": "actor.patient",
+   "label": "reminds dose"
   },
   {
    "from": "ui.auth",
@@ -471,12 +610,27 @@
    "label": "summary"
   },
   {
+   "from": "api.vault",
+   "to": "svc.medications",
+   "label": "active meds"
+  },
+  {
    "from": "svc.ai",
    "to": "ext.gemini",
    "label": "reads document"
   },
   {
    "from": "api.records",
+   "to": "svc.db",
+   "label": "queries"
+  },
+  {
+   "from": "api.medications",
+   "to": "svc.medications",
+   "label": "normalizes"
+  },
+  {
+   "from": "api.medications",
    "to": "svc.db",
    "label": "queries"
   },
@@ -534,6 +688,11 @@
    "from": "job.cleanup",
    "to": "store.r2",
    "label": "deletes drafts"
+  },
+  {
+   "from": "job.cleanup",
+   "to": "svc.medications",
+   "label": "completes expired"
   },
   {
    "from": "api.mw",
@@ -598,6 +757,11 @@
   {
    "from": "dec.session",
    "to": "api.records",
+   "label": "yes"
+  },
+  {
+   "from": "dec.session",
+   "to": "api.medications",
    "label": "yes"
   },
   {
@@ -707,6 +871,22 @@
    ]
   },
   {
+   "name": "Manage medication reminders",
+   "steps": [
+    "actor.patient",
+    "ui.root",
+    "ui.records",
+    "ui.medications",
+    "ui.med_store",
+    "ui.client",
+    "api.mw",
+    "dec.session",
+    "api.medications",
+    "svc.db",
+    "store.pg"
+   ]
+  },
+  {
    "name": "Share records by QR",
    "steps": [
     "actor.patient",
@@ -728,21 +908,6 @@
     "api.public",
     "svc.shares",
     "dec.share",
-    "svc.db",
-    "store.pg"
-   ]
-  },
-  {
-   "name": "Emergency Medical ID",
-   "steps": [
-    "actor.patient",
-    "ui.root",
-    "ui.records",
-    "ui.medical",
-    "ui.client",
-    "api.mw",
-    "dec.session",
-    "api.profile",
     "svc.db",
     "store.pg"
    ]
